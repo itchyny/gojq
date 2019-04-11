@@ -1,7 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"os"
+
+	"github.com/itchyny/gojq/cli"
+)
 
 func main() {
-	fmt.Print("gojq")
+	os.Exit(cli.Run())
 }
