@@ -1,0 +1,7 @@
+language: go
+go:
+  - 1.12.x
+env: PATH=/home/travis/gopath/bin:$PATH
+script:
+  - make test
+  - make lint
