@@ -46,6 +46,12 @@ func TestRun(t *testing.T) {
 			expected: 128,
 		},
 		{
+			name:     "object index",
+			query:    `.foo`,
+			input:    map[string]interface{}{"foo": 128},
+			expected: 128,
+		},
+		{
 			name:  "expected object",
 			query: `.foo|.bar`,
 			input: map[string]interface{}{"foo": 128},
@@ -58,10 +64,32 @@ func TestRun(t *testing.T) {
 			expected: struct{}{},
 		},
 		{
-			name:     "pipe",
-			query:    `.foo | . | .baz`,
-			input:    map[string]interface{}{"foo": map[string]interface{}{"baz": 256}},
-			expected: 256,
+			name:     "array index",
+			query:    `.[2]`,
+			input:    []interface{}{16, 32, 48, 64},
+			expected: 48,
+		},
+		{
+			name:     "array index out of bound",
+			query:    `. [ 4 ]`,
+			input:    []interface{}{16, 32, 48, 64},
+			expected: nil,
+		},
+		{
+			name:  "expected array",
+			query: `.[0]`,
+			input: map[string]interface{}{"foo": 128},
+			err:   "expected an array but got: map",
+		},
+		{
+			name:  "pipe",
+			query: `.foo | . | .baz | .[1]`,
+			input: map[string]interface{}{
+				"foo": map[string]interface{}{
+					"baz": []interface{}{"Hello", "world"},
+				},
+			},
+			expected: "world",
 		},
 	}
 

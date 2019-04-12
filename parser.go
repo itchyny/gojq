@@ -18,6 +18,7 @@ func NewParser() Parser {
 			&Query{},
 			participle.Lexer(lexer.Must(ebnf.New(`
 				ObjectIndex = "." ( "_" | alpha ) { "_" | alpha | digit } .
+				Integer = "0" | "1"…"9" { digit } .
 				Whitespace = " " | "\t" | "\n" | "\r" .
 				Punct = "!"…"/" | ":"…"@" | "["…`+"\"`\""+` | "{"…"~" .
 				alpha = "a"…"z" | "A"…"Z" .

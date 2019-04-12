@@ -17,3 +17,11 @@ type expectedObjectError struct {
 func (err *expectedObjectError) Error() string {
 	return fmt.Sprintf("expected an object but got: %T", err.v)
 }
+
+type expectedArrayError struct {
+	v interface{}
+}
+
+func (err *expectedArrayError) Error() string {
+	return fmt.Sprintf("expected an array but got: %T", err.v)
+}

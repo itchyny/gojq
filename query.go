@@ -12,8 +12,9 @@ type Pipe struct {
 
 // Term ...
 type Term struct {
-	Identity    *Identity    `@@ |`
-	ObjectIndex *ObjectIndex `@@`
+	ObjectIndex *ObjectIndex `@@ |`
+	ArrayIndex  *ArrayIndex  `@@ |`
+	Identity    *Identity    `@@`
 }
 
 // Identity ...
@@ -25,4 +26,9 @@ type Identity struct {
 type ObjectIndex struct {
 	Name     string `@ObjectIndex`
 	Optional bool   `@"?"?`
+}
+
+// ArrayIndex ...
+type ArrayIndex struct {
+	Index int `"." "[" @Integer "]"`
 }

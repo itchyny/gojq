@@ -38,5 +38,15 @@ func applyTerm(term *Term, v interface{}) (interface{}, error) {
 		}
 		return m[x.Name[1:]], nil
 	}
+	if x := term.ArrayIndex; x != nil {
+		a, ok := v.([]interface{})
+		if !ok {
+			return nil, &expectedArrayError{v}
+		}
+		if x.Index < 0 || len(a) <= x.Index {
+			return nil, nil
+		}
+		return a[x.Index], nil
+	}
 	return nil, &unexpectedQueryError{}
 }
