@@ -17,10 +17,13 @@ func NewParser() Parser {
 		participle.MustBuild(
 			&Query{},
 			participle.Lexer(lexer.Must(ebnf.New(`
-				ObjectIndex = "." { "_" | alpha } { "_" | alpha | digit } .
+				ObjectIndex = "." ( "_" | alpha ) { "_" | alpha | digit } .
+				Whitespace = " " | "\t" | "\n" | "\r" .
+				Punct = "!"…"/" | ":"…"@" | "["…`+"\"`\""+` | "{"…"~" .
 				alpha = "a"…"z" | "A"…"Z" .
 				digit = "0"…"9" .
 `))),
+			participle.Elide("Whitespace"),
 		),
 	}
 }

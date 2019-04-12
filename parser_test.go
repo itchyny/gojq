@@ -19,13 +19,28 @@ func TestParser(t *testing.T) {
 		{
 			src: ".",
 			expected: &Query{
-				Term: &Term{Identity: &Identity{"."}},
+				Pipe: &Pipe{
+					Terms: []*Term{
+						&Term{Identity: &Identity{}},
+					},
+				},
 			},
 		},
 		{
-			src:      "abc",
-			err:      ":1:1:",
-			expected: nil,
+			src: ".foo | . | .bar",
+			expected: &Query{
+				Pipe: &Pipe{
+					Terms: []*Term{
+						&Term{ObjectIndex: &ObjectIndex{".foo"}},
+						&Term{Identity: &Identity{}},
+						&Term{ObjectIndex: &ObjectIndex{".bar"}},
+					},
+				},
+			},
+		},
+		{
+			src: "abc",
+			err: ":1:1:",
 		},
 	}
 

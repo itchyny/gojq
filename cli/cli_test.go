@@ -33,6 +33,15 @@ func TestCliRun(t *testing.T) {
 `,
 		},
 		{
+			name:  "pipe",
+			args:  []string{".foo | .bar"},
+			input: `{"foo": {"bar": {"baz": 128}}}`,
+			expected: `{
+  "baz": 128
+}
+`,
+		},
+		{
 			name:  "invalid query",
 			args:  []string{"abc"},
 			input: `{}`,

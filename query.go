@@ -2,7 +2,12 @@ package gojq
 
 // Query ...
 type Query struct {
-	Term *Term `@@`
+	Pipe *Pipe `@@`
+}
+
+// Pipe ...
+type Pipe struct {
+	Terms []*Term `@@ ("|" @@)*`
 }
 
 // Term ...
@@ -13,7 +18,7 @@ type Term struct {
 
 // Identity ...
 type Identity struct {
-	X string `@"."`
+	_ string `"."`
 }
 
 // ObjectIndex ...
