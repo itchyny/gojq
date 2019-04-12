@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"io"
 	"runtime"
+	"strings"
+
+	"github.com/alecthomas/participle/lexer"
 
 	"github.com/itchyny/gojq"
 )
@@ -60,7 +63,7 @@ Options:
 	if len(args) == 0 {
 		arg = "."
 	} else if len(args) == 1 {
-		arg = args[0]
+		arg = strings.TrimSpace(args[0])
 	} else {
 		fmt.Fprintf(cli.errStream, "%s: too many arguments\n", name)
 		return exitCodeErr
@@ -68,7 +71,8 @@ Options:
 	parser := gojq.NewParser()
 	query, err := parser.Parse(arg)
 	if err != nil {
-		fmt.Fprintf(cli.errStream, "%s: %s: %s\n", name, err, arg)
+		fmt.Fprintf(cli.errStream, "%s: invalid query: %q\n", name, arg)
+		cli.printQueryParseError(arg, err)
 		return exitCodeErr
 	}
 	var v interface{}
@@ -88,4 +92,13 @@ Options:
 		return exitCodeErr
 	}
 	return exitCodeOK
+}
+
+func (cli *cli) printQueryParseError(query string, err error) {
+	if err, ok := err.(*lexer.Error); ok {
+		lines := strings.Split(query, "\n")
+		if 0 < err.Pos.Line && err.Pos.Line <= len(lines) {
+			fmt.Fprintf(cli.errStream, "    %s\n%s\n", lines[err.Pos.Line-1], strings.Repeat(" ", 3+err.Pos.Column)+"^")
+		}
+	}
 }
