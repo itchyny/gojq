@@ -42,10 +42,35 @@ func TestCliRun(t *testing.T) {
 `,
 		},
 		{
-			name:  "invalid json",
+			name:  "invalid json: eof",
 			args:  []string{},
 			input: `{`,
-			err:   "invalid json: unexpected EOF",
+			err: `invalid json: unexpected EOF
+    {
+     ^
+`,
+		},
+		{
+			name: "invalid json: invalid character",
+			args: []string{},
+			input: `{
+  "あいうえお" 100
+}`,
+			err: `invalid json: invalid character '1' after object key
+      "あいうえお" 100
+                   ^
+`,
+		},
+		{
+			name: "invalid json: string literal",
+			args: []string{},
+			input: `{
+  "いろは": "
+}`,
+			err: `invalid json: invalid character '\n' in string literal
+      "いろは": "
+                 ^
+`,
 		},
 	}
 
