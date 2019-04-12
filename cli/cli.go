@@ -80,6 +80,9 @@ Options:
 	var v interface{}
 	var buf bytes.Buffer
 	if err := json.NewDecoder(io.TeeReader(cli.inStream, &buf)).Decode(&v); err != nil {
+		if buf.String() == "" {
+			return exitCodeOK
+		}
 		fmt.Fprintf(cli.errStream, "%s: invalid json: %s\n", name, err)
 		cli.printJSONError(buf.String(), err)
 		return exitCodeErr

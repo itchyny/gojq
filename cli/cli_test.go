@@ -17,6 +17,12 @@ func TestCliRun(t *testing.T) {
 		err      string
 	}{
 		{
+			name:     "empty",
+			args:     []string{},
+			input:    ``,
+			expected: ``,
+		},
+		{
 			name:  "number",
 			args:  []string{"."},
 			input: `128`,
