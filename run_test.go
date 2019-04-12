@@ -39,6 +39,12 @@ func TestRun(t *testing.T) {
 			input:    []interface{}{"foo", 128},
 			expected: []interface{}{"foo", 128},
 		},
+		{
+			name:     "object index",
+			query:    `.foo`,
+			input:    map[string]interface{}{"foo": 128},
+			expected: 128,
+		},
 	}
 
 	for _, tc := range testCases {

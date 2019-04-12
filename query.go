@@ -7,10 +7,16 @@ type Query struct {
 
 // Term ...
 type Term struct {
-	Identity *Identity `@@`
+	Identity    *Identity    `@@ |`
+	ObjectIndex *ObjectIndex `@@`
 }
 
 // Identity ...
 type Identity struct {
 	X string `@"."`
+}
+
+// ObjectIndex ...
+type ObjectIndex struct {
+	Name string `@ObjectIndex`
 }

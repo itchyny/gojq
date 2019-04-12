@@ -1,6 +1,10 @@
 package gojq
 
-import "github.com/alecthomas/participle"
+import (
+	"github.com/alecthomas/participle"
+	"github.com/alecthomas/participle/lexer"
+	"github.com/alecthomas/participle/lexer/ebnf"
+)
 
 // Parser parses a query.
 type Parser interface {
@@ -9,7 +13,16 @@ type Parser interface {
 
 // NewParser creates a new query parser.
 func NewParser() Parser {
-	return &parser{participle.MustBuild(&Query{})}
+	return &parser{
+		participle.MustBuild(
+			&Query{},
+			participle.Lexer(lexer.Must(ebnf.New(`
+				ObjectIndex = "." { "_" | alpha } { "_" | alpha | digit } .
+				alpha = "a"…"z" | "A"…"Z" .
+				digit = "0"…"9" .
+`))),
+		),
+	}
 }
 
 type parser struct {
