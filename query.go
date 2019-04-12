@@ -23,5 +23,6 @@ type Identity struct {
 
 // ObjectIndex ...
 type ObjectIndex struct {
-	Name string `@ObjectIndex`
+	Name     string `@ObjectIndex`
+	Optional bool   `@"?"?`
 }

@@ -89,6 +89,9 @@ Options:
 		fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 		return exitCodeErr
 	}
+	if v == struct{}{} {
+		return exitCodeOK
+	}
 	enc := json.NewEncoder(cli.outStream)
 	enc.SetIndent("", "  ")
 	if err := enc.Encode(v); err != nil {

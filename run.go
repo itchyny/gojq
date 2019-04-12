@@ -31,6 +31,9 @@ func applyTerm(term *Term, v interface{}) (interface{}, error) {
 	if x := term.ObjectIndex; x != nil {
 		m, ok := v.(map[string]interface{})
 		if !ok {
+			if x.Optional {
+				return struct{}{}, nil
+			}
 			return nil, &expectedObjectError{v}
 		}
 		return m[x.Name[1:]], nil

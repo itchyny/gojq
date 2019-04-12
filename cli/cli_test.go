@@ -42,6 +42,12 @@ func TestCliRun(t *testing.T) {
 `,
 		},
 		{
+			name:     "object optional",
+			args:     []string{".foo | .bar?"},
+			input:    `{"foo": 128}`,
+			expected: ``,
+		},
+		{
 			name:  "invalid query",
 			args:  []string{"abc"},
 			input: `{}`,

@@ -46,6 +46,18 @@ func TestRun(t *testing.T) {
 			expected: 128,
 		},
 		{
+			name:  "expected object",
+			query: `.foo|.bar`,
+			input: map[string]interface{}{"foo": 128},
+			err:   "expected an object but got: int",
+		},
+		{
+			name:     "object optional",
+			query:    `.foo|.bar?`,
+			input:    map[string]interface{}{"foo": 128},
+			expected: struct{}{},
+		},
+		{
 			name:     "pipe",
 			query:    `.foo | . | .baz`,
 			input:    map[string]interface{}{"foo": map[string]interface{}{"baz": 256}},
@@ -57,10 +69,17 @@ func TestRun(t *testing.T) {
 		parser := NewParser()
 		t.Run(tc.name, func(t *testing.T) {
 			query, err := parser.Parse(tc.query)
+			assert.NoError(t, err)
 			require.NoError(t, err)
 			got, err := Run(query, tc.input)
-			require.NoError(t, err)
-			assert.Equal(t, tc.expected, got)
+			if err == nil {
+				require.NoError(t, err)
+				assert.Equal(t, tc.expected, got)
+			} else {
+				assert.NotEqual(t, tc.err, "")
+				require.Contains(t, err.Error(), tc.err)
+				assert.Equal(t, tc.expected, got)
+			}
 		})
 	}
 }

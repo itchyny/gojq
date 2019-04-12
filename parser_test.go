@@ -27,13 +27,13 @@ func TestParser(t *testing.T) {
 			},
 		},
 		{
-			src: ".foo | . | .bar",
+			src: ".foo | . | .bar?",
 			expected: &Query{
 				Pipe: &Pipe{
 					Terms: []*Term{
-						&Term{ObjectIndex: &ObjectIndex{".foo"}},
+						&Term{ObjectIndex: &ObjectIndex{".foo", false}},
 						&Term{Identity: &Identity{}},
-						&Term{ObjectIndex: &ObjectIndex{".bar"}},
+						&Term{ObjectIndex: &ObjectIndex{".bar", true}},
 					},
 				},
 			},
