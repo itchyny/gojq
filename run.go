@@ -62,7 +62,18 @@ func applyComma(c *Comma, v interface{}) (interface{}, error) {
 	return d, nil
 }
 
-func applyTerm(t *Term, v interface{}) (interface{}, error) {
+func applyTerm(t *Term, v interface{}) (w interface{}, err error) {
+	defer func() {
+		if err != nil {
+			return
+		}
+		for _, s := range t.SuffixList {
+			w, err = applySuffix(s, w)
+			if err != nil {
+				return
+			}
+		}
+	}()
 	if t.Identity != nil {
 		return v, nil
 	}
@@ -71,9 +82,6 @@ func applyTerm(t *Term, v interface{}) (interface{}, error) {
 	}
 	if x := t.ArrayIndex; x != nil {
 		return applyArrayIndex(x, v)
-	}
-	if x := t.Iterator; x != nil {
-		return applyIterator(x, v)
 	}
 	if x := t.Expression; x != nil {
 		return applyExpression(x, v)
@@ -112,36 +120,6 @@ func applyArrayIndex(x *ArrayIndex, v interface{}) (interface{}, error) {
 	return a, nil
 }
 
-func applyIterator(x *Iterator, v interface{}) (interface{}, error) {
-	c := make(chan interface{}, 1)
-	if x.Name != "" {
-		m, ok := v.(map[string]interface{})
-		if !ok {
-			return nil, &expectedObjectError{v}
-		}
-		v = m[x.Name]
-	}
-	if a, ok := v.([]interface{}); ok {
-		go func() {
-			defer close(c)
-			for _, e := range a {
-				c <- e
-			}
-		}()
-	} else if o, ok := v.(map[string]interface{}); ok {
-		go func() {
-			defer close(c)
-			for _, e := range o {
-				c <- e
-			}
-		}()
-	} else {
-		close(c)
-		return nil, &iteratorError{v}
-	}
-	return c, nil
-}
-
 func applyExpression(x *Expression, v interface{}) (interface{}, error) {
 	if x.Null != nil {
 		return nil, nil
@@ -175,4 +153,56 @@ func applyArray(x *Array, v interface{}) (interface{}, error) {
 		return v, nil
 	}
 	return []interface{}{v}, nil
+}
+
+func applySuffix(s *Suffix, v interface{}) (interface{}, error) {
+	if x := s.ObjectIndex; x != nil {
+		return applyObjectIndex(x, v)
+	}
+	if x := s.ArrayIndex; x != nil {
+		return applyArrayIndex(x, v)
+	}
+	if x := s.Array; x != nil {
+		if x.Pipe == nil {
+			return applyIterator(v)
+		}
+		return applyArray(x, v)
+	}
+	return nil, &unexpectedQueryError{}
+}
+
+func applyIterator(v interface{}) (chan interface{}, error) {
+	c := make(chan interface{}, 1)
+	if a, ok := v.([]interface{}); ok {
+		go func() {
+			defer close(c)
+			for _, e := range a {
+				c <- e
+			}
+		}()
+	} else if o, ok := v.(map[string]interface{}); ok {
+		go func() {
+			defer close(c)
+			for _, e := range o {
+				c <- e
+			}
+		}()
+	} else if w, ok := v.(chan interface{}); ok {
+		go func() {
+			defer close(c)
+			for e := range w {
+				u, err := applyIterator(e)
+				if err != nil {
+					panic(err) // todo
+				}
+				for x := range u {
+					c <- x
+				}
+			}
+		}()
+	} else {
+		close(c)
+		return nil, &iteratorError{v}
+	}
+	return c, nil
 }

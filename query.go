@@ -17,11 +17,11 @@ type Comma struct {
 
 // Term ...
 type Term struct {
-	Iterator    *Iterator    `  @@`
-	ObjectIndex *ObjectIndex `| @@`
+	ObjectIndex *ObjectIndex `( @@`
 	ArrayIndex  *ArrayIndex  `| @@`
 	Identity    *Identity    `| @@`
-	Expression  *Expression  `| @@`
+	Expression  *Expression  `| @@ )`
+	SuffixList  []*Suffix    `@@*`
 }
 
 // ObjectIndex ...
@@ -37,12 +37,14 @@ type ArrayIndex struct {
 	Index *int `| @Integer ) "]"`
 }
 
-// Iterator ...
-type Iterator struct {
-	Name string `"." @Ident? "[" "]"`
-}
-
 // Identity ...
 type Identity struct {
 	_ string `"."`
+}
+
+// Suffix ...
+type Suffix struct {
+	ObjectIndex *ObjectIndex `  @@`
+	ArrayIndex  *ArrayIndex  `| @@`
+	Array       *Array       `| @@`
 }

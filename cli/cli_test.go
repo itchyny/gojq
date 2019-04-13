@@ -95,6 +95,17 @@ func TestCliRun(t *testing.T) {
 `,
 		},
 		{
+			name:  "iterator in array",
+			args:  []string{"[.foo|.bar[][]]"},
+			input: `{"foo": {"bar": [[1],[2],[3]]}}`,
+			expected: `[
+  1,
+  2,
+  3
+]
+`,
+		},
+		{
 			name:  "invalid query",
 			args:  []string{"abc"},
 			input: `{}`,

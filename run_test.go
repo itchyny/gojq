@@ -146,9 +146,9 @@ func TestRun(t *testing.T) {
 		},
 		{
 			name:     "array",
-			query:    `. | [false, .foo, .bar] | .`,
+			query:    `. | [false, .foo, .bar.baz] | .`,
 			input:    map[string]interface{}{"foo": "hello", "bar": map[string]interface{}{"baz": 128}},
-			expected: []interface{}{false, "hello", map[string]interface{}{"baz": 128}},
+			expected: []interface{}{false, "hello", 128},
 		},
 		{
 			name:     "pipe in array",
@@ -166,6 +166,12 @@ func TestRun(t *testing.T) {
 			name:     "iterator in array",
 			query:    `[ .foo | .bar[] ]`,
 			input:    map[string]interface{}{"foo": map[string]interface{}{"bar": []interface{}{1, 2, 3}}},
+			expected: []interface{}{1, 2, 3},
+		},
+		{
+			name:     "iterator in array",
+			query:    `[ .foo | .["bar"][][] ]`,
+			input:    map[string]interface{}{"foo": map[string]interface{}{"bar": []interface{}{[]interface{}{1}, []interface{}{2}, []interface{}{3}}}},
 			expected: []interface{}{1, 2, 3},
 		},
 	}
