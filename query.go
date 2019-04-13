@@ -34,12 +34,12 @@ type ArrayIndex struct {
 
 // Iterator ...
 type Iterator struct {
-	_ *string `"." "[" "]"`
+	_ string `"." "[" "]"`
 }
 
 // Identity ...
 type Identity struct {
-	_ *string `"."`
+	_ string `"."`
 }
 
 // Expression ...
@@ -49,5 +49,5 @@ type Expression struct {
 
 // Null ...
 type Null struct {
-	_ *string `"null"`
+	_ string `"null"`
 }
