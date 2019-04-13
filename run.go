@@ -145,5 +145,27 @@ func applyExpression(x *Expression, v interface{}) (interface{}, error) {
 	if x.False != nil {
 		return false, nil
 	}
+	if x.Array != nil {
+		return applyArray(x.Array, v)
+	}
 	return nil, &unexpectedQueryError{}
+}
+
+func applyArray(x *Array, v interface{}) (interface{}, error) {
+	if x.Pipe == nil {
+		return []interface{}{}, nil
+	}
+	var err error
+	v, err = applyPipe(x.Pipe, v)
+	if err != nil {
+		return nil, err
+	}
+	if w, ok := v.(chan interface{}); ok {
+		v := []interface{}{}
+		for e := range w {
+			v = append(v, e)
+		}
+		return v, nil
+	}
+	return []interface{}{v}, nil
 }

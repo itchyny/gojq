@@ -5,6 +5,7 @@ type Expression struct {
 	Null  *Null  `  @@`
 	True  *True  `| @@`
 	False *False `| @@`
+	Array *Array `| @@`
 }
 
 // Null ...
@@ -20,4 +21,9 @@ type True struct {
 // False ...
 type False struct {
 	_ string `"false"`
+}
+
+// Array ...
+type Array struct {
+	Pipe *Pipe `"[" @@? "]"`
 }

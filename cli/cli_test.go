@@ -70,6 +70,31 @@ func TestCliRun(t *testing.T) {
 			expected: ``,
 		},
 		{
+			name:  "array",
+			args:  []string{"[.foo, .]"},
+			input: `{"foo": {"bar": 128}}`,
+			expected: `[
+  {
+    "bar": 128
+  },
+  {
+    "foo": {
+      "bar": 128
+    }
+  }
+]
+`,
+		},
+		{
+			name:  "pipe in array",
+			args:  []string{"[.foo|.bar]"},
+			input: `{"foo": {"bar": 128}}`,
+			expected: `[
+  128
+]
+`,
+		},
+		{
 			name:  "invalid query",
 			args:  []string{"abc"},
 			input: `{}`,

@@ -35,12 +35,6 @@ func TestRun(t *testing.T) {
 			expected: map[string]interface{}{"foo": 128},
 		},
 		{
-			name:     "array",
-			query:    `.`,
-			input:    []interface{}{"foo", 128},
-			expected: []interface{}{"foo", 128},
-		},
-		{
 			name:     "object index",
 			query:    `.foo`,
 			input:    map[string]interface{}{"foo": 128},
@@ -143,6 +137,30 @@ func TestRun(t *testing.T) {
 			input:    []interface{}{"a", 10},
 			expected: []interface{}{true, false, true, false},
 			iterator: true,
+		},
+		{
+			name:     "empty array",
+			query:    `[]`,
+			input:    []interface{}{1, 2, 3},
+			expected: []interface{}{},
+		},
+		{
+			name:     "array",
+			query:    `. | [false, .foo, .bar] | .`,
+			input:    map[string]interface{}{"foo": "hello", "bar": map[string]interface{}{"baz": 128}},
+			expected: []interface{}{false, "hello", map[string]interface{}{"baz": 128}},
+		},
+		{
+			name:     "pipe in array",
+			query:    `[ .foo | .bar ]`,
+			input:    map[string]interface{}{"foo": map[string]interface{}{"bar": 128}},
+			expected: []interface{}{128},
+		},
+		{
+			name:     "iterator in array",
+			query:    `[ .[] | .foo ]`,
+			input:    []interface{}{map[string]interface{}{"foo": "hello"}, map[string]interface{}{"foo": 128}},
+			expected: []interface{}{"hello", 128},
 		},
 	}
 
