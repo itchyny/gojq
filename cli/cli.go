@@ -77,24 +77,28 @@ Options:
 		cli.printQueryParseError(arg, err)
 		return exitCodeErr
 	}
-	var v interface{}
 	var buf bytes.Buffer
-	if err := json.NewDecoder(io.TeeReader(cli.inStream, &buf)).Decode(&v); err != nil {
-		if buf.String() == "" {
-			return exitCodeOK
+	dec := json.NewDecoder(io.TeeReader(cli.inStream, &buf))
+	for {
+		buf.Reset()
+		var v interface{}
+		if err := dec.Decode(&v); err != nil {
+			if buf.String() == "" {
+				return exitCodeOK
+			}
+			fmt.Fprintf(cli.errStream, "%s: invalid json: %s\n", name, err)
+			cli.printJSONError(buf.String(), err)
+			return exitCodeErr
 		}
-		fmt.Fprintf(cli.errStream, "%s: invalid json: %s\n", name, err)
-		cli.printJSONError(buf.String(), err)
-		return exitCodeErr
-	}
-	v, err = gojq.Run(query, v)
-	if err != nil {
-		fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
-		return exitCodeErr
-	}
-	if err := cli.printValue(v); err != nil {
-		fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
-		return exitCodeErr
+		v, err = gojq.Run(query, v)
+		if err != nil {
+			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+			return exitCodeErr
+		}
+		if err := cli.printValue(v); err != nil {
+			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+			return exitCodeErr
+		}
 	}
 	return exitCodeOK
 }

@@ -109,6 +109,20 @@ func TestCliRun(t *testing.T) {
                  ^
 `,
 		},
+		{
+			name:  "multiple json",
+			args:  []string{},
+			input: `{}[]{"foo":10}{"bar":[]}`,
+			expected: `{}
+[]
+{
+  "foo": 10
+}
+{
+  "bar": []
+}
+`,
+		},
 	}
 
 	for _, tc := range testCases {
