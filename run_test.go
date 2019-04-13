@@ -130,6 +130,12 @@ func TestRun(t *testing.T) {
 			},
 			expected: "world",
 		},
+		{
+			name:     "null value",
+			query:    `null`,
+			input:    []interface{}{"a", 10, []interface{}{}},
+			expected: nil,
+		},
 	}
 
 	for _, tc := range testCases {

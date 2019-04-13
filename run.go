@@ -37,6 +37,9 @@ func applyTerm(term *Term, v interface{}) (interface{}, error) {
 	if x := term.Iterator; x != nil {
 		return applyIterator(v)
 	}
+	if x := term.Expression; x != nil {
+		return applyExpression(x, v)
+	}
 	return nil, &unexpectedQueryError{}
 }
 
@@ -92,4 +95,11 @@ func applyIterator(v interface{}) (interface{}, error) {
 		return nil, &iteratorError{v}
 	}
 	return c, nil
+}
+
+func applyExpression(x *Expression, v interface{}) (interface{}, error) {
+	if x.Null != nil {
+		return nil, nil
+	}
+	return nil, &unexpectedQueryError{}
 }

@@ -15,7 +15,8 @@ type Term struct {
 	ObjectIndex *ObjectIndex `@@ |`
 	ArrayIndex  *ArrayIndex  `@@ |`
 	Iterator    *Iterator    `@@ |`
-	Identity    *Identity    `@@`
+	Identity    *Identity    `@@ |`
+	Expression  *Expression  `@@`
 }
 
 // ObjectIndex ...
@@ -39,4 +40,14 @@ type Iterator struct {
 // Identity ...
 type Identity struct {
 	_ *string `"."`
+}
+
+// Expression ...
+type Expression struct {
+	Null *Null `@@`
+}
+
+// Null ...
+type Null struct {
+	_ *string `"null"`
 }
