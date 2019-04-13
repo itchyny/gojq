@@ -13,6 +13,7 @@ func TestRun(t *testing.T) {
 		query    string
 		input    interface{}
 		expected interface{}
+		iterator bool
 		err      string
 	}{
 		{
@@ -106,6 +107,20 @@ func TestRun(t *testing.T) {
 			err:   "expected an array but got: map",
 		},
 		{
+			name:     "array iterator",
+			query:    `.[]`,
+			input:    []interface{}{"a", "b", "c"},
+			expected: []interface{}{"a", "b", "c"},
+			iterator: true,
+		},
+		{
+			name:     "object iterator",
+			query:    `.[]`,
+			input:    map[string]interface{}{"a": 10},
+			expected: []interface{}{10},
+			iterator: true,
+		},
+		{
 			name:  "pipe",
 			query: `.foo | . | .baz | .[1]`,
 			input: map[string]interface{}{
@@ -126,7 +141,17 @@ func TestRun(t *testing.T) {
 			got, err := Run(query, tc.input)
 			if err == nil {
 				require.NoError(t, err)
-				assert.Equal(t, tc.expected, got)
+				if c, ok := got.(chan interface{}); ok {
+					var got []interface{}
+					for e := range c {
+						got = append(got, e)
+					}
+					assert.Equal(t, tc.iterator, true)
+					assert.Equal(t, tc.expected, got)
+				} else {
+					assert.Equal(t, tc.iterator, false)
+					assert.Equal(t, tc.expected, got)
+				}
 			} else {
 				assert.NotEqual(t, tc.err, "")
 				require.Contains(t, err.Error(), tc.err)

@@ -92,12 +92,7 @@ Options:
 		fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 		return exitCodeErr
 	}
-	if v == struct{}{} {
-		return exitCodeOK
-	}
-	enc := json.NewEncoder(cli.outStream)
-	enc.SetIndent("", "  ")
-	if err := enc.Encode(v); err != nil {
+	if err := cli.printValue(v); err != nil {
 		fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 		return exitCodeErr
 	}
@@ -142,4 +137,21 @@ func (cli *cli) printJSONError(input string, err error) {
 		}
 		fmt.Fprintf(cli.errStream, "    %s\n%s\n", s.String(), strings.Repeat(" ", 3+j)+"^")
 	}
+}
+
+func (cli *cli) printValue(v interface{}) error {
+	if v == struct{}{} {
+		return nil
+	}
+	enc := json.NewEncoder(cli.outStream)
+	enc.SetIndent("", "  ")
+	if c, ok := v.(chan interface{}); ok {
+		for x := range c {
+			if err := enc.Encode(x); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	return enc.Encode(v)
 }

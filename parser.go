@@ -28,7 +28,7 @@ func NewParser() Parser {
 `))),
 			participle.Elide("Whitespace"),
 			participle.Unquote("String"),
-			participle.UseLookahead(1),
+			participle.UseLookahead(2),
 		),
 	}
 }

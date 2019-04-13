@@ -14,12 +14,8 @@ type Pipe struct {
 type Term struct {
 	ObjectIndex *ObjectIndex `@@ |`
 	ArrayIndex  *ArrayIndex  `@@ |`
+	Iterator    *Iterator    `@@ |`
 	Identity    *Identity    `@@`
-}
-
-// Identity ...
-type Identity struct {
-	_ string `"."`
 }
 
 // ObjectIndex ...
@@ -33,4 +29,14 @@ type ArrayIndex struct {
 	Start *int `"." "[" ( @Integer?`
 	End   *int `":" @Integer? |`
 	Index *int `@Integer ) "]"`
+}
+
+// Iterator ...
+type Iterator struct {
+	_ *string `"." "[" "]"`
+}
+
+// Identity ...
+type Identity struct {
+	_ *string `"."`
 }

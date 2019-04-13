@@ -25,3 +25,11 @@ type expectedArrayError struct {
 func (err *expectedArrayError) Error() string {
 	return fmt.Sprintf("expected an array but got: %T", err.v)
 }
+
+type iteratorError struct {
+	v interface{}
+}
+
+func (err *iteratorError) Error() string {
+	return fmt.Sprintf("cannot iterate over: %T", err.v)
+}

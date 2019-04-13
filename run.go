@@ -34,6 +34,9 @@ func applyTerm(term *Term, v interface{}) (interface{}, error) {
 	if x := term.ArrayIndex; x != nil {
 		return applyArrayIndex(x, v)
 	}
+	if x := term.Iterator; x != nil {
+		return applyIterator(v)
+	}
 	return nil, &unexpectedQueryError{}
 }
 
@@ -66,4 +69,27 @@ func applyArrayIndex(x *ArrayIndex, v interface{}) (interface{}, error) {
 		a = a[*start:]
 	}
 	return a, nil
+}
+
+func applyIterator(v interface{}) (interface{}, error) {
+	c := make(chan interface{}, 1)
+	if a, ok := v.([]interface{}); ok {
+		go func() {
+			defer close(c)
+			for _, e := range a {
+				c <- e
+			}
+		}()
+	} else if o, ok := v.(map[string]interface{}); ok {
+		go func() {
+			defer close(c)
+			for _, e := range o {
+				c <- e
+			}
+		}()
+	} else {
+		close(c)
+		return nil, &iteratorError{v}
+	}
+	return c, nil
 }
