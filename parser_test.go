@@ -31,7 +31,7 @@ func TestParser(t *testing.T) {
 			},
 		},
 		{
-			src: `.foo | .,. | .["bar"]?`,
+			src: `.foo | .,. | .bar[] | .["bar"]?`,
 			expected: &Query{
 				Pipe: &Pipe{
 					Commas: []*Comma{
@@ -44,6 +44,11 @@ func TestParser(t *testing.T) {
 							Terms: []*Term{
 								&Term{Identity: &Identity{}},
 								&Term{Identity: &Identity{}},
+							},
+						},
+						&Comma{
+							Terms: []*Term{
+								&Term{Iterator: &Iterator{"bar"}},
 							},
 						},
 						&Comma{

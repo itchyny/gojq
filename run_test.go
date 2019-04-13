@@ -162,6 +162,12 @@ func TestRun(t *testing.T) {
 			input:    []interface{}{map[string]interface{}{"foo": "hello"}, map[string]interface{}{"foo": 128}},
 			expected: []interface{}{"hello", 128},
 		},
+		{
+			name:     "iterator in array",
+			query:    `[ .foo | .bar[] ]`,
+			input:    map[string]interface{}{"foo": map[string]interface{}{"bar": []interface{}{1, 2, 3}}},
+			expected: []interface{}{1, 2, 3},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -185,7 +191,7 @@ func TestRun(t *testing.T) {
 					assert.Equal(t, tc.expected, got)
 				}
 			} else {
-				assert.NotEqual(t, tc.err, "")
+				assert.NotEqual(t, tc.err, "", err.Error())
 				require.Contains(t, err.Error(), tc.err)
 				assert.Equal(t, tc.expected, got)
 			}

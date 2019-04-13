@@ -73,7 +73,7 @@ func applyTerm(t *Term, v interface{}) (interface{}, error) {
 		return applyArrayIndex(x, v)
 	}
 	if x := t.Iterator; x != nil {
-		return applyIterator(v)
+		return applyIterator(x, v)
 	}
 	if x := t.Expression; x != nil {
 		return applyExpression(x, v)
@@ -112,8 +112,15 @@ func applyArrayIndex(x *ArrayIndex, v interface{}) (interface{}, error) {
 	return a, nil
 }
 
-func applyIterator(v interface{}) (interface{}, error) {
+func applyIterator(x *Iterator, v interface{}) (interface{}, error) {
 	c := make(chan interface{}, 1)
+	if x.Name != "" {
+		m, ok := v.(map[string]interface{})
+		if !ok {
+			return nil, &expectedObjectError{v}
+		}
+		v = m[x.Name]
+	}
 	if a, ok := v.([]interface{}); ok {
 		go func() {
 			defer close(c)
