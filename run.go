@@ -62,20 +62,20 @@ func applyComma(c *Comma, v interface{}) (interface{}, error) {
 	return d, nil
 }
 
-func applyTerm(term *Term, v interface{}) (interface{}, error) {
-	if term.Identity != nil {
+func applyTerm(t *Term, v interface{}) (interface{}, error) {
+	if t.Identity != nil {
 		return v, nil
 	}
-	if x := term.ObjectIndex; x != nil {
+	if x := t.ObjectIndex; x != nil {
 		return applyObjectIndex(x, v)
 	}
-	if x := term.ArrayIndex; x != nil {
+	if x := t.ArrayIndex; x != nil {
 		return applyArrayIndex(x, v)
 	}
-	if x := term.Iterator; x != nil {
+	if x := t.Iterator; x != nil {
 		return applyIterator(v)
 	}
-	if x := term.Expression; x != nil {
+	if x := t.Expression; x != nil {
 		return applyExpression(x, v)
 	}
 	return nil, &unexpectedQueryError{}
