@@ -29,24 +29,41 @@ func applyTerm(term *Term, v interface{}) (interface{}, error) {
 		return v, nil
 	}
 	if x := term.ObjectIndex; x != nil {
-		m, ok := v.(map[string]interface{})
-		if !ok {
-			if x.Optional {
-				return struct{}{}, nil
-			}
-			return nil, &expectedObjectError{v}
-		}
-		return m[x.Name], nil
+		return applyObjectIndex(x, v)
 	}
 	if x := term.ArrayIndex; x != nil {
-		a, ok := v.([]interface{})
-		if !ok {
-			return nil, &expectedArrayError{v}
-		}
-		if x.Index < 0 || len(a) <= x.Index {
-			return nil, nil
-		}
-		return a[x.Index], nil
+		return applyArrayIndex(x, v)
 	}
 	return nil, &unexpectedQueryError{}
+}
+
+func applyObjectIndex(x *ObjectIndex, v interface{}) (interface{}, error) {
+	m, ok := v.(map[string]interface{})
+	if !ok {
+		if x.Optional {
+			return struct{}{}, nil
+		}
+		return nil, &expectedObjectError{v}
+	}
+	return m[x.Name], nil
+}
+
+func applyArrayIndex(x *ArrayIndex, v interface{}) (interface{}, error) {
+	a, ok := v.([]interface{})
+	if !ok {
+		return nil, &expectedArrayError{v}
+	}
+	if index := x.Index; index != nil {
+		if *index < 0 || len(a) <= *index {
+			return nil, nil
+		}
+		return a[*index], nil
+	}
+	if end := x.End; end != nil {
+		a = a[:*end]
+	}
+	if start := x.Start; start != nil {
+		a = a[*start:]
+	}
+	return a, nil
 }

@@ -76,6 +76,30 @@ func TestRun(t *testing.T) {
 			expected: nil,
 		},
 		{
+			name:     "array slice start",
+			query:    `.[2:]`,
+			input:    []interface{}{16, 32, 48, 64},
+			expected: []interface{}{48, 64},
+		},
+		{
+			name:     "array slice end",
+			query:    `.[:2]`,
+			input:    []interface{}{16, 32, 48, 64},
+			expected: []interface{}{16, 32},
+		},
+		{
+			name:     "array slice start end",
+			query:    `.[1:3]`,
+			input:    []interface{}{16, 32, 48, 64},
+			expected: []interface{}{32, 48},
+		},
+		{
+			name:     "array slice all",
+			query:    `.[:]`,
+			input:    []interface{}{16, 32, 48, 64},
+			expected: []interface{}{16, 32, 48, 64},
+		},
+		{
 			name:  "expected array",
 			query: `.[0]`,
 			input: map[string]interface{}{"foo": 128},

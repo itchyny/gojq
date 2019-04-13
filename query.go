@@ -30,5 +30,7 @@ type ObjectIndex struct {
 
 // ArrayIndex ...
 type ArrayIndex struct {
-	Index int `"." "[" @Integer "]"`
+	Start *int `"." "[" ( @Integer?`
+	End   *int `":" @Integer? |`
+	Index *int `@Integer ) "]"`
 }
