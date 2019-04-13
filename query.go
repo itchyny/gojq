@@ -7,7 +7,12 @@ type Query struct {
 
 // Pipe ...
 type Pipe struct {
-	Terms []*Term `@@ ("|" @@)*`
+	Commas []*Comma `@@ ("|" @@)*`
+}
+
+// Comma ...
+type Comma struct {
+	Terms []*Term `@@ ("," @@)*`
 }
 
 // Term ...

@@ -15,8 +15,8 @@ func Run(q *Query, v interface{}) (interface{}, error) {
 
 func applyPipe(pipe *Pipe, v interface{}) (interface{}, error) {
 	var err error
-	for _, term := range pipe.Terms {
-		v, err = applyTerm(term, v)
+	for _, c := range pipe.Commas {
+		v, err = applyComma(c, v)
 		if err != nil {
 			return nil, err
 		}
@@ -24,23 +24,47 @@ func applyPipe(pipe *Pipe, v interface{}) (interface{}, error) {
 	return v, nil
 }
 
-func applyTerm(term *Term, v interface{}) (interface{}, error) {
-	if term.Identity != nil {
-		return v, nil
-	}
-	if c, ok := v.(chan interface{}); ok {
+func applyComma(c *Comma, v interface{}) (interface{}, error) {
+	if w, ok := v.(chan interface{}); ok {
 		d := make(chan interface{}, 1)
 		go func() {
 			defer close(d)
-			for e := range c {
-				x, err := applyTerm(term, e)
+			for e := range w {
+				x, err := applyComma(c, e)
 				if err != nil {
 					panic(err) // todo
+				}
+				if y, ok := x.(chan interface{}); ok {
+					for e := range y {
+						d <- e
+					}
+					continue
 				}
 				d <- x
 			}
 		}()
 		return d, nil
+	}
+	if len(c.Terms) == 1 {
+		return applyTerm(c.Terms[0], v)
+	}
+	d := make(chan interface{}, 1)
+	go func() {
+		defer close(d)
+		for _, t := range c.Terms {
+			v, err := applyTerm(t, v)
+			if err != nil {
+				panic(err) // todo
+			}
+			d <- v
+		}
+	}()
+	return d, nil
+}
+
+func applyTerm(term *Term, v interface{}) (interface{}, error) {
+	if term.Identity != nil {
+		return v, nil
 	}
 	if x := term.ObjectIndex; x != nil {
 		return applyObjectIndex(x, v)

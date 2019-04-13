@@ -139,9 +139,9 @@ func TestRun(t *testing.T) {
 		},
 		{
 			name:     "boolean values",
-			query:    `.[] | true`,
-			input:    []interface{}{"a", 10, []interface{}{}},
-			expected: []interface{}{true, true, true},
+			query:    `.[] | true,false`,
+			input:    []interface{}{"a", 10},
+			expected: []interface{}{true, false, true, false},
 			iterator: true,
 		},
 	}
