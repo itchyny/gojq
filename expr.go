@@ -2,9 +2,9 @@ package gojq
 
 // Expression ...
 type Expression struct {
-	Null  *Null  `@@ |`
-	True  *True  `@@ |`
-	False *False `@@`
+	Null  *Null  `  @@`
+	True  *True  `| @@`
+	False *False `| @@`
 }
 
 // Null ...

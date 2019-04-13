@@ -17,11 +17,11 @@ type Comma struct {
 
 // Term ...
 type Term struct {
-	ObjectIndex *ObjectIndex `@@ |`
-	ArrayIndex  *ArrayIndex  `@@ |`
-	Iterator    *Iterator    `@@ |`
-	Identity    *Identity    `@@ |`
-	Expression  *Expression  `@@`
+	ObjectIndex *ObjectIndex `  @@`
+	ArrayIndex  *ArrayIndex  `| @@`
+	Iterator    *Iterator    `| @@`
+	Identity    *Identity    `| @@`
+	Expression  *Expression  `| @@`
 }
 
 // ObjectIndex ...
@@ -33,8 +33,8 @@ type ObjectIndex struct {
 // ArrayIndex ...
 type ArrayIndex struct {
 	Start *int `"." "[" ( @Integer?`
-	End   *int `":" @Integer? |`
-	Index *int `@Integer ) "]"`
+	End   *int `":" @Integer?`
+	Index *int `| @Integer ) "]"`
 }
 
 // Iterator ...
