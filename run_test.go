@@ -137,6 +137,13 @@ func TestRun(t *testing.T) {
 			expected: []interface{}{nil, nil, nil},
 			iterator: true,
 		},
+		{
+			name:     "boolean values",
+			query:    `.[] | true`,
+			input:    []interface{}{"a", 10, []interface{}{}},
+			expected: []interface{}{true, true, true},
+			iterator: true,
+		},
 	}
 
 	for _, tc := range testCases {

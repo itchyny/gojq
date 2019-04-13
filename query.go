@@ -41,13 +41,3 @@ type Iterator struct {
 type Identity struct {
 	_ string `"."`
 }
-
-// Expression ...
-type Expression struct {
-	Null *Null `@@`
-}
-
-// Null ...
-type Null struct {
-	_ string `"null"`
-}

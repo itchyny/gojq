@@ -115,5 +115,11 @@ func applyExpression(x *Expression, v interface{}) (interface{}, error) {
 	if x.Null != nil {
 		return nil, nil
 	}
+	if x.True != nil {
+		return true, nil
+	}
+	if x.False != nil {
+		return false, nil
+	}
 	return nil, &unexpectedQueryError{}
 }
