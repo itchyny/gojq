@@ -37,7 +37,7 @@ func TestParser(t *testing.T) {
 					Commas: []*Comma{
 						&Comma{
 							Terms: []*Term{
-								&Term{ObjectIndex: &ObjectIndex{"foo", false}},
+								&Term{ObjectIndex: &ObjectIndex{"foo"}},
 							},
 						},
 						&Comma{
@@ -49,7 +49,7 @@ func TestParser(t *testing.T) {
 						&Comma{
 							Terms: []*Term{
 								&Term{
-									ObjectIndex: &ObjectIndex{"bar", false},
+									ObjectIndex: &ObjectIndex{"bar"},
 									SuffixList: []*Suffix{
 										&Suffix{Array: &Array{Pipe: nil}},
 									},
@@ -58,7 +58,12 @@ func TestParser(t *testing.T) {
 						},
 						&Comma{
 							Terms: []*Term{
-								&Term{ObjectIndex: &ObjectIndex{"bar", true}},
+								&Term{
+									ObjectIndex: &ObjectIndex{"bar"},
+									SuffixList: []*Suffix{
+										&Suffix{Optional: true},
+									},
+								},
 							},
 						},
 					},

@@ -26,8 +26,7 @@ type Term struct {
 
 // ObjectIndex ...
 type ObjectIndex struct {
-	Name     string `"." ( @Ident | "[" @String "]" )`
-	Optional bool   `@"?"?`
+	Name string `"." ( @Ident | "[" @String "]" )`
 }
 
 // ArrayIndex ...
@@ -47,4 +46,5 @@ type Suffix struct {
 	ObjectIndex *ObjectIndex `  @@`
 	ArrayIndex  *ArrayIndex  `| @@`
 	Array       *Array       `| @@`
+	Optional    bool         `| @"?"`
 }

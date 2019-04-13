@@ -54,7 +54,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			name:     "object optional",
-			query:    `.foo|.bar?`,
+			query:    `.foo.bar.baz?`,
 			input:    map[string]interface{}{"foo": 128},
 			expected: struct{}{},
 		},
@@ -108,11 +108,23 @@ func TestRun(t *testing.T) {
 			iterator: true,
 		},
 		{
+			name:     "array iterator optional",
+			query:    `.[]?`,
+			input:    10,
+			expected: struct{}{},
+		},
+		{
 			name:     "object iterator",
 			query:    `.[]`,
 			input:    map[string]interface{}{"a": 10},
 			expected: []interface{}{10},
 			iterator: true,
+		},
+		{
+			name:     "object iterator optional",
+			query:    `.foo?`,
+			input:    []interface{}{"a"},
+			expected: struct{}{},
 		},
 		{
 			name:  "pipe",

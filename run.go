@@ -64,14 +64,8 @@ func applyComma(c *Comma, v interface{}) (interface{}, error) {
 
 func applyTerm(t *Term, v interface{}) (w interface{}, err error) {
 	defer func() {
-		if err != nil {
-			return
-		}
 		for _, s := range t.SuffixList {
-			w, err = applySuffix(s, w)
-			if err != nil {
-				return
-			}
+			w, err = applySuffix(s, w, err)
 		}
 	}()
 	if t.Identity != nil {
@@ -92,9 +86,6 @@ func applyTerm(t *Term, v interface{}) (w interface{}, err error) {
 func applyObjectIndex(x *ObjectIndex, v interface{}) (interface{}, error) {
 	m, ok := v.(map[string]interface{})
 	if !ok {
-		if x.Optional {
-			return struct{}{}, nil
-		}
 		return nil, &expectedObjectError{v}
 	}
 	return m[x.Name], nil
@@ -155,7 +146,24 @@ func applyArray(x *Array, v interface{}) (interface{}, error) {
 	return []interface{}{v}, nil
 }
 
-func applySuffix(s *Suffix, v interface{}) (interface{}, error) {
+func applySuffix(s *Suffix, v interface{}, err error) (interface{}, error) {
+	if v == struct{}{} {
+		return v, nil
+	}
+	if s.Optional {
+		switch err.(type) {
+		case *expectedObjectError:
+			return struct{}{}, nil
+		case *expectedArrayError:
+			return struct{}{}, nil
+		case *iteratorError:
+			return struct{}{}, nil
+		}
+		return nil, err
+	}
+	if err != nil {
+		return nil, err
+	}
 	if x := s.ObjectIndex; x != nil {
 		return applyObjectIndex(x, v)
 	}
