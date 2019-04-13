@@ -17,14 +17,18 @@ func NewParser() Parser {
 		participle.MustBuild(
 			&Query{},
 			participle.Lexer(lexer.Must(ebnf.New(`
-				ObjectIndex = "." ( "_" | alpha ) { "_" | alpha | digit } .
+				Ident = ( "_" | alpha ) { "_" | alpha | digit } .
 				Integer = "0" | "1"…"9" { digit } .
+				String = "\""  { "\u0000"…"\uffff"-"\""-"\\" | "\\" any } "\"" .
 				Whitespace = " " | "\t" | "\n" | "\r" .
 				Punct = "!"…"/" | ":"…"@" | "["…`+"\"`\""+` | "{"…"~" .
 				alpha = "a"…"z" | "A"…"Z" .
 				digit = "0"…"9" .
+				any = "\u0000"…"\uffff" .
 `))),
 			participle.Elide("Whitespace"),
+			participle.Unquote("String"),
+			participle.UseLookahead(2),
 		),
 	}
 }

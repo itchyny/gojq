@@ -46,8 +46,8 @@ func TestRun(t *testing.T) {
 			expected: 128,
 		},
 		{
-			name:     "object index",
-			query:    `.foo`,
+			name:     "object member",
+			query:    `.["foo"]`,
 			input:    map[string]interface{}{"foo": 128},
 			expected: 128,
 		},

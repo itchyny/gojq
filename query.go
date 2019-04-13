@@ -24,7 +24,7 @@ type Identity struct {
 
 // ObjectIndex ...
 type ObjectIndex struct {
-	Name     string `@ObjectIndex`
+	Name     string `"." ( @Ident | "[" @String "]" )`
 	Optional bool   `@"?"?`
 }
 

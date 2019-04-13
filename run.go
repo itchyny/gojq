@@ -36,7 +36,7 @@ func applyTerm(term *Term, v interface{}) (interface{}, error) {
 			}
 			return nil, &expectedObjectError{v}
 		}
-		return m[x.Name[1:]], nil
+		return m[x.Name], nil
 	}
 	if x := term.ArrayIndex; x != nil {
 		a, ok := v.([]interface{})
