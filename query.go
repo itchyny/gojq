@@ -38,7 +38,7 @@ type ArrayIndex struct {
 
 // Identity ...
 type Identity struct {
-	_ string `"."`
+	_ bool `"."`
 }
 
 // Suffix ...

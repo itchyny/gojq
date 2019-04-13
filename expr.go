@@ -10,17 +10,17 @@ type Expression struct {
 
 // Null ...
 type Null struct {
-	_ string `"null"`
+	_ bool `"null"`
 }
 
 // True ...
 type True struct {
-	_ string `"true"`
+	_ bool `"true"`
 }
 
 // False ...
 type False struct {
-	_ string `"false"`
+	_ bool `"false"`
 }
 
 // Array ...
