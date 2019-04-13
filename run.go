@@ -28,6 +28,20 @@ func applyTerm(term *Term, v interface{}) (interface{}, error) {
 	if term.Identity != nil {
 		return v, nil
 	}
+	if c, ok := v.(chan interface{}); ok {
+		d := make(chan interface{}, 1)
+		go func() {
+			defer close(d)
+			for e := range c {
+				x, err := applyTerm(term, e)
+				if err != nil {
+					panic(err) // todo
+				}
+				d <- x
+			}
+		}()
+		return d, nil
+	}
 	if x := term.ObjectIndex; x != nil {
 		return applyObjectIndex(x, v)
 	}

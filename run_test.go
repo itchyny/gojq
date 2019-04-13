@@ -132,9 +132,10 @@ func TestRun(t *testing.T) {
 		},
 		{
 			name:     "null value",
-			query:    `null`,
+			query:    `.[] | null`,
 			input:    []interface{}{"a", 10, []interface{}{}},
-			expected: nil,
+			expected: []interface{}{nil, nil, nil},
+			iterator: true,
 		},
 	}
 

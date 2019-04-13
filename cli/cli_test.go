@@ -40,7 +40,7 @@ func TestCliRun(t *testing.T) {
 		},
 		{
 			name:  "iterator",
-			args:  []string{".foo | .[]"},
+			args:  []string{".foo | .[] | ."},
 			input: `{"foo": [1,2,{"bar":[]},[3,4,5]]}`,
 			expected: `1
 2
