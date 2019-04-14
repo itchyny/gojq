@@ -62,6 +62,12 @@ func applyComma(c *Comma, v interface{}) (interface{}, error) {
 				d <- err
 				return
 			}
+			if w, ok := v.(chan interface{}); ok {
+				for e := range w {
+					d <- e
+				}
+				continue
+			}
 			d <- v
 		}
 	}()

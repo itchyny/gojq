@@ -229,6 +229,12 @@ func TestRun(t *testing.T) {
 			err:   "expected an object but got: ",
 		},
 		{
+			name:     "multiple iterators in array",
+			query:    `[.[],.[],..]`,
+			input:    []interface{}{1, 2, 3},
+			expected: []interface{}{1, 2, 3, 1, 2, 3, []interface{}{1, 2, 3}, 1, 2, 3},
+		},
+		{
 			name:  "recurse",
 			query: `..`,
 			input: map[string]interface{}{"x": []interface{}{map[string]interface{}{"y": 128}, 48}},
