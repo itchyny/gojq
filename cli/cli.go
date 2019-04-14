@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"github.com/alecthomas/participle/lexer"
+	"github.com/fatih/color"
+	"github.com/hokaccha/go-prettyjson"
 	"github.com/mattn/go-runewidth"
 
 	"github.com/itchyny/gojq"
@@ -147,8 +149,6 @@ func (cli *cli) printValue(v interface{}) error {
 	if v == struct{}{} {
 		return nil
 	}
-	enc := json.NewEncoder(cli.outStream)
-	enc.SetIndent("", "  ")
 	if c, ok := v.(chan interface{}); ok {
 		for x := range c {
 			if err, ok := x.(error); ok {
@@ -160,5 +160,17 @@ func (cli *cli) printValue(v interface{}) error {
 		}
 		return nil
 	}
-	return enc.Encode(v)
+	xs, err := jsonFormatter().Marshal(v)
+	cli.outStream.Write(xs)
+	cli.outStream.Write([]byte{'\n'})
+	return err
+}
+
+func jsonFormatter() *prettyjson.Formatter {
+	f := prettyjson.NewFormatter()
+	f.StringColor = color.New(color.FgGreen)
+	f.BoolColor = color.New(color.FgYellow)
+	f.NumberColor = color.New(color.FgCyan)
+	f.NullColor = color.New(color.FgHiBlack)
+	return f
 }
