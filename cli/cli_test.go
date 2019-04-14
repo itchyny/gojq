@@ -131,7 +131,7 @@ func TestCliRun(t *testing.T) {
 			name:  "invalid query",
 			args:  []string{"abc"},
 			input: `{}`,
-			err: `invalid query: "abc"
+			err: `invalid query: abc
     abc
     ^  invalid syntax
 `,

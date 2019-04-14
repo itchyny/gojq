@@ -73,7 +73,7 @@ Options:
 	parser := gojq.NewParser()
 	query, err := parser.Parse(arg)
 	if err != nil {
-		fmt.Fprintf(cli.errStream, "%s: invalid query: %q\n", name, arg)
+		fmt.Fprintf(cli.errStream, "%s: invalid query: %s\n", name, arg)
 		cli.printQueryParseError(arg, err)
 		return exitCodeErr
 	}
