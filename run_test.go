@@ -157,7 +157,13 @@ func TestRun(t *testing.T) {
 			expected: []interface{}{},
 		},
 		{
-			name:     "array",
+			name:     "object construction",
+			query:    `{ foo: .foo.bar, "bar": .foo }`,
+			input:    map[string]interface{}{"foo": map[string]interface{}{"bar": []interface{}{1, 2, 3}}},
+			expected: map[string]interface{}{"foo": []interface{}{1, 2, 3}, "bar": map[string]interface{}{"bar": []interface{}{1, 2, 3}}},
+		},
+		{
+			name:     "array construction",
 			query:    `. | [false, .foo, .bar.baz] | .`,
 			input:    map[string]interface{}{"foo": "hello", "bar": map[string]interface{}{"baz": 128}},
 			expected: []interface{}{false, "hello", 128},

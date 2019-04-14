@@ -127,10 +127,25 @@ func applyExpression(x *Expression, v interface{}) (interface{}, error) {
 	if x.False != nil {
 		return false, nil
 	}
+	if x.Object != nil {
+		return applyObject(x.Object, v)
+	}
 	if x.Array != nil {
 		return applyArray(x.Array, v)
 	}
 	return nil, &unexpectedQueryError{}
+}
+
+func applyObject(x *Object, v interface{}) (interface{}, error) {
+	w := make(map[string]interface{})
+	for _, kv := range x.KeyVals {
+		u, err := applyTerm(kv.Val, v)
+		if err != nil {
+			return nil, err
+		}
+		w[kv.Key] = u
+	}
+	return w, nil
 }
 
 func applyArray(x *Array, v interface{}) (interface{}, error) {

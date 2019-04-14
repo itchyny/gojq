@@ -2,10 +2,11 @@ package gojq
 
 // Expression ...
 type Expression struct {
-	Null  *Null  `  @@`
-	True  *True  `| @@`
-	False *False `| @@`
-	Array *Array `| @@`
+	Null   *Null   `  @@`
+	True   *True   `| @@`
+	False  *False  `| @@`
+	Object *Object `| @@`
+	Array  *Array  `| @@`
 }
 
 // Null ...
@@ -21,6 +22,17 @@ type True struct {
 // False ...
 type False struct {
 	_ bool `"false"`
+}
+
+// Object ...
+type Object struct {
+	KeyVals []*ObjKeyVal `"{" (@@ ("," @@)*)? "}"`
+}
+
+// ObjKeyVal ...
+type ObjKeyVal struct {
+	Key string `( @Ident | @String ) ":"`
+	Val *Term  `@@`
 }
 
 // Array ...
