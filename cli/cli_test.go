@@ -70,6 +70,28 @@ func TestCliRun(t *testing.T) {
 			expected: ``,
 		},
 		{
+			name:  "iterator in object",
+			args:  []string{"{ foo: .foo[], bar: .bar[] }"},
+			input: `{"foo":[1,2],"bar":["a","b"]}`,
+			expected: `{
+  "bar": "a",
+  "foo": 1
+}
+{
+  "bar": "b",
+  "foo": 1
+}
+{
+  "bar": "a",
+  "foo": 2
+}
+{
+  "bar": "b",
+  "foo": 2
+}
+`,
+		},
+		{
 			name:  "array",
 			args:  []string{"[.foo, .]"},
 			input: `{"foo": {"bar": 128}}`,

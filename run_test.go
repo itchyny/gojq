@@ -163,6 +163,18 @@ func TestRun(t *testing.T) {
 			expected: map[string]interface{}{"foo": []interface{}{1, 2, 3}, "bar": map[string]interface{}{"bar": []interface{}{1, 2, 3}}},
 		},
 		{
+			name:  "iterator in object",
+			query: `{ foo: .foo[], bar: .bar[], baz: .baz }`,
+			input: map[string]interface{}{"foo": []interface{}{1, 2}, "bar": []interface{}{"a", "b"}, "baz": 128},
+			expected: []interface{}{
+				map[string]interface{}{"foo": 1, "bar": "a", "baz": 128},
+				map[string]interface{}{"foo": 1, "bar": "b", "baz": 128},
+				map[string]interface{}{"foo": 2, "bar": "a", "baz": 128},
+				map[string]interface{}{"foo": 2, "bar": "b", "baz": 128},
+			},
+			iterator: true,
+		},
+		{
 			name:     "array construction",
 			query:    `. | [false, .foo, .bar.baz] | .`,
 			input:    map[string]interface{}{"foo": "hello", "bar": map[string]interface{}{"baz": 128}},

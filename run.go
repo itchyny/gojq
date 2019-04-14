@@ -138,12 +138,20 @@ func applyExpression(x *Expression, v interface{}) (interface{}, error) {
 
 func applyObject(x *Object, v interface{}) (interface{}, error) {
 	w := make(map[string]interface{})
+	var iterators []iterator
 	for _, kv := range x.KeyVals {
 		u, err := applyTerm(kv.Val, v)
 		if err != nil {
 			return nil, err
 		}
+		if t, ok := u.(chan interface{}); ok {
+			iterators = append(iterators, iterator{kv.Key, t})
+			continue
+		}
 		w[kv.Key] = u
+	}
+	if len(iterators) > 0 {
+		return foldIterators(w, iterators), nil
 	}
 	return w, nil
 }
