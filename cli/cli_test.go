@@ -176,6 +176,24 @@ null
 `,
 		},
 		{
+			name:  "invalid query",
+			args:  []string{".abc["},
+			input: `{}`,
+			err: `invalid query: .abc[
+    .abc[
+        ^  unexpected token "["
+`,
+		},
+		{
+			name:  "invalid query",
+			args:  []string{"[ .[] | { id } ]"},
+			input: `{}`,
+			err: `invalid query: [ .[] | { id } ]
+    [ .[] | { id } ]
+          ^  unexpected "|" (expected "]")
+`,
+		},
+		{
 			name:  "invalid json: eof",
 			args:  []string{},
 			input: `{`,
