@@ -111,7 +111,7 @@ func TestCliRun(t *testing.T) {
 			input: `{}`,
 			err: `invalid query: "abc"
     abc
-    ^
+    ^  invalid syntax
 `,
 		},
 		{

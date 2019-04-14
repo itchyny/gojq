@@ -107,7 +107,7 @@ func (cli *cli) printQueryParseError(query string, err error) {
 	if err, ok := err.(*lexer.Error); ok {
 		lines := strings.Split(query, "\n")
 		if 0 < err.Pos.Line && err.Pos.Line <= len(lines) {
-			fmt.Fprintf(cli.errStream, "    %s\n%s\n", lines[err.Pos.Line-1], strings.Repeat(" ", 3+err.Pos.Column)+"^")
+			fmt.Fprintf(cli.errStream, "    %s\n%s  %s\n", lines[err.Pos.Line-1], strings.Repeat(" ", 3+err.Pos.Column)+"^", err.Message)
 		}
 	}
 }
