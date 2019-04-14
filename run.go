@@ -30,9 +30,14 @@ func applyComma(c *Comma, v interface{}) (interface{}, error) {
 		go func() {
 			defer close(d)
 			for e := range w {
+				if _, ok := e.(error); ok {
+					d <- e
+					continue
+				}
 				x, err := applyComma(c, e)
 				if err != nil {
-					panic(err) // todo
+					d <- err
+					return
 				}
 				if y, ok := x.(chan interface{}); ok {
 					for e := range y {
@@ -54,7 +59,8 @@ func applyComma(c *Comma, v interface{}) (interface{}, error) {
 		for _, t := range c.Terms {
 			v, err := applyTerm(t, v)
 			if err != nil {
-				panic(err) // todo
+				d <- err
+				return
 			}
 			d <- v
 		}
@@ -139,6 +145,9 @@ func applyArray(x *Array, v interface{}) (interface{}, error) {
 	if w, ok := v.(chan interface{}); ok {
 		v := []interface{}{}
 		for e := range w {
+			if err, ok := e.(error); ok {
+				return nil, err
+			}
 			v = append(v, e)
 		}
 		return v, nil
@@ -199,9 +208,14 @@ func applyIterator(v interface{}) (chan interface{}, error) {
 		go func() {
 			defer close(c)
 			for e := range w {
+				if _, ok := e.(error); ok {
+					c <- e
+					continue
+				}
 				u, err := applyIterator(e)
 				if err != nil {
-					panic(err) // todo
+					c <- err
+					return
 				}
 				for x := range u {
 					c <- x

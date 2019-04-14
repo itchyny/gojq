@@ -151,6 +151,9 @@ func (cli *cli) printValue(v interface{}) error {
 	enc.SetIndent("", "  ")
 	if c, ok := v.(chan interface{}); ok {
 		for x := range c {
+			if err, ok := x.(error); ok {
+				return err
+			}
 			if err := enc.Encode(x); err != nil {
 				return err
 			}

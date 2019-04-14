@@ -186,6 +186,12 @@ func TestRun(t *testing.T) {
 			input:    map[string]interface{}{"foo": map[string]interface{}{"bar": []interface{}{[]interface{}{1}, []interface{}{2}, []interface{}{3}}}},
 			expected: []interface{}{1, 2, 3},
 		},
+		{
+			name:  "error after iterator",
+			query: `[ .[] | .foo ]`,
+			input: []interface{}{1, 2, 3},
+			err:   "expected an object but got: int",
+		},
 	}
 
 	for _, tc := range testCases {
