@@ -74,14 +74,17 @@ func applyTerm(t *Term, v interface{}) (w interface{}, err error) {
 			w, err = applySuffix(s, w, err)
 		}
 	}()
-	if t.Identity != nil {
-		return v, nil
-	}
 	if x := t.ObjectIndex; x != nil {
 		return applyObjectIndex(x, v)
 	}
 	if x := t.ArrayIndex; x != nil {
 		return applyArrayIndex(x, v)
+	}
+	if t.Identity != nil {
+		return v, nil
+	}
+	if t.Recurse != nil {
+		return applyRecurse(v), nil
 	}
 	if x := t.Expression; x != nil {
 		return applyExpression(x, v)
@@ -115,6 +118,46 @@ func applyArrayIndex(x *ArrayIndex, v interface{}) (interface{}, error) {
 		a = a[*start:]
 	}
 	return a, nil
+}
+
+func applyRecurse(v interface{}) chan interface{} {
+	c := make(chan interface{}, 1)
+	if a, ok := v.([]interface{}); ok {
+		go func() {
+			defer close(c)
+			c <- v
+			for _, d := range a {
+				for e := range applyRecurse(d) {
+					c <- e
+				}
+			}
+		}()
+	} else if o, ok := v.(map[string]interface{}); ok {
+		go func() {
+			defer close(c)
+			c <- v
+			for _, d := range o {
+				for e := range applyRecurse(d) {
+					c <- e
+				}
+			}
+		}()
+	} else if w, ok := v.(chan interface{}); ok {
+		go func() {
+			defer close(c)
+			for d := range w {
+				for e := range applyRecurse(d) {
+					c <- e
+				}
+			}
+		}()
+	} else {
+		go func() {
+			defer close(c)
+			c <- v
+		}()
+	}
+	return c
 }
 
 func applyExpression(x *Expression, v interface{}) (interface{}, error) {
@@ -202,8 +245,9 @@ func applySuffix(s *Suffix, v interface{}, err error) (interface{}, error) {
 			return struct{}{}, nil
 		case *iteratorError:
 			return struct{}{}, nil
+		default:
+			return v, err
 		}
-		return nil, err
 	}
 	if err != nil {
 		return nil, err

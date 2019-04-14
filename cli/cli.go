@@ -154,7 +154,7 @@ func (cli *cli) printValue(v interface{}) error {
 			if err, ok := x.(error); ok {
 				return err
 			}
-			if err := enc.Encode(x); err != nil {
+			if err := cli.printValue(x); err != nil {
 				return err
 			}
 		}

@@ -20,6 +20,7 @@ type Term struct {
 	ObjectIndex *ObjectIndex `( @@`
 	ArrayIndex  *ArrayIndex  `| @@`
 	Identity    *Identity    `| @@`
+	Recurse     *Recurse     `| @@`
 	Expression  *Expression  `| @@ )`
 	SuffixList  []*Suffix    `@@*`
 }
@@ -39,6 +40,11 @@ type ArrayIndex struct {
 // Identity ...
 type Identity struct {
 	_ bool `"."`
+}
+
+// Recurse ...
+type Recurse struct {
+	X bool `@Recurse`
 }
 
 // Suffix ...

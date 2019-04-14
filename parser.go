@@ -18,6 +18,7 @@ func NewParser() Parser {
 			&Query{},
 			participle.Lexer(lexer.Must(ebnf.New(`
 				Ident = ( "_" | alpha ) { "_" | alpha | digit } .
+				Recurse = ".." .
 				Integer = "0" | "1"…"9" { digit } .
 				String = "\""  { "\u0000"…"\uffff"-"\""-"\\" | "\\" any } "\"" .
 				Whitespace = " " | "\t" | "\n" | "\r" .

@@ -31,7 +31,7 @@ func TestParser(t *testing.T) {
 			},
 		},
 		{
-			src: `.foo | .,. | .bar[] | .["bar"]?`,
+			src: `.foo | .,. | .bar[] | .["bar"]? | ..`,
 			expected: &Query{
 				Pipe: &Pipe{
 					Commas: []*Comma{
@@ -63,6 +63,13 @@ func TestParser(t *testing.T) {
 									SuffixList: []*Suffix{
 										&Suffix{Optional: true},
 									},
+								},
+							},
+						},
+						&Comma{
+							Terms: []*Term{
+								&Term{
+									Recurse: &Recurse{true},
 								},
 							},
 						},

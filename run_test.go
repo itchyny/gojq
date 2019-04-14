@@ -228,6 +228,30 @@ func TestRun(t *testing.T) {
 			input: []interface{}{[]interface{}{1, 2, 3}, 2, 3},
 			err:   "expected an object but got: ",
 		},
+		{
+			name:  "recurse",
+			query: `..`,
+			input: map[string]interface{}{"x": []interface{}{map[string]interface{}{"y": 128}, 48}},
+			expected: []interface{}{
+				map[string]interface{}{"x": []interface{}{map[string]interface{}{"y": 128}, 48}},
+				[]interface{}{map[string]interface{}{"y": 128}, 48},
+				map[string]interface{}{"y": 128},
+				128,
+				48,
+			},
+			iterator: true,
+		},
+		{
+			name:  "recurse after iterator",
+			query: `.[] | ..`,
+			input: map[string]interface{}{"x": []interface{}{map[string]interface{}{"y": 128}}},
+			expected: []interface{}{
+				[]interface{}{map[string]interface{}{"y": 128}},
+				map[string]interface{}{"y": 128},
+				128,
+			},
+			iterator: true,
+		},
 	}
 
 	for _, tc := range testCases {

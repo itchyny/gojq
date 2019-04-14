@@ -128,6 +128,45 @@ func TestCliRun(t *testing.T) {
 `,
 		},
 		{
+			name:  "recurse",
+			args:  []string{".."},
+			input: `{"foo":{"bar":["a","b"]}}`,
+			expected: `{
+  "foo": {
+    "bar": [
+      "a",
+      "b"
+    ]
+  }
+}
+{
+  "bar": [
+    "a",
+    "b"
+  ]
+}
+[
+  "a",
+  "b"
+]
+"a"
+"b"
+`,
+		},
+		{
+			name:  "recurse and pipe",
+			args:  []string{".. | .foo?"},
+			input: `{"foo":{"bar":["a","b"]}}`,
+			expected: `{
+  "bar": [
+    "a",
+    "b"
+  ]
+}
+null
+`,
+		},
+		{
 			name:  "invalid query",
 			args:  []string{"abc"},
 			input: `{}`,
