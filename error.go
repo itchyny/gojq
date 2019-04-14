@@ -38,11 +38,22 @@ func (err *iteratorError) Error() string {
 	return fmt.Sprintf("cannot iterate over: %s", typeErrorPreview(err.v))
 }
 
+type objectKeyNotStringError struct {
+	v interface{}
+}
+
+func (err *objectKeyNotStringError) Error() string {
+	return fmt.Sprintf("expected a string for object key but got: %s", typeErrorPreview(err.v))
+}
+
 func typeErrorPreview(v interface{}) string {
 	return typeof(v) + preview(v)
 }
 
 func typeof(v interface{}) (s string) {
+	if v == nil {
+		return "null"
+	}
 	k := reflect.TypeOf(v).Kind()
 	switch k {
 	case reflect.Array, reflect.Slice:
@@ -59,6 +70,9 @@ func typeof(v interface{}) (s string) {
 }
 
 func preview(v interface{}) string {
+	if v == nil {
+		return ""
+	}
 	bs, err := json.Marshal(v)
 	if err != nil {
 		return ""

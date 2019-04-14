@@ -158,9 +158,9 @@ func TestRun(t *testing.T) {
 		},
 		{
 			name:     "object construction",
-			query:    `{ foo: .foo.bar, "bar": .foo }`,
+			query:    `{ foo: .foo.bar, "bar": .foo, "": false }`,
 			input:    map[string]interface{}{"foo": map[string]interface{}{"bar": []interface{}{1, 2, 3}}},
-			expected: map[string]interface{}{"foo": []interface{}{1, 2, 3}, "bar": map[string]interface{}{"bar": []interface{}{1, 2, 3}}},
+			expected: map[string]interface{}{"foo": []interface{}{1, 2, 3}, "bar": map[string]interface{}{"bar": []interface{}{1, 2, 3}}, "": false},
 		},
 		{
 			name:  "iterator in object",
@@ -173,6 +173,24 @@ func TestRun(t *testing.T) {
 				map[string]interface{}{"foo": 2, "bar": "b", "baz": 128},
 			},
 			iterator: true,
+		},
+		{
+			name:     "pipe in object key",
+			query:    `{ (.foo|.bar): .foo.bar }`,
+			input:    map[string]interface{}{"foo": map[string]interface{}{"bar": "baz"}},
+			expected: map[string]interface{}{"baz": "baz"},
+		},
+		{
+			name:  "number in object key",
+			query: `{ (.foo): .foo }`,
+			input: map[string]interface{}{"foo": 10},
+			err:   "expected a string for object key but got: number (10)",
+		},
+		{
+			name:  "null in object key",
+			query: `{ (.foo): .foo }`,
+			input: map[string]interface{}{},
+			err:   "expected a string for object key but got: null",
 		},
 		{
 			name:     "array construction",

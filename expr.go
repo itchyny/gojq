@@ -31,8 +31,9 @@ type Object struct {
 
 // ObjKeyVal ...
 type ObjKeyVal struct {
-	Key string `( @Ident | @String ) ":"`
-	Val *Term  `@@`
+	Key  string `( ( @Ident | @String )`
+	Pipe *Pipe  `| "(" @@ ")" ) ":"`
+	Val  *Term  `@@`
 }
 
 // Array ...
