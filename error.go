@@ -1,6 +1,7 @@
 package gojq
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 )
@@ -18,7 +19,7 @@ type expectedObjectError struct {
 }
 
 func (err *expectedObjectError) Error() string {
-	return fmt.Sprintf("expected an object but got: %s", typeof(err.v))
+	return fmt.Sprintf("expected an object but got: %s", typeErrorPreview(err.v))
 }
 
 type expectedArrayError struct {
@@ -26,7 +27,7 @@ type expectedArrayError struct {
 }
 
 func (err *expectedArrayError) Error() string {
-	return fmt.Sprintf("expected an array but got: %s", typeof(err.v))
+	return fmt.Sprintf("expected an array but got: %s", typeErrorPreview(err.v))
 }
 
 type iteratorError struct {
@@ -34,10 +35,14 @@ type iteratorError struct {
 }
 
 func (err *iteratorError) Error() string {
-	return fmt.Sprintf("cannot iterate over: %s", typeof(err.v))
+	return fmt.Sprintf("cannot iterate over: %s", typeErrorPreview(err.v))
 }
 
-func typeof(v interface{}) string {
+func typeErrorPreview(v interface{}) string {
+	return typeof(v) + preview(v)
+}
+
+func typeof(v interface{}) (s string) {
 	k := reflect.TypeOf(v).Kind()
 	switch k {
 	case reflect.Array, reflect.Slice:
@@ -51,4 +56,16 @@ func typeof(v interface{}) string {
 	default:
 		return k.String()
 	}
+}
+
+func preview(v interface{}) string {
+	bs, err := json.Marshal(v)
+	if err != nil {
+		return ""
+	}
+	s, l := string(bs), 25
+	if len(s) > l {
+		s = s[:l-3] + " ..."
+	}
+	return " (" + s + ")"
 }

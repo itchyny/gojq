@@ -50,7 +50,7 @@ func TestRun(t *testing.T) {
 			name:  "expected object",
 			query: `.foo|.bar`,
 			input: map[string]interface{}{"foo": 128},
-			err:   "expected an object but got: int",
+			err:   "expected an object but got: number (128)",
 		},
 		{
 			name:     "object optional",
@@ -98,7 +98,7 @@ func TestRun(t *testing.T) {
 			name:  "expected array",
 			query: `.[0]`,
 			input: map[string]interface{}{"foo": 128},
-			err:   "expected an array but got: map",
+			err:   `expected an array but got: object ({"foo":128})`,
 		},
 		{
 			name:     "array iterator",
@@ -189,8 +189,8 @@ func TestRun(t *testing.T) {
 		{
 			name:  "error after iterator",
 			query: `[ .[] | .foo ]`,
-			input: []interface{}{1, 2, 3},
-			err:   "expected an object but got: int",
+			input: []interface{}{[]interface{}{1, 2, 3}, 2, 3},
+			err:   "expected an object but got: ",
 		},
 	}
 
