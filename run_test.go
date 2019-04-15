@@ -258,6 +258,19 @@ func TestRun(t *testing.T) {
 			},
 			iterator: true,
 		},
+		{
+			name:     "length function",
+			query:    `.[] | length`,
+			input:    []interface{}{42, -42, map[string]interface{}{"a": 1, "b": 2, "c": 3}, []interface{}{4, 5}, "Hello, world", "あいうえお", nil},
+			expected: []interface{}{42, 42, 3, 2, 12, 5, 0},
+			iterator: true,
+		},
+		{
+			name:  "length function error",
+			query: `length`,
+			input: false,
+			err:   "length cannot be applied to: boolean (false)",
+		},
 	}
 
 	for _, tc := range testCases {

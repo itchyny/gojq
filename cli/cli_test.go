@@ -167,6 +167,21 @@ null
 `,
 		},
 		{
+			name:  "length function",
+			args:  []string{"[.[]|length]"},
+			input: `[42, -42, {"a":1,"b":2}, [3,4,5], "Hello, world", "あいうえお", null]`,
+			expected: `[
+  42,
+  42,
+  2,
+  3,
+  12,
+  5,
+  0
+]
+`,
+		},
+		{
 			name:  "function not defined",
 			args:  []string{"abc"},
 			input: `{}`,
