@@ -272,6 +272,12 @@ func TestRun(t *testing.T) {
 			expected: 21,
 		},
 		{
+			name:     "keys function",
+			query:    `[.[] | keys]`,
+			input:    []interface{}{map[string]interface{}{"c": 3, "b": 2, "a": 1}, []interface{}{3, 2, 1}},
+			expected: []interface{}{[]interface{}{"a", "b", "c"}, []interface{}{0, 1, 2}},
+		},
+		{
 			name:  "length function error",
 			query: `length`,
 			input: false,

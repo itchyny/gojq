@@ -182,6 +182,23 @@ null
 `,
 		},
 		{
+			name:  "keys function",
+			args:  []string{"[.[]|keys]"},
+			input: `[{"a":1,"b":2}, [3,4,5]]`,
+			expected: `[
+  [
+    "a",
+    "b"
+  ],
+  [
+    0,
+    1,
+    2
+  ]
+]
+`,
+		},
+		{
 			name:  "function not defined",
 			args:  []string{"abc"},
 			input: `{}`,

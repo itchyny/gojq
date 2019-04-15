@@ -2,6 +2,7 @@ package gojq
 
 import (
 	"math"
+	"sort"
 )
 
 type function struct {
@@ -15,6 +16,7 @@ var funcMap = map[string]function{
 	"false":          {0, 0, funcFalse},
 	"length":         {0, 0, funcLength},
 	"utf8bytelength": {0, 0, funcUtf8ByteLength},
+	"keys":           {0, 0, funcKeys},
 }
 
 func applyFunc(f *Func, v interface{}) (interface{}, error) {
@@ -65,5 +67,31 @@ func funcUtf8ByteLength(v interface{}) (interface{}, error) {
 		return len([]byte(v)), nil
 	default:
 		return nil, &funcTypeError{"utf8bytelength", v}
+	}
+}
+
+func funcKeys(v interface{}) (interface{}, error) {
+	switch v := v.(type) {
+	case []interface{}:
+		w := make([]interface{}, len(v))
+		for i := range v {
+			w[i] = i
+		}
+		return w, nil
+	case map[string]interface{}:
+		w := make([]string, len(v))
+		var i int
+		for k := range v {
+			w[i] = k
+			i++
+		}
+		sort.Strings(w)
+		u := make([]interface{}, len(v))
+		for i, x := range w {
+			u[i] = x
+		}
+		return u, nil
+	default:
+		return nil, &funcTypeError{"keys", v}
 	}
 }
