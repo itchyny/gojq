@@ -54,6 +54,15 @@ func (err *funcNotFoundError) Error() string {
 	return fmt.Sprintf("function not defined: %s", err.f.Name)
 }
 
+type funcTypeError struct {
+	name string
+	v    interface{}
+}
+
+func (err *funcTypeError) Error() string {
+	return fmt.Sprintf("%s cannot be applied to: %s", err.name, typeErrorPreview(err.v))
+}
+
 func typeErrorPreview(v interface{}) string {
 	return typeof(v) + preview(v)
 }

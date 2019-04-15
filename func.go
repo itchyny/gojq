@@ -1,7 +1,6 @@
 package gojq
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -38,14 +37,6 @@ func funcFalse(_ interface{}) (interface{}, error) {
 	return false, nil
 }
 
-type lengthTypeError struct {
-	v interface{}
-}
-
-func (err *lengthTypeError) Error() string {
-	return fmt.Sprintf("length cannot be applied to: %s", typeErrorPreview(err.v))
-}
-
 func funcLength(v interface{}) (interface{}, error) {
 	switch v := v.(type) {
 	case []interface{}:
@@ -64,16 +55,8 @@ func funcLength(v interface{}) (interface{}, error) {
 	case nil:
 		return 0, nil
 	default:
-		return nil, &lengthTypeError{v}
+		return nil, &funcTypeError{"length", v}
 	}
-}
-
-type utf8ByteLengthTypeError struct {
-	v interface{}
-}
-
-func (err *utf8ByteLengthTypeError) Error() string {
-	return fmt.Sprintf("utf8bytelength cannot be applied to: %s", typeErrorPreview(err.v))
 }
 
 func funcUtf8ByteLength(v interface{}) (interface{}, error) {
@@ -81,6 +64,6 @@ func funcUtf8ByteLength(v interface{}) (interface{}, error) {
 	case string:
 		return len([]byte(v)), nil
 	default:
-		return nil, &utf8ByteLengthTypeError{v}
+		return nil, &funcTypeError{"utf8bytelength", v}
 	}
 }
