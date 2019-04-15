@@ -167,11 +167,18 @@ null
 `,
 		},
 		{
-			name:  "invalid query",
+			name:  "function not defined",
 			args:  []string{"abc"},
 			input: `{}`,
-			err: `invalid query: abc
-    abc
+			err: `function not defined: abc
+`,
+		},
+		{
+			name:  "invalid query",
+			args:  []string{">abc"},
+			input: `{}`,
+			err: `invalid query: >abc
+    >abc
     ^  invalid syntax
 `,
 		},

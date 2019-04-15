@@ -78,7 +78,7 @@ func TestParser(t *testing.T) {
 			},
 		},
 		{
-			src: "abc",
+			src: ">abc",
 			err: ":1:1:",
 		},
 	}

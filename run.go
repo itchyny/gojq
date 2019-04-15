@@ -167,14 +167,8 @@ func applyRecurse(v interface{}) chan interface{} {
 }
 
 func applyExpression(x *Expression, v interface{}) (interface{}, error) {
-	if x.Null != nil {
-		return nil, nil
-	}
-	if x.True != nil {
-		return true, nil
-	}
-	if x.False != nil {
-		return false, nil
+	if x.Func != nil {
+		return applyFunc(x.Func, v)
 	}
 	if x.Object != nil {
 		return applyObject(x.Object, v)

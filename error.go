@@ -46,6 +46,14 @@ func (err *objectKeyNotStringError) Error() string {
 	return fmt.Sprintf("expected a string for object key but got: %s", typeErrorPreview(err.v))
 }
 
+type funcNotFoundError struct {
+	f *Func
+}
+
+func (err *funcNotFoundError) Error() string {
+	return fmt.Sprintf("function not defined: %s", err.f.Name)
+}
+
 func typeErrorPreview(v interface{}) string {
 	return typeof(v) + preview(v)
 }

@@ -2,26 +2,14 @@ package gojq
 
 // Expression ...
 type Expression struct {
-	Null   *Null   `  @@`
-	True   *True   `| @@`
-	False  *False  `| @@`
+	Func   *Func   `  @@`
 	Object *Object `| @@`
 	Array  *Array  `| @@`
 }
 
-// Null ...
-type Null struct {
-	_ bool `"null"`
-}
-
-// True ...
-type True struct {
-	_ bool `"true"`
-}
-
-// False ...
-type False struct {
-	_ bool `"false"`
+// Func ...
+type Func struct {
+	Name string `@Ident`
 }
 
 // Object ...
