@@ -266,6 +266,12 @@ func TestRun(t *testing.T) {
 			iterator: true,
 		},
 		{
+			name:     "utf8bytelength function",
+			query:    `utf8bytelength`,
+			input:    "あいうえお☆ミ",
+			expected: 21,
+		},
+		{
 			name:  "length function error",
 			query: `length`,
 			input: false,

@@ -11,10 +11,11 @@ type function struct {
 }
 
 var funcMap = map[string]function{
-	"null":   {0, 0, funcNull},
-	"true":   {0, 0, funcTrue},
-	"false":  {0, 0, funcFalse},
-	"length": {0, 0, funcLength},
+	"null":           {0, 0, funcNull},
+	"true":           {0, 0, funcTrue},
+	"false":          {0, 0, funcFalse},
+	"length":         {0, 0, funcLength},
+	"utf8bytelength": {0, 0, funcUtf8ByteLength},
 }
 
 func applyFunc(f *Func, v interface{}) (interface{}, error) {
@@ -64,5 +65,22 @@ func funcLength(v interface{}) (interface{}, error) {
 		return 0, nil
 	default:
 		return nil, &lengthTypeError{v}
+	}
+}
+
+type utf8ByteLengthTypeError struct {
+	v interface{}
+}
+
+func (err *utf8ByteLengthTypeError) Error() string {
+	return fmt.Sprintf("utf8bytelength cannot be applied to: %s", typeErrorPreview(err.v))
+}
+
+func funcUtf8ByteLength(v interface{}) (interface{}, error) {
+	switch v := v.(type) {
+	case string:
+		return len([]byte(v)), nil
+	default:
+		return nil, &utf8ByteLengthTypeError{v}
 	}
 }
