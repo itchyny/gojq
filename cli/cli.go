@@ -72,8 +72,7 @@ Options:
 		fmt.Fprintf(cli.errStream, "%s: too many arguments\n", name)
 		return exitCodeErr
 	}
-	parser := gojq.NewParser()
-	query, err := parser.Parse(arg)
+	query, err := gojq.Parse(arg)
 	if err != nil {
 		fmt.Fprintf(cli.errStream, "%s: invalid query: %s\n", name, arg)
 		cli.printQueryParseError(arg, err)

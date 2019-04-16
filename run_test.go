@@ -286,9 +286,8 @@ func TestRun(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		parser := NewParser()
 		t.Run(tc.name, func(t *testing.T) {
-			query, err := parser.Parse(tc.query)
+			query, err := Parse(tc.query)
 			assert.NoError(t, err)
 			require.NoError(t, err)
 			got, err := Run(query, tc.input)
