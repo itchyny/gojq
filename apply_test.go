@@ -290,7 +290,7 @@ func TestRun(t *testing.T) {
 			query, err := Parse(tc.query)
 			assert.NoError(t, err)
 			require.NoError(t, err)
-			got, err := Run(query, tc.input)
+			got, err := query.Apply(tc.input)
 			if err == nil {
 				require.NoError(t, err)
 				if c, ok := got.(chan interface{}); ok {

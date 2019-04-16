@@ -1,7 +1,7 @@
 package gojq
 
-// Run gojq.
-func Run(q *Query, v interface{}) (interface{}, error) {
+// Apply query.
+func (q *Query) Apply(v interface{}) (interface{}, error) {
 	v, err := applyPipe(q.Pipe, v)
 	if err != nil {
 		if err, ok := err.(*unexpectedQueryError); ok {

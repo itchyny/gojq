@@ -91,7 +91,7 @@ Options:
 			cli.printJSONError(buf.String(), err)
 			return exitCodeErr
 		}
-		v, err = gojq.Run(query, v)
+		v, err = query.Apply(v)
 		if err != nil {
 			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 			return exitCodeErr
