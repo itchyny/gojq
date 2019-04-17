@@ -98,6 +98,9 @@ func (env *env) applyTerm(t *Term, v interface{}) (w interface{}, err error) {
 	if x := t.Expression; x != nil {
 		return env.applyExpression(x, v)
 	}
+	if x := t.Pipe; x != nil {
+		return env.applyPipe(x, v)
+	}
 	return nil, &unexpectedQueryError{}
 }
 

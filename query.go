@@ -34,7 +34,8 @@ type Term struct {
 	ArrayIndex  *ArrayIndex  `| @@`
 	Identity    *Identity    `| @@`
 	Recurse     *Recurse     `| @@`
-	Expression  *Expression  `| @@ )`
+	Expression  *Expression  `| @@`
+	Pipe        *Pipe        `| "(" @@ ")" )`
 	SuffixList  []*Suffix    `@@*`
 }
 
