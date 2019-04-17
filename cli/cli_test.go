@@ -221,6 +221,61 @@ null
 `,
 		},
 		{
+			name:  "recurse/0 function",
+			args:  []string{"recurse"},
+			input: `{"a":{"b":[1]}}`,
+			expected: `{
+  "a": {
+    "b": [
+      1
+    ]
+  }
+}
+{
+  "b": [
+    1
+  ]
+}
+[
+  1
+]
+1
+`,
+		},
+		{
+			name:  "recurse/1 function",
+			args:  []string{"recurse(.a[])"},
+			input: `{"a":[{"a": []}, {"a":[{"a":[]}]}]}`,
+			expected: `{
+  "a": [
+    {
+      "a": []
+    },
+    {
+      "a": [
+        {
+          "a": []
+        }
+      ]
+    }
+  ]
+}
+{
+  "a": []
+}
+{
+  "a": [
+    {
+      "a": []
+    }
+  ]
+}
+{
+  "a": []
+}
+`,
+		},
+		{
 			name:  "function not defined",
 			args:  []string{"abc"},
 			input: `{}`,
