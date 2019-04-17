@@ -192,8 +192,8 @@ func (env *env) applyFunc(f *Func, v interface{}) (interface{}, error) {
 	if p := env.lookupVariable(f.Name); p != nil {
 		return env.applyPipe(p, v)
 	}
-	if fn, ok := funcMap[f.Name]; ok {
-		return fn.callback(v)
+	if fn, ok := internalFuncs[f.Name]; ok {
+		return fn(v)
 	}
 	fds := env.lookupFuncDef(f.Name)
 	if fds == nil {

@@ -5,18 +5,15 @@ import (
 	"sort"
 )
 
-type function struct {
-	minArgs, maxArgs int
-	callback         func(interface{}) (interface{}, error)
-}
+type function func(interface{}) (interface{}, error)
 
-var funcMap = map[string]function{
-	"null":           {0, 0, funcNull},
-	"true":           {0, 0, funcTrue},
-	"false":          {0, 0, funcFalse},
-	"length":         {0, 0, funcLength},
-	"utf8bytelength": {0, 0, funcUtf8ByteLength},
-	"keys":           {0, 0, funcKeys},
+var internalFuncs = map[string]function{
+	"null":           funcNull,
+	"true":           funcTrue,
+	"false":          funcFalse,
+	"length":         funcLength,
+	"utf8bytelength": funcUtf8ByteLength,
+	"keys":           funcKeys,
 }
 
 func funcNull(_ interface{}) (interface{}, error) {
@@ -40,7 +37,7 @@ func funcLength(v interface{}) (interface{}, error) {
 	case string:
 		return len([]rune(v)), nil
 	case int:
-		if v > 0 {
+		if v >= 0 {
 			return v, nil
 		}
 		return -v, nil
