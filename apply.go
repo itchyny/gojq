@@ -186,30 +186,21 @@ func (env *env) applyExpression(x *Expression, v interface{}) (interface{}, erro
 }
 
 func (env *env) applyFunc(f *Func, v interface{}) (interface{}, error) {
-	if p, ok := env.variables[f.Name]; ok {
+	if p := env.lookupVariable(f.Name); p != nil {
 		return env.applyPipe(p, v)
 	}
 	if fn, ok := funcMap[f.Name]; ok {
 		return fn.callback(v)
 	}
-	if _, ok := env.funcDefs[f.Name]; !ok {
-		bfn, ok := builtinFuncs[f.Name]
-		if !ok {
-			return nil, &funcNotFoundError{f}
-		}
-		p, err := Parse(bfn)
-		if err != nil {
-			panic(err)
-		}
-		for _, fd := range p.FuncDefs {
-			env.addFuncDef(fd)
-		}
+	fds := env.lookupFuncDef(f.Name)
+	if fds == nil {
+		return nil, &funcNotFoundError{f}
 	}
-	fd, ok := env.funcDefs[f.Name][len(f.Args)]
+	fd, ok := fds[len(f.Args)]
 	if !ok {
 		return nil, &funcArgCountError{f}
 	}
-	subEnv := newEnv()
+	subEnv := newEnv(env)
 	for i, arg := range fd.Args {
 		subEnv.variables[arg] = f.Args[i]
 	}

@@ -8,7 +8,7 @@ type Query struct {
 
 // Run query.
 func (q *Query) Run(v interface{}) (interface{}, error) {
-	return newEnv().applyQuery(q, v)
+	return newEnv(nil).applyQuery(q, v)
 }
 
 // FuncDef ...

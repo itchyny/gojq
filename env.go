@@ -3,12 +3,14 @@ package gojq
 type env struct {
 	funcDefs  map[string]map[int]*FuncDef
 	variables map[string]*Pipe
+	parent    *env
 }
 
-func newEnv() *env {
+func newEnv(parent *env) *env {
 	return &env{
 		funcDefs:  make(map[string]map[int]*FuncDef),
 		variables: make(map[string]*Pipe),
+		parent:    parent,
 	}
 }
 
@@ -17,4 +19,35 @@ func (env *env) addFuncDef(fd *FuncDef) {
 		env.funcDefs[fd.Name] = make(map[int]*FuncDef)
 	}
 	env.funcDefs[fd.Name][len(fd.Args)] = fd
+}
+
+func (env *env) lookupFuncDef(name string) map[int]*FuncDef {
+	if fds, ok := env.funcDefs[name]; ok {
+		return fds
+	}
+	if env.parent != nil {
+		return env.parent.lookupFuncDef(name)
+	}
+	bfn, ok := builtinFuncs[name]
+	if !ok {
+		return nil
+	}
+	p, err := Parse(bfn)
+	if err != nil {
+		panic(err)
+	}
+	for _, fd := range p.FuncDefs {
+		env.addFuncDef(fd)
+	}
+	return env.funcDefs[name]
+}
+
+func (env *env) lookupVariable(name string) *Pipe {
+	if p, ok := env.variables[name]; ok {
+		return p
+	}
+	if env.parent != nil {
+		return env.parent.lookupVariable(name)
+	}
+	return nil
 }
