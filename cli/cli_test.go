@@ -314,6 +314,7 @@ null
 			if tc.err == "" {
 				assert.Equal(t, exitCodeOK, code)
 				assert.Equal(t, tc.expected, outStream.String())
+				assert.Equal(t, "", errStream.String())
 			} else {
 				assert.Equal(t, exitCodeErr, code)
 				assert.Contains(t, errStream.String(), tc.err)
