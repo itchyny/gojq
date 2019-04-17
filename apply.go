@@ -1,11 +1,11 @@
 package gojq
 
-// Apply query.
-func (q *Query) Apply(v interface{}) (interface{}, error) {
-	v, err := newEnv().applyPipe(q.Pipe, v)
+func (env *env) applyQuery(query *Query, v interface{}) (interface{}, error) {
+	var err error
+	v, err = env.applyPipe(query.Pipe, v)
 	if err != nil {
 		if err, ok := err.(*unexpectedQueryError); ok {
-			err.q = q
+			err.q = query
 			return nil, err
 		}
 		return nil, err

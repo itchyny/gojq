@@ -7,7 +7,7 @@ import (
 )
 
 var parser = participle.MustBuild(
-	&Query{},
+	&Program{},
 	participle.Lexer(lexer.Must(ebnf.New(`
 				Ident = ( "_" | alpha ) { "_" | alpha | digit } .
 				Recurse = ".." .
@@ -24,11 +24,11 @@ var parser = participle.MustBuild(
 	participle.UseLookahead(2),
 )
 
-// Parse parses a query.
-func Parse(src string) (*Query, error) {
-	var query Query
-	if err := parser.ParseString(src, &query); err != nil {
+// Parse parses a program.
+func Parse(src string) (*Program, error) {
+	var program Program
+	if err := parser.ParseString(src, &program); err != nil {
 		return nil, err
 	}
-	return &query, nil
+	return &program, nil
 }
