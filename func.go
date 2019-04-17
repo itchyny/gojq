@@ -19,7 +19,7 @@ var funcMap = map[string]function{
 	"keys":           {0, 0, funcKeys},
 }
 
-func applyFunc(f *Func, v interface{}) (interface{}, error) {
+func (env *env) applyFunc(f *Func, v interface{}) (interface{}, error) {
 	fn, ok := funcMap[f.Name]
 	if !ok {
 		return nil, &funcNotFoundError{f}

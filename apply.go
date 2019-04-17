@@ -2,7 +2,7 @@ package gojq
 
 // Apply query.
 func (q *Query) Apply(v interface{}) (interface{}, error) {
-	v, err := applyPipe(q.Pipe, v)
+	v, err := newEnv().applyPipe(q.Pipe, v)
 	if err != nil {
 		if err, ok := err.(*unexpectedQueryError); ok {
 			err.q = q
@@ -13,10 +13,10 @@ func (q *Query) Apply(v interface{}) (interface{}, error) {
 	return v, nil
 }
 
-func applyPipe(pipe *Pipe, v interface{}) (interface{}, error) {
+func (env *env) applyPipe(pipe *Pipe, v interface{}) (interface{}, error) {
 	var err error
 	for _, c := range pipe.Commas {
-		v, err = applyComma(c, v)
+		v, err = env.applyComma(c, v)
 		if err != nil {
 			return nil, err
 		}
@@ -24,7 +24,7 @@ func applyPipe(pipe *Pipe, v interface{}) (interface{}, error) {
 	return v, nil
 }
 
-func applyComma(c *Comma, v interface{}) (interface{}, error) {
+func (env *env) applyComma(c *Comma, v interface{}) (interface{}, error) {
 	if w, ok := v.(chan interface{}); ok {
 		d := make(chan interface{}, 1)
 		go func() {
@@ -34,7 +34,7 @@ func applyComma(c *Comma, v interface{}) (interface{}, error) {
 					d <- e
 					continue
 				}
-				x, err := applyComma(c, e)
+				x, err := env.applyComma(c, e)
 				if err != nil {
 					d <- err
 					return
@@ -51,13 +51,13 @@ func applyComma(c *Comma, v interface{}) (interface{}, error) {
 		return d, nil
 	}
 	if len(c.Terms) == 1 {
-		return applyTerm(c.Terms[0], v)
+		return env.applyTerm(c.Terms[0], v)
 	}
 	d := make(chan interface{}, 1)
 	go func() {
 		defer close(d)
 		for _, t := range c.Terms {
-			v, err := applyTerm(t, v)
+			v, err := env.applyTerm(t, v)
 			if err != nil {
 				d <- err
 				return
@@ -74,31 +74,31 @@ func applyComma(c *Comma, v interface{}) (interface{}, error) {
 	return d, nil
 }
 
-func applyTerm(t *Term, v interface{}) (w interface{}, err error) {
+func (env *env) applyTerm(t *Term, v interface{}) (w interface{}, err error) {
 	defer func() {
 		for _, s := range t.SuffixList {
-			w, err = applySuffix(s, w, err)
+			w, err = env.applySuffix(s, w, err)
 		}
 	}()
 	if x := t.ObjectIndex; x != nil {
-		return applyObjectIndex(x, v)
+		return env.applyObjectIndex(x, v)
 	}
 	if x := t.ArrayIndex; x != nil {
-		return applyArrayIndex(x, v)
+		return env.applyArrayIndex(x, v)
 	}
 	if t.Identity != nil {
 		return v, nil
 	}
 	if t.Recurse != nil {
-		return applyRecurse(v), nil
+		return env.applyRecurse(v), nil
 	}
 	if x := t.Expression; x != nil {
-		return applyExpression(x, v)
+		return env.applyExpression(x, v)
 	}
 	return nil, &unexpectedQueryError{}
 }
 
-func applyObjectIndex(x *ObjectIndex, v interface{}) (interface{}, error) {
+func (env *env) applyObjectIndex(x *ObjectIndex, v interface{}) (interface{}, error) {
 	m, ok := v.(map[string]interface{})
 	if !ok {
 		return nil, &expectedObjectError{v}
@@ -106,7 +106,7 @@ func applyObjectIndex(x *ObjectIndex, v interface{}) (interface{}, error) {
 	return m[x.Name], nil
 }
 
-func applyArrayIndex(x *ArrayIndex, v interface{}) (interface{}, error) {
+func (env *env) applyArrayIndex(x *ArrayIndex, v interface{}) (interface{}, error) {
 	a, ok := v.([]interface{})
 	if !ok {
 		return nil, &expectedArrayError{v}
@@ -126,14 +126,14 @@ func applyArrayIndex(x *ArrayIndex, v interface{}) (interface{}, error) {
 	return a, nil
 }
 
-func applyRecurse(v interface{}) chan interface{} {
+func (env *env) applyRecurse(v interface{}) chan interface{} {
 	c := make(chan interface{}, 1)
 	if a, ok := v.([]interface{}); ok {
 		go func() {
 			defer close(c)
 			c <- v
 			for _, d := range a {
-				for e := range applyRecurse(d) {
+				for e := range env.applyRecurse(d) {
 					c <- e
 				}
 			}
@@ -143,7 +143,7 @@ func applyRecurse(v interface{}) chan interface{} {
 			defer close(c)
 			c <- v
 			for _, d := range o {
-				for e := range applyRecurse(d) {
+				for e := range env.applyRecurse(d) {
 					c <- e
 				}
 			}
@@ -152,7 +152,7 @@ func applyRecurse(v interface{}) chan interface{} {
 		go func() {
 			defer close(c)
 			for d := range w {
-				for e := range applyRecurse(d) {
+				for e := range env.applyRecurse(d) {
 					c <- e
 				}
 			}
@@ -166,26 +166,26 @@ func applyRecurse(v interface{}) chan interface{} {
 	return c
 }
 
-func applyExpression(x *Expression, v interface{}) (interface{}, error) {
+func (env *env) applyExpression(x *Expression, v interface{}) (interface{}, error) {
 	if x.Func != nil {
-		return applyFunc(x.Func, v)
+		return env.applyFunc(x.Func, v)
 	}
 	if x.Object != nil {
-		return applyObject(x.Object, v)
+		return env.applyObject(x.Object, v)
 	}
 	if x.Array != nil {
-		return applyArray(x.Array, v)
+		return env.applyArray(x.Array, v)
 	}
 	return nil, &unexpectedQueryError{}
 }
 
-func applyObject(x *Object, v interface{}) (interface{}, error) {
+func (env *env) applyObject(x *Object, v interface{}) (interface{}, error) {
 	w := make(map[string]interface{})
 	var iterators []iterator
 	for _, kv := range x.KeyVals {
 		key := kv.Key
 		if kv.Pipe != nil {
-			k, err := applyPipe(kv.Pipe, v)
+			k, err := env.applyPipe(kv.Pipe, v)
 			if err != nil {
 				return nil, err
 			}
@@ -195,7 +195,7 @@ func applyObject(x *Object, v interface{}) (interface{}, error) {
 				return nil, &objectKeyNotStringError{k}
 			}
 		}
-		u, err := applyTerm(kv.Val, v)
+		u, err := env.applyTerm(kv.Val, v)
 		if err != nil {
 			return nil, err
 		}
@@ -211,12 +211,12 @@ func applyObject(x *Object, v interface{}) (interface{}, error) {
 	return w, nil
 }
 
-func applyArray(x *Array, v interface{}) (interface{}, error) {
+func (env *env) applyArray(x *Array, v interface{}) (interface{}, error) {
 	if x.Pipe == nil {
 		return []interface{}{}, nil
 	}
 	var err error
-	v, err = applyPipe(x.Pipe, v)
+	v, err = env.applyPipe(x.Pipe, v)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +233,7 @@ func applyArray(x *Array, v interface{}) (interface{}, error) {
 	return []interface{}{v}, nil
 }
 
-func applySuffix(s *Suffix, v interface{}, err error) (interface{}, error) {
+func (env *env) applySuffix(s *Suffix, v interface{}, err error) (interface{}, error) {
 	if v == struct{}{} {
 		return v, nil
 	}
@@ -253,21 +253,21 @@ func applySuffix(s *Suffix, v interface{}, err error) (interface{}, error) {
 		return nil, err
 	}
 	if x := s.ObjectIndex; x != nil {
-		return applyObjectIndex(x, v)
+		return env.applyObjectIndex(x, v)
 	}
 	if x := s.ArrayIndex; x != nil {
-		return applyArrayIndex(x, v)
+		return env.applyArrayIndex(x, v)
 	}
 	if x := s.Array; x != nil {
 		if x.Pipe == nil {
-			return applyIterator(v)
+			return env.applyIterator(v)
 		}
-		return applyArray(x, v)
+		return env.applyArray(x, v)
 	}
 	return nil, &unexpectedQueryError{}
 }
 
-func applyIterator(v interface{}) (chan interface{}, error) {
+func (env *env) applyIterator(v interface{}) (chan interface{}, error) {
 	c := make(chan interface{}, 1)
 	if a, ok := v.([]interface{}); ok {
 		go func() {
@@ -291,7 +291,7 @@ func applyIterator(v interface{}) (chan interface{}, error) {
 					c <- e
 					continue
 				}
-				u, err := applyIterator(e)
+				u, err := env.applyIterator(e)
 				if err != nil {
 					c <- err
 					return
