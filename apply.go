@@ -1,6 +1,9 @@
 package gojq
 
 func (env *env) applyQuery(query *Query, v interface{}) (interface{}, error) {
+	if v == struct{}{} {
+		return v, nil
+	}
 	for _, fd := range query.FuncDefs {
 		env.addFuncDef(fd)
 	}
