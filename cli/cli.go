@@ -72,7 +72,7 @@ Options:
 		fmt.Fprintf(cli.errStream, "%s: too many arguments\n", name)
 		return exitCodeErr
 	}
-	prog, err := gojq.Parse(arg)
+	query, err := gojq.Parse(arg)
 	if err != nil {
 		fmt.Fprintf(cli.errStream, "%s: invalid query: %s\n", name, arg)
 		cli.printParseError(arg, err)
@@ -91,7 +91,7 @@ Options:
 			cli.printJSONError(buf.String(), err)
 			return exitCodeErr
 		}
-		v, err = prog.Run(v)
+		v, err = query.Run(v)
 		if err != nil {
 			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 			return exitCodeErr
@@ -104,9 +104,9 @@ Options:
 	return exitCodeOK
 }
 
-func (cli *cli) printParseError(prog string, err error) {
+func (cli *cli) printParseError(query string, err error) {
 	if err, ok := err.(*lexer.Error); ok {
-		lines := strings.Split(prog, "\n")
+		lines := strings.Split(query, "\n")
 		if 0 < err.Pos.Line && err.Pos.Line <= len(lines) {
 			line, col := []rune(lines[err.Pos.Line-1]), err.Pos.Column
 			// somehow participle reports invalid column

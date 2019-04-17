@@ -2,7 +2,20 @@ package gojq
 
 // Query ...
 type Query struct {
-	Pipe *Pipe `@@`
+	FuncDefs []*FuncDef `@@*`
+	Pipe     *Pipe      `@@?`
+}
+
+// Run query.
+func (q *Query) Run(v interface{}) (interface{}, error) {
+	return newEnv().applyQuery(q, v)
+}
+
+// FuncDef ...
+type FuncDef struct {
+	Name string   `"def" @Ident`
+	Args []string `("(" @Ident (";" @Ident)* ")")? ":"`
+	Body *Query   `@@ ";"`
 }
 
 // Pipe ...

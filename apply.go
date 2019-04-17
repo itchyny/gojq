@@ -1,6 +1,9 @@
 package gojq
 
 func (env *env) applyQuery(query *Query, v interface{}) (interface{}, error) {
+	for _, fd := range query.FuncDefs {
+		env.addFuncDef(fd)
+	}
 	var err error
 	v, err = env.applyPipe(query.Pipe, v)
 	if err != nil {
@@ -207,7 +210,7 @@ func (env *env) applyFunc(f *Func, v interface{}) (interface{}, error) {
 	for i, arg := range fd.Args {
 		subEnv.variables[arg] = f.Args[i]
 	}
-	return subEnv.run(fd.Body, v)
+	return subEnv.applyQuery(fd.Body, v)
 }
 
 func (env *env) applyObject(x *Object, v interface{}) (interface{}, error) {

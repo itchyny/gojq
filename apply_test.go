@@ -312,10 +312,10 @@ func TestRun(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			prog, err := Parse(tc.src)
+			query, err := Parse(tc.src)
 			assert.NoError(t, err)
 			require.NoError(t, err)
-			got, err := prog.Run(tc.input)
+			got, err := query.Run(tc.input)
 			if err == nil {
 				require.NoError(t, err)
 				if c, ok := got.(chan interface{}); ok {
