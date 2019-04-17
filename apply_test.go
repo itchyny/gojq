@@ -284,6 +284,18 @@ func TestRun(t *testing.T) {
 			err:   "length cannot be applied to: boolean (false)",
 		},
 		{
+			name:     "map function",
+			src:      `map(..)`,
+			input:    map[string]interface{}{"foo": map[string]interface{}{"bar": 10}},
+			expected: []interface{}{map[string]interface{}{"bar": 10}, 10},
+		},
+		{
+			name:  "argument count error",
+			src:   `map(.;.)`,
+			input: []interface{}{1},
+			err:   "function not defined: map/2",
+		},
+		{
 			name:     "function declaration",
 			src:      `def f(g): g | g; f(..)`,
 			input:    []interface{}{0, 1},

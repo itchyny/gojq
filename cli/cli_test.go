@@ -199,6 +199,28 @@ null
 `,
 		},
 		{
+			name:  "map function",
+			args:  []string{"map(..)"},
+			input: `[{"a":1,"b":2}, [3,4,5]]`,
+			expected: `[
+  {
+    "a": 1,
+    "b": 2
+  },
+  1,
+  2,
+  [
+    3,
+    4,
+    5
+  ],
+  3,
+  4,
+  5
+]
+`,
+		},
+		{
 			name:  "function not defined",
 			args:  []string{"abc"},
 			input: `{}`,
