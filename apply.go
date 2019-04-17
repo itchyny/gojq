@@ -257,6 +257,9 @@ func (env *env) applyArray(x *Array, v interface{}) (interface{}, error) {
 			if err, ok := e.(error); ok {
 				return nil, err
 			}
+			if e == struct{}{} {
+				continue
+			}
 			v = append(v, e)
 		}
 		return v, nil
