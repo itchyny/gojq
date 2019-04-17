@@ -10,4 +10,5 @@ require (
 	github.com/mattn/go-isatty v0.0.7 // indirect
 	github.com/mattn/go-runewidth v0.0.4
 	github.com/stretchr/testify v1.2.2
+	gopkg.in/yaml.v2 v2.2.2
 )

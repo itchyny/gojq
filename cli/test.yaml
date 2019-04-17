@@ -1,0 +1,600 @@
+- name: empty
+  input: ''
+  expected: ''
+
+- name: number
+  args:
+    - '.'
+  input: '128'
+  expected: |
+    128
+
+- name: string
+  args:
+    - '.'
+  input: '"Hello, world!"'
+  expected: |
+    "Hello, world!"
+
+- name: object
+  input: '{"foo": 128}'
+  expected: |
+    {
+      "foo": 128
+    }
+
+- name: object index
+  args:
+    - '.foo'
+  input: '{"foo": 128}'
+  expected: |
+    128
+
+- name: object index
+  args:
+    - '.["foo"]'
+  input: '{"foo": 128}'
+  expected: |
+    128
+
+- name: expected object
+  args:
+    - '.foo.bar'
+  input: '{"foo": 128}'
+  error: |
+    expected an object but got: number (128)
+
+- name: object optional
+  args:
+    - '.foo.bar.baz?'
+  input: '{"foo": 128}'
+
+- name: array index
+  args:
+    - '.[2]'
+  input: '[16, 32, 48, 64]'
+  expected: |
+    48
+
+- name: array index out of bound
+  args:
+    - '.[4]'
+  input: '[16, 32, 48, 64]'
+  expected: |
+    null
+
+- name: array slice start
+  args:
+    - '.[2:]'
+  input: '[16, 32, 48, 64]'
+  expected: |
+    [
+      48,
+      64
+    ]
+
+- name: array slice end
+  args:
+    - '.[:2]'
+  input: '[16, 32, 48, 64]'
+  expected: |
+    [
+      16,
+      32
+    ]
+
+- name: array slice start end
+  args:
+    - '.[1:3]'
+  input: '[16, 32, 48, 64]'
+  expected: |
+    [
+      32,
+      48
+    ]
+
+- name: array all
+  args:
+    - '.[:]'
+  input: '[16, 32, 48, 64]'
+  expected: |
+    [
+      16,
+      32,
+      48,
+      64
+    ]
+
+- name: expected array
+  args:
+    - '.[0]'
+  input: '{"foo": 128}'
+  error: |
+    expected an array but got: object ({"foo":128})
+
+- name: iterator
+  args:
+    - '.foo | .[] | .'
+  input: '{"foo": [1,2,{"bar":[]},[3,4,5]]}'
+  expected: |
+    1
+    2
+    {
+      "bar": []
+    }
+    [
+      3,
+      4,
+      5
+    ]
+
+- name: iterator optional
+  args:
+    - '.[]?'
+  input: '10'
+
+- name: object iterator
+  args:
+    - '.[]'
+  input: '{"foo": 128}'
+  expected: |
+    128
+
+- name: pipe
+  args:
+    - '.foo | .bar'
+  input: '{"foo": {"bar": {"baz": 128}}}'
+  expected: |
+    {
+      "baz": 128
+    }
+
+- name: null values
+  args:
+    - '.[] | null'
+  input: '["a", 1, [], {}]'
+  expected: |
+    null
+    null
+    null
+    null
+
+- name: boolean values
+  args:
+    - '.[] | true, false'
+  input: '["a", 1]'
+  expected: |
+    true
+    false
+    true
+    false
+
+- name: object optional
+  args:
+    - '.foo | .bar?'
+  input: '{"foo": 128}'
+
+- name: object construction
+  args:
+    - '{ foo: .foo.bar, "bar": .foo, "": false }'
+  input: '{"foo":{"bar":["a","b"]}}'
+  expected: |
+    {
+      "": false,
+      "bar": {
+        "bar": [
+          "a",
+          "b"
+        ]
+      },
+      "foo": [
+        "a",
+        "b"
+      ]
+    }
+
+- name: empty object
+  args:
+    - '{}'
+  input: '{"foo":{"bar":["a","b"]}}'
+  expected: |
+    {}
+
+- name: iterator in object
+  args:
+    - '{ foo: .foo[], bar: .bar[] }'
+  input: '{"foo":[1,2],"bar":["a","b"]}'
+  expected: |
+    {
+      "bar": "a",
+      "foo": 1
+    }
+    {
+      "bar": "b",
+      "foo": 1
+    }
+    {
+      "bar": "a",
+      "foo": 2
+    }
+    {
+      "bar": "b",
+      "foo": 2
+    }
+
+- name: pipe in object key
+  args:
+    - '{ (.foo|.bar): .foo.bar }'
+  input: '{"foo":{"bar":"baz"}}'
+  expected: |
+    {
+      "baz": "baz"
+    }
+
+- name: number in object key
+  args:
+    - '{ (.foo): .foo }'
+  input: '{"foo":10}'
+  error: |
+    expected a string for object key but got: number (10)
+
+- name: null in object key
+  args:
+    - '{ (.foo): .foo }'
+  input: '{}'
+  error: |
+    expected a string for object key but got: null
+
+- name: array
+  args:
+    - '[.foo, ., false]'
+  input: '{"foo": {"bar": 128}}'
+  expected: |
+    [
+      {
+        "bar": 128
+      },
+      {
+        "foo": {
+          "bar": 128
+        }
+      },
+      false
+    ]
+
+- name: empty array
+  args:
+    - '[]'
+  input: '{"foo": {"bar": 128}}'
+  expected: |
+    []
+
+- name: pipe in array
+  args:
+    - '[.foo|.bar]'
+  input: '{"foo": {"bar": 128}}'
+  expected: |
+    [
+      128
+    ]
+
+- name: iterator in array
+  args:
+    - '[.foo|.bar[][]]'
+  input: '{"foo": {"bar": [[1],[2],[3]]}}'
+  expected: |
+    [
+      1,
+      2,
+      3
+    ]
+
+- name: error after iterator
+  args:
+    - '[ .[] | .foo ]'
+  input: '[ [1, 2, 3], 4, 5]'
+  error: |
+    expected an object but got: array ([1,2,3])
+
+- name: multiple iterators in array
+  args:
+    - '[.[],..,.[]]'
+  input: '[1, 2, 3]'
+  expected: |
+    [
+      1,
+      2,
+      3,
+      [
+        1,
+        2,
+        3
+      ],
+      1,
+      2,
+      3,
+      1,
+      2,
+      3
+    ]
+
+- name: recurse
+  args:
+    - '..'
+  input: '{"foo":{"bar":["a","b"]}}'
+  expected: |
+    {
+      "foo": {
+        "bar": [
+          "a",
+          "b"
+        ]
+      }
+    }
+    {
+      "bar": [
+        "a",
+        "b"
+      ]
+    }
+    [
+      "a",
+      "b"
+    ]
+    "a"
+    "b"
+
+- name: recurse after iterator
+  args:
+    - '.[] | ..'
+  input: '{"foo":[{"bar":128}]}'
+  expected: |
+    [
+      {
+        "bar": 128
+      }
+    ]
+    {
+      "bar": 128
+    }
+    128
+
+- name: recurse and pipe
+  args:
+    - '.. | .foo?'
+  input: '{"foo":{"bar":["a","b"]}}'
+  expected: |
+    {
+      "bar": [
+        "a",
+        "b"
+      ]
+    }
+    null
+
+- name: length function
+  args:
+    - 'map(length)'
+  input: '[42, -42, {"a":1,"b":2}, [3,4,5], "Hello, world", "あいうえお", null]'
+  expected: |
+    [
+      42,
+      42,
+      2,
+      3,
+      12,
+      5,
+      0
+    ]
+
+- name: length function error
+  args:
+    - 'length'
+  input: 'false'
+  error: |
+    length cannot be applied to: boolean (false)
+
+- name: keys function
+  args:
+    - '[.[]|keys]'
+  input: '[{"a":1,"b":2}, [3,4,5]]'
+  expected: |
+    [
+      [
+        "a",
+        "b"
+      ],
+      [
+        0,
+        1,
+        2
+      ]
+    ]
+
+- name: utf8bytelength function
+  args:
+    - 'utf8bytelength'
+  input: '"あいうえお☆ミ"'
+  expected: |
+    21
+
+- name: map function
+  args:
+    - 'map(..)'
+  input: '[{"a":{"b":1}}, [2,3,4]]'
+  expected: |
+    [
+      {
+        "a": {
+          "b": 1
+        }
+      },
+      {
+        "b": 1
+      },
+      1,
+      [
+        2,
+        3,
+        4
+      ],
+      2,
+      3,
+      4
+    ]
+
+- name: recurse/0 function
+  args:
+    - 'recurse'
+  input: '{"a":{"b":[1]}}'
+  expected: |
+    {
+      "a": {
+        "b": [
+          1
+        ]
+      }
+    }
+    {
+      "b": [
+        1
+      ]
+    }
+    [
+      1
+    ]
+    1
+
+- name: recurse/1 function
+  args:
+    - 'recurse(.a[])'
+  input: '{"a":[{"a": []}, {"a":[{"a":[]}]}]}'
+  expected: |
+    {
+      "a": [
+        {
+          "a": []
+        },
+        {
+          "a": [
+            {
+              "a": []
+            }
+          ]
+        }
+      ]
+    }
+    {
+      "a": []
+    }
+    {
+      "a": [
+        {
+          "a": []
+        }
+      ]
+    }
+    {
+      "a": []
+    }
+
+- name: function not defined
+  args:
+    - 'abc'
+  input: '{}'
+  error: |
+    function not defined: abc
+
+- name: argument count error
+  args:
+    - 'map(.;.)'
+  input: '{}'
+  error: |
+    function not defined: map/2
+
+- name: function declaration
+  args:
+    - 'def f(g): g | g; f(..)'
+  input: '[0, 1]'
+  expected: |
+    [
+      0,
+      1
+    ]
+    0
+    1
+    0
+    1
+
+- name: argument count error for custom function
+  args:
+    - 'def f(g): g | g; f'
+  input: '{}'
+  error: |
+    function not defined: f/0
+
+- name: invalid query
+  args:
+    - '>abc'
+  input: '{}'
+  error: |
+    invalid query: >abc
+        >abc
+        ^  invalid syntax
+
+- name: invalid query
+  args:
+    - '.abc['
+  input: '{}'
+  error: |
+    invalid query: .abc[
+        .abc[
+            ^  unexpected token "["
+
+- name: invalid query
+  args:
+    - '[ .[] | { id } ]'
+  input: '{}'
+  error: |
+    invalid query: [ .[] | { id } ]
+        [ .[] | { id } ]
+              ^  unexpected "|" (expected "]")
+
+- name: invalid json eof
+  input: '{'
+  error: |
+    invalid json: unexpected EOF
+        {
+         ^
+
+- name: invalid json invalid character
+  input: |
+    {
+      "あいうえお" 100
+    }
+  error: |
+    invalid json: invalid character '1' after object key
+          "あいうえお" 100
+                       ^
+
+- name: invalid json string literal
+  input: |
+    {
+      "いろは": n
+    }
+  error: |
+    invalid json: invalid character '\n' in literal null (expecting 'u')
+          "いろは": n
+                     ^
+
+- name: multiple json in input
+  input: '{}[]{"foo":10}{"bar":[]}'
+  expected: |
+    {}
+    []
+    {
+      "foo": 10
+    }
+    {
+      "bar": []
+    }
