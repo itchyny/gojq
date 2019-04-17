@@ -38,6 +38,9 @@ func productIterator(c chan interface{}, t chan interface{}, name string) chan i
 					d <- err
 					return
 				}
+				if e == struct{}{} {
+					continue
+				}
 				n := make(map[string]interface{})
 				for k, v := range m {
 					n[k] = v
