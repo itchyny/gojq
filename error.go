@@ -54,6 +54,14 @@ func (err *funcNotFoundError) Error() string {
 	return fmt.Sprintf("function not defined: %s", err.f.Name)
 }
 
+type funcArgCountError struct {
+	f *Func
+}
+
+func (err *funcArgCountError) Error() string {
+	return fmt.Sprintf("function not defined: %s/%d", err.f.Name, len(err.f.Args))
+}
+
 type funcTypeError struct {
 	name string
 	v    interface{}

@@ -283,6 +283,19 @@ func TestRun(t *testing.T) {
 			input: false,
 			err:   "length cannot be applied to: boolean (false)",
 		},
+		{
+			name:     "function declaration",
+			src:      `def f(g): g | g; f(..)`,
+			input:    []interface{}{0, 1},
+			expected: []interface{}{[]interface{}{0, 1}, 0, 1, 0, 1},
+			iterator: true,
+		},
+		{
+			name:  "argument count error",
+			src:   `def f(g): g | g; f`,
+			input: []interface{}{1},
+			err:   "function not defined: f/0",
+		},
 	}
 
 	for _, tc := range testCases {

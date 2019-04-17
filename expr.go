@@ -9,7 +9,8 @@ type Expression struct {
 
 // Func ...
 type Func struct {
-	Name string `@Ident`
+	Name string  `@Ident`
+	Args []*Pipe `( "(" @@ (";" @@)* ")" )?`
 }
 
 // Object ...

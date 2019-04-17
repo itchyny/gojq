@@ -179,6 +179,37 @@ func (env *env) applyExpression(x *Expression, v interface{}) (interface{}, erro
 	return nil, &unexpectedQueryError{}
 }
 
+func (env *env) applyFunc(f *Func, v interface{}) (interface{}, error) {
+	if p, ok := env.variables[f.Name]; ok {
+		return env.applyPipe(p, v)
+	}
+	if fn, ok := funcMap[f.Name]; ok {
+		return fn.callback(v)
+	}
+	if _, ok := env.funcDefs[f.Name]; !ok {
+		bfn, ok := builtinFuncs[f.Name]
+		if !ok {
+			return nil, &funcNotFoundError{f}
+		}
+		p, err := Parse(bfn)
+		if err != nil {
+			panic(err)
+		}
+		for _, fd := range p.FuncDefs {
+			env.addFuncDef(fd)
+		}
+	}
+	fd, ok := env.funcDefs[f.Name][len(f.Args)]
+	if !ok {
+		return nil, &funcArgCountError{f}
+	}
+	subEnv := newEnv()
+	for i, arg := range fd.Args {
+		subEnv.variables[arg] = f.Args[i]
+	}
+	return subEnv.run(fd.Body, v)
+}
+
 func (env *env) applyObject(x *Object, v interface{}) (interface{}, error) {
 	w := make(map[string]interface{})
 	var iterators []iterator
