@@ -96,7 +96,7 @@ func (env *env) applyTerm(t *Term, v interface{}) (w interface{}, err error) {
 		return v, nil
 	}
 	if t.Recurse != nil {
-		return env.applyRecurse(v), nil
+		return env.applyFunc(&Func{Name: "recurse"}, v)
 	}
 	if x := t.Expression; x != nil {
 		return env.applyExpression(x, v)
@@ -133,46 +133,6 @@ func (env *env) applyArrayIndex(x *ArrayIndex, v interface{}) (interface{}, erro
 		a = a[*start:]
 	}
 	return a, nil
-}
-
-func (env *env) applyRecurse(v interface{}) chan interface{} {
-	c := make(chan interface{}, 1)
-	if a, ok := v.([]interface{}); ok {
-		go func() {
-			defer close(c)
-			c <- v
-			for _, d := range a {
-				for e := range env.applyRecurse(d) {
-					c <- e
-				}
-			}
-		}()
-	} else if o, ok := v.(map[string]interface{}); ok {
-		go func() {
-			defer close(c)
-			c <- v
-			for _, d := range o {
-				for e := range env.applyRecurse(d) {
-					c <- e
-				}
-			}
-		}()
-	} else if w, ok := v.(chan interface{}); ok {
-		go func() {
-			defer close(c)
-			for d := range w {
-				for e := range env.applyRecurse(d) {
-					c <- e
-				}
-			}
-		}()
-	} else {
-		go func() {
-			defer close(c)
-			c <- v
-		}()
-	}
-	return c
 }
 
 func (env *env) applyExpression(x *Expression, v interface{}) (interface{}, error) {
