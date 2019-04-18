@@ -37,6 +37,15 @@
   expected: |
     128
 
+- name: object index after iterator
+  args:
+    - '{ message: .[].message }'
+  input: '[ {"message": "Hello, world" } ]'
+  expected: |
+    {
+      "message": "Hello, world"
+    }
+
 - name: expected object
   args:
     - '.foo.bar'

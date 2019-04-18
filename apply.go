@@ -214,6 +214,14 @@ func (env *env) applySuffix(s *Suffix, v interface{}, err error) (interface{}, e
 	if v == struct{}{} {
 		return v, nil
 	}
+	if w, ok := v.(chan interface{}); ok {
+		return mapIterator(w, func(v interface{}) (interface{}, error) {
+			if err, ok := v.(error); ok {
+				return env.applySuffix(s, nil, err)
+			}
+			return env.applySuffix(s, v, nil)
+		}), nil
+	}
 	if s.Optional {
 		switch err.(type) {
 		case *expectedObjectError:
@@ -271,6 +279,8 @@ func (env *env) applyIterator(v interface{}) (chan interface{}, error) {
 			return env.applyIterator(v)
 		}), nil
 	} else {
-		return nil, &iteratorError{v}
+		c := make(chan interface{}, 1)
+		close(c)
+		return c, &iteratorError{v}
 	}
 }
