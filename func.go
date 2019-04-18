@@ -11,6 +11,7 @@ var internalFuncs = map[string]function{
 	"null":           funcNull,
 	"true":           funcTrue,
 	"false":          funcFalse,
+	"empty":          funcEmpty,
 	"length":         funcLength,
 	"utf8bytelength": funcUtf8ByteLength,
 	"keys":           funcKeys,
@@ -26,6 +27,10 @@ func funcTrue(_ interface{}) (interface{}, error) {
 
 func funcFalse(_ interface{}) (interface{}, error) {
 	return false, nil
+}
+
+func funcEmpty(_ interface{}) (interface{}, error) {
+	return struct{}{}, nil
 }
 
 func funcLength(v interface{}) (interface{}, error) {

@@ -188,6 +188,11 @@
     true
     false
 
+- name: empty value
+  args:
+    - '.[] | empty, empty'
+  input: '[0, 1]'
+
 - name: object construction
   args:
     - '{ foo: .foo.bar, "bar": .foo, "": false }'
