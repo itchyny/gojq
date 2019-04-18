@@ -89,7 +89,7 @@ func mapIterator(c chan interface{}, f func(interface{}) (interface{}, error)) c
 			x, err := f(e)
 			if err != nil {
 				d <- err
-				return
+				continue
 			}
 			if y, ok := x.(chan interface{}); ok {
 				for e := range y {

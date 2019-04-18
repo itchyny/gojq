@@ -149,6 +149,16 @@
   expected: |
     128
 
+- name: object optional after iterator
+  args:
+    - '[.[].name?]'
+  input: '[ 1, { "name": 2 }, 3, { "name": 4 } ]'
+  expected: |
+    [
+      2,
+      4
+    ]
+
 - name: pipe
   args:
     - '.foo | .bar'
@@ -177,11 +187,6 @@
     false
     true
     false
-
-- name: object optional
-  args:
-    - '.foo | .bar?'
-  input: '{"foo": 128}'
 
 - name: object construction
   args:
