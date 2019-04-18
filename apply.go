@@ -32,29 +32,12 @@ func (env *env) applyPipe(pipe *Pipe, v interface{}) (interface{}, error) {
 
 func (env *env) applyComma(c *Comma, v interface{}) (interface{}, error) {
 	if w, ok := v.(chan interface{}); ok {
-		d := make(chan interface{}, 1)
-		go func() {
-			defer close(d)
-			for e := range w {
-				if _, ok := e.(error); ok {
-					d <- e
-					continue
-				}
-				x, err := env.applyComma(c, e)
-				if err != nil {
-					d <- err
-					return
-				}
-				if y, ok := x.(chan interface{}); ok {
-					for e := range y {
-						d <- e
-					}
-					continue
-				}
-				d <- x
+		return mapIterator(w, func(v interface{}) (interface{}, error) {
+			if err, ok := v.(error); ok {
+				return nil, err
 			}
-		}()
-		return d, nil
+			return env.applyComma(c, v)
+		}), nil
 	}
 	if len(c.Terms) == 1 {
 		return env.applyTerm(c.Terms[0], v)
@@ -262,42 +245,32 @@ func (env *env) applySuffix(s *Suffix, v interface{}, err error) (interface{}, e
 }
 
 func (env *env) applyIterator(v interface{}) (chan interface{}, error) {
-	c := make(chan interface{}, 1)
 	if a, ok := v.([]interface{}); ok {
+		c := make(chan interface{}, 1)
 		go func() {
 			defer close(c)
 			for _, e := range a {
 				c <- e
 			}
 		}()
+		return c, nil
 	} else if o, ok := v.(map[string]interface{}); ok {
+		c := make(chan interface{}, 1)
 		go func() {
 			defer close(c)
 			for _, e := range o {
 				c <- e
 			}
 		}()
+		return c, nil
 	} else if w, ok := v.(chan interface{}); ok {
-		go func() {
-			defer close(c)
-			for e := range w {
-				if _, ok := e.(error); ok {
-					c <- e
-					continue
-				}
-				u, err := env.applyIterator(e)
-				if err != nil {
-					c <- err
-					return
-				}
-				for x := range u {
-					c <- x
-				}
+		return mapIterator(w, func(v interface{}) (interface{}, error) {
+			if err, ok := v.(error); ok {
+				return nil, err
 			}
-		}()
+			return env.applyIterator(v)
+		}), nil
 	} else {
-		close(c)
 		return nil, &iteratorError{v}
 	}
-	return c, nil
 }

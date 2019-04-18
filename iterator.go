@@ -80,3 +80,25 @@ func reuseIterator(c chan interface{}) func() chan interface{} {
 		return d
 	}
 }
+
+func mapIterator(c chan interface{}, f func(interface{}) (interface{}, error)) chan interface{} {
+	d := make(chan interface{}, 1)
+	go func() {
+		defer close(d)
+		for e := range c {
+			x, err := f(e)
+			if err != nil {
+				d <- err
+				return
+			}
+			if y, ok := x.(chan interface{}); ok {
+				for e := range y {
+					d <- e
+				}
+				continue
+			}
+			d <- x
+		}
+	}()
+	return d
+}
