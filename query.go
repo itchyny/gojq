@@ -29,7 +29,10 @@ type Comma struct {
 }
 
 // Expr ...
-type Expr Term
+type Expr struct {
+	Term *Term `  @@`
+	If   *If   `| @@`
+}
 
 // Term ...
 type Term struct {
@@ -95,4 +98,15 @@ type Suffix struct {
 	ArrayIndex  *ArrayIndex  `| @@`
 	Array       *Array       `| @@`
 	Optional    bool         `| @"?"`
+}
+
+// If ...
+type If struct {
+	Cond *Pipe `"if" @@`
+	Then *Pipe `"then" @@`
+	Elif []struct {
+		Cond *Pipe `"elif" @@`
+		Then *Pipe `"then" @@`
+	} `@@*`
+	Else *Pipe `"else" @@ "end"`
 }

@@ -64,7 +64,13 @@ func (env *env) applyComma(c *Comma, v interface{}) (interface{}, error) {
 }
 
 func (env *env) applyExpr(e *Expr, v interface{}) (w interface{}, err error) {
-	return env.applyTerm((*Term)(e), v)
+	if e.Term != nil {
+		return env.applyTerm(e.Term, v)
+	}
+	if e.If != nil {
+		return env.applyIf(e.If, v)
+	}
+	return nil, &unexpectedQueryError{}
 }
 
 func (env *env) applyTerm(t *Term, v interface{}) (w interface{}, err error) {
@@ -279,5 +285,42 @@ func (env *env) applyIterator(v interface{}) (chan interface{}, error) {
 		c := make(chan interface{}, 1)
 		close(c)
 		return c, &iteratorError{v}
+	}
+}
+
+func (env *env) applyIf(x *If, v interface{}) (interface{}, error) {
+	w, err := env.applyPipe(x.Cond, v)
+	if err != nil {
+		return nil, err
+	}
+	if u, ok := w.(chan interface{}); ok {
+		return mapIterator(u, func(u interface{}) (interface{}, error) {
+			if err, ok := u.(error); ok {
+				return nil, err
+			}
+			return env.evalIf(x, u, v)
+		}), nil
+	}
+	return env.evalIf(x, w, v)
+}
+
+func (env *env) evalIf(x *If, w, v interface{}) (interface{}, error) {
+	if condToBool(w) {
+		return env.applyPipe(x.Then, v)
+	}
+	if len(x.Elif) > 0 {
+		return env.applyIf(&If{x.Elif[0].Cond, x.Elif[0].Then, x.Elif[1:], x.Else}, v)
+	}
+	return env.applyPipe(x.Else, v)
+}
+
+func condToBool(v interface{}) bool {
+	switch v := v.(type) {
+	case nil:
+		return false
+	case bool:
+		return v
+	default:
+		return true
 	}
 }

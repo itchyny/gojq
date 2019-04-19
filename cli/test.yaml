@@ -583,6 +583,33 @@
   error: |
     function not defined: f/0
 
+- name: condition
+  args:
+    - '.[] | if . then . else empty end'
+  input: '[false, true, 0, 1]'
+  expected: |
+    true
+    0
+    1
+
+- name: condition with elif
+  args:
+    - '.[] | if . then . elif [] then . else empty end'
+  input: '[false, true, 0, 1]'
+  expected: |
+    false
+    true
+    0
+    1
+
+- name: iterator in condition
+  args:
+    - 'if .. then [] else {} end'
+  input: '{ "foo": false }'
+  expected: |
+    []
+    {}
+
 - name: invalid query
   args:
     - '>abc'
