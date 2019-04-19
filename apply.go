@@ -1,82 +1,45 @@
 package gojq
 
-func (env *env) applyQuery(query *Query, v interface{}) (interface{}, error) {
-	if v == struct{}{} {
-		return v, nil
-	}
+func (env *env) applyQuery(query *Query, v chan interface{}) chan interface{} {
 	for _, fd := range query.FuncDefs {
 		env.addFuncDef(fd)
 	}
-	var err error
-	v, err = env.applyPipe(query.Pipe, v)
-	if err != nil {
-		if err, ok := err.(*unexpectedQueryError); ok {
-			err.q = query
-			return nil, err
-		}
-		return nil, err
-	}
-	return v, nil
+	return env.applyPipe(query.Pipe, v)
 }
 
-func (env *env) applyPipe(pipe *Pipe, v interface{}) (interface{}, error) {
-	var err error
-	for _, c := range pipe.Commas {
-		v, err = env.applyComma(c, v)
-		if err != nil {
-			return nil, err
-		}
+func (env *env) applyPipe(p *Pipe, v chan interface{}) chan interface{} {
+	for _, c := range p.Commas {
+		v = env.applyComma(c, v)
 	}
-	return v, nil
+	return v
 }
 
-func (env *env) applyComma(c *Comma, v interface{}) (interface{}, error) {
-	if w, ok := v.(chan interface{}); ok {
-		return mapIterator(w, func(v interface{}) (interface{}, error) {
-			if err, ok := v.(error); ok {
-				return nil, err
-			}
-			return env.applyComma(c, v)
-		}), nil
-	}
-	if len(c.Exprs) == 1 {
-		return env.applyExpr(c.Exprs[0], v)
-	}
-	d := make(chan interface{}, 1)
-	go func() {
-		defer close(d)
-		for _, e := range c.Exprs {
-			v, err := env.applyExpr(e, v)
-			if err != nil {
-				d <- err
-				return
-			}
-			if w, ok := v.(chan interface{}); ok {
-				for e := range w {
+func (env *env) applyComma(c *Comma, v chan interface{}) chan interface{} {
+	return mapIterator(v, func(v interface{}) interface{} {
+		d := make(chan interface{}, 1)
+		go func() {
+			defer close(d)
+			for _, e := range c.Exprs {
+				for e := range env.applyExpr(e, unitIterator(v)) {
 					d <- e
 				}
-				continue
 			}
-			d <- v
-		}
-	}()
-	return d, nil
+		}()
+		return d
+	})
 }
 
-func (env *env) applyExpr(e *Expr, v interface{}) (w interface{}, err error) {
+func (env *env) applyExpr(e *Expr, v chan interface{}) chan interface{} {
 	if e.Term != nil {
 		return env.applyTerm(e.Term, v)
 	}
-	if e.If != nil {
-		return env.applyIf(e.If, v)
-	}
-	return nil, &unexpectedQueryError{}
+	return env.applyIf(e.If, v)
 }
 
-func (env *env) applyTerm(t *Term, v interface{}) (w interface{}, err error) {
+func (env *env) applyTerm(t *Term, v chan interface{}) (w chan interface{}) {
 	defer func() {
 		for _, s := range t.SuffixList {
-			w, err = env.applySuffix(s, w, err)
+			w = env.applySuffix(s, w)
 		}
 	}()
 	if x := t.ObjectIndex; x != nil {
@@ -86,7 +49,7 @@ func (env *env) applyTerm(t *Term, v interface{}) (w interface{}, err error) {
 		return env.applyArrayIndex(x, v)
 	}
 	if t.Identity != nil {
-		return v, nil
+		return v
 	}
 	if t.Recurse != nil {
 		return env.applyFunc(&Func{Name: "recurse"}, v)
@@ -100,54 +63,55 @@ func (env *env) applyTerm(t *Term, v interface{}) (w interface{}, err error) {
 	if t.Array != nil {
 		return env.applyArray(t.Array, v)
 	}
-	if t := t.Pipe; t != nil {
-		return env.applyPipe(t, v)
-	}
-	return nil, &unexpectedQueryError{}
+	return env.applyPipe(t.Pipe, v)
 }
 
-func (env *env) applyObjectIndex(x *ObjectIndex, v interface{}) (interface{}, error) {
-	m, ok := v.(map[string]interface{})
-	if !ok {
-		return nil, &expectedObjectError{v}
-	}
-	return m[x.Name], nil
-}
-
-func (env *env) applyArrayIndex(x *ArrayIndex, v interface{}) (interface{}, error) {
-	a, ok := v.([]interface{})
-	if !ok {
-		return nil, &expectedArrayError{v}
-	}
-	if index := x.Index; index != nil {
-		if *index < 0 || len(a) <= *index {
-			return nil, nil
+func (env *env) applyObjectIndex(x *ObjectIndex, v chan interface{}) chan interface{} {
+	return mapIterator(v, func(v interface{}) interface{} {
+		m, ok := v.(map[string]interface{})
+		if !ok {
+			return &expectedObjectError{v}
 		}
-		return a[*index], nil
-	}
-	if end := x.End; end != nil {
-		a = a[:*end]
-	}
-	if start := x.Start; start != nil {
-		a = a[*start:]
-	}
-	return a, nil
+		return m[x.Name]
+	})
 }
 
-func (env *env) applyFunc(f *Func, v interface{}) (interface{}, error) {
+func (env *env) applyArrayIndex(x *ArrayIndex, v chan interface{}) chan interface{} {
+	return mapIterator(v, func(v interface{}) interface{} {
+		a, ok := v.([]interface{})
+		if !ok {
+			return &expectedArrayError{v}
+		}
+		if index := x.Index; index != nil {
+			if *index < 0 || len(a) <= *index {
+				return nil
+			}
+			return a[*index]
+		}
+		if end := x.End; end != nil {
+			a = a[:*end]
+		}
+		if start := x.Start; start != nil {
+			a = a[*start:]
+		}
+		return a
+	})
+}
+
+func (env *env) applyFunc(f *Func, v chan interface{}) chan interface{} {
 	if p := env.lookupVariable(f.Name); p != nil {
 		return env.applyPipe(p, v)
 	}
 	if fn, ok := internalFuncs[f.Name]; ok {
-		return fn(v)
+		return mapIterator(v, fn)
 	}
 	fds := env.lookupFuncDef(f.Name)
 	if fds == nil {
-		return nil, &funcNotFoundError{f}
+		return unitIterator(&funcNotFoundError{f})
 	}
 	fd, ok := fds[len(f.Args)]
 	if !ok {
-		return nil, &funcArgCountError{f}
+		return unitIterator(&funcArgCountError{f})
 	}
 	subEnv := newEnv(env)
 	for i, arg := range fd.Args {
@@ -156,162 +120,117 @@ func (env *env) applyFunc(f *Func, v interface{}) (interface{}, error) {
 	return subEnv.applyQuery(fd.Body, v)
 }
 
-func (env *env) applyObject(x *Object, v interface{}) (interface{}, error) {
-	w := make(map[string]interface{})
-	var iterators []iterator
-	for _, kv := range x.KeyVals {
-		key := kv.Key
-		if kv.Pipe != nil {
-			k, err := env.applyPipe(kv.Pipe, v)
-			if err != nil {
-				return nil, err
+func (env *env) applyObject(x *Object, v chan interface{}) chan interface{} {
+	return mapIterator(v, func(v interface{}) interface{} {
+		w := make(map[string]interface{})
+		var iterators []iterator
+		for _, kv := range x.KeyVals {
+			key := kv.Key
+			if kv.Pipe != nil {
+				var k interface{}
+				var cnt int
+				for k = range env.applyPipe(kv.Pipe, unitIterator(v)) {
+					cnt++
+					if cnt > 1 {
+						break
+					}
+				}
+				if l, ok := k.(string); ok && cnt == 1 {
+					key = l
+				} else {
+					return &objectKeyNotStringError{k}
+				}
 			}
-			if l, ok := k.(string); ok {
-				key = l
-			} else {
-				return nil, &objectKeyNotStringError{k}
-			}
+			iterators = append(iterators, iterator{key, env.applyExpr(kv.Val, unitIterator(v))})
 		}
-		u, err := env.applyExpr(kv.Val, v)
-		if err != nil {
-			return nil, err
+		if len(iterators) > 0 {
+			return foldIterators(w, iterators)
 		}
-		if t, ok := u.(chan interface{}); ok {
-			iterators = append(iterators, iterator{key, t})
-			continue
-		}
-		w[key] = u
-	}
-	if len(iterators) > 0 {
-		return foldIterators(w, iterators), nil
-	}
-	return w, nil
+		return w
+	})
 }
 
-func (env *env) applyArray(x *Array, v interface{}) (interface{}, error) {
+func (env *env) applyArray(x *Array, v chan interface{}) chan interface{} {
 	if x.Pipe == nil {
-		return []interface{}{}, nil
+		return unitIterator([]interface{}{})
 	}
-	var err error
-	v, err = env.applyPipe(x.Pipe, v)
-	if err != nil {
-		return nil, err
-	}
-	if w, ok := v.(chan interface{}); ok {
-		v := []interface{}{}
-		for e := range w {
-			if err, ok := e.(error); ok {
-				return nil, err
-			}
-			if e == struct{}{} {
-				continue
-			}
-			v = append(v, e)
+	v = env.applyPipe(x.Pipe, v)
+	a := []interface{}{}
+	for e := range v {
+		if err, ok := e.(error); ok {
+			return unitIterator(err)
 		}
-		return v, nil
+		a = append(a, e)
 	}
-	return []interface{}{v}, nil
+	return unitIterator(a)
 }
 
-func (env *env) applySuffix(s *Suffix, v interface{}, err error) (interface{}, error) {
-	if v == struct{}{} {
-		return v, nil
-	}
-	if w, ok := v.(chan interface{}); ok {
-		return mapIterator(w, func(v interface{}) (interface{}, error) {
-			if err, ok := v.(error); ok {
-				return env.applySuffix(s, nil, err)
+func (env *env) applySuffix(s *Suffix, v chan interface{}) chan interface{} {
+	return mapIterator(v, func(v interface{}) interface{} {
+		if s.Optional {
+			switch v.(type) {
+			case *expectedObjectError, *expectedArrayError, *iteratorError:
+				return struct{}{}
+			default:
+				return v
 			}
-			return env.applySuffix(s, v, nil)
-		}), nil
-	}
-	if s.Optional {
-		switch err.(type) {
-		case *expectedObjectError:
-			return struct{}{}, nil
-		case *expectedArrayError:
-			return struct{}{}, nil
-		case *iteratorError:
-			return struct{}{}, nil
-		default:
-			return v, err
 		}
-	}
-	if err != nil {
-		return nil, err
-	}
-	if x := s.ObjectIndex; x != nil {
-		return env.applyObjectIndex(x, v)
-	}
-	if x := s.ArrayIndex; x != nil {
-		return env.applyArrayIndex(x, v)
-	}
-	if x := s.Array; x != nil {
-		if x.Pipe == nil {
-			return env.applyIterator(v)
+		if _, ok := v.(error); ok {
+			return v
 		}
-		return env.applyArray(x, v)
-	}
-	return nil, &unexpectedQueryError{}
+		if x := s.ObjectIndex; x != nil {
+			return env.applyObjectIndex(x, unitIterator(v))
+		}
+		if x := s.ArrayIndex; x != nil {
+			return env.applyArrayIndex(x, unitIterator(v))
+		}
+		if s.Array.Pipe == nil {
+			return env.applyIterator(unitIterator(v))
+		}
+		return env.applyArray(s.Array, unitIterator(v))
+	})
 }
 
-func (env *env) applyIterator(v interface{}) (chan interface{}, error) {
-	if a, ok := v.([]interface{}); ok {
-		c := make(chan interface{}, 1)
-		go func() {
-			defer close(c)
-			for _, e := range a {
-				c <- e
-			}
-		}()
-		return c, nil
-	} else if o, ok := v.(map[string]interface{}); ok {
-		c := make(chan interface{}, 1)
-		go func() {
-			defer close(c)
-			for _, e := range o {
-				c <- e
-			}
-		}()
-		return c, nil
-	} else if w, ok := v.(chan interface{}); ok {
-		return mapIterator(w, func(v interface{}) (interface{}, error) {
-			if err, ok := v.(error); ok {
-				return nil, err
-			}
-			return env.applyIterator(v)
-		}), nil
-	} else {
-		c := make(chan interface{}, 1)
-		close(c)
-		return c, &iteratorError{v}
-	}
+func (env *env) applyIterator(v chan interface{}) chan interface{} {
+	return mapIterator(v, func(v interface{}) interface{} {
+		if a, ok := v.([]interface{}); ok {
+			c := make(chan interface{}, 1)
+			go func() {
+				defer close(c)
+				for _, e := range a {
+					c <- e
+				}
+			}()
+			return c
+		} else if o, ok := v.(map[string]interface{}); ok {
+			c := make(chan interface{}, 1)
+			go func() {
+				defer close(c)
+				for _, e := range o {
+					c <- e
+				}
+			}()
+			return c
+		} else {
+			return &iteratorError{v}
+		}
+	})
 }
 
-func (env *env) applyIf(x *If, v interface{}) (interface{}, error) {
-	w, err := env.applyPipe(x.Cond, v)
-	if err != nil {
-		return nil, err
-	}
-	if u, ok := w.(chan interface{}); ok {
-		return mapIterator(u, func(u interface{}) (interface{}, error) {
-			if err, ok := u.(error); ok {
-				return nil, err
-			}
-			return env.evalIf(x, u, v)
-		}), nil
-	}
-	return env.evalIf(x, w, v)
-}
-
-func (env *env) evalIf(x *If, w, v interface{}) (interface{}, error) {
-	if condToBool(w) {
-		return env.applyPipe(x.Then, v)
-	}
-	if len(x.Elif) > 0 {
-		return env.applyIf(&If{x.Elif[0].Cond, x.Elif[0].Then, x.Elif[1:], x.Else}, v)
-	}
-	return env.applyPipe(x.Else, v)
+func (env *env) applyIf(x *If, v chan interface{}) chan interface{} {
+	t := reuseIterator(v)
+	return mapIterator(env.applyPipe(x.Cond, t()), func(w interface{}) interface{} {
+		if _, ok := w.(error); ok {
+			return w
+		}
+		if condToBool(w) {
+			return env.applyPipe(x.Then, t())
+		}
+		if len(x.Elif) > 0 {
+			return env.applyIf(&If{x.Elif[0].Cond, x.Elif[0].Then, x.Elif[1:], x.Else}, t())
+		}
+		return env.applyPipe(x.Else, t())
+	})
 }
 
 func condToBool(v interface{}) bool {

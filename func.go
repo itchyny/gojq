@@ -5,7 +5,7 @@ import (
 	"sort"
 )
 
-type function func(interface{}) (interface{}, error)
+type function func(interface{}) interface{}
 
 var internalFuncs = map[string]function{
 	"null":           funcNull,
@@ -17,61 +17,61 @@ var internalFuncs = map[string]function{
 	"keys":           funcKeys,
 }
 
-func funcNull(_ interface{}) (interface{}, error) {
-	return nil, nil
+func funcNull(_ interface{}) interface{} {
+	return nil
 }
 
-func funcTrue(_ interface{}) (interface{}, error) {
-	return true, nil
+func funcTrue(_ interface{}) interface{} {
+	return true
 }
 
-func funcFalse(_ interface{}) (interface{}, error) {
-	return false, nil
+func funcFalse(_ interface{}) interface{} {
+	return false
 }
 
-func funcEmpty(_ interface{}) (interface{}, error) {
-	return struct{}{}, nil
+func funcEmpty(_ interface{}) interface{} {
+	return struct{}{}
 }
 
-func funcLength(v interface{}) (interface{}, error) {
+func funcLength(v interface{}) interface{} {
 	switch v := v.(type) {
 	case []interface{}:
-		return len(v), nil
+		return len(v)
 	case map[string]interface{}:
-		return len(v), nil
+		return len(v)
 	case string:
-		return len([]rune(v)), nil
+		return len([]rune(v))
 	case int:
 		if v >= 0 {
-			return v, nil
+			return v
 		}
-		return -v, nil
+		return -v
 	case float64:
-		return math.Abs(v), nil
+		return math.Abs(v)
 	case nil:
-		return 0, nil
+		return 0
 	default:
-		return nil, &funcTypeError{"length", v}
+		return &funcTypeError{"length", v}
 	}
 }
 
-func funcUtf8ByteLength(v interface{}) (interface{}, error) {
+func funcUtf8ByteLength(v interface{}) interface{} {
 	switch v := v.(type) {
 	case string:
-		return len([]byte(v)), nil
+		return len([]byte(v))
 	default:
-		return nil, &funcTypeError{"utf8bytelength", v}
+		return &funcTypeError{"utf8bytelength", v}
 	}
 }
 
-func funcKeys(v interface{}) (interface{}, error) {
+func funcKeys(v interface{}) interface{} {
 	switch v := v.(type) {
 	case []interface{}:
 		w := make([]interface{}, len(v))
 		for i := range v {
 			w[i] = i
 		}
-		return w, nil
+		return w
 	case map[string]interface{}:
 		w := make([]string, len(v))
 		var i int
@@ -84,8 +84,8 @@ func funcKeys(v interface{}) (interface{}, error) {
 		for i, x := range w {
 			u[i] = x
 		}
-		return u, nil
+		return u
 	default:
-		return nil, &funcTypeError{"keys", v}
+		return &funcTypeError{"keys", v}
 	}
 }

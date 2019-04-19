@@ -91,12 +91,7 @@ Options:
 			cli.printJSONError(buf.String(), err)
 			return exitCodeErr
 		}
-		v, err = query.Run(v)
-		if err != nil {
-			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
-			return exitCodeErr
-		}
-		if err := cli.printValue(v); err != nil {
+		if err := cli.printValue(query.Run(v)); err != nil {
 			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 			return exitCodeErr
 		}
@@ -146,25 +141,19 @@ func (cli *cli) printJSONError(input string, err error) {
 	}
 }
 
-func (cli *cli) printValue(v interface{}) error {
-	if v == struct{}{} {
-		return nil
-	}
-	if c, ok := v.(chan interface{}); ok {
-		for x := range c {
-			if err, ok := x.(error); ok {
-				return err
-			}
-			if err := cli.printValue(x); err != nil {
-				return err
-			}
+func (cli *cli) printValue(v chan interface{}) error {
+	for x := range v {
+		if err, ok := x.(error); ok {
+			return err
 		}
-		return nil
+		xs, err := jsonFormatter().Marshal(x)
+		if err != nil {
+			return err
+		}
+		cli.outStream.Write(xs)
+		cli.outStream.Write([]byte{'\n'})
 	}
-	xs, err := jsonFormatter().Marshal(v)
-	cli.outStream.Write(xs)
-	cli.outStream.Write([]byte{'\n'})
-	return err
+	return nil
 }
 
 func jsonFormatter() *prettyjson.Formatter {

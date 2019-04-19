@@ -66,11 +66,9 @@ func reuseIterator(c chan interface{}) func() chan interface{} {
 				}
 			}()
 		} else {
+			done = true
 			go func() {
-				defer func() {
-					close(d)
-					done = true
-				}()
+				defer close(d)
 				for e := range c {
 					xs = append(xs, e)
 					d <- e
@@ -81,18 +79,20 @@ func reuseIterator(c chan interface{}) func() chan interface{} {
 	}
 }
 
-func mapIterator(c chan interface{}, f func(interface{}) (interface{}, error)) chan interface{} {
+func mapIterator(c chan interface{}, f func(interface{}) interface{}) chan interface{} {
 	d := make(chan interface{}, 1)
 	go func() {
 		defer close(d)
 		for e := range c {
-			x, err := f(e)
-			if err != nil {
-				d <- err
+			if e == struct{}{} {
 				continue
 			}
+			x := f(e)
 			if y, ok := x.(chan interface{}); ok {
 				for e := range y {
+					if e == struct{}{} {
+						continue
+					}
 					d <- e
 				}
 				continue

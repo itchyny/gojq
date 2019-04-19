@@ -6,14 +6,6 @@ import (
 	"reflect"
 )
 
-type unexpectedQueryError struct {
-	q *Query
-}
-
-func (err *unexpectedQueryError) Error() string {
-	return fmt.Sprintf("unexpected query: %v", err.q)
-}
-
 type expectedObjectError struct {
 	v interface{}
 }
