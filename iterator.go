@@ -38,9 +38,6 @@ func productIterator(c <-chan interface{}, t <-chan interface{}, name string) <-
 					d <- err
 					return
 				}
-				if e == struct{}{} {
-					continue
-				}
 				n := make(map[string]interface{})
 				for k, v := range m {
 					n[k] = v
@@ -84,9 +81,6 @@ func mapIterator(c <-chan interface{}, f func(interface{}) interface{}) <-chan i
 	go func() {
 		defer close(d)
 		for e := range c {
-			if e == struct{}{} {
-				continue
-			}
 			x := f(e)
 			if y, ok := x.(<-chan interface{}); ok {
 				for e := range y {
