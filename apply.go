@@ -39,14 +39,14 @@ func (env *env) applyComma(c *Comma, v interface{}) (interface{}, error) {
 			return env.applyComma(c, v)
 		}), nil
 	}
-	if len(c.Terms) == 1 {
-		return env.applyTerm(c.Terms[0], v)
+	if len(c.Exprs) == 1 {
+		return env.applyExpr(c.Exprs[0], v)
 	}
 	d := make(chan interface{}, 1)
 	go func() {
 		defer close(d)
-		for _, t := range c.Terms {
-			v, err := env.applyTerm(t, v)
+		for _, e := range c.Exprs {
+			v, err := env.applyExpr(e, v)
 			if err != nil {
 				d <- err
 				return
@@ -61,6 +61,10 @@ func (env *env) applyComma(c *Comma, v interface{}) (interface{}, error) {
 		}
 	}()
 	return d, nil
+}
+
+func (env *env) applyExpr(e *Expr, v interface{}) (w interface{}, err error) {
+	return env.applyTerm((*Term)(e), v)
 }
 
 func (env *env) applyTerm(t *Term, v interface{}) (w interface{}, err error) {
@@ -162,7 +166,7 @@ func (env *env) applyObject(x *Object, v interface{}) (interface{}, error) {
 				return nil, &objectKeyNotStringError{k}
 			}
 		}
-		u, err := env.applyTerm(kv.Val, v)
+		u, err := env.applyExpr(kv.Val, v)
 		if err != nil {
 			return nil, err
 		}

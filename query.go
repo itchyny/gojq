@@ -25,8 +25,11 @@ type Pipe struct {
 
 // Comma ...
 type Comma struct {
-	Terms []*Term `@@ ("," @@)*`
+	Exprs []*Expr `@@ ("," @@)*`
 }
+
+// Expr ...
+type Expr Term
 
 // Term ...
 type Term struct {
@@ -78,7 +81,7 @@ type Object struct {
 type ObjKeyVal struct {
 	Key  string `( ( @Ident | @String )`
 	Pipe *Pipe  `| "(" @@ ")" ) ":"`
-	Val  *Term  `@@`
+	Val  *Expr  `@@`
 }
 
 // Array ...
