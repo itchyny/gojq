@@ -103,12 +103,7 @@ func (env *env) applyFunc(f *Func, v <-chan interface{}) <-chan interface{} {
 		return env.applyPipe(p, v)
 	}
 	if fn, ok := internalFuncs[f.Name]; ok {
-		return mapIterator(v, func(v interface{}) interface{} {
-			if _, ok := v.(error); ok {
-				return v
-			}
-			return fn(v)
-		})
+		return mapIterator(v, fn)
 	}
 	fds := env.lookupFuncDef(f.Name)
 	if fds == nil {
@@ -171,7 +166,7 @@ func (env *env) applyArray(x *Array, v <-chan interface{}) <-chan interface{} {
 }
 
 func (env *env) applySuffix(s *Suffix, v <-chan interface{}) <-chan interface{} {
-	return mapIterator(v, func(v interface{}) interface{} {
+	return mapIteratorWithError(v, func(v interface{}) interface{} {
 		if s.Optional {
 			switch v.(type) {
 			case *expectedObjectError, *expectedArrayError, *iteratorError:
@@ -225,9 +220,6 @@ func (env *env) applyIterator(v <-chan interface{}) <-chan interface{} {
 func (env *env) applyIf(x *If, v <-chan interface{}) <-chan interface{} {
 	t := reuseIterator(v)
 	return mapIterator(env.applyPipe(x.Cond, t()), func(w interface{}) interface{} {
-		if _, ok := w.(error); ok {
-			return w
-		}
 		if condToBool(w) {
 			return env.applyPipe(x.Then, t())
 		}

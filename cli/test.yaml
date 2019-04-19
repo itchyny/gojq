@@ -53,6 +53,20 @@
   error: |
     expected an object but got: number (128)
 
+- name: expected object in pipe
+  args:
+    - '.foo|.bar'
+  input: '{"foo": 128}'
+  error: |
+    expected an object but got: number (128)
+
+- name: expected object after iterator
+  args:
+    - '.[]|.foo|.bar'
+  input: '[128]'
+  error: |
+    expected an object but got: number (128)
+
 - name: object optional
   args:
     - '.foo.bar.baz?'

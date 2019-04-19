@@ -77,6 +77,15 @@ func reuseIterator(c <-chan interface{}) func() <-chan interface{} {
 }
 
 func mapIterator(c <-chan interface{}, f func(interface{}) interface{}) <-chan interface{} {
+	return mapIteratorWithError(c, func(v interface{}) interface{} {
+		if _, ok := v.(error); ok {
+			return v
+		}
+		return f(v)
+	})
+}
+
+func mapIteratorWithError(c <-chan interface{}, f func(interface{}) interface{}) <-chan interface{} {
 	d := make(chan interface{}, 1)
 	go func() {
 		defer close(d)
