@@ -108,22 +108,9 @@ func (cli *cli) printParseError(query string, err error) {
 	if err, ok := err.(*lexer.Error); ok {
 		lines := strings.Split(query, "\n")
 		if 0 < err.Pos.Line && err.Pos.Line <= len(lines) {
-			line, col := []rune(lines[err.Pos.Line-1]), err.Pos.Column
-			// somehow participle reports invalid column
-			for _, prefix := range []string{"unexpected", "unexpected token"} {
-				var r rune
-				if _, err := fmt.Sscanf(err.Message, prefix+` "%c"`, &r); err == nil {
-					c := col
-					for 1 < c && (len(line) < c || line[c-1] != r) {
-						c--
-					}
-					if c > 1 {
-						col = c
-						break
-					}
-				}
-			}
-			fmt.Fprintf(cli.errStream, "    %s\n%s  %s\n", string(line), strings.Repeat(" ", 3+col)+"^", err.Message)
+			fmt.Fprintf(
+				cli.errStream, "    %s\n%s  %s\n", lines[err.Pos.Line-1],
+				strings.Repeat(" ", 3+err.Pos.Column)+"^", err.Message)
 		}
 	}
 }
