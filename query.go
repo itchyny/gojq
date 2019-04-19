@@ -34,7 +34,9 @@ type Term struct {
 	ArrayIndex  *ArrayIndex  `| @@`
 	Identity    *Identity    `| @@`
 	Recurse     *Recurse     `| @@`
-	Expression  *Expression  `| @@`
+	Func        *Func        `| @@`
+	Object      *Object      `| @@`
+	Array       *Array       `| @@`
 	Pipe        *Pipe        `| "(" @@ ")" )`
 	SuffixList  []*Suffix    `@@*`
 }
@@ -59,6 +61,29 @@ type Identity struct {
 // Recurse ...
 type Recurse struct {
 	X bool `@Recurse`
+}
+
+// Func ...
+type Func struct {
+	Name string  `@Ident`
+	Args []*Pipe `( "(" @@ (";" @@)* ")" )?`
+}
+
+// Object ...
+type Object struct {
+	KeyVals []*ObjKeyVal `"{" (@@ ("," @@)*)? "}"`
+}
+
+// ObjKeyVal ...
+type ObjKeyVal struct {
+	Key  string `( ( @Ident | @String )`
+	Pipe *Pipe  `| "(" @@ ")" ) ":"`
+	Val  *Term  `@@`
+}
+
+// Array ...
+type Array struct {
+	Pipe *Pipe `"[" @@? "]"`
 }
 
 // Suffix ...

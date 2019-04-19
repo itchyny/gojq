@@ -81,11 +81,17 @@ func (env *env) applyTerm(t *Term, v interface{}) (w interface{}, err error) {
 	if t.Recurse != nil {
 		return env.applyFunc(&Func{Name: "recurse"}, v)
 	}
-	if x := t.Expression; x != nil {
-		return env.applyExpression(x, v)
+	if t.Func != nil {
+		return env.applyFunc(t.Func, v)
 	}
-	if x := t.Pipe; x != nil {
-		return env.applyPipe(x, v)
+	if t.Object != nil {
+		return env.applyObject(t.Object, v)
+	}
+	if t.Array != nil {
+		return env.applyArray(t.Array, v)
+	}
+	if t := t.Pipe; t != nil {
+		return env.applyPipe(t, v)
 	}
 	return nil, &unexpectedQueryError{}
 }
@@ -116,19 +122,6 @@ func (env *env) applyArrayIndex(x *ArrayIndex, v interface{}) (interface{}, erro
 		a = a[*start:]
 	}
 	return a, nil
-}
-
-func (env *env) applyExpression(x *Expression, v interface{}) (interface{}, error) {
-	if x.Func != nil {
-		return env.applyFunc(x.Func, v)
-	}
-	if x.Object != nil {
-		return env.applyObject(x.Object, v)
-	}
-	if x.Array != nil {
-		return env.applyArray(x.Array, v)
-	}
-	return nil, &unexpectedQueryError{}
 }
 
 func (env *env) applyFunc(f *Func, v interface{}) (interface{}, error) {
