@@ -122,7 +122,6 @@ func (env *env) applyFunc(f *Func, v <-chan interface{}) <-chan interface{} {
 
 func (env *env) applyObject(x *Object, v <-chan interface{}) <-chan interface{} {
 	return mapIterator(v, func(v interface{}) interface{} {
-		w := make(map[string]interface{})
 		var iterators []iterator
 		for _, kv := range x.KeyVals {
 			key := kv.Key
@@ -143,10 +142,7 @@ func (env *env) applyObject(x *Object, v <-chan interface{}) <-chan interface{} 
 			}
 			iterators = append(iterators, iterator{key, env.applyExpr(kv.Val, unitIterator(v))})
 		}
-		if len(iterators) > 0 {
-			return foldIterators(w, iterators)
-		}
-		return w
+		return foldIterators(iterators)
 	})
 }
 

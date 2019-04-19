@@ -5,8 +5,8 @@ type iterator struct {
 	iter <-chan interface{}
 }
 
-func foldIterators(v interface{}, is []iterator) <-chan interface{} {
-	c := unitIterator(v)
+func foldIterators(is []iterator) <-chan interface{} {
+	c := unitIterator(map[string]interface{}{})
 	for _, it := range is {
 		c = productIterator(c, it.iter, it.name)
 	}
