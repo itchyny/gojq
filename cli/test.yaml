@@ -315,6 +315,13 @@
   error: |
     expected an object but got: array ([1,2,3])
 
+- name: function after iterator error
+  args:
+    - '.[] | .foo | null'
+  input: '[1, 2, 3]'
+  error: |
+    expected an object but got: number (1)
+
 - name: multiple iterators in array
   args:
     - '[.[],..,.[]]'
