@@ -2,10 +2,10 @@ package gojq
 
 type iterator struct {
 	name string
-	iter chan interface{}
+	iter <-chan interface{}
 }
 
-func foldIterators(v interface{}, is []iterator) chan interface{} {
+func foldIterators(v interface{}, is []iterator) <-chan interface{} {
 	c := unitIterator(v)
 	for _, it := range is {
 		c = productIterator(c, it.iter, it.name)
@@ -13,7 +13,7 @@ func foldIterators(v interface{}, is []iterator) chan interface{} {
 	return c
 }
 
-func unitIterator(v interface{}) chan interface{} {
+func unitIterator(v interface{}) <-chan interface{} {
 	c := make(chan interface{}, 1)
 	defer func() {
 		defer close(c)
@@ -22,7 +22,7 @@ func unitIterator(v interface{}) chan interface{} {
 	return c
 }
 
-func productIterator(c chan interface{}, t chan interface{}, name string) chan interface{} {
+func productIterator(c <-chan interface{}, t <-chan interface{}, name string) <-chan interface{} {
 	d := make(chan interface{}, 1)
 	go func() {
 		defer close(d)
@@ -53,10 +53,10 @@ func productIterator(c chan interface{}, t chan interface{}, name string) chan i
 	return d
 }
 
-func reuseIterator(c chan interface{}) func() chan interface{} {
+func reuseIterator(c <-chan interface{}) func() <-chan interface{} {
 	var done bool
 	var xs []interface{}
-	return func() chan interface{} {
+	return func() <-chan interface{} {
 		d := make(chan interface{}, 1)
 		if done {
 			go func() {
@@ -79,7 +79,7 @@ func reuseIterator(c chan interface{}) func() chan interface{} {
 	}
 }
 
-func mapIterator(c chan interface{}, f func(interface{}) interface{}) chan interface{} {
+func mapIterator(c <-chan interface{}, f func(interface{}) interface{}) <-chan interface{} {
 	d := make(chan interface{}, 1)
 	go func() {
 		defer close(d)
@@ -88,7 +88,7 @@ func mapIterator(c chan interface{}, f func(interface{}) interface{}) chan inter
 				continue
 			}
 			x := f(e)
-			if y, ok := x.(chan interface{}); ok {
+			if y, ok := x.(<-chan interface{}); ok {
 				for e := range y {
 					if e == struct{}{} {
 						continue

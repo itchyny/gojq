@@ -141,7 +141,7 @@ func (cli *cli) printJSONError(input string, err error) {
 	}
 }
 
-func (cli *cli) printValue(v chan interface{}) error {
+func (cli *cli) printValue(v <-chan interface{}) error {
 	for x := range v {
 		if err, ok := x.(error); ok {
 			return err

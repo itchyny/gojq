@@ -1,20 +1,20 @@
 package gojq
 
-func (env *env) applyQuery(query *Query, v chan interface{}) chan interface{} {
+func (env *env) applyQuery(query *Query, v <-chan interface{}) <-chan interface{} {
 	for _, fd := range query.FuncDefs {
 		env.addFuncDef(fd)
 	}
 	return env.applyPipe(query.Pipe, v)
 }
 
-func (env *env) applyPipe(p *Pipe, v chan interface{}) chan interface{} {
+func (env *env) applyPipe(p *Pipe, v <-chan interface{}) <-chan interface{} {
 	for _, c := range p.Commas {
 		v = env.applyComma(c, v)
 	}
 	return v
 }
 
-func (env *env) applyComma(c *Comma, v chan interface{}) chan interface{} {
+func (env *env) applyComma(c *Comma, v <-chan interface{}) <-chan interface{} {
 	return mapIterator(v, func(v interface{}) interface{} {
 		d := make(chan interface{}, 1)
 		go func() {
@@ -25,18 +25,18 @@ func (env *env) applyComma(c *Comma, v chan interface{}) chan interface{} {
 				}
 			}
 		}()
-		return d
+		return (<-chan interface{})(d)
 	})
 }
 
-func (env *env) applyExpr(e *Expr, v chan interface{}) chan interface{} {
+func (env *env) applyExpr(e *Expr, v <-chan interface{}) <-chan interface{} {
 	if e.Term != nil {
 		return env.applyTerm(e.Term, v)
 	}
 	return env.applyIf(e.If, v)
 }
 
-func (env *env) applyTerm(t *Term, v chan interface{}) (w chan interface{}) {
+func (env *env) applyTerm(t *Term, v <-chan interface{}) (w <-chan interface{}) {
 	defer func() {
 		for _, s := range t.SuffixList {
 			w = env.applySuffix(s, w)
@@ -66,7 +66,7 @@ func (env *env) applyTerm(t *Term, v chan interface{}) (w chan interface{}) {
 	return env.applyPipe(t.Pipe, v)
 }
 
-func (env *env) applyObjectIndex(x *ObjectIndex, v chan interface{}) chan interface{} {
+func (env *env) applyObjectIndex(x *ObjectIndex, v <-chan interface{}) <-chan interface{} {
 	return mapIterator(v, func(v interface{}) interface{} {
 		m, ok := v.(map[string]interface{})
 		if !ok {
@@ -76,7 +76,7 @@ func (env *env) applyObjectIndex(x *ObjectIndex, v chan interface{}) chan interf
 	})
 }
 
-func (env *env) applyArrayIndex(x *ArrayIndex, v chan interface{}) chan interface{} {
+func (env *env) applyArrayIndex(x *ArrayIndex, v <-chan interface{}) <-chan interface{} {
 	return mapIterator(v, func(v interface{}) interface{} {
 		a, ok := v.([]interface{})
 		if !ok {
@@ -98,7 +98,7 @@ func (env *env) applyArrayIndex(x *ArrayIndex, v chan interface{}) chan interfac
 	})
 }
 
-func (env *env) applyFunc(f *Func, v chan interface{}) chan interface{} {
+func (env *env) applyFunc(f *Func, v <-chan interface{}) <-chan interface{} {
 	if p := env.lookupVariable(f.Name); p != nil {
 		return env.applyPipe(p, v)
 	}
@@ -120,7 +120,7 @@ func (env *env) applyFunc(f *Func, v chan interface{}) chan interface{} {
 	return subEnv.applyQuery(fd.Body, v)
 }
 
-func (env *env) applyObject(x *Object, v chan interface{}) chan interface{} {
+func (env *env) applyObject(x *Object, v <-chan interface{}) <-chan interface{} {
 	return mapIterator(v, func(v interface{}) interface{} {
 		w := make(map[string]interface{})
 		var iterators []iterator
@@ -150,7 +150,7 @@ func (env *env) applyObject(x *Object, v chan interface{}) chan interface{} {
 	})
 }
 
-func (env *env) applyArray(x *Array, v chan interface{}) chan interface{} {
+func (env *env) applyArray(x *Array, v <-chan interface{}) <-chan interface{} {
 	if x.Pipe == nil {
 		return unitIterator([]interface{}{})
 	}
@@ -165,7 +165,7 @@ func (env *env) applyArray(x *Array, v chan interface{}) chan interface{} {
 	return unitIterator(a)
 }
 
-func (env *env) applySuffix(s *Suffix, v chan interface{}) chan interface{} {
+func (env *env) applySuffix(s *Suffix, v <-chan interface{}) <-chan interface{} {
 	return mapIterator(v, func(v interface{}) interface{} {
 		if s.Optional {
 			switch v.(type) {
@@ -191,7 +191,7 @@ func (env *env) applySuffix(s *Suffix, v chan interface{}) chan interface{} {
 	})
 }
 
-func (env *env) applyIterator(v chan interface{}) chan interface{} {
+func (env *env) applyIterator(v <-chan interface{}) <-chan interface{} {
 	return mapIterator(v, func(v interface{}) interface{} {
 		if a, ok := v.([]interface{}); ok {
 			c := make(chan interface{}, 1)
@@ -201,7 +201,7 @@ func (env *env) applyIterator(v chan interface{}) chan interface{} {
 					c <- e
 				}
 			}()
-			return c
+			return (<-chan interface{})(c)
 		} else if o, ok := v.(map[string]interface{}); ok {
 			c := make(chan interface{}, 1)
 			go func() {
@@ -210,14 +210,14 @@ func (env *env) applyIterator(v chan interface{}) chan interface{} {
 					c <- e
 				}
 			}()
-			return c
+			return (<-chan interface{})(c)
 		} else {
 			return &iteratorError{v}
 		}
 	})
 }
 
-func (env *env) applyIf(x *If, v chan interface{}) chan interface{} {
+func (env *env) applyIf(x *If, v <-chan interface{}) <-chan interface{} {
 	t := reuseIterator(v)
 	return mapIterator(env.applyPipe(x.Cond, t()), func(w interface{}) interface{} {
 		if _, ok := w.(error); ok {
