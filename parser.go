@@ -3,23 +3,17 @@ package gojq
 import (
 	"github.com/alecthomas/participle"
 	"github.com/alecthomas/participle/lexer"
-	"github.com/alecthomas/participle/lexer/ebnf"
 )
 
 var parser = participle.MustBuild(
 	&Query{},
-	participle.Lexer(lexer.Must(ebnf.New(`
-				Ident = ( "_" | alpha ) { "_" | alpha | digit } .
-				Recurse = ".." .
-				Integer = "0" | "1"…"9" { digit } .
-				String = "\""  { "\u0000"…"\uffff"-"\""-"\\" | "\\" any } "\"" .
-				Whitespace = " " | "\t" | "\n" | "\r" .
-				Punct = "!"…"/" | ":"…"@" | "["…`+"\"`\""+` | "{"…"~" .
-				alpha = "a"…"z" | "A"…"Z" .
-				digit = "0"…"9" .
-				any = "\u0000"…"\uffff" .
-`))),
-	participle.Elide("Whitespace"),
+	participle.Lexer(lexer.Must(lexer.Regexp(`(\s+)`+
+		`|(?P<Ident>[a-zA-Z_][a-zA-Z0-9_]*)`+
+		`|(?P<Recurse>\.\.)`+
+		`|(?P<Integer>(0|[1-9]\d*))`+
+		`|(?P<String>"([^"\\]*|\\.)*")`+
+		`|(?P<Punct>[!-/:-@\[-\]^-`+"`"+`{-~])`,
+	))),
 	participle.Unquote("String"),
 	participle.UseLookahead(2),
 )
