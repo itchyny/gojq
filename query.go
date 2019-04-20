@@ -38,8 +38,8 @@ type Expr struct {
 type Term struct {
 	ObjectIndex *ObjectIndex `( @@`
 	ArrayIndex  *ArrayIndex  `| @@`
-	Identity    *Identity    `| @@`
-	Recurse     *Recurse     `| @@`
+	Identity    bool         `| @"."`
+	Recurse     bool         `| @Recurse`
 	Func        *Func        `| @@`
 	Object      *Object      `| @@`
 	Array       *Array       `| @@`
@@ -57,16 +57,6 @@ type ArrayIndex struct {
 	Start *int `"." "[" ( @Integer?`
 	End   *int `":" @Integer?`
 	Index *int `| @Integer ) "]"`
-}
-
-// Identity ...
-type Identity struct {
-	_ bool `"."`
-}
-
-// Recurse ...
-type Recurse struct {
-	X bool `@Recurse`
 }
 
 // Func ...

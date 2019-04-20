@@ -48,10 +48,10 @@ func (env *env) applyTerm(t *Term, v <-chan interface{}) (w <-chan interface{}) 
 	if x := t.ArrayIndex; x != nil {
 		return env.applyArrayIndex(x, v)
 	}
-	if t.Identity != nil {
+	if t.Identity {
 		return v
 	}
-	if t.Recurse != nil {
+	if t.Recurse {
 		return env.applyFunc(&Func{Name: "recurse"}, v)
 	}
 	if t.Func != nil {
