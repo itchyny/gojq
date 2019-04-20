@@ -206,15 +206,16 @@ func (env *env) applyIterator(c <-chan interface{}) <-chan interface{} {
 }
 
 func (env *env) applyIf(x *If, c <-chan interface{}) <-chan interface{} {
-	t := reuseIterator(c)
-	return mapIterator(env.applyPipe(x.Cond, t()), func(d interface{}) interface{} {
-		if condToBool(d) {
-			return env.applyPipe(x.Then, t())
-		}
-		if len(x.Elif) > 0 {
-			return env.applyIf(&If{x.Elif[0].Cond, x.Elif[0].Then, x.Elif[1:], x.Else}, t())
-		}
-		return env.applyPipe(x.Else, t())
+	return mapIterator(c, func(v interface{}) interface{} {
+		return mapIterator(env.applyPipe(x.Cond, unitIterator(v)), func(w interface{}) interface{} {
+			if condToBool(w) {
+				return env.applyPipe(x.Then, unitIterator(v))
+			}
+			if len(x.Elif) > 0 {
+				return env.applyIf(&If{x.Elif[0].Cond, x.Elif[0].Then, x.Elif[1:], x.Else}, unitIterator(v))
+			}
+			return env.applyPipe(x.Else, unitIterator(v))
+		})
 	})
 }
 
