@@ -255,6 +255,67 @@
       "foo": 2
     }
 
+- name: iterator in object key
+  args:
+    - '{ (.[]): .. }'
+  input: '["a", "b"]'
+  expected: |
+    {
+      "a": [
+        "a",
+        "b"
+      ]
+    }
+    {
+      "a": "a"
+    }
+    {
+      "a": "b"
+    }
+    {
+      "b": [
+        "a",
+        "b"
+      ]
+    }
+    {
+      "b": "a"
+    }
+    {
+      "b": "b"
+    }
+
+- name: error in object key
+  args:
+    - '{ (.[]): .. }'
+  input: '["a", 1]'
+  expected: |
+    {
+      "a": [
+        "a",
+        1
+      ]
+    }
+    {
+      "a": "a"
+    }
+    {
+      "a": 1
+    }
+  error: |
+    expected a string for object key but got: number (1)
+
+- name: error in object value
+  args:
+    - '.[] | { (.k): .a.b }'
+  input: '[{"a":{"b":10},"k":"a"}, {"a":10,"k":"b"}]'
+  expected: |
+    {
+      "a": 10
+    }
+  error: |
+    expected an object but got: number (10)
+
 - name: pipe in object key
   args:
     - '{ (.foo|.bar): .foo.bar }'

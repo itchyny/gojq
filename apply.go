@@ -122,27 +122,19 @@ func (env *env) applyFunc(f *Func, v <-chan interface{}) <-chan interface{} {
 
 func (env *env) applyObject(x *Object, v <-chan interface{}) <-chan interface{} {
 	return mapIterator(v, func(v interface{}) interface{} {
-		var iterators []iterator
+		w := unitIterator(map[string]interface{}{})
 		for _, kv := range x.KeyVals {
-			key := kv.Key
 			if kv.Pipe != nil {
-				var k interface{}
-				var cnt int
-				for k = range env.applyPipe(kv.Pipe, unitIterator(v)) {
-					cnt++
-					if cnt > 1 {
-						break
-					}
-				}
-				if l, ok := k.(string); ok && cnt == 1 {
-					key = l
-				} else {
-					return &objectKeyNotStringError{k}
-				}
+				w = objectIterator(w,
+					env.applyPipe(kv.Pipe, unitIterator(v)),
+					env.applyExpr(kv.Val, unitIterator(v)))
+			} else {
+				w = objectIterator(w,
+					unitIterator(kv.Key),
+					env.applyExpr(kv.Val, unitIterator(v)))
 			}
-			iterators = append(iterators, iterator{key, env.applyExpr(kv.Val, unitIterator(v))})
 		}
-		return foldIterators(iterators)
+		return w
 	})
 }
 

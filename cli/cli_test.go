@@ -41,6 +41,7 @@ func TestCliRun(t *testing.T) {
 				assert.Equal(t, "", errStream.String())
 			} else {
 				assert.Equal(t, exitCodeErr, code)
+				assert.Equal(t, tc.Expected, outStream.String())
 				assert.Contains(t, errStream.String(), tc.Error)
 			}
 		})

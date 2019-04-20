@@ -1,18 +1,5 @@
 package gojq
 
-type iterator struct {
-	name string
-	iter <-chan interface{}
-}
-
-func foldIterators(is []iterator) <-chan interface{} {
-	c := unitIterator(map[string]interface{}{})
-	for _, it := range is {
-		c = productIterator(c, it.iter, it.name)
-	}
-	return c
-}
-
 func unitIterator(v interface{}) <-chan interface{} {
 	c := make(chan interface{}, 1)
 	defer func() {
@@ -22,28 +9,42 @@ func unitIterator(v interface{}) <-chan interface{} {
 	return c
 }
 
-func productIterator(c <-chan interface{}, t <-chan interface{}, name string) <-chan interface{} {
+func objectIterator(c <-chan interface{}, keys <-chan interface{}, values <-chan interface{}) <-chan interface{} {
 	d := make(chan interface{}, 1)
 	go func() {
 		defer close(d)
-		t := reuseIterator(t)
+		keys := reuseIterator(keys)
+		values := reuseIterator(values)
 		for m := range c {
 			if err, ok := m.(error); ok {
 				d <- err
 				return
 			}
 			m := m.(map[string]interface{})
-			for e := range t() {
-				if err, ok := e.(error); ok {
+			for key := range keys() {
+				if err, ok := key.(error); ok {
 					d <- err
 					return
 				}
-				n := make(map[string]interface{})
-				for k, v := range m {
-					n[k] = v
+				var k string
+				if l, ok := key.(string); ok {
+					k = l
+				} else {
+					d <- &objectKeyNotStringError{key}
+					return
 				}
-				n[name] = e
-				d <- n
+				for value := range values() {
+					if err, ok := value.(error); ok {
+						d <- err
+						return
+					}
+					l := make(map[string]interface{})
+					for k, v := range m {
+						l[k] = v
+					}
+					l[k] = value
+					d <- l
+				}
 			}
 		}
 	}()
