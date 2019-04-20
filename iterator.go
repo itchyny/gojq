@@ -10,45 +10,27 @@ func unitIterator(v interface{}) <-chan interface{} {
 }
 
 func objectIterator(c <-chan interface{}, keys <-chan interface{}, values <-chan interface{}) <-chan interface{} {
-	d := make(chan interface{}, 1)
-	go func() {
-		defer close(d)
-		keys := reuseIterator(keys)
-		values := reuseIterator(values)
-		for m := range c {
-			if err, ok := m.(error); ok {
-				d <- err
-				return
+	ks := reuseIterator(keys)
+	vs := reuseIterator(values)
+	return mapIterator(c, func(v interface{}) interface{} {
+		m := v.(map[string]interface{})
+		return mapIterator(ks(), func(key interface{}) interface{} {
+			var k string
+			if l, ok := key.(string); ok {
+				k = l
+			} else {
+				return &objectKeyNotStringError{key}
 			}
-			m := m.(map[string]interface{})
-			for key := range keys() {
-				if err, ok := key.(error); ok {
-					d <- err
-					return
+			return mapIterator(vs(), func(value interface{}) interface{} {
+				l := make(map[string]interface{})
+				for k, v := range m {
+					l[k] = v
 				}
-				var k string
-				if l, ok := key.(string); ok {
-					k = l
-				} else {
-					d <- &objectKeyNotStringError{key}
-					return
-				}
-				for value := range values() {
-					if err, ok := value.(error); ok {
-						d <- err
-						return
-					}
-					l := make(map[string]interface{})
-					for k, c := range m {
-						l[k] = c
-					}
-					l[k] = value
-					d <- l
-				}
-			}
-		}
-	}()
-	return d
+				l[k] = value
+				return l
+			})
+		})
+	})
 }
 
 func reuseIterator(c <-chan interface{}) func() <-chan interface{} {
