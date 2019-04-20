@@ -1,12 +1,12 @@
 package gojq
 
 func unitIterator(v interface{}) <-chan interface{} {
-	c := make(chan interface{}, 1)
+	d := make(chan interface{}, 1)
 	defer func() {
-		defer close(c)
-		c <- v
+		defer close(d)
+		d <- v
 	}()
-	return c
+	return d
 }
 
 func objectIterator(c <-chan interface{}, keys <-chan interface{}, values <-chan interface{}) <-chan interface{} {
@@ -39,8 +39,8 @@ func objectIterator(c <-chan interface{}, keys <-chan interface{}, values <-chan
 						return
 					}
 					l := make(map[string]interface{})
-					for k, v := range m {
-						l[k] = v
+					for k, c := range m {
+						l[k] = c
 					}
 					l[k] = value
 					d <- l
@@ -59,17 +59,17 @@ func reuseIterator(c <-chan interface{}) func() <-chan interface{} {
 		if done {
 			go func() {
 				defer close(d)
-				for _, e := range xs {
-					d <- e
+				for _, v := range xs {
+					d <- v
 				}
 			}()
 		} else {
 			done = true
 			go func() {
 				defer close(d)
-				for e := range c {
-					xs = append(xs, e)
-					d <- e
+				for v := range c {
+					xs = append(xs, v)
+					d <- v
 				}
 			}()
 		}
@@ -90,14 +90,14 @@ func mapIteratorWithError(c <-chan interface{}, f func(interface{}) interface{})
 	d := make(chan interface{}, 1)
 	go func() {
 		defer close(d)
-		for e := range c {
-			x := f(e)
+		for v := range c {
+			x := f(v)
 			if y, ok := x.(<-chan interface{}); ok {
-				for e := range y {
-					if e == struct{}{} {
+				for v := range y {
+					if v == struct{}{} {
 						continue
 					}
-					d <- e
+					d <- v
 				}
 				continue
 			}
