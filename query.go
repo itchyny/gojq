@@ -30,8 +30,12 @@ type Comma struct {
 
 // Expr ...
 type Expr struct {
-	Term *Term `  @@`
-	If   *If   `| @@`
+	Left  *Term `( @@`
+	Right []struct {
+		Op   Operator `@("+" | "-")`
+		Term *Term    `@@`
+	} `@@* )`
+	If *If `| @@`
 }
 
 // Term ...

@@ -35,6 +35,28 @@ func objectIterator(c <-chan interface{}, keys <-chan interface{}, values <-chan
 	})
 }
 
+func binopIterator(l <-chan interface{}, r <-chan interface{}, fn func(l, r interface{}) interface{}) <-chan interface{} {
+	d := make(chan interface{}, 1)
+	go func() {
+		defer close(d)
+		l := reuseIterator(l)
+		for r := range r {
+			if err, ok := r.(error); ok {
+				d <- err
+				return
+			}
+			for l := range l() {
+				if err, ok := l.(error); ok {
+					d <- err
+					return
+				}
+				d <- fn(l, r)
+			}
+		}
+	}()
+	return d
+}
+
 func reuseIterator(c <-chan interface{}) func() <-chan interface{} {
 	xs, m := []interface{}{}, new(sync.Mutex)
 	get := func(i int) (interface{}, bool) {

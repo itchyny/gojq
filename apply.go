@@ -30,8 +30,13 @@ func (env *env) applyComma(o *Comma, c <-chan interface{}) <-chan interface{} {
 }
 
 func (env *env) applyExpr(e *Expr, c <-chan interface{}) <-chan interface{} {
-	if e.Term != nil {
-		return env.applyTerm(e.Term, c)
+	if e.Left != nil {
+		d := reuseIterator(c)
+		w := env.applyFactor(e.Left, d())
+		for _, r := range e.Right {
+			w = binopIterator(w, env.applyFactor(r.Factor, d()), r.Op.Eval)
+		}
+		return w
 	}
 	return env.applyIf(e.If, c)
 }

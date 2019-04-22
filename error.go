@@ -63,6 +63,15 @@ func (err *funcTypeError) Error() string {
 	return fmt.Sprintf("%s cannot be applied to: %s", err.name, typeErrorPreview(err.v))
 }
 
+type binopTypeError struct {
+	name string
+	l, r interface{}
+}
+
+func (err *binopTypeError) Error() string {
+	return fmt.Sprintf("cannot %s: %s and %s", err.name, typeErrorPreview(err.l), typeErrorPreview(err.r))
+}
+
 func typeErrorPreview(v interface{}) string {
 	return typeof(v) + preview(v)
 }
