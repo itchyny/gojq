@@ -781,6 +781,38 @@
     "abcabcabcabc"
     "abcabcabcabcabcabc"
 
+- name: multiply objects
+  args:
+    - '.[] * .[]'
+  input: '[{"foo": 10, "bar": {"qux": 20}}, {"foo": 20, "bar": {"baz": "quux"}}]'
+  expected: |
+    {
+      "bar": {
+        "qux": 20
+      },
+      "foo": 10
+    }
+    {
+      "bar": {
+        "baz": "quux",
+        "qux": 20
+      },
+      "foo": 10
+    }
+    {
+      "bar": {
+        "baz": "quux",
+        "qux": 20
+      },
+      "foo": 20
+    }
+    {
+      "bar": {
+        "baz": "quux"
+      },
+      "foo": 20
+    }
+
 - name: divide strings
   args:
     - '.[] / .[]'

@@ -169,16 +169,7 @@ func funcOpMul(l, r interface{}) interface{} {
 		func(l, r float64) interface{} { return l * r },
 		func(l, r string) interface{} { return &binopTypeError{"multiply", l, r} },
 		func(l, r []interface{}) interface{} { return &binopTypeError{"multiply", l, r} },
-		func(l, r map[string]interface{}) interface{} {
-			m := make(map[string]interface{})
-			for k, v := range l {
-				m[k] = v
-			}
-			for k, v := range r {
-				m[k] = v
-			}
-			return m
-		},
+		deepMergeObjects,
 		func(l, r interface{}) interface{} {
 			multiplyString := func(s string, cnt float64) interface{} {
 				if cnt < 0.0 {
@@ -208,6 +199,24 @@ func funcOpMul(l, r interface{}) interface{} {
 			return &binopTypeError{"multiply", l, r}
 		},
 	)
+}
+
+func deepMergeObjects(l, r map[string]interface{}) interface{} {
+	m := make(map[string]interface{})
+	for k, v := range l {
+		m[k] = v
+	}
+	for k, v := range r {
+		if mk, ok := m[k]; ok {
+			if mk, ok := mk.(map[string]interface{}); ok {
+				if w, ok := v.(map[string]interface{}); ok {
+					v = deepMergeObjects(mk, w)
+				}
+			}
+		}
+		m[k] = v
+	}
+	return m
 }
 
 func funcOpDiv(l, r interface{}) interface{} {
