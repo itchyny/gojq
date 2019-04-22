@@ -102,17 +102,43 @@ func (env *env) applyArrayIndex(x *ArrayIndex, c <-chan interface{}) <-chan inte
 		if !ok {
 			return &expectedArrayError{v}
 		}
+		l := len(a)
+		toIndex := func(i int) int {
+			switch {
+			case i < -l:
+				return -2
+			case i < 0:
+				return l + i
+			case i < l:
+				return i
+			default:
+				return -1
+			}
+		}
 		if index := x.Index; index != nil {
-			if *index < 0 || len(a) <= *index {
+			i := toIndex(*index)
+			if i < 0 {
 				return nil
 			}
-			return a[*index]
+			return a[i]
 		}
 		if end := x.End; end != nil {
-			a = a[:*end]
+			i := toIndex(*end)
+			if i == -1 {
+				i = len(a)
+			} else if i == -2 {
+				i = 0
+			}
+			a = a[:i]
 		}
 		if start := x.Start; start != nil {
-			a = a[*start:]
+			i := toIndex(*start)
+			if i == -1 || len(a) < i {
+				i = len(a)
+			} else if i == -2 {
+				i = 0
+			}
+			a = a[i:]
 		}
 		return a
 	})

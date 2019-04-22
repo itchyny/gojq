@@ -74,59 +74,65 @@
 
 - name: array index
   args:
-    - '.[2]'
-  input: '[16, 32, 48, 64]'
-  expected: |
-    48
-
-- name: array index out of bound
-  args:
-    - '.[4]'
+    - '.[-5],.[-1],.[0],.[2],.[3],.[4]'
   input: '[16, 32, 48, 64]'
   expected: |
     null
+    64
+    16
+    48
+    64
+    null
 
-- name: array slice start
+- name: array slice
   args:
-    - '.[2:]'
+    - '.[2:], .[:2], .[1:3], .[0:4], .[2:1], .[-2:], .[:-2], .[-2:-1], .[-10:], .[:10], .[10:], .[:-10]'
   input: '[16, 32, 48, 64]'
   expected: |
     [
       48,
       64
     ]
-
-- name: array slice end
-  args:
-    - '.[:2]'
-  input: '[16, 32, 48, 64]'
-  expected: |
     [
       16,
       32
     ]
-
-- name: array slice start end
-  args:
-    - '.[1:3]'
-  input: '[16, 32, 48, 64]'
-  expected: |
     [
       32,
       48
     ]
-
-- name: array all
-  args:
-    - '.[:]'
-  input: '[16, 32, 48, 64]'
-  expected: |
     [
       16,
       32,
       48,
       64
     ]
+    []
+    [
+      48,
+      64
+    ]
+    [
+      16,
+      32
+    ]
+    [
+      48
+    ]
+    [
+      16,
+      32,
+      48,
+      64
+    ]
+    [
+      16,
+      32,
+      48,
+      64
+    ]
+    []
+    []
 
 - name: expected array
   args:
