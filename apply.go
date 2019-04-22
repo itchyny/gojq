@@ -41,6 +41,15 @@ func (env *env) applyExpr(e *Expr, c <-chan interface{}) <-chan interface{} {
 	return env.applyIf(e.If, c)
 }
 
+func (env *env) applyFactor(e *Factor, c <-chan interface{}) <-chan interface{} {
+	d := reuseIterator(c)
+	w := env.applyTerm(e.Left, d())
+	for _, r := range e.Right {
+		w = binopIterator(w, env.applyTerm(r.Term, d()), r.Op.Eval)
+	}
+	return w
+}
+
 func (env *env) applyTerm(t *Term, c <-chan interface{}) (d <-chan interface{}) {
 	defer func() {
 		for _, s := range t.SuffixList {

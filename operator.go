@@ -1,6 +1,9 @@
 package gojq
 
-import "reflect"
+import (
+	"reflect"
+	"strings"
+)
 
 // Operator ...
 type Operator int
@@ -9,11 +12,15 @@ type Operator int
 const (
 	OpAdd Operator = iota
 	OpSub
+	OpMul
+	OpDiv
 )
 
 var operatorMap = map[string]Operator{
 	"+": OpAdd,
 	"-": OpSub,
+	"*": OpMul,
+	"/": OpDiv,
 }
 
 // Capture implements  participle.Capture.
@@ -29,6 +36,10 @@ func (op Operator) String() string {
 		return "+"
 	case OpSub:
 		return "-"
+	case OpMul:
+		return "*"
+	case OpDiv:
+		return "/"
 	}
 	panic(op)
 }
@@ -40,6 +51,10 @@ func (op Operator) Eval(l, r interface{}) interface{} {
 		return funcOpAdd(l, r)
 	case OpSub:
 		return funcOpSub(l, r)
+	case OpMul:
+		return funcOpMul(l, r)
+	case OpDiv:
+		return funcOpDiv(l, r)
 	}
 	panic("unsupported operator")
 }
@@ -145,5 +160,63 @@ func funcOpSub(l, r interface{}) interface{} {
 		},
 		func(l, r map[string]interface{}) interface{} { return &binopTypeError{"subtract", l, r} },
 		func(l, r interface{}) interface{} { return &binopTypeError{"subtract", l, r} },
+	)
+}
+
+func funcOpMul(l, r interface{}) interface{} {
+	return binopTypeSwitch(l, r,
+		func(l, r int) interface{} { return l * r },
+		func(l, r float64) interface{} { return l * r },
+		func(l, r string) interface{} { return &binopTypeError{"multiply", l, r} },
+		func(l, r []interface{}) interface{} { return &binopTypeError{"multiply", l, r} },
+		func(l, r map[string]interface{}) interface{} {
+			m := make(map[string]interface{})
+			for k, v := range l {
+				m[k] = v
+			}
+			for k, v := range r {
+				m[k] = v
+			}
+			return m
+		},
+		func(l, r interface{}) interface{} {
+			multiplyString := func(s string, cnt float64) interface{} {
+				if cnt < 0.0 {
+					return nil
+				}
+				if cnt < 1.0 {
+					return l
+				}
+				return strings.Repeat(s, int(cnt))
+			}
+			if l, ok := l.(string); ok {
+				switch r := r.(type) {
+				case int:
+					return multiplyString(l, float64(r))
+				case float64:
+					return multiplyString(l, r)
+				}
+			}
+			if r, ok := r.(string); ok {
+				switch l := l.(type) {
+				case int:
+					return multiplyString(r, float64(l))
+				case float64:
+					return multiplyString(r, l)
+				}
+			}
+			return &binopTypeError{"multiply", l, r}
+		},
+	)
+}
+
+func funcOpDiv(l, r interface{}) interface{} {
+	return binopTypeSwitch(l, r,
+		func(l, r int) interface{} { return l / r },
+		func(l, r float64) interface{} { return l / r },
+		func(l, r string) interface{} { return strings.Split(l, r) },
+		func(l, r []interface{}) interface{} { return &binopTypeError{"divide", l, r} },
+		func(l, r map[string]interface{}) interface{} { return &binopTypeError{"divide", l, r} },
+		func(l, r interface{}) interface{} { return &binopTypeError{"divide", l, r} },
 	)
 }
