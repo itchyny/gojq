@@ -759,13 +759,13 @@
 
 - name: add strings
   args:
-    - '.[] + .[]'
+    - '.[] + .[] + "c"'
   input: '["a", "b"]'
   expected: |
-    "aa"
-    "ba"
-    "ab"
-    "bb"
+    "aac"
+    "bac"
+    "abc"
+    "bbc"
 
 - name: multiply constant
   args:

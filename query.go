@@ -57,6 +57,7 @@ type Term struct {
 	Object      *Object      `| @@`
 	Array       *Array       `| @@`
 	Number      *float64     `| @Number`
+	String      *string      `| @String`
 	Pipe        *Pipe        `| "(" @@ ")" )`
 	SuffixList  []*Suffix    `@@*`
 }
