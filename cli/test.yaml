@@ -767,6 +767,21 @@
     "ab"
     "bb"
 
+- name: multiply constant
+  args:
+    - '3 * .[], 2.5 * .[], .054e2 * .[]'
+  input: '[1, 2.5, "abc"]'
+  expected: |
+    3
+    7.5
+    "abcabcabc"
+    2.5
+    6.25
+    "abcabc"
+    5.4
+    13.5
+    "abcabcabcabcabc"
+
 - name: multiply strings
   args:
     - '(.[] * .[] * .[])?'

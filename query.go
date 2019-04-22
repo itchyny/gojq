@@ -56,6 +56,7 @@ type Term struct {
 	Func        *Func        `| @@`
 	Object      *Object      `| @@`
 	Array       *Array       `| @@`
+	Number      *float64     `| @Number`
 	Pipe        *Pipe        `| "(" @@ ")" )`
 	SuffixList  []*Suffix    `@@*`
 }
@@ -67,9 +68,9 @@ type ObjectIndex struct {
 
 // ArrayIndex ...
 type ArrayIndex struct {
-	Start *int `"." "[" ( @Integer?`
-	End   *int `":" @Integer?`
-	Index *int `| @Integer ) "]"`
+	Start *int `"." "[" ( @Number?`
+	End   *int `":" @Number?`
+	Index *int `| @Number ) "]"`
 }
 
 // Func ...

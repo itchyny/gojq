@@ -77,6 +77,9 @@ func (env *env) applyTerm(t *Term, c <-chan interface{}) (d <-chan interface{}) 
 	if t.Array != nil {
 		return env.applyArray(t.Array, c)
 	}
+	if t.Number != nil {
+		return unitIterator(*t.Number)
+	}
 	return env.applyPipe(t.Pipe, c)
 }
 
