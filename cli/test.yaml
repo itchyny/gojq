@@ -285,6 +285,60 @@
       "b": "b"
     }
 
+- name: binary operator in object key and value
+  args:
+    - '{ (.[] + .[]): (.[] + .[]) }'
+  input: '{"foo":"bar","bar":"baz"}'
+  expected: |
+    {
+      "barbar": "barbar"
+    }
+    {
+      "barbar": "bazbar"
+    }
+    {
+      "barbar": "barbaz"
+    }
+    {
+      "barbar": "bazbaz"
+    }
+    {
+      "bazbar": "barbar"
+    }
+    {
+      "bazbar": "bazbar"
+    }
+    {
+      "bazbar": "barbaz"
+    }
+    {
+      "bazbar": "bazbaz"
+    }
+    {
+      "barbaz": "barbar"
+    }
+    {
+      "barbaz": "bazbar"
+    }
+    {
+      "barbaz": "barbaz"
+    }
+    {
+      "barbaz": "bazbaz"
+    }
+    {
+      "bazbaz": "barbar"
+    }
+    {
+      "bazbaz": "bazbar"
+    }
+    {
+      "bazbaz": "barbaz"
+    }
+    {
+      "bazbaz": "bazbaz"
+    }
+
 - name: error in object key
   args:
     - '{ (.[]): .. }'
