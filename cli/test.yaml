@@ -288,55 +288,55 @@
 - name: binary operator in object key and value
   args:
     - '{ (.[] + .[]): (.[] + .[]) }'
-  input: '{"foo":"bar","bar":"baz"}'
+  input: '["foo", "bar"]'
   expected: |
     {
+      "foofoo": "foofoo"
+    }
+    {
+      "foofoo": "barfoo"
+    }
+    {
+      "foofoo": "foobar"
+    }
+    {
+      "foofoo": "barbar"
+    }
+    {
+      "barfoo": "foofoo"
+    }
+    {
+      "barfoo": "barfoo"
+    }
+    {
+      "barfoo": "foobar"
+    }
+    {
+      "barfoo": "barbar"
+    }
+    {
+      "foobar": "foofoo"
+    }
+    {
+      "foobar": "barfoo"
+    }
+    {
+      "foobar": "foobar"
+    }
+    {
+      "foobar": "barbar"
+    }
+    {
+      "barbar": "foofoo"
+    }
+    {
+      "barbar": "barfoo"
+    }
+    {
+      "barbar": "foobar"
+    }
+    {
       "barbar": "barbar"
-    }
-    {
-      "barbar": "bazbar"
-    }
-    {
-      "barbar": "barbaz"
-    }
-    {
-      "barbar": "bazbaz"
-    }
-    {
-      "bazbar": "barbar"
-    }
-    {
-      "bazbar": "bazbar"
-    }
-    {
-      "bazbar": "barbaz"
-    }
-    {
-      "bazbar": "bazbaz"
-    }
-    {
-      "barbaz": "barbar"
-    }
-    {
-      "barbaz": "bazbar"
-    }
-    {
-      "barbaz": "barbaz"
-    }
-    {
-      "barbaz": "bazbaz"
-    }
-    {
-      "bazbaz": "barbar"
-    }
-    {
-      "bazbaz": "bazbar"
-    }
-    {
-      "bazbaz": "barbaz"
-    }
-    {
-      "bazbaz": "bazbaz"
     }
 
 - name: error in object key
