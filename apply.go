@@ -162,7 +162,7 @@ func (env *env) applySuffix(s *Suffix, c <-chan interface{}) <-chan interface{} 
 	return mapIteratorWithError(c, func(v interface{}) interface{} {
 		if s.Optional {
 			switch v.(type) {
-			case *expectedObjectError, *expectedArrayError, *iteratorError:
+			case error:
 				return struct{}{}
 			default:
 				return v
