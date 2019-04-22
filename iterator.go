@@ -1,5 +1,7 @@
 package gojq
 
+import "sync"
+
 func unitIterator(v interface{}) <-chan interface{} {
 	d := make(chan interface{}, 1)
 	defer func() {
@@ -34,27 +36,33 @@ func objectIterator(c <-chan interface{}, keys <-chan interface{}, values <-chan
 }
 
 func reuseIterator(c <-chan interface{}) func() <-chan interface{} {
-	var done bool
-	var xs []interface{}
+	xs, m := []interface{}{}, new(sync.Mutex)
+	get := func(i int) (interface{}, bool) {
+		m.Lock()
+		defer m.Unlock()
+		if i < len(xs) {
+			return xs[i], false
+		}
+		for v := range c {
+			xs = append(xs, v)
+			return v, false
+		}
+		return nil, true
+	}
 	return func() <-chan interface{} {
 		d := make(chan interface{}, 1)
-		if done {
-			go func() {
-				defer close(d)
-				for _, v := range xs {
-					d <- v
+		go func() {
+			defer close(d)
+			var i int
+			for {
+				v, done := get(i)
+				if done {
+					return
 				}
-			}()
-		} else {
-			done = true
-			go func() {
-				defer close(d)
-				for v := range c {
-					xs = append(xs, v)
-					d <- v
-				}
-			}()
-		}
+				d <- v
+				i++
+			}
+		}()
 		return d
 	}
 }
