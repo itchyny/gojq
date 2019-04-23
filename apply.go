@@ -114,46 +114,88 @@ func (env *env) applyArrayIndex(x *ArrayIndex, c <-chan interface{}) <-chan inte
 		if !ok {
 			return &expectedArrayError{v}
 		}
-		l := len(a)
-		toIndex := func(i int) int {
-			switch {
-			case i < -l:
-				return -2
-			case i < 0:
-				return l + i
-			case i < l:
-				return i
-			default:
-				return -1
-			}
+		if x.Index != nil {
+			return mapIterator(env.applyPipe(x.Index, unitIterator(a)), func(s interface{}) interface{} {
+				if index, ok := toInt(s); ok {
+					if x.End != nil {
+						return mapIterator(env.applyPipe(x.End, unitIterator(a)), func(e interface{}) interface{} {
+							if end, ok := toInt(e); ok {
+								return applyArrayIndetInternal(&index, &end, nil, a)
+							}
+							return e
+						})
+					}
+					if x.IsSlice {
+						return applyArrayIndetInternal(&index, nil, nil, a)
+					}
+					return applyArrayIndetInternal(nil, nil, &index, a)
+				}
+				return s
+			})
 		}
-		if index := x.Index; index != nil {
-			i := toIndex(*index)
-			if i < 0 {
-				return nil
-			}
-			return a[i]
-		}
-		if end := x.End; end != nil {
-			i := toIndex(*end)
-			if i == -1 {
-				i = len(a)
-			} else if i == -2 {
-				i = 0
-			}
-			a = a[:i]
-		}
-		if start := x.Start; start != nil {
-			i := toIndex(*start)
-			if i == -1 || len(a) < i {
-				i = len(a)
-			} else if i == -2 {
-				i = 0
-			}
-			a = a[i:]
+		if x.End != nil {
+			return mapIterator(env.applyPipe(x.End, unitIterator(a)), func(e interface{}) interface{} {
+				if end, ok := toInt(e); ok {
+					return applyArrayIndetInternal(nil, &end, nil, a)
+				}
+				return e
+			})
 		}
 		return a
 	})
+}
+
+func toInt(x interface{}) (int, bool) {
+	switch x := x.(type) {
+	case int:
+		return x, true
+	case float64:
+		return int(x), true
+	default:
+		return 0, false
+	}
+}
+
+func applyArrayIndetInternal(start, end, index *int, a []interface{}) interface{} {
+	l := len(a)
+	toIndex := func(i int) int {
+		switch {
+		case i < -l:
+			return -2
+		case i < 0:
+			return l + i
+		case i < l:
+			return i
+		default:
+			return -1
+		}
+	}
+	if index != nil {
+		i := toIndex(*index)
+		if i < 0 {
+			return nil
+		}
+		return a[i]
+	}
+	if end != nil {
+		i := toIndex(*end)
+		if i == -1 {
+			i = len(a)
+		} else if i == -2 {
+			i = 0
+		}
+		a = a[:i]
+	}
+	if start != nil {
+		i := toIndex(*start)
+		if i == -1 || len(a) < i {
+			i = len(a)
+		} else if i == -2 {
+			i = 0
+		}
+		a = a[i:]
+	}
+	return a
 }
 
 func (env *env) applyFunc(f *Func, c <-chan interface{}) <-chan interface{} {

@@ -82,9 +82,9 @@ type ObjectIndex struct {
 
 // ArrayIndex ...
 type ArrayIndex struct {
-	Start *int `"." "[" ( @Number?`
-	End   *int `":" @Number?`
-	Index *int `| @Number ) "]"`
+	Index   *Pipe `"." "[" ( @@`
+	IsSlice bool  `( @":"`
+	End     *Pipe `@@? )? | ":" @@ ) "]"`
 }
 
 // Func ...

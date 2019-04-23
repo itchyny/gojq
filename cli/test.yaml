@@ -134,6 +134,57 @@
     []
     []
 
+- name: iterator in array index
+  args:
+    - '.[.[]],.[.[]:],.[:.[]],.[.[]:.[]],.[-.[]],.[--.[]]'
+  input: '[0, 1, 2]'
+  expected: |
+    0
+    1
+    2
+    [
+      0,
+      1,
+      2
+    ]
+    [
+      1,
+      2
+    ]
+    [
+      2
+    ]
+    []
+    [
+      0
+    ]
+    [
+      0,
+      1
+    ]
+    []
+    [
+      0
+    ]
+    [
+      0,
+      1
+    ]
+    []
+    []
+    [
+      1
+    ]
+    []
+    []
+    []
+    0
+    2
+    1
+    0
+    1
+    2
+
 - name: expected array
   args:
     - '.[0]'
@@ -212,6 +263,22 @@
   args:
     - '.[] | empty, empty'
   input: '[0, 1]'
+
+- name: unary operators
+  args:
+    - 'map(-.[]), map(+.[])'
+  input: '[[1,2,3]]'
+  expected: |
+    [
+      -1,
+      -2,
+      -3
+    ]
+    [
+      1,
+      2,
+      3
+    ]
 
 - name: object construction
   args:
