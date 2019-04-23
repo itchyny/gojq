@@ -30,20 +30,29 @@ type Comma struct {
 
 // Expr ...
 type Expr struct {
-	Left  *Factor `( @@`
+	Left  *Compare `( @@`
 	Right []struct {
-		Op     Operator `@("+" | "-")`
-		Factor *Factor  `@@`
+		Op    Operator `@("+" | "-")`
+		Right *Compare `@@`
 	} `@@* )`
 	If *If `| @@`
+}
+
+// Compare ...
+type Compare struct {
+	Left  *Factor `@@`
+	Right []struct {
+		Op    Operator `@CompareOp`
+		Right *Factor  `@@`
+	} `@@*`
 }
 
 // Factor ...
 type Factor struct {
 	Left  *Term `@@`
 	Right []struct {
-		Op   Operator `@("*" | "/")`
-		Term *Term    `@@`
+		Op    Operator `@("*" | "/")`
+		Right *Term    `@@`
 	} `@@*`
 }
 

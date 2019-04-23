@@ -14,13 +14,25 @@ const (
 	OpSub
 	OpMul
 	OpDiv
+	OpEq
+	OpNe
+	OpGt
+	OpLt
+	OpGe
+	OpLe
 )
 
 var operatorMap = map[string]Operator{
-	"+": OpAdd,
-	"-": OpSub,
-	"*": OpMul,
-	"/": OpDiv,
+	"+":  OpAdd,
+	"-":  OpSub,
+	"*":  OpMul,
+	"/":  OpDiv,
+	"==": OpEq,
+	"!=": OpNe,
+	">":  OpGt,
+	"<":  OpLt,
+	">=": OpGe,
+	"<=": OpLe,
 }
 
 // Capture implements  participle.Capture.
@@ -40,6 +52,18 @@ func (op Operator) String() string {
 		return "*"
 	case OpDiv:
 		return "/"
+	case OpEq:
+		return "=="
+	case OpNe:
+		return "!="
+	case OpGt:
+		return ">"
+	case OpLt:
+		return "<"
+	case OpGe:
+		return ">="
+	case OpLe:
+		return "<="
 	}
 	panic(op)
 }
@@ -55,6 +79,18 @@ func (op Operator) Eval(l, r interface{}) interface{} {
 		return funcOpMul(l, r)
 	case OpDiv:
 		return funcOpDiv(l, r)
+	case OpEq:
+		return funcOpEq(l, r)
+	case OpNe:
+		return funcOpNe(l, r)
+	case OpGt:
+		return funcOpGt(l, r)
+	case OpLt:
+		return funcOpLt(l, r)
+	case OpGe:
+		return funcOpGe(l, r)
+	case OpLe:
+		return funcOpLe(l, r)
 	}
 	panic("unsupported operator")
 }
@@ -245,4 +281,28 @@ func funcOpDiv(l, r interface{}) interface{} {
 		func(l, r map[string]interface{}) interface{} { return &binopTypeError{"divide", l, r} },
 		func(l, r interface{}) interface{} { return &binopTypeError{"divide", l, r} },
 	)
+}
+
+func funcOpEq(l, r interface{}) interface{} {
+	return compare(l, r) == 0
+}
+
+func funcOpNe(l, r interface{}) interface{} {
+	return compare(l, r) != 0
+}
+
+func funcOpGt(l, r interface{}) interface{} {
+	return compare(l, r) > 0
+}
+
+func funcOpLt(l, r interface{}) interface{} {
+	return compare(l, r) < 0
+}
+
+func funcOpGe(l, r interface{}) interface{} {
+	return compare(l, r) >= 0
+}
+
+func funcOpLe(l, r interface{}) interface{} {
+	return compare(l, r) <= 0
 }
