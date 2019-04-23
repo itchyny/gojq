@@ -233,7 +233,14 @@ func funcOpDiv(l, r interface{}) interface{} {
 			}
 			return l / r
 		},
-		func(l, r string) interface{} { return strings.Split(l, r) },
+		func(l, r string) interface{} {
+			xs := strings.Split(l, r)
+			vs := make([]interface{}, len(xs))
+			for i, x := range xs {
+				vs[i] = x
+			}
+			return vs
+		},
 		func(l, r []interface{}) interface{} { return &binopTypeError{"divide", l, r} },
 		func(l, r map[string]interface{}) interface{} { return &binopTypeError{"divide", l, r} },
 		func(l, r interface{}) interface{} { return &binopTypeError{"divide", l, r} },

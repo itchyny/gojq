@@ -726,6 +726,17 @@
       "a": []
     }
 
+- name: join function
+  args:
+    - '. / "" | join(.[])'
+  input: '"abcde"'
+  expected: |
+    "aabacadae"
+    "abbbcbdbe"
+    "acbcccdce"
+    "adbdcddde"
+    "aebecedee"
+
 - name: function not defined
   args:
     - 'abc'

@@ -1,8 +1,10 @@
 package gojq
 
 import (
+	"fmt"
 	"math"
 	"sort"
+	"strings"
 )
 
 type function func(*env, *Func) func(interface{}) interface{}
@@ -19,6 +21,7 @@ func init() {
 		"utf8bytelength": noArgFunc(funcUtf8ByteLength),
 		"keys":           noArgFunc(funcKeys),
 		"has":            funcHas,
+		"join":           funcJoin,
 	}
 }
 
@@ -132,6 +135,34 @@ func funcHas(env *env, f *Func) func(interface{}) interface{} {
 				}
 			default:
 				return &funcTypeError{"has", v}
+			}
+		})
+	}
+}
+
+func funcJoin(env *env, f *Func) func(interface{}) interface{} {
+	return func(v interface{}) interface{} {
+		if len(f.Args) != 1 {
+			return &funcNotFoundError{f}
+		}
+		return mapIterator(env.applyPipe(f.Args[0], unitIterator(v)), func(x interface{}) interface{} {
+			switch v := v.(type) {
+			case []interface{}:
+				switch x := x.(type) {
+				case string:
+					var s strings.Builder
+					for i, v := range v {
+						if i > 0 {
+							s.WriteString(x)
+						}
+						s.WriteString(fmt.Sprint(v))
+					}
+					return s.String()
+				default:
+					return &funcTypeError{"join", v}
+				}
+			default:
+				return &funcTypeError{"join", v}
 			}
 		})
 	}
