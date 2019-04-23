@@ -5,16 +5,27 @@ import (
 	"sort"
 )
 
-type function func(interface{}) interface{}
+type function func(*env, *Func) func(interface{}) interface{}
 
 var internalFuncs = map[string]function{
-	"null":           funcNull,
-	"true":           funcTrue,
-	"false":          funcFalse,
-	"empty":          funcEmpty,
-	"length":         funcLength,
-	"utf8bytelength": funcUtf8ByteLength,
-	"keys":           funcKeys,
+	"null":           noArgFunc(funcNull),
+	"true":           noArgFunc(funcTrue),
+	"false":          noArgFunc(funcFalse),
+	"empty":          noArgFunc(funcEmpty),
+	"length":         noArgFunc(funcLength),
+	"utf8bytelength": noArgFunc(funcUtf8ByteLength),
+	"keys":           noArgFunc(funcKeys),
+}
+
+func noArgFunc(fn func(interface{}) interface{}) function {
+	return func(_ *env, f *Func) func(interface{}) interface{} {
+		return func(v interface{}) interface{} {
+			if len(f.Args) != 0 {
+				return &funcArgCountError{f}
+			}
+			return fn(v)
+		}
+	}
 }
 
 func funcNull(_ interface{}) interface{} {

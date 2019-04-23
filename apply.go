@@ -149,7 +149,7 @@ func (env *env) applyFunc(f *Func, c <-chan interface{}) <-chan interface{} {
 		return env.applyPipe(p, c)
 	}
 	if fn, ok := internalFuncs[f.Name]; ok {
-		return mapIterator(c, fn)
+		return mapIterator(c, fn(env, f))
 	}
 	fds := env.lookupFuncDef(f.Name)
 	if fds == nil {
