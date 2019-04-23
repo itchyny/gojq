@@ -610,6 +610,42 @@
   expected: |
     21
 
+- name: has function on objects
+  args:
+    - 'map(has(.c[]))'
+  input: '[{"a":{"b":1},"c":["a","b"]}, {"c":["b","c"]}]'
+  expected: |
+    [
+      true,
+      false,
+      false,
+      true
+    ]
+
+- name: has function on arrays
+  args:
+    - 'map(has(2))'
+  input: '[[1, 2, 3], [1, 3]]'
+  expected: |
+    [
+      true,
+      false
+    ]
+
+- name: has/0 is not defined
+  args:
+    - 'map(has)'
+  input: '[0]'
+  error: |
+    function not defined: has/0
+
+- name: has/2 is not defined
+  args:
+    - 'map(has(1; 2))'
+  input: '[0]'
+  error: |
+    function not defined: has/2
+
 - name: map function
   args:
     - 'map(..)'

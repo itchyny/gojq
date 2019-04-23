@@ -7,14 +7,19 @@ import (
 
 type function func(*env, *Func) func(interface{}) interface{}
 
-var internalFuncs = map[string]function{
-	"null":           noArgFunc(funcNull),
-	"true":           noArgFunc(funcTrue),
-	"false":          noArgFunc(funcFalse),
-	"empty":          noArgFunc(funcEmpty),
-	"length":         noArgFunc(funcLength),
-	"utf8bytelength": noArgFunc(funcUtf8ByteLength),
-	"keys":           noArgFunc(funcKeys),
+var internalFuncs map[string]function
+
+func init() {
+	internalFuncs = map[string]function{
+		"null":           noArgFunc(funcNull),
+		"true":           noArgFunc(funcTrue),
+		"false":          noArgFunc(funcFalse),
+		"empty":          noArgFunc(funcEmpty),
+		"length":         noArgFunc(funcLength),
+		"utf8bytelength": noArgFunc(funcUtf8ByteLength),
+		"keys":           noArgFunc(funcKeys),
+		"has":            funcHas,
+	}
 }
 
 func noArgFunc(fn func(interface{}) interface{}) function {
@@ -98,5 +103,36 @@ func funcKeys(v interface{}) interface{} {
 		return u
 	default:
 		return &funcTypeError{"keys", v}
+	}
+}
+
+func funcHas(env *env, f *Func) func(interface{}) interface{} {
+	return func(v interface{}) interface{} {
+		if len(f.Args) != 1 {
+			return &funcArgCountError{f}
+		}
+		return mapIterator(env.applyPipe(f.Args[0], unitIterator(v)), func(x interface{}) interface{} {
+			switch v := v.(type) {
+			case []interface{}:
+				switch x := x.(type) {
+				case int:
+					return 0 <= x && x < len(v)
+				case float64:
+					return 0 <= int(x) && int(x) < len(v)
+				default:
+					return &funcTypeError{"has", v}
+				}
+			case map[string]interface{}:
+				switch x := x.(type) {
+				case string:
+					_, ok := v[x]
+					return ok
+				default:
+					return &funcTypeError{"has", v}
+				}
+			default:
+				return &funcTypeError{"has", v}
+			}
+		})
 	}
 }
