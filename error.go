@@ -72,6 +72,14 @@ func (err *binopTypeError) Error() string {
 	return fmt.Sprintf("cannot %s: %s and %s", err.name, typeErrorPreview(err.l), typeErrorPreview(err.r))
 }
 
+type zeroDivisionError struct {
+	l, r interface{}
+}
+
+func (err *zeroDivisionError) Error() string {
+	return fmt.Sprintf("cannot divide %s by: %s", typeErrorPreview(err.l), typeErrorPreview(err.r))
+}
+
 func typeErrorPreview(v interface{}) string {
 	return typeof(v) + preview(v)
 }

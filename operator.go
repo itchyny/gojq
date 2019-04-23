@@ -221,8 +221,18 @@ func deepMergeObjects(l, r map[string]interface{}) interface{} {
 
 func funcOpDiv(l, r interface{}) interface{} {
 	return binopTypeSwitch(l, r,
-		func(l, r int) interface{} { return l / r },
-		func(l, r float64) interface{} { return l / r },
+		func(l, r int) interface{} {
+			if r == 0 {
+				return &zeroDivisionError{l, r}
+			}
+			return l / r
+		},
+		func(l, r float64) interface{} {
+			if r == 0.0 {
+				return &zeroDivisionError{l, r}
+			}
+			return l / r
+		},
 		func(l, r string) interface{} { return strings.Split(l, r) },
 		func(l, r []interface{}) interface{} { return &binopTypeError{"divide", l, r} },
 		func(l, r map[string]interface{}) interface{} { return &binopTypeError{"divide", l, r} },

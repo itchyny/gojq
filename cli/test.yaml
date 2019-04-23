@@ -763,6 +763,16 @@
     6.25
     7.75
 
+- name: zero division
+  args:
+    - '.[] / .[]'
+  input: '[1, 0]'
+  expected: |
+    1
+    0
+  error: |
+    cannot divide number (1) by: number (0)
+
 - name: add strings
   args:
     - '.[] + .[] + "c"'
