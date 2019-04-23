@@ -6,4 +6,8 @@ var builtinFuncs = map[string]string{
 		def recurse: recurse(.[]?);
 		def recurse(f): def r: ., (f | r); r;
 		def recurse(f; cond): def r: ., (f | select(cond) | r); r;`,
+	"while": `
+		def while(cond; update):
+			def _while: if cond then ., (update | _while) else empty end;
+			_while;`,
 }
