@@ -81,6 +81,14 @@ func (err *zeroDivisionError) Error() string {
 	return fmt.Sprintf("cannot divide %s by: %s", typeErrorPreview(err.l), typeErrorPreview(err.r))
 }
 
+type zeroModuloError struct {
+	l, r interface{}
+}
+
+func (err *zeroModuloError) Error() string {
+	return fmt.Sprintf("cannot modulo %s by: %s", typeErrorPreview(err.l), typeErrorPreview(err.r))
+}
+
 func typeErrorPreview(v interface{}) string {
 	return typeof(v) + preview(v)
 }

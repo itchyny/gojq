@@ -51,7 +51,7 @@ type Compare struct {
 type Factor struct {
 	Left  *Term `@@`
 	Right []struct {
-		Op    Operator `@("*" | "/")`
+		Op    Operator `@("*" | "/" | "%")`
 		Right *Term    `@@`
 	} `@@*`
 }

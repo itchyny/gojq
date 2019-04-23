@@ -14,6 +14,7 @@ const (
 	OpSub
 	OpMul
 	OpDiv
+	OpMod
 	OpEq
 	OpNe
 	OpGt
@@ -27,6 +28,7 @@ var operatorMap = map[string]Operator{
 	"-":  OpSub,
 	"*":  OpMul,
 	"/":  OpDiv,
+	"%":  OpMod,
 	"==": OpEq,
 	"!=": OpNe,
 	">":  OpGt,
@@ -52,6 +54,8 @@ func (op Operator) String() string {
 		return "*"
 	case OpDiv:
 		return "/"
+	case OpMod:
+		return "%"
 	case OpEq:
 		return "=="
 	case OpNe:
@@ -79,6 +83,8 @@ func (op Operator) Eval(l, r interface{}) interface{} {
 		return funcOpMul(l, r)
 	case OpDiv:
 		return funcOpDiv(l, r)
+	case OpMod:
+		return funcOpMod(l, r)
 	case OpEq:
 		return funcOpEq(l, r)
 	case OpNe:
@@ -280,6 +286,27 @@ func funcOpDiv(l, r interface{}) interface{} {
 		func(l, r []interface{}) interface{} { return &binopTypeError{"divide", l, r} },
 		func(l, r map[string]interface{}) interface{} { return &binopTypeError{"divide", l, r} },
 		func(l, r interface{}) interface{} { return &binopTypeError{"divide", l, r} },
+	)
+}
+
+func funcOpMod(l, r interface{}) interface{} {
+	return binopTypeSwitch(l, r,
+		func(l, r int) interface{} {
+			if r == 0 {
+				return &zeroModuloError{l, r}
+			}
+			return l % r
+		},
+		func(l, r float64) interface{} {
+			if r == 0.0 {
+				return &zeroModuloError{l, r}
+			}
+			return int(l) % int(r)
+		},
+		func(l, r string) interface{} { return &binopTypeError{"modulo", l, r} },
+		func(l, r []interface{}) interface{} { return &binopTypeError{"modulo", l, r} },
+		func(l, r map[string]interface{}) interface{} { return &binopTypeError{"modulo", l, r} },
+		func(l, r interface{}) interface{} { return &binopTypeError{"modulo", l, r} },
 	)
 }
 
