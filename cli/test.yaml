@@ -735,6 +735,13 @@
 
 - name: join function
   args:
+    - 'join(",")'
+  input: '[null, false, true, 0, 1, "", "a", "b", "abc"]'
+  expected: |
+    ",false,true,0,1,,a,b,abc"
+
+- name: join function with iterator argument
+  args:
     - '. / "" | join(.[])'
   input: '"abcde"'
   expected: |

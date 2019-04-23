@@ -155,7 +155,9 @@ func funcJoin(env *env, f *Func) func(interface{}) interface{} {
 						if i > 0 {
 							s.WriteString(x)
 						}
-						s.WriteString(fmt.Sprint(v))
+						if v != nil {
+							s.WriteString(fmt.Sprint(v))
+						}
 					}
 					return s.String()
 				default:
