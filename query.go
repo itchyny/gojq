@@ -66,9 +66,13 @@ type Term struct {
 	Object      *Object      `| @@`
 	Array       *Array       `| @@`
 	Number      *float64     `| @Number`
-	String      *string      `| @String`
-	Pipe        *Pipe        `| "(" @@ ")" )`
-	SuffixList  []*Suffix    `@@*`
+	Unary       *struct {
+		Op   Operator `@("+" | "-")`
+		Term *Term    `@@`
+	} `| @@`
+	String     *string   `| @String`
+	Pipe       *Pipe     `| "(" @@ ")" )`
+	SuffixList []*Suffix `@@*`
 }
 
 // ObjectIndex ...

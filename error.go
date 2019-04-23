@@ -55,6 +55,15 @@ func (err *funcTypeError) Error() string {
 	return fmt.Sprintf("%s cannot be applied to: %s", err.name, typeErrorPreview(err.v))
 }
 
+type unaryTypeError struct {
+	name string
+	v    interface{}
+}
+
+func (err *unaryTypeError) Error() string {
+	return fmt.Sprintf("cannot %s: %s", err.name, typeErrorPreview(err.v))
+}
+
 type binopTypeError struct {
 	name string
 	l, r interface{}

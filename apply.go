@@ -89,6 +89,9 @@ func (env *env) applyTerm(t *Term, c <-chan interface{}) (d <-chan interface{}) 
 	if t.Number != nil {
 		return unitIterator(*t.Number)
 	}
+	if t.Unary != nil {
+		return env.applyUnary(t.Unary.Op, t.Unary.Term, c)
+	}
 	if t.String != nil {
 		return unitIterator(*t.String)
 	}
@@ -206,6 +209,35 @@ func (env *env) applyArray(x *Array, c <-chan interface{}) <-chan interface{} {
 		a = append(a, v)
 	}
 	return unitIterator(a)
+}
+
+func (env *env) applyUnary(op Operator, x *Term, c <-chan interface{}) <-chan interface{} {
+	return mapIterator(c, func(v interface{}) interface{} {
+		return mapIterator(env.applyTerm(x, unitIterator(v)), func(v interface{}) interface{} {
+			switch op {
+			case OpAdd:
+				switch v := v.(type) {
+				case int:
+					return v
+				case float64:
+					return v
+				default:
+					return &unaryTypeError{"plus", v}
+				}
+			case OpSub:
+				switch v := v.(type) {
+				case int:
+					return -v
+				case float64:
+					return -v
+				default:
+					return &unaryTypeError{"negate", v}
+				}
+			default:
+				panic(op)
+			}
+		})
+	})
 }
 
 func (env *env) applySuffix(s *Suffix, c <-chan interface{}) <-chan interface{} {
