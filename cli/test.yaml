@@ -731,7 +731,7 @@
     - 'abc'
   input: '{}'
   error: |
-    function not defined: abc
+    function not defined: abc/0
 
 - name: argument count error
   args:

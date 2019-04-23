@@ -26,7 +26,7 @@ func noArgFunc(fn func(interface{}) interface{}) function {
 	return func(_ *env, f *Func) func(interface{}) interface{} {
 		return func(v interface{}) interface{} {
 			if len(f.Args) != 0 {
-				return &funcArgCountError{f}
+				return &funcNotFoundError{f}
 			}
 			return fn(v)
 		}
@@ -109,7 +109,7 @@ func funcKeys(v interface{}) interface{} {
 func funcHas(env *env, f *Func) func(interface{}) interface{} {
 	return func(v interface{}) interface{} {
 		if len(f.Args) != 1 {
-			return &funcArgCountError{f}
+			return &funcNotFoundError{f}
 		}
 		return mapIterator(env.applyPipe(f.Args[0], unitIterator(v)), func(x interface{}) interface{} {
 			switch v := v.(type) {

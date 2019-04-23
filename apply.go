@@ -157,7 +157,7 @@ func (env *env) applyFunc(f *Func, c <-chan interface{}) <-chan interface{} {
 	}
 	fd, ok := fds[len(f.Args)]
 	if !ok {
-		return unitIterator(&funcArgCountError{f})
+		return unitIterator(&funcNotFoundError{f})
 	}
 	subEnv := newEnv(env)
 	for i, arg := range fd.Args {
