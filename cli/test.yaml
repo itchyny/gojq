@@ -800,6 +800,13 @@
   expected: |
     "0,1,1,2,3,5,8,13,21,34,55,89"
 
+- name: until function
+  args:
+    - '[.,1] | until(.[0]==0; [.[0]-1, .[0]*.[1]]) | .[1]'
+  input: '20'
+  expected: |
+    2432902008176640000
+
 - name: join function
   args:
     - 'join(",")'
