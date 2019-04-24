@@ -30,8 +30,26 @@ type Comma struct {
 
 // Expr ...
 type Expr struct {
-	Compare *Compare `  @@`
-	If      *If      `| @@`
+	Logic *Logic `  @@`
+	If    *If    `| @@`
+}
+
+// Logic ...
+type Logic struct {
+	Left  *AndExpr `@@`
+	Right []struct {
+		Op    Operator `@"or"`
+		Right *AndExpr `@@`
+	} `@@*`
+}
+
+// AndExpr ...
+type AndExpr struct {
+	Left  *Compare `@@`
+	Right []struct {
+		Op    Operator `@"and"`
+		Right *Compare `@@`
+	} `@@*`
 }
 
 // Compare ...

@@ -21,25 +21,33 @@ const (
 	OpLt
 	OpGe
 	OpLe
+	OpAnd
+	OpOr
 )
 
 var operatorMap = map[string]Operator{
-	"+":  OpAdd,
-	"-":  OpSub,
-	"*":  OpMul,
-	"/":  OpDiv,
-	"%":  OpMod,
-	"==": OpEq,
-	"!=": OpNe,
-	">":  OpGt,
-	"<":  OpLt,
-	">=": OpGe,
-	"<=": OpLe,
+	"+":   OpAdd,
+	"-":   OpSub,
+	"*":   OpMul,
+	"/":   OpDiv,
+	"%":   OpMod,
+	"==":  OpEq,
+	"!=":  OpNe,
+	">":   OpGt,
+	"<":   OpLt,
+	">=":  OpGe,
+	"<=":  OpLe,
+	"and": OpAnd,
+	"or":  OpOr,
 }
 
 // Capture implements  participle.Capture.
 func (op *Operator) Capture(s []string) error {
-	*op = operatorMap[s[0]]
+	var ok bool
+	*op, ok = operatorMap[s[0]]
+	if !ok {
+		panic("operator: " + s[0])
+	}
 	return nil
 }
 
@@ -68,6 +76,10 @@ func (op Operator) String() string {
 		return ">="
 	case OpLe:
 		return "<="
+	case OpAnd:
+		return "and"
+	case OpOr:
+		return "or"
 	}
 	panic(op)
 }
@@ -97,6 +109,10 @@ func (op Operator) Eval(l, r interface{}) interface{} {
 		return funcOpGe(l, r)
 	case OpLe:
 		return funcOpLe(l, r)
+	case OpAnd:
+		panic("unreachable")
+	case OpOr:
+		panic("unreachable")
 	}
 	panic("unsupported operator")
 }
