@@ -39,7 +39,7 @@ func (env *env) applyExpr(e *Expr, c <-chan interface{}) <-chan interface{} {
 func (env *env) applyCompare(e *Compare, c <-chan interface{}) <-chan interface{} {
 	d := reuseIterator(c)
 	w := env.applyArith(e.Left, d())
-	for _, r := range e.Right {
+	if r := e.Right; r != nil {
 		w = binopIterator(w, env.applyArith(r.Right, d()), r.Op.Eval)
 	}
 	return w

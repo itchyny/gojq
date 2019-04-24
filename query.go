@@ -37,10 +37,10 @@ type Expr struct {
 // Compare ...
 type Compare struct {
 	Left  *Arith `@@`
-	Right []struct {
+	Right *struct {
 		Op    Operator `@CompareOp`
 		Right *Arith   `@@`
-	} `@@*`
+	} `@@?`
 }
 
 // Arith ...
