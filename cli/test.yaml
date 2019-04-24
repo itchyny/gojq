@@ -793,6 +793,22 @@
       "a": []
     }
 
+- name: recurse/2 function
+  args:
+    - 'recurse(. + .; . < 1000)'
+  input: '1'
+  expected: |
+    1
+    2
+    4
+    8
+    16
+    32
+    64
+    128
+    256
+    512
+
 - name: while function
   args:
     - '[while(.[0]<100; [.[1], .[0]+.[1]]) | .[0]] | join(",")'
