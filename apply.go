@@ -30,18 +30,22 @@ func (env *env) applyComma(o *Comma, c <-chan interface{}) <-chan interface{} {
 }
 
 func (env *env) applyExpr(e *Expr, c <-chan interface{}) <-chan interface{} {
-	if e.Left != nil {
-		d := reuseIterator(c)
-		w := env.applyCompare(e.Left, d())
-		for _, r := range e.Right {
-			w = binopIterator(w, env.applyCompare(r.Right, d()), r.Op.Eval)
-		}
-		return w
+	if e.Compare != nil {
+		return env.applyCompare(e.Compare, c)
 	}
 	return env.applyIf(e.If, c)
 }
 
 func (env *env) applyCompare(e *Compare, c <-chan interface{}) <-chan interface{} {
+	d := reuseIterator(c)
+	w := env.applyArith(e.Left, d())
+	for _, r := range e.Right {
+		w = binopIterator(w, env.applyArith(r.Right, d()), r.Op.Eval)
+	}
+	return w
+}
+
+func (env *env) applyArith(e *Arith, c <-chan interface{}) <-chan interface{} {
 	d := reuseIterator(c)
 	w := env.applyFactor(e.Left, d())
 	for _, r := range e.Right {
