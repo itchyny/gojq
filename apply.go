@@ -261,7 +261,11 @@ func (env *env) applyObject(x *Object, c <-chan interface{}) <-chan interface{} 
 	return mapIterator(c, func(v interface{}) interface{} {
 		d := unitIterator(map[string]interface{}{})
 		for _, kv := range x.KeyVals {
-			if kv.Pipe != nil {
+			if kv.KeyOnly != nil {
+				d = objectIterator(d,
+					unitIterator(*kv.KeyOnly),
+					env.applyObjectIndex(&ObjectIndex{*kv.KeyOnly}, unitIterator(v)))
+			} else if kv.Pipe != nil {
 				d = objectIterator(d,
 					env.applyPipe(kv.Pipe, unitIterator(v)),
 					env.applyExpr(kv.Val, unitIterator(v)))

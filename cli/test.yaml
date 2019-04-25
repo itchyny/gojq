@@ -299,6 +299,18 @@
       ]
     }
 
+- name: object construction shortcut
+  args:
+    - '{foo,"bar",qux,quxx:.foo}'
+  input: '{"foo": 1, "bar": 2, "baz": 3}'
+  expected: |
+    {
+      "bar": 2,
+      "foo": 1,
+      "qux": null,
+      "quxx": 1
+    }
+
 - name: empty object
   args:
     - '{}'
@@ -1247,11 +1259,11 @@
 
 - name: invalid query
   args:
-    - '[ .[] | { id } ]'
+    - '[ .[] | { .id } ]'
   input: '{}'
   error: |
-    invalid query: [ .[] | { id } ]
-        [ .[] | { id } ]
+    invalid query: [ .[] | { .id } ]
+        [ .[] | { .id } ]
               ^  unexpected "|" (expected "]")
 
 - name: invalid json eof
