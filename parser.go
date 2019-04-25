@@ -13,7 +13,7 @@ var parser = participle.MustBuild(
 		`|(?P<CompareOp>([=!]=|[<>]=?))`+
 		`|(?P<Number>((\d*\.)?\d+([eE]([-+]?\d+))?))`+
 		`|(?P<String>"([^"\\]*|\\.)*")`+
-		`|(?P<Punct>[!-/:-@\[-\]^-`+"`"+`{-~])`,
+		"|(?P<Punct>[!-/:-@\\[-\\]^-`{-~])",
 	))),
 	participle.Unquote("String"),
 	participle.UseLookahead(2),
