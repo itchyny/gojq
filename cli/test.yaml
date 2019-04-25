@@ -1231,6 +1231,19 @@
     0
     1
 
+- name: condition without else clause
+  args:
+    - 'map(if . > 2 then . / 2 end)'
+  input: '[1, 2, 3, 4, 5]'
+  expected: |
+    [
+      1,
+      2,
+      1.5,
+      2,
+      2.5
+    ]
+
 - name: iterator in condition
   args:
     - 'if .. then [] else {} end'

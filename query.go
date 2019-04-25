@@ -147,5 +147,5 @@ type If struct {
 		Cond *Pipe `"elif" @@`
 		Then *Pipe `"then" @@`
 	} `@@*`
-	Else *Pipe `"else" @@ "end"`
+	Else *Pipe `("else" @@)? "end"`
 }

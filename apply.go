@@ -384,7 +384,10 @@ func (env *env) applyIf(x *If, c <-chan interface{}) <-chan interface{} {
 			if len(x.Elif) > 0 {
 				return env.applyIf(&If{x.Elif[0].Cond, x.Elif[0].Then, x.Elif[1:], x.Else}, unitIterator(v))
 			}
-			return env.applyPipe(x.Else, unitIterator(v))
+			if x.Else != nil {
+				return env.applyPipe(x.Else, unitIterator(v))
+			}
+			return v
 		})
 	})
 }
