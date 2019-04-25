@@ -84,7 +84,7 @@ type Term struct {
 	ObjectIndex *ObjectIndex `( @@`
 	ArrayIndex  *ArrayIndex  `| @@`
 	Identity    bool         `| @"."`
-	Recurse     bool         `| @Recurse`
+	Recurse     bool         `| @".."`
 	Func        *Func        `| @@`
 	Object      *Object      `| @@`
 	Array       *Array       `| @@`
