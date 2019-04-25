@@ -37,6 +37,9 @@ func (env *env) applyExpr(e *Expr, c <-chan interface{}) <-chan interface{} {
 }
 
 func (env *env) applyLogic(e *Logic, c <-chan interface{}) <-chan interface{} {
+	if len(e.Right) == 0 {
+		return env.applyAndExpr(e.Left, c)
+	}
 	d := reuseIterator(c)
 	w := env.applyAndExpr(e.Left, d())
 	for _, r := range e.Right {
@@ -46,6 +49,9 @@ func (env *env) applyLogic(e *Logic, c <-chan interface{}) <-chan interface{} {
 }
 
 func (env *env) applyAndExpr(e *AndExpr, c <-chan interface{}) <-chan interface{} {
+	if len(e.Right) == 0 {
+		return env.applyCompare(e.Left, c)
+	}
 	d := reuseIterator(c)
 	w := env.applyCompare(e.Left, d())
 	for _, r := range e.Right {
@@ -55,6 +61,9 @@ func (env *env) applyAndExpr(e *AndExpr, c <-chan interface{}) <-chan interface{
 }
 
 func (env *env) applyCompare(e *Compare, c <-chan interface{}) <-chan interface{} {
+	if e.Right == nil {
+		return env.applyArith(e.Left, c)
+	}
 	d := reuseIterator(c)
 	w := env.applyArith(e.Left, d())
 	if r := e.Right; r != nil {
@@ -64,6 +73,9 @@ func (env *env) applyCompare(e *Compare, c <-chan interface{}) <-chan interface{
 }
 
 func (env *env) applyArith(e *Arith, c <-chan interface{}) <-chan interface{} {
+	if len(e.Right) == 0 {
+		return env.applyFactor(e.Left, c)
+	}
 	d := reuseIterator(c)
 	w := env.applyFactor(e.Left, d())
 	for _, r := range e.Right {
@@ -73,6 +85,9 @@ func (env *env) applyArith(e *Arith, c <-chan interface{}) <-chan interface{} {
 }
 
 func (env *env) applyFactor(e *Factor, c <-chan interface{}) <-chan interface{} {
+	if len(e.Right) == 0 {
+		return env.applyTerm(e.Left, c)
+	}
 	d := reuseIterator(c)
 	w := env.applyTerm(e.Left, d())
 	for _, r := range e.Right {
