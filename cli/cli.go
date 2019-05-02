@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"os"
 	"runtime"
 	"strings"
 
@@ -66,11 +67,9 @@ Options:
 	var arg string
 	if len(args) == 0 {
 		arg = "."
-	} else if len(args) == 1 {
-		arg = strings.TrimSpace(args[0])
 	} else {
-		fmt.Fprintf(cli.errStream, "%s: too many arguments\n", name)
-		return exitCodeErr
+		arg = strings.TrimSpace(args[0])
+		args = args[1:]
 	}
 	query, err := gojq.Parse(arg)
 	if err != nil {
@@ -78,8 +77,41 @@ Options:
 		cli.printParseError(arg, err)
 		return exitCodeErr
 	}
+	if len(args) == 0 {
+		return cli.process(cli.inStream, query)
+	}
+	for _, arg := range args {
+		if exitCode := cli.processFile(arg, query); exitCode != exitCodeOK {
+			return exitCode
+		}
+	}
+	return exitCodeOK
+}
+
+func (cli *cli) printParseError(query string, err error) {
+	if err, ok := err.(*lexer.Error); ok {
+		lines := strings.Split(query, "\n")
+		if 0 < err.Pos.Line && err.Pos.Line <= len(lines) {
+			fmt.Fprintf(
+				cli.errStream, "    %s\n%s  %s\n", lines[err.Pos.Line-1],
+				strings.Repeat(" ", 3+err.Pos.Column)+"^", err.Message)
+		}
+	}
+}
+
+func (cli *cli) processFile(fname string, query *gojq.Query) int {
+	f, err := os.Open(fname)
+	if err != nil {
+		fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+		return exitCodeErr
+	}
+	defer f.Close()
+	return cli.process(f, query)
+}
+
+func (cli *cli) process(in io.Reader, query *gojq.Query) int {
 	var buf bytes.Buffer
-	dec := json.NewDecoder(io.TeeReader(cli.inStream, &buf))
+	dec := json.NewDecoder(io.TeeReader(in, &buf))
 	for {
 		buf.Reset()
 		var v interface{}
@@ -94,18 +126,6 @@ Options:
 		if err := cli.printValue(query.Run(v)); err != nil {
 			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 			return exitCodeErr
-		}
-	}
-	return exitCodeOK
-}
-
-func (cli *cli) printParseError(query string, err error) {
-	if err, ok := err.(*lexer.Error); ok {
-		lines := strings.Split(query, "\n")
-		if 0 < err.Pos.Line && err.Pos.Line <= len(lines) {
-			fmt.Fprintf(
-				cli.errStream, "    %s\n%s  %s\n", lines[err.Pos.Line-1],
-				strings.Repeat(" ", 3+err.Pos.Column)+"^", err.Message)
 		}
 	}
 }

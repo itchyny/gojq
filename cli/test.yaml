@@ -1507,3 +1507,40 @@
     {
       "bar": []
     }
+
+- name: json file arguments
+  args:
+    - '.'
+    - 'testdata/1.json'
+    - 'testdata/2.json'
+  expected: |
+    {
+      "foo": 10
+    }
+    [
+      {
+        "bar": []
+      }
+    ]
+
+- name: json file error json
+  args:
+    - '.'
+    - 'testdata/3.json'
+  error: |
+    invalid json: unexpected EOF
+        {
+         ^
+
+- name: json file not found
+  args:
+    - '.'
+    - 'testdata/1.json'
+    - 'testdata/4.json'
+    - 'testdata/2.json'
+  expected: |
+    {
+      "foo": 10
+    }
+  error: |
+    open testdata/4.json: no such file or directory
