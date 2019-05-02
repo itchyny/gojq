@@ -2,7 +2,7 @@
 
 ## [v0.1.0](https://github.com/itchyny/gojq/compare/v0.0.1..v0.1.0) (2019-05-02)
 
-* implemnt binary operators (`+`, `-`, `*`, `/`, `%`, `==`, `!=`, `>`, `<`,
+* implement binary operators (`+`, `-`, `*`, `/`, `%`, `==`, `!=`, `>`, `<`,
   `>=`, `<=`, `and`, `or`)
 * implement unary operators (`+`, `-`)
 * implement booleans (`false`, `true`), `null`, number and string constant
