@@ -236,6 +236,9 @@ func applyArrayIndetInternal(start, end, index *int, a []interface{}) interface{
 }
 
 func (env *env) applyFunc(f *Func, c <-chan interface{}) <-chan interface{} {
+	if v, ok := env.lookupValues(f.Name); ok {
+		return unitIterator(v)
+	}
 	if p := env.lookupVariable(f.Name); p != nil {
 		return env.applyPipe(p, c)
 	}
@@ -251,10 +254,35 @@ func (env *env) applyFunc(f *Func, c <-chan interface{}) <-chan interface{} {
 		return unitIterator(&funcNotFoundError{f})
 	}
 	subEnv := newEnv(env)
+	var cc func() <-chan interface{}
+	var d <-chan interface{}
 	for i, arg := range fd.Args {
-		subEnv.variables[arg] = f.Args[i]
+		if arg[0] == '$' {
+			if cc == nil {
+				cc = reuseIterator(c)
+				d = unitIterator(map[string]interface{}{})
+			}
+			d = objectIterator(d,
+				unitIterator(arg),
+				env.applyPipe(f.Args[i], cc()))
+		} else {
+			subEnv.variables[arg] = f.Args[i]
+		}
 	}
-	return subEnv.applyQuery(fd.Body, c)
+	if d == nil {
+		return subEnv.applyQuery(fd.Body, c)
+	}
+	return mapIterator(d, func(v interface{}) interface{} {
+		m := v.(map[string]interface{})
+		e := newEnv(env)
+		for k, v := range subEnv.variables {
+			e.variables[k] = v
+		}
+		for k, v := range m {
+			e.values[k] = v
+		}
+		return e.applyQuery(fd.Body, cc())
+	})
 }
 
 func (env *env) applyObject(x *Object, c <-chan interface{}) <-chan interface{} {

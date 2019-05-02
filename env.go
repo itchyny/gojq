@@ -3,6 +3,7 @@ package gojq
 type env struct {
 	funcDefs  map[string]map[int]*FuncDef
 	variables map[string]*Pipe
+	values    map[string]interface{}
 	parent    *env
 }
 
@@ -10,6 +11,7 @@ func newEnv(parent *env) *env {
 	return &env{
 		funcDefs:  make(map[string]map[int]*FuncDef),
 		variables: make(map[string]*Pipe),
+		values:    make(map[string]interface{}),
 		parent:    parent,
 	}
 }
@@ -50,4 +52,14 @@ func (env *env) lookupVariable(name string) *Pipe {
 		return env.parent.lookupVariable(name)
 	}
 	return nil
+}
+
+func (env *env) lookupValues(name string) (interface{}, bool) {
+	if p, ok := env.values[name]; ok {
+		return p, true
+	}
+	if env.parent != nil {
+		return env.parent.lookupValues(name)
+	}
+	return nil, false
 }
