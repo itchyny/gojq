@@ -22,6 +22,7 @@ func init() {
 		"keys":           noArgFunc(funcKeys),
 		"has":            funcHas,
 		"type":           funcType,
+		"explode":        funcExplode,
 		"join":           funcJoin,
 	}
 }
@@ -147,6 +148,25 @@ func funcType(env *env, f *Func) func(interface{}) interface{} {
 			return &funcNotFoundError{f}
 		}
 		return typeof(v)
+	}
+}
+
+func funcExplode(env *env, f *Func) func(interface{}) interface{} {
+	return func(v interface{}) interface{} {
+		if len(f.Args) != 0 {
+			return &funcNotFoundError{f}
+		}
+		switch v := v.(type) {
+		case string:
+			rs := []int32(v)
+			xs := make([]interface{}, len(rs))
+			for i, r := range rs {
+				xs[i] = r
+			}
+			return xs
+		default:
+			return &funcTypeError{"explode", v}
+		}
 	}
 }
 
