@@ -750,6 +750,77 @@
       4
     ]
 
+- name: arrays, objects, iterables, booleans, numbers, strings, nulls, values, scalars functions
+  args:
+    - 'map(arrays), map(objects), map(iterables), map(booleans), map(numbers), map(strings), map(nulls), map(values), map(scalars)'
+  input: '[null, true, false, 0, 1, "", "foo", [], [2, []], {}, { "foo": [] }]'
+  expected: |
+    [
+      [],
+      [
+        2,
+        []
+      ]
+    ]
+    [
+      {},
+      {
+        "foo": []
+      }
+    ]
+    [
+      [],
+      [
+        2,
+        []
+      ],
+      {},
+      {
+        "foo": []
+      }
+    ]
+    [
+      true,
+      false
+    ]
+    [
+      0,
+      1
+    ]
+    [
+      "",
+      "foo"
+    ]
+    [
+      null
+    ]
+    [
+      true,
+      false,
+      0,
+      1,
+      "",
+      "foo",
+      [],
+      [
+        2,
+        []
+      ],
+      {},
+      {
+        "foo": []
+      }
+    ]
+    [
+      null,
+      true,
+      false,
+      0,
+      1,
+      "",
+      "foo"
+    ]
+
 - name: recurse/0 function
   args:
     - 'recurse'
