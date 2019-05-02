@@ -1393,6 +1393,16 @@
       2.5
     ]
 
+- name: not function
+  args:
+    - 'map(not)'
+  input: '[true, false]'
+  expected: |
+    [
+      false,
+      true
+    ]
+
 - name: iterator in condition
   args:
     - 'if .. then [] else {} end'
