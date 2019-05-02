@@ -15,6 +15,14 @@ var builtinFuncs = map[string]string{
 		def until(cond; next):
 			def _until: if cond then . else (next | _until) end;
 			_until;`,
+	"range": `
+		def range($x): range(0; $x);
+		def range($start; $end):
+			$start | while(. < $end; . + 1);
+		def range($start; $end; $step):
+			if $step > 0 then $start|while(. < $end; . + $step)
+			elif $step < 0 then $start|while(. > $end; . + $step)
+			else empty end;`,
 	"arrays":    `def arrays: select(type == "array");`,
 	"objects":   `def objects: select(type == "object");`,
 	"iterables": `def iterables: select(type |. == "array" or . == "object");`,

@@ -906,6 +906,40 @@
   expected: |
     2432902008176640000
 
+- name: range function
+  args:
+    - '[range(.)], [range(. + 1)], [range(3; 5)], [range(0; 10; 3)], [range(0; 10; -1)], [range(5; -5; -3)]'
+  input: '3'
+  expected: |
+    [
+      0,
+      1,
+      2
+    ]
+    [
+      0,
+      1,
+      2,
+      3
+    ]
+    [
+      3,
+      4
+    ]
+    [
+      0,
+      3,
+      6,
+      9
+    ]
+    []
+    [
+      5,
+      2,
+      -1,
+      -4
+    ]
+
 - name: type function
   args:
     - 'map(type)'
