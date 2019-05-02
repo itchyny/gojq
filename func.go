@@ -1,6 +1,7 @@
 package gojq
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"sort"
@@ -21,6 +22,7 @@ func init() {
 		"utf8bytelength": noArgFunc(funcUtf8ByteLength),
 		"keys":           noArgFunc(funcKeys),
 		"has":            funcHas,
+		"tonumber":       funcToNumber,
 		"type":           funcType,
 		"explode":        funcExplode,
 		"join":           funcJoin,
@@ -139,6 +141,26 @@ func funcHas(env *env, f *Func) func(interface{}) interface{} {
 				return &funcTypeError{"has", v}
 			}
 		})
+	}
+}
+
+func funcToNumber(env *env, f *Func) func(interface{}) interface{} {
+	return func(v interface{}) interface{} {
+		if len(f.Args) != 0 {
+			return &funcNotFoundError{f}
+		}
+		switch v := v.(type) {
+		case int, uint, float64:
+			return v
+		case string:
+			var x float64
+			if err := json.Unmarshal([]byte(v), &x); err != nil {
+				return fmt.Errorf("%s: %q", err, v)
+			}
+			return x
+		default:
+			return &funcTypeError{"tonumber", v}
+		}
 	}
 }
 
