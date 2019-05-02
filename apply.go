@@ -266,7 +266,7 @@ func (env *env) applyFunc(f *Func, c <-chan interface{}) <-chan interface{} {
 				unitIterator(arg),
 				env.applyPipe(f.Args[i], cc()))
 		} else {
-			subEnv.variables[arg] = f.Args[i]
+			subEnv.variables.Store(arg, f.Args[i])
 		}
 	}
 	if d == nil {
@@ -275,11 +275,12 @@ func (env *env) applyFunc(f *Func, c <-chan interface{}) <-chan interface{} {
 	return mapIterator(d, func(v interface{}) interface{} {
 		m := v.(map[string]interface{})
 		e := newEnv(env)
-		for k, v := range subEnv.variables {
-			e.variables[k] = v
-		}
+		subEnv.variables.Range(func(k, v interface{}) bool {
+			e.variables.Store(k, v)
+			return false
+		})
 		for k, v := range m {
-			e.values[k] = v
+			e.values.Store(k, v)
 		}
 		return e.applyQuery(fd.Body, cc())
 	})
