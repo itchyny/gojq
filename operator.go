@@ -292,6 +292,9 @@ func funcOpDiv(l, r interface{}) interface{} {
 			return l / r
 		},
 		func(l, r string) interface{} {
+			if l == "" {
+				return []interface{}{}
+			}
 			xs := strings.Split(l, r)
 			vs := make([]interface{}, len(xs))
 			for i, x := range xs {
