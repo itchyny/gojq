@@ -25,6 +25,7 @@ func init() {
 		"tonumber":       funcToNumber,
 		"type":           funcType,
 		"explode":        funcExplode,
+		"implode":        funcImplode,
 		"join":           funcJoin,
 	}
 }
@@ -188,6 +189,31 @@ func funcExplode(env *env, f *Func) func(interface{}) interface{} {
 			return xs
 		default:
 			return &funcTypeError{"explode", v}
+		}
+	}
+}
+
+func funcImplode(env *env, f *Func) func(interface{}) interface{} {
+	return func(v interface{}) interface{} {
+		if len(f.Args) != 0 {
+			return &funcNotFoundError{f}
+		}
+		switch v := v.(type) {
+		case []interface{}:
+			var rs []rune
+			for _, r := range v {
+				switch r := r.(type) {
+				case int:
+					rs = append(rs, rune(r))
+				case float64:
+					rs = append(rs, rune(r))
+				default:
+					return &funcTypeError{"implode", v}
+				}
+			}
+			return string(rs)
+		default:
+			return &funcTypeError{"implode", v}
 		}
 	}
 }
