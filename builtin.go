@@ -32,4 +32,5 @@ var builtinFuncs = map[string]string{
 	"nulls":     `def nulls: select(. == null);`,
 	"values":    `def values: select(. != null);`,
 	"scalars":   `def scalars: select(type |. != "array" and . != "object");`,
+	"reverse":   `def reverse: [.[length - 1 - range(0;length)]];`,
 }
