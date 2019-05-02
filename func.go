@@ -21,6 +21,7 @@ func init() {
 		"utf8bytelength": noArgFunc(funcUtf8ByteLength),
 		"keys":           noArgFunc(funcKeys),
 		"has":            funcHas,
+		"type":           funcType,
 		"join":           funcJoin,
 	}
 }
@@ -137,6 +138,15 @@ func funcHas(env *env, f *Func) func(interface{}) interface{} {
 				return &funcTypeError{"has", v}
 			}
 		})
+	}
+}
+
+func funcType(env *env, f *Func) func(interface{}) interface{} {
+	return func(v interface{}) interface{} {
+		if len(f.Args) != 0 {
+			return &funcNotFoundError{f}
+		}
+		return typeof(v)
 	}
 }
 

@@ -835,6 +835,21 @@
   expected: |
     2432902008176640000
 
+- name: type function
+  args:
+    - 'map(type)'
+  input: '[null, false, true, 0, "foo", [], {}]'
+  expected: |
+    [
+      "null",
+      "boolean",
+      "boolean",
+      "number",
+      "string",
+      "array",
+      "object"
+    ]
+
 - name: join function
   args:
     - 'join(",")'
