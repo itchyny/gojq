@@ -251,7 +251,7 @@ func applyArrayIndetInternal(start, end, index *int, a []interface{}) interface{
 }
 
 func (env *env) applyFunc(f *Func, c <-chan interface{}) <-chan interface{} {
-	if v, ok := env.lookupValues(f.Name); ok {
+	if v, ok := env.lookupValue(f.Name); ok {
 		return unitIterator(v)
 	}
 	if p := env.lookupVariable(f.Name); p != nil {
@@ -307,7 +307,7 @@ func (env *env) applyObject(x *Object, c <-chan interface{}) <-chan interface{} 
 		for _, kv := range x.KeyVals {
 			if kv.KeyOnly != nil {
 				if (*kv.KeyOnly)[0] == '$' {
-					if vv, ok := env.lookupValues(*kv.KeyOnly); ok {
+					if vv, ok := env.lookupValue(*kv.KeyOnly); ok {
 						d = objectIterator(d,
 							unitIterator((*kv.KeyOnly)[1:]),
 							unitIterator(vv))

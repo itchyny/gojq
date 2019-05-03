@@ -58,12 +58,12 @@ func (env *env) lookupVariable(name string) *Pipe {
 	return nil
 }
 
-func (env *env) lookupValues(name string) (interface{}, bool) {
+func (env *env) lookupValue(name string) (interface{}, bool) {
 	if p, ok := env.values.Load(name); ok {
 		return p, true
 	}
 	if env.parent != nil {
-		return env.parent.lookupValues(name)
+		return env.parent.lookupValue(name)
 	}
 	return nil, false
 }
