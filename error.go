@@ -89,6 +89,14 @@ func (err *zeroModuloError) Error() string {
 	return fmt.Sprintf("cannot modulo %s by: %s", typeErrorPreview(err.l), typeErrorPreview(err.r))
 }
 
+type variableNotFoundError struct {
+	n string
+}
+
+func (err *variableNotFoundError) Error() string {
+	return fmt.Sprintf("variable not defined: %s", err.n)
+}
+
 func typeErrorPreview(v interface{}) string {
 	return typeof(v) + preview(v)
 }

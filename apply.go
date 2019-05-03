@@ -291,9 +291,19 @@ func (env *env) applyObject(x *Object, c <-chan interface{}) <-chan interface{} 
 		d := unitIterator(map[string]interface{}{})
 		for _, kv := range x.KeyVals {
 			if kv.KeyOnly != nil {
-				d = objectIterator(d,
-					unitIterator(*kv.KeyOnly),
-					env.applyObjectIndex(&ObjectIndex{*kv.KeyOnly}, unitIterator(v)))
+				if (*kv.KeyOnly)[0] == '$' {
+					if vv, ok := env.lookupValues(*kv.KeyOnly); ok {
+						d = objectIterator(d,
+							unitIterator((*kv.KeyOnly)[1:]),
+							unitIterator(vv))
+					} else {
+						return &variableNotFoundError{*kv.KeyOnly}
+					}
+				} else {
+					d = objectIterator(d,
+						unitIterator(*kv.KeyOnly),
+						env.applyObjectIndex(&ObjectIndex{*kv.KeyOnly}, unitIterator(v)))
+				}
 			} else if kv.Pipe != nil {
 				d = objectIterator(d,
 					env.applyPipe(kv.Pipe, unitIterator(v)),
