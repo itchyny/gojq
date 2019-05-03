@@ -1442,6 +1442,31 @@
     []
     {}
 
+- name: defining variable
+  args:
+    - '.foo * .foo.bar as $foo | .foo.bar as $bar | {$foo} + {bar: ($bar / 2)} * { baz: 20 }'
+  input: '{ "foo": { "bar": 10 } }'
+  expected: |
+    {
+      "bar": 5,
+      "baz": 20,
+      "foo": 10
+    }
+
+- name: variable name error
+  args:
+    - '.foo as foo | {$bar}'
+  input: '{ "foo": 10 }'
+  error: |
+    variable should start with "$" but got: "foo"
+
+- name: variable name not found error
+  args:
+    - '.foo as $foo | {$bar}'
+  input: '{ "foo": 10 }'
+  error: |
+    variable not defined: $bar
+
 - name: invalid query
   args:
     - '>abc'

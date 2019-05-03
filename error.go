@@ -97,6 +97,14 @@ func (err *variableNotFoundError) Error() string {
 	return fmt.Sprintf("variable not defined: %s", err.n)
 }
 
+type bindVariableNameError struct {
+	n string
+}
+
+func (err *bindVariableNameError) Error() string {
+	return fmt.Sprintf(`variable should start with "$" but got: %q`, err.n)
+}
+
 func typeErrorPreview(v interface{}) string {
 	return typeof(v) + preview(v)
 }

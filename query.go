@@ -96,6 +96,10 @@ type Term struct {
 	String     *string   `| @String`
 	Pipe       *Pipe     `| "(" @@ ")" )`
 	SuffixList []*Suffix `@@*`
+	Bind       *struct {
+		Ident string `"as" @Ident`
+		Body  *Pipe  `"|" @@`
+	} `@@?`
 }
 
 // ObjectIndex ...

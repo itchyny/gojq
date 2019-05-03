@@ -96,7 +96,22 @@ func (env *env) applyFactor(e *Factor, c <-chan interface{}) <-chan interface{} 
 	return w
 }
 
-func (env *env) applyTerm(t *Term, c <-chan interface{}) (d <-chan interface{}) {
+func (env *env) applyTerm(t *Term, c <-chan interface{}) <-chan interface{} {
+	if t.Bind == nil {
+		return env.applyTermInternal(t, c)
+	}
+	if t.Bind.Ident[0] != '$' {
+		return unitIterator(&bindVariableNameError{t.Bind.Ident})
+	}
+	cc := reuseIterator(c)
+	return mapIterator(env.applyTermInternal(t, cc()), func(v interface{}) interface{} {
+		subEnv := newEnv(env)
+		subEnv.values.Store(t.Bind.Ident, v)
+		return subEnv.applyPipe(t.Bind.Body, cc())
+	})
+}
+
+func (env *env) applyTermInternal(t *Term, c <-chan interface{}) (d <-chan interface{}) {
 	defer func() {
 		for _, s := range t.SuffixList {
 			d = env.applySuffix(s, d)
