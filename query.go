@@ -104,7 +104,7 @@ type Term struct {
 
 // ObjectIndex ...
 type ObjectIndex struct {
-	Name string `"." ( @Ident | "[" @String "]" )`
+	Name string `"." @Ident`
 }
 
 // ArrayIndex ...

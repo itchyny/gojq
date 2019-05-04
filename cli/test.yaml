@@ -37,6 +37,13 @@
   expected: |
     128
 
+- name: object index by query
+  args:
+    - '.[.a + .b]'
+  input: '{"a": "b", "b": "c", "bc": 128}'
+  expected: |
+    128
+
 - name: object index after iterator
   args:
     - '{ message: .[].message }'
@@ -45,6 +52,13 @@
     {
       "message": "Hello, world"
     }
+
+- name: object index error
+  args:
+    - '.[.a + .b]'
+  input: '{"a": 10, "b": 20}'
+  error: |
+    expected a string for object key but got: number (30)
 
 - name: expected object
   args:
@@ -187,7 +201,7 @@
 
 - name: expected array
   args:
-    - '.[0]'
+    - '.[0:1]'
   input: '{"foo": 128}'
   error: |
     expected an array but got: object ({"foo":128})

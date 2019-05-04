@@ -164,7 +164,20 @@ func (env *env) applyArrayIndex(x *ArrayIndex, c <-chan interface{}) <-chan inte
 	return mapIterator(c, func(v interface{}) interface{} {
 		a, ok := v.([]interface{})
 		if !ok {
-			return &expectedArrayError{v}
+			if x.Index == nil || x.IsSlice || x.End != nil {
+				return &expectedArrayError{v}
+			}
+			m, ok := v.(map[string]interface{})
+			if !ok {
+				return &expectedObjectError{v}
+			}
+			return mapIterator(env.applyPipe(x.Index, unitIterator(v)), func(s interface{}) interface{} {
+				key, ok := s.(string)
+				if !ok {
+					return &objectKeyNotStringError{s}
+				}
+				return m[key]
+			})
 		}
 		if x.Index != nil {
 			return mapIterator(env.applyPipe(x.Index, unitIterator(a)), func(s interface{}) interface{} {
