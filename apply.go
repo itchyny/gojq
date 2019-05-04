@@ -117,11 +117,8 @@ func (env *env) applyTermInternal(t *Term, c <-chan interface{}) (d <-chan inter
 			d = env.applySuffix(s, d)
 		}
 	}()
-	if x := t.ObjectIndex; x != nil {
-		return env.applyObjectIndex(x, c)
-	}
-	if x := t.ArrayIndex; x != nil {
-		return env.applyArrayIndex(x, c)
+	if x := t.Index; x != nil {
+		return env.applyIndex(x, c)
 	}
 	if t.Identity {
 		return c
@@ -150,64 +147,74 @@ func (env *env) applyTermInternal(t *Term, c <-chan interface{}) (d <-chan inter
 	return env.applyPipe(t.Pipe, c)
 }
 
-func (env *env) applyObjectIndex(x *ObjectIndex, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyIndex(x *Index, c <-chan interface{}) <-chan interface{} {
 	return mapIterator(c, func(v interface{}) interface{} {
-		m, ok := v.(map[string]interface{})
-		if !ok {
-			return &expectedObjectError{v}
+		switch v := v.(type) {
+		case map[string]interface{}:
+			return env.applyObjectIndex(x, v)
+		case []interface{}:
+			return env.applyArrayIndex(x, v)
+		default:
+			if indexIsForObject(x) {
+				return &expectedObjectError{v}
+			}
+			return &expectedArrayError{v}
 		}
-		return m[x.Name]
 	})
 }
 
-func (env *env) applyArrayIndex(x *ArrayIndex, c <-chan interface{}) <-chan interface{} {
-	return mapIterator(c, func(v interface{}) interface{} {
-		a, ok := v.([]interface{})
+func (env *env) applyObjectIndex(x *Index, m map[string]interface{}) interface{} {
+	if !indexIsForObject(x) {
+		return &expectedArrayError{m}
+	}
+	if x.Name != "" {
+		return m[x.Name]
+	}
+	return mapIterator(env.applyPipe(x.Start, unitIterator(m)), func(s interface{}) interface{} {
+		key, ok := s.(string)
 		if !ok {
-			if x.Index == nil || x.IsSlice || x.End != nil {
-				return &expectedArrayError{v}
-			}
-			m, ok := v.(map[string]interface{})
-			if !ok {
-				return &expectedObjectError{v}
-			}
-			return mapIterator(env.applyPipe(x.Index, unitIterator(v)), func(s interface{}) interface{} {
-				key, ok := s.(string)
-				if !ok {
-					return &objectKeyNotStringError{s}
-				}
-				return m[key]
-			})
+			return &objectKeyNotStringError{s}
 		}
-		if x.Index != nil {
-			return mapIterator(env.applyPipe(x.Index, unitIterator(a)), func(s interface{}) interface{} {
-				if index, ok := toInt(s); ok {
-					if x.End != nil {
-						return mapIterator(env.applyPipe(x.End, unitIterator(a)), func(e interface{}) interface{} {
-							if end, ok := toInt(e); ok {
-								return applyArrayIndetInternal(&index, &end, nil, a)
-							}
-							return e
-						})
-					}
-					if x.IsSlice {
-						return applyArrayIndetInternal(&index, nil, nil, a)
-					}
-					return applyArrayIndetInternal(nil, nil, &index, a)
-				}
-				return s
-			})
-		}
-		if x.End != nil {
-			return mapIterator(env.applyPipe(x.End, unitIterator(a)), func(e interface{}) interface{} {
-				if end, ok := toInt(e); ok {
-					return applyArrayIndetInternal(nil, &end, nil, a)
-				}
-				return e
-			})
-		}
-		return a
+		return m[key]
 	})
+}
+
+func (env *env) applyArrayIndex(x *Index, a []interface{}) interface{} {
+	if x.Name != "" {
+		return &expectedObjectError{a}
+	}
+	if x.Start != nil {
+		return mapIterator(env.applyPipe(x.Start, unitIterator(a)), func(s interface{}) interface{} {
+			if start, ok := toInt(s); ok {
+				if x.End != nil {
+					return mapIterator(env.applyPipe(x.End, unitIterator(a)), func(e interface{}) interface{} {
+						if end, ok := toInt(e); ok {
+							return applyArrayIndetInternal(&start, &end, nil, a)
+						}
+						return e
+					})
+				}
+				if x.IsSlice {
+					return applyArrayIndetInternal(&start, nil, nil, a)
+				}
+				return applyArrayIndetInternal(nil, nil, &start, a)
+			}
+			return s
+		})
+	}
+	if x.End != nil {
+		return mapIterator(env.applyPipe(x.End, unitIterator(a)), func(e interface{}) interface{} {
+			if end, ok := toInt(e); ok {
+				return applyArrayIndetInternal(nil, &end, nil, a)
+			}
+			return e
+		})
+	}
+	return a
+}
+
+func indexIsForObject(x *Index) bool {
+	return (x.Name != "" || x.Start != nil) && !x.IsSlice && x.End == nil
 }
 
 func toInt(x interface{}) (int, bool) {
@@ -330,7 +337,7 @@ func (env *env) applyObject(x *Object, c <-chan interface{}) <-chan interface{} 
 				} else {
 					d = objectIterator(d,
 						unitIterator(*kv.KeyOnly),
-						env.applyObjectIndex(&ObjectIndex{*kv.KeyOnly}, unitIterator(v)))
+						env.applyIndex(&Index{Name: *kv.KeyOnly}, unitIterator(v)))
 				}
 			} else if kv.Pipe != nil {
 				d = objectIterator(d,
@@ -403,11 +410,8 @@ func (env *env) applySuffix(s *Suffix, c <-chan interface{}) <-chan interface{} 
 		if _, ok := v.(error); ok {
 			return v
 		}
-		if x := s.ObjectIndex; x != nil {
-			return env.applyObjectIndex(x, unitIterator(v))
-		}
-		if x := s.ArrayIndex; x != nil {
-			return env.applyArrayIndex(x, unitIterator(v))
+		if x := s.Index; x != nil {
+			return env.applyIndex(x, unitIterator(v))
 		}
 		if s.Array.Pipe == nil {
 			return env.applyIterator(unitIterator(v))

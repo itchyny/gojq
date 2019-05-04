@@ -81,15 +81,14 @@ type Factor struct {
 
 // Term ...
 type Term struct {
-	ObjectIndex *ObjectIndex `( @@`
-	ArrayIndex  *ArrayIndex  `| @@`
-	Identity    bool         `| @"."`
-	Recurse     bool         `| @".."`
-	Func        *Func        `| @@`
-	Object      *Object      `| @@`
-	Array       *Array       `| @@`
-	Number      *float64     `| @Number`
-	Unary       *struct {
+	Index    *Index   `( @@`
+	Identity bool     `| @"."`
+	Recurse  bool     `| @".."`
+	Func     *Func    `| @@`
+	Object   *Object  `| @@`
+	Array    *Array   `| @@`
+	Number   *float64 `| @Number`
+	Unary    *struct {
 		Op   Operator `@("+" | "-")`
 		Term *Term    `@@`
 	} `| @@`
@@ -102,16 +101,12 @@ type Term struct {
 	} `@@?`
 }
 
-// ObjectIndex ...
-type ObjectIndex struct {
-	Name string `"." @Ident`
-}
-
-// ArrayIndex ...
-type ArrayIndex struct {
-	Index   *Pipe `"." "[" ( @@`
-	IsSlice bool  `( @":"`
-	End     *Pipe `@@? )? | ":" @@ ) "]"`
+// Index ...
+type Index struct {
+	Name    string `"." ( @Ident`
+	Start   *Pipe  `| "[" ( @@`
+	IsSlice bool   `( @":"`
+	End     *Pipe  `@@? )? | ":" @@ ) "]" )`
 }
 
 // Func ...
@@ -137,10 +132,9 @@ type Array struct {
 
 // Suffix ...
 type Suffix struct {
-	ObjectIndex *ObjectIndex `  @@`
-	ArrayIndex  *ArrayIndex  `| @@`
-	Array       *Array       `| @@`
-	Optional    bool         `| @"?"`
+	Index    *Index `  @@`
+	Array    *Array `| @@`
+	Optional bool   `| @"?"`
 }
 
 // If ...
