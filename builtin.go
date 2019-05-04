@@ -1,9 +1,10 @@
 package gojq
 
 var builtinFuncs = map[string]string{
-	"not":    `def not: if . then false else true end;`,
-	"map":    `def map(f): [.[] | f];`,
-	"select": `def select(f): if f then . else empty end;`,
+	"not":        `def not: if . then false else true end;`,
+	"map":        `def map(f): [.[] | f];`,
+	"to_entries": `def to_entries: [keys[] as $k | {key: $k, value: .[$k]}];`,
+	"select":     `def select(f): if f then . else empty end;`,
 	"recurse": `
 		def recurse: recurse(.[]?);
 		def recurse(f): def r: ., (f | r); r;

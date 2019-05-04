@@ -764,6 +764,32 @@
       4
     ]
 
+- name: to_entries function
+  args:
+    - 'to_entries'
+  input: '[10, 20] {"a": 10, "b": []}'
+  expected: |
+    [
+      {
+        "key": 0,
+        "value": 10
+      },
+      {
+        "key": 1,
+        "value": 20
+      }
+    ]
+    [
+      {
+        "key": "a",
+        "value": 10
+      },
+      {
+        "key": "b",
+        "value": []
+      }
+    ]
+
 - name: arrays, objects, iterables, booleans, numbers, strings, nulls, values, scalars functions
   args:
     - 'map(arrays), map(objects), map(iterables), map(booleans), map(numbers), map(strings), map(nulls), map(values), map(scalars)'
