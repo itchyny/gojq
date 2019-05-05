@@ -1036,6 +1036,20 @@
       0
     ]
 
+- name: combinations/0 function
+  args:
+    - '[combinations | join("")] | join(",")'
+  input: '[[1, 2, 3], [4, 5, 6]]'
+  expected: |
+    "14,15,16,24,25,26,34,35,36"
+
+- name: combinations/1 function
+  args:
+    - '[combinations(3) | join("")] | join(",")'
+  input: '[0, 1]'
+  expected: |
+    "000,001,010,011,100,101,110,111"
+
 - name: join function
   args:
     - 'join(",")'

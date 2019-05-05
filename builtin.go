@@ -35,4 +35,13 @@ var builtinFuncs = map[string]string{
 	"values":    `def values: select(. != null);`,
 	"scalars":   `def scalars: select(type |. != "array" and . != "object");`,
 	"reverse":   `def reverse: [.[length - 1 - range(0;length)]];`,
+	"combinations": `
+		def combinations:
+			if length == 0 then
+				[]
+			else
+				.[0][] as $x | (.[1:] | combinations) as $y | [$x] + $y
+			end;
+		def combinations(n):
+			. as $dot | [range(n) | $dot] | combinations;`,
 }
