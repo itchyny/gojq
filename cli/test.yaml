@@ -739,6 +739,28 @@
   error: |
     function not defined: has/2
 
+- name: in function for object
+  args:
+    - 'map(in({"foo": 42}))'
+  input: '["foo", "bar"]'
+  expected: |
+    [
+      true,
+      false
+    ]
+
+- name: in function for array
+  args:
+    - 'map(in([3, 4]))'
+  input: '[-1, 0, 1, 2]'
+  expected: |
+    [
+      false,
+      true,
+      true,
+      false
+    ]
+
 - name: map function
   args:
     - 'map(..)'

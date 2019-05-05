@@ -2,6 +2,7 @@ package gojq
 
 var builtinFuncs = map[string]string{
 	"not":        `def not: if . then false else true end;`,
+	"in":         `def in(xs): . as $x | xs | has($x);`,
 	"map":        `def map(f): [.[] | f];`,
 	"to_entries": `def to_entries: [keys[] as $k | {key: $k, value: .[$k]}];`,
 	"select":     `def select(f): if f then . else empty end;`,
