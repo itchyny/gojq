@@ -128,7 +128,7 @@ func funcHas(env *env, f *Func) func(interface{}) interface{} {
 				case float64:
 					return 0 <= int(x) && int(x) < len(v)
 				default:
-					return &funcTypeError{"has", v}
+					return &hasKeyTypeError{v, x}
 				}
 			case map[string]interface{}:
 				switch x := x.(type) {
@@ -136,10 +136,10 @@ func funcHas(env *env, f *Func) func(interface{}) interface{} {
 					_, ok := v[x]
 					return ok
 				default:
-					return &funcTypeError{"has", v}
+					return &hasKeyTypeError{v, x}
 				}
 			default:
-				return &funcTypeError{"has", v}
+				return &hasKeyTypeError{v, x}
 			}
 		})
 	}

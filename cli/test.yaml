@@ -739,6 +739,13 @@
   error: |
     function not defined: has/2
 
+- name: has function type error
+  args:
+    - 'has(0)'
+  input: '{}'
+  error: |
+    cannot check wether object ({}) has a key: number (0)
+
 - name: in function for object
   args:
     - 'map(in({"foo": 42}))'
@@ -760,6 +767,13 @@
       true,
       false
     ]
+
+- name: in function type error
+  args:
+    - 'in([])'
+  input: '"x"'
+  error: |
+    cannot check wether array ([]) has a key: string ("x")
 
 - name: map function
   args:

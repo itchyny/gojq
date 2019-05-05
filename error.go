@@ -55,6 +55,14 @@ func (err *funcTypeError) Error() string {
 	return fmt.Sprintf("%s cannot be applied to: %s", err.name, typeErrorPreview(err.v))
 }
 
+type hasKeyTypeError struct {
+	l, r interface{}
+}
+
+func (err *hasKeyTypeError) Error() string {
+	return fmt.Sprintf("cannot check wether %s has a key: %s", typeErrorPreview(err.l), typeErrorPreview(err.r))
+}
+
 type unaryTypeError struct {
 	name string
 	v    interface{}
