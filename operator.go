@@ -23,6 +23,7 @@ const (
 	OpLe
 	OpAnd
 	OpOr
+	OpAlt
 )
 
 var operatorMap = map[string]Operator{
@@ -39,6 +40,7 @@ var operatorMap = map[string]Operator{
 	"<=":  OpLe,
 	"and": OpAnd,
 	"or":  OpOr,
+	"//":  OpAlt,
 }
 
 // Capture implements  participle.Capture.
@@ -80,6 +82,8 @@ func (op Operator) String() string {
 		return "and"
 	case OpOr:
 		return "or"
+	case OpAlt:
+		return "//"
 	}
 	panic(op)
 }
@@ -112,6 +116,8 @@ func (op Operator) Eval(l, r interface{}) interface{} {
 	case OpAnd:
 		panic("unreachable")
 	case OpOr:
+		panic("unreachable")
+	case OpAlt:
 		panic("unreachable")
 	}
 	panic("unsupported operator")

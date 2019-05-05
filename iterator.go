@@ -35,6 +35,29 @@ func objectIterator(c <-chan interface{}, keys <-chan interface{}, values <-chan
 	})
 }
 
+func binopIteratorAlt(l <-chan interface{}, r <-chan interface{}) <-chan interface{} {
+	d := make(chan interface{}, 1)
+	go func() {
+		defer close(d)
+		var done bool
+		for v := range l {
+			if _, ok := v.(error); ok {
+				break
+			}
+			if v != nil && v != false {
+				d <- v
+				done = true
+			}
+		}
+		if !done {
+			for v := range r {
+				d <- v
+			}
+		}
+	}()
+	return d
+}
+
 func binopIteratorOr(l <-chan interface{}, r <-chan interface{}) <-chan interface{} {
 	d := make(chan interface{}, 1)
 	go func() {

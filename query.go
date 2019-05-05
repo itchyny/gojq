@@ -25,7 +25,16 @@ type Pipe struct {
 
 // Comma ...
 type Comma struct {
-	Exprs []*Expr `@@ ("," @@)*`
+	Alts []*Alt `@@ ("," @@)*`
+}
+
+// Alt ...
+type Alt struct {
+	Left  *Expr `@@`
+	Right []struct {
+		Op    Operator `@"//"`
+		Right *Expr    `@@`
+	} `@@*`
 }
 
 // Expr ...

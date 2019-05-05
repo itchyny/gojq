@@ -19,14 +19,26 @@ func (env *env) applyComma(o *Comma, c <-chan interface{}) <-chan interface{} {
 		d := make(chan interface{}, 1)
 		go func() {
 			defer close(d)
-			for _, e := range o.Exprs {
-				for v := range env.applyExpr(e, unitIterator(v)) {
+			for _, e := range o.Alts {
+				for v := range env.applyAlt(e, unitIterator(v)) {
 					d <- v
 				}
 			}
 		}()
 		return (<-chan interface{})(d)
 	})
+}
+
+func (env *env) applyAlt(e *Alt, c <-chan interface{}) <-chan interface{} {
+	if len(e.Right) == 0 {
+		return env.applyExpr(e.Left, c)
+	}
+	d := reuseIterator(c)
+	w := env.applyExpr(e.Left, d())
+	for _, r := range e.Right {
+		w = binopIteratorAlt(w, env.applyExpr(r.Right, d()))
+	}
+	return w
 }
 
 func (env *env) applyExpr(e *Expr, c <-chan interface{}) <-chan interface{} {

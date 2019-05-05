@@ -1413,6 +1413,23 @@
     "111000011110001111100111111000000001000000110000011100001111000111110011111100000000100000011000001110000111100011111001"
     "1111100000000100000011000001110000111100011111001111110"
 
+- name: alternative operator
+  args:
+    - '.a // .b, .b // null // .a, .c[] // .d[], .d[] // .c, .c // .a, .e.a // .c[]'
+  input: '{ "a": 5, "b": false, "c": [null,false], "d": [false,3], "e": null }'
+  expected: |
+    5
+    5
+    false
+    3
+    3
+    [
+      null,
+      false
+    ]
+    null
+    false
+
 - name: explode function
   args:
     - 'map(explode | join(",")) | join("/")'
