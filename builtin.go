@@ -43,6 +43,13 @@ var builtinFuncs = map[string]string{
 			else
 				_type_error("startswith")
 			end;`,
+	"endswith": `
+		def endswith($x):
+			if type == "string" then
+				.[- ($x | length):] == $x
+			else
+				_type_error("endswith")
+			end;`,
 	"combinations": `
 		def combinations:
 			if length == 0 then

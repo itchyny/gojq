@@ -1085,6 +1085,19 @@
       false
     ]
 
+- name: endswith function
+  args:
+    - 'map(endswith("foo"))'
+  input: '["", "fo", "foo", "fooo", "barfoo"]'
+  expected: |
+    [
+      false,
+      false,
+      true,
+      false,
+      true
+    ]
+
 - name: combinations/0 function
   args:
     - '[combinations | join("")] | join(",")'
