@@ -28,6 +28,7 @@ func init() {
 		"implode":        funcImplode,
 		"join":           funcJoin,
 		"tojson":         funcToJson,
+		"fromjson":       funcFromJson,
 		"_type_error":    internalfuncTypeError,
 	}
 }
@@ -268,6 +269,25 @@ func funcToJson(env *env, f *Func) func(interface{}) interface{} {
 			return err
 		}
 		return string(xs)
+	}
+}
+
+func funcFromJson(env *env, f *Func) func(interface{}) interface{} {
+	return func(v interface{}) interface{} {
+		if len(f.Args) != 0 {
+			return &funcNotFoundError{f}
+		}
+		switch v := v.(type) {
+		case string:
+			var w interface{}
+			err := json.Unmarshal([]byte(v), &w)
+			if err != nil {
+				return err
+			}
+			return w
+		default:
+			return &funcTypeError{"fromjson", v}
+		}
 	}
 }
 
