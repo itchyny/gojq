@@ -1615,6 +1615,30 @@
     []
     {}
 
+- name: try
+  args:
+    - 'map(try utf8bytelength)'
+  input: '[[], {}, [1,2], "hello", 55, true, false]'
+  expected: |
+    [
+      5
+    ]
+
+- name: try catch
+  args:
+    - 'map(try utf8bytelength catch .)'
+  input: '[[], {}, [1,2], "hello", 55, true, false]'
+  expected: |
+    [
+      "utf8bytelength cannot be applied to: array ([])",
+      "utf8bytelength cannot be applied to: object ({})",
+      "utf8bytelength cannot be applied to: array ([1,2])",
+      5,
+      "utf8bytelength cannot be applied to: number (55)",
+      "utf8bytelength cannot be applied to: boolean (true)",
+      "utf8bytelength cannot be applied to: boolean (false)"
+    ]
+
 - name: tojson function
   args:
     - 'map(tojson)'

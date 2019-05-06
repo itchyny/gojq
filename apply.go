@@ -45,7 +45,13 @@ func (env *env) applyExpr(e *Expr, c <-chan interface{}) <-chan interface{} {
 	if e.Logic != nil {
 		return env.applyLogic(e.Logic, c)
 	}
-	return env.applyIf(e.If, c)
+	if e.If != nil {
+		return env.applyIf(e.If, c)
+	}
+	if e.Try != nil {
+		return env.applyTry(e.Try, c)
+	}
+	panic("unreachable expr")
 }
 
 func (env *env) applyLogic(e *Logic, c <-chan interface{}) <-chan interface{} {
@@ -496,4 +502,18 @@ func valueToBool(v interface{}) bool {
 	default:
 		return true
 	}
+}
+
+func (env *env) applyTry(x *Try, c <-chan interface{}) <-chan interface{} {
+	return mapIterator(c, func(v interface{}) interface{} {
+		return mapIteratorWithError(env.applyPipe(x.Body, unitIterator(v)), func(w interface{}) interface{} {
+			if err, ok := w.(error); ok {
+				if x.Catch != nil {
+					return env.applyPipe(x.Catch, unitIterator(err.Error()))
+				}
+				return struct{}{}
+			}
+			return w
+		})
+	})
 }

@@ -41,6 +41,7 @@ type Alt struct {
 type Expr struct {
 	Logic *Logic `  @@`
 	If    *If    `| @@`
+	Try   *Try   `| @@`
 }
 
 // Logic ...
@@ -163,4 +164,10 @@ type If struct {
 		Then *Pipe `"then" @@`
 	} `@@*`
 	Else *Pipe `("else" @@)? "end"`
+}
+
+// Try ...
+type Try struct {
+	Body  *Pipe `"try" @@`
+	Catch *Pipe `("catch" @@)?`
 }
