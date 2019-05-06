@@ -1156,6 +1156,13 @@
     "adbdcddde"
     "aebecedee"
 
+- name: ascii_downcase function
+  args:
+    - 'ascii_downcase'
+  input: '"@ABC XYZ[] `abc xyz{} ☆"'
+  expected: |
+    "@abc xyz[] `abc xyz{} ☆"
+
 - name: function not defined
   args:
     - 'abc'

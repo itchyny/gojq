@@ -73,4 +73,7 @@ var builtinFuncs = map[string]string{
 			end;
 		def combinations(n):
 			. as $dot | [range(n) | $dot] | combinations;`,
+	"ascii_downcase": `
+		def ascii_downcase:
+			explode | map(if 65 <= . and . <= 90 then . + 32 end) | implode;`,
 }
