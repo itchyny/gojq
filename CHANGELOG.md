@@ -1,5 +1,17 @@
 # Changelog
 
+## [v0.2.0](https://github.com/itchyny/gojq/compare/v0.1.0..v0.2.0) (2019-05-06)
+
+* implement binding variable syntax (`... as $var`)
+* implement `try` `catch` syntax
+* implement alternative operator (`//`)
+* implement various functions (`in`, `to_entries`, `startswith`, `endswith`,
+  `ltrimstr`, `rtrimstr`, `combinations`, `ascii_downcase`, `ascii_upcase`,
+  `tojson`, `fromjson`)
+* support query for object indexing
+* support object construction with variables
+* support indexing against strings
+
 ## [v0.1.0](https://github.com/itchyny/gojq/compare/v0.0.1..v0.1.0) (2019-05-02)
 
 * implement binary operators (`+`, `-`, `*`, `/`, `%`, `==`, `!=`, `>`, `<`,
