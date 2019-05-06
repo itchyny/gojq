@@ -27,8 +27,8 @@ func init() {
 		"explode":        funcExplode,
 		"implode":        funcImplode,
 		"join":           funcJoin,
-		"tojson":         funcToJson,
-		"fromjson":       funcFromJson,
+		"tojson":         funcToJSON,
+		"fromjson":       funcFromJSON,
 		"_type_error":    internalfuncTypeError,
 	}
 }
@@ -259,7 +259,7 @@ func funcJoin(env *env, f *Func) func(interface{}) interface{} {
 	}
 }
 
-func funcToJson(env *env, f *Func) func(interface{}) interface{} {
+func funcToJSON(env *env, f *Func) func(interface{}) interface{} {
 	return func(v interface{}) interface{} {
 		if len(f.Args) != 0 {
 			return &funcNotFoundError{f}
@@ -272,7 +272,7 @@ func funcToJson(env *env, f *Func) func(interface{}) interface{} {
 	}
 }
 
-func funcFromJson(env *env, f *Func) func(interface{}) interface{} {
+func funcFromJSON(env *env, f *Func) func(interface{}) interface{} {
 	return func(v interface{}) interface{} {
 		if len(f.Args) != 0 {
 			return &funcNotFoundError{f}
