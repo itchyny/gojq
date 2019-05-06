@@ -1098,6 +1098,19 @@
       true
     ]
 
+- name: ltrimstr function
+  args:
+    - 'map(ltrimstr("foo"))'
+  input: '["", "fo", "foo", "fooo", "barfoo"]'
+  expected: |
+    [
+      "",
+      "fo",
+      "",
+      "o",
+      "barfoo"
+    ]
+
 - name: combinations/0 function
   args:
     - '[combinations | join("")] | join(",")'

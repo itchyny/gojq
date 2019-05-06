@@ -50,6 +50,13 @@ var builtinFuncs = map[string]string{
 			else
 				_type_error("endswith")
 			end;`,
+	"ltrimstr": `
+		def ltrimstr($x):
+			if type == "string" then
+				if startswith($x) then .[$x | length:] end
+			else
+				_type_error("ltrimstr")
+			end;`,
 	"combinations": `
 		def combinations:
 			if length == 0 then
