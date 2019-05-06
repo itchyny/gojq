@@ -27,6 +27,7 @@ func init() {
 		"explode":        funcExplode,
 		"implode":        funcImplode,
 		"join":           funcJoin,
+		"_type_error":    internalfuncTypeError,
 	}
 }
 
@@ -252,6 +253,17 @@ func funcJoin(env *env, f *Func) func(interface{}) interface{} {
 			default:
 				return &funcTypeError{"join", v}
 			}
+		})
+	}
+}
+
+func internalfuncTypeError(env *env, f *Func) func(interface{}) interface{} {
+	return func(v interface{}) interface{} {
+		if len(f.Args) != 1 {
+			return &funcNotFoundError{f}
+		}
+		return mapIterator(env.applyPipe(f.Args[0], unitIterator(v)), func(x interface{}) interface{} {
+			return &funcTypeError{x.(string), v}
 		})
 	}
 }
