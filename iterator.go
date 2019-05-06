@@ -44,7 +44,7 @@ func binopIteratorAlt(l <-chan interface{}, r <-chan interface{}) <-chan interfa
 			if _, ok := v.(error); ok {
 				break
 			}
-			if v != nil && v != false {
+			if valueToBool(v) {
 				d <- v
 				done = true
 			}
@@ -68,7 +68,7 @@ func binopIteratorOr(l <-chan interface{}, r <-chan interface{}) <-chan interfac
 				d <- err
 				return
 			}
-			if l != nil && l != false {
+			if valueToBool(l) {
 				d <- true
 			} else {
 				for r := range r() {
@@ -76,7 +76,7 @@ func binopIteratorOr(l <-chan interface{}, r <-chan interface{}) <-chan interfac
 						d <- err
 						return
 					}
-					d <- r != nil && r != false
+					d <- valueToBool(r)
 				}
 			}
 		}
@@ -94,13 +94,13 @@ func binopIteratorAnd(l <-chan interface{}, r <-chan interface{}) <-chan interfa
 				d <- err
 				return
 			}
-			if l != nil && l != false {
+			if valueToBool(l) {
 				for r := range r() {
 					if err, ok := r.(error); ok {
 						d <- err
 						return
 					}
-					d <- r != nil && r != false
+					d <- valueToBool(r)
 				}
 			} else {
 				d <- false

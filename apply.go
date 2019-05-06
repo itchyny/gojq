@@ -473,7 +473,7 @@ func (env *env) applyIterator(c <-chan interface{}) <-chan interface{} {
 func (env *env) applyIf(x *If, c <-chan interface{}) <-chan interface{} {
 	return mapIterator(c, func(v interface{}) interface{} {
 		return mapIterator(env.applyPipe(x.Cond, unitIterator(v)), func(w interface{}) interface{} {
-			if condToBool(w) {
+			if valueToBool(w) {
 				return env.applyPipe(x.Then, unitIterator(v))
 			}
 			if len(x.Elif) > 0 {
@@ -487,7 +487,7 @@ func (env *env) applyIf(x *If, c <-chan interface{}) <-chan interface{} {
 	})
 }
 
-func condToBool(v interface{}) bool {
+func valueToBool(v interface{}) bool {
 	switch v := v.(type) {
 	case nil:
 		return false
