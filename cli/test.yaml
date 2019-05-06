@@ -1072,6 +1072,19 @@
       0
     ]
 
+- name: startswith function
+  args:
+    - 'map(startswith("foo"))'
+  input: '["", "fo", "foo", "fooo", "barfoo"]'
+  expected: |
+    [
+      false,
+      false,
+      true,
+      true,
+      false
+    ]
+
 - name: combinations/0 function
   args:
     - '[combinations | join("")] | join(",")'

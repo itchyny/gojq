@@ -36,6 +36,13 @@ var builtinFuncs = map[string]string{
 	"values":    `def values: select(. != null);`,
 	"scalars":   `def scalars: select(type |. != "array" and . != "object");`,
 	"reverse":   `def reverse: [.[length - 1 - range(0;length)]];`,
+	"startswith": `
+		def startswith($x):
+			if type == "string" then
+				.[:$x | length] == $x
+			else
+				_type_error("startswith")
+			end;`,
 	"combinations": `
 		def combinations:
 			if length == 0 then
