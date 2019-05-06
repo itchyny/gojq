@@ -1111,6 +1111,19 @@
       "barfoo"
     ]
 
+- name: rtrimstr function
+  args:
+    - 'map(rtrimstr("foo"))'
+  input: '["", "fo", "foo", "fooo", "barfoo"]'
+  expected: |
+    [
+      "",
+      "fo",
+      "",
+      "fooo",
+      "bar"
+    ]
+
 - name: combinations/0 function
   args:
     - '[combinations | join("")] | join(",")'
