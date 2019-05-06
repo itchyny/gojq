@@ -166,6 +166,15 @@ func (env *env) applyIndex(x *Index, c <-chan interface{}) <-chan interface{} {
 			return env.applyObjectIndex(x, v)
 		case []interface{}:
 			return env.applyArrayIndex(x, v)
+		case string:
+			switch v := env.applyArrayIndex(x, explode(v)).(type) {
+			case <-chan interface{}:
+				return mapIterator(v, func(v interface{}) interface{} {
+					return implode(v.([]interface{}))
+				})
+			default:
+				return v
+			}
 		default:
 			if indexIsForObject(x) {
 				return &expectedObjectError{v}

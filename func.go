@@ -181,16 +181,20 @@ func funcExplode(env *env, f *Func) func(interface{}) interface{} {
 		}
 		switch v := v.(type) {
 		case string:
-			rs := []int32(v)
-			xs := make([]interface{}, len(rs))
-			for i, r := range rs {
-				xs[i] = r
-			}
-			return xs
+			return explode(v)
 		default:
 			return &funcTypeError{"explode", v}
 		}
 	}
+}
+
+func explode(s string) []interface{} {
+	rs := []int32(s)
+	xs := make([]interface{}, len(rs))
+	for i, r := range rs {
+		xs[i] = int(r)
+	}
+	return xs
 }
 
 func funcImplode(env *env, f *Func) func(interface{}) interface{} {
@@ -200,22 +204,26 @@ func funcImplode(env *env, f *Func) func(interface{}) interface{} {
 		}
 		switch v := v.(type) {
 		case []interface{}:
-			var rs []rune
-			for _, r := range v {
-				switch r := r.(type) {
-				case int:
-					rs = append(rs, rune(r))
-				case float64:
-					rs = append(rs, rune(r))
-				default:
-					return &funcTypeError{"implode", v}
-				}
-			}
-			return string(rs)
+			return implode(v)
 		default:
 			return &funcTypeError{"implode", v}
 		}
 	}
+}
+
+func implode(v []interface{}) interface{} {
+	var rs []rune
+	for _, r := range v {
+		switch r := r.(type) {
+		case int:
+			rs = append(rs, rune(r))
+		case float64:
+			rs = append(rs, rune(r))
+		default:
+			return &funcTypeError{"implode", v}
+		}
+	}
+	return string(rs)
 }
 
 func funcJoin(env *env, f *Func) func(interface{}) interface{} {
