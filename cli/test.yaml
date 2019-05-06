@@ -1601,6 +1601,20 @@
     []
     {}
 
+- name: tojson function
+  args:
+    - 'map(tojson)'
+  input: '[1, null, false, "foo", ["foo"], {"a": [1,2,3]}]'
+  expected: |
+    [
+      "1",
+      "null",
+      "false",
+      "\"foo\"",
+      "[\"foo\"]",
+      "{\"a\":[1,2,3]}"
+    ]
+
 - name: defining variable
   args:
     - '.foo * .foo.bar as $foo | .foo.bar as $bar | {$foo} + {bar: ($bar / 2)} * { baz: 20 }'

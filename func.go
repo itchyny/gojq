@@ -27,6 +27,7 @@ func init() {
 		"explode":        funcExplode,
 		"implode":        funcImplode,
 		"join":           funcJoin,
+		"tojson":         funcToJson,
 		"_type_error":    internalfuncTypeError,
 	}
 }
@@ -254,6 +255,19 @@ func funcJoin(env *env, f *Func) func(interface{}) interface{} {
 				return &funcTypeError{"join", v}
 			}
 		})
+	}
+}
+
+func funcToJson(env *env, f *Func) func(interface{}) interface{} {
+	return func(v interface{}) interface{} {
+		if len(f.Args) != 0 {
+			return &funcNotFoundError{f}
+		}
+		xs, err := json.Marshal(v)
+		if err != nil {
+			return err
+		}
+		return string(xs)
 	}
 }
 
