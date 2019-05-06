@@ -1163,6 +1163,13 @@
   expected: |
     "@abc xyz[] `abc xyz{} ☆"
 
+- name: ascii_upcase function
+  args:
+    - 'ascii_upcase'
+  input: '"@ABC XYZ[] `abc xyz{} ☆"'
+  expected: |
+    "@ABC XYZ[] `ABC XYZ{} ☆"
+
 - name: function not defined
   args:
     - 'abc'
