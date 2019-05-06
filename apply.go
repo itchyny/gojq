@@ -425,10 +425,13 @@ func (env *env) applySuffix(s *Suffix, c <-chan interface{}) <-chan interface{} 
 		if x := s.Index; x != nil {
 			return env.applyIndex(x, unitIterator(v))
 		}
-		if s.Array.Pipe == nil {
+		if x := s.SuffixIndex; x != nil {
+			return env.applyIndex(&Index{Start: x.Start, IsSlice: x.IsSlice, End: x.End}, unitIterator(v))
+		}
+		if s.Iter {
 			return env.applyIterator(unitIterator(v))
 		}
-		return env.applyArray(s.Array, unitIterator(v))
+		panic("unreachable suffix")
 	})
 }
 

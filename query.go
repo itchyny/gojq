@@ -141,9 +141,17 @@ type Array struct {
 
 // Suffix ...
 type Suffix struct {
-	Index    *Index `  @@`
-	Array    *Array `| @@`
-	Optional bool   `| @"?"`
+	Index       *Index       `  @@`
+	SuffixIndex *SuffixIndex `| @@`
+	Iter        bool         `| @("[" "]")`
+	Optional    bool         `| @"?"`
+}
+
+// SuffixIndex ...
+type SuffixIndex struct {
+	Start   *Pipe `"[" ( @@`
+	IsSlice bool  `( @":"`
+	End     *Pipe `@@? )? | ":" @@ ) "]"`
 }
 
 // If ...
