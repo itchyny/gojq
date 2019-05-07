@@ -22,13 +22,13 @@ func init() {
 		"utf8bytelength": noArgFunc(funcUtf8ByteLength),
 		"keys":           noArgFunc(funcKeys),
 		"has":            funcHas,
-		"tonumber":       funcToNumber,
-		"type":           funcType,
-		"explode":        funcExplode,
-		"implode":        funcImplode,
+		"tonumber":       noArgFunc(funcToNumber),
+		"type":           noArgFunc(funcType),
+		"explode":        noArgFunc(funcExplode),
+		"implode":        noArgFunc(funcImplode),
 		"join":           funcJoin,
-		"tojson":         funcToJSON,
-		"fromjson":       funcFromJSON,
+		"tojson":         noArgFunc(funcToJSON),
+		"fromjson":       noArgFunc(funcFromJSON),
 		"_type_error":    internalfuncTypeError,
 	}
 }
@@ -148,46 +148,31 @@ func funcHas(env *env, f *Func) func(interface{}) interface{} {
 	}
 }
 
-func funcToNumber(env *env, f *Func) func(interface{}) interface{} {
-	return func(v interface{}) interface{} {
-		if len(f.Args) != 0 {
-			return &funcNotFoundError{f}
+func funcToNumber(v interface{}) interface{} {
+	switch v := v.(type) {
+	case int, uint, float64:
+		return v
+	case string:
+		var x float64
+		if err := json.Unmarshal([]byte(v), &x); err != nil {
+			return fmt.Errorf("%s: %q", err, v)
 		}
-		switch v := v.(type) {
-		case int, uint, float64:
-			return v
-		case string:
-			var x float64
-			if err := json.Unmarshal([]byte(v), &x); err != nil {
-				return fmt.Errorf("%s: %q", err, v)
-			}
-			return x
-		default:
-			return &funcTypeError{"tonumber", v}
-		}
+		return x
+	default:
+		return &funcTypeError{"tonumber", v}
 	}
 }
 
-func funcType(env *env, f *Func) func(interface{}) interface{} {
-	return func(v interface{}) interface{} {
-		if len(f.Args) != 0 {
-			return &funcNotFoundError{f}
-		}
-		return typeof(v)
-	}
+func funcType(v interface{}) interface{} {
+	return typeof(v)
 }
 
-func funcExplode(env *env, f *Func) func(interface{}) interface{} {
-	return func(v interface{}) interface{} {
-		if len(f.Args) != 0 {
-			return &funcNotFoundError{f}
-		}
-		switch v := v.(type) {
-		case string:
-			return explode(v)
-		default:
-			return &funcTypeError{"explode", v}
-		}
+func funcExplode(v interface{}) interface{} {
+	switch v := v.(type) {
+	case string:
+		return explode(v)
+	default:
+		return &funcTypeError{"explode", v}
 	}
 }
 
@@ -200,17 +185,12 @@ func explode(s string) []interface{} {
 	return xs
 }
 
-func funcImplode(env *env, f *Func) func(interface{}) interface{} {
-	return func(v interface{}) interface{} {
-		if len(f.Args) != 0 {
-			return &funcNotFoundError{f}
-		}
-		switch v := v.(type) {
-		case []interface{}:
-			return implode(v)
-		default:
-			return &funcTypeError{"implode", v}
-		}
+func funcImplode(v interface{}) interface{} {
+	switch v := v.(type) {
+	case []interface{}:
+		return implode(v)
+	default:
+		return &funcTypeError{"implode", v}
 	}
 }
 
@@ -259,35 +239,25 @@ func funcJoin(env *env, f *Func) func(interface{}) interface{} {
 	}
 }
 
-func funcToJSON(env *env, f *Func) func(interface{}) interface{} {
-	return func(v interface{}) interface{} {
-		if len(f.Args) != 0 {
-			return &funcNotFoundError{f}
-		}
-		xs, err := json.Marshal(v)
+func funcToJSON(v interface{}) interface{} {
+	xs, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	return string(xs)
+}
+
+func funcFromJSON(v interface{}) interface{} {
+	switch v := v.(type) {
+	case string:
+		var w interface{}
+		err := json.Unmarshal([]byte(v), &w)
 		if err != nil {
 			return err
 		}
-		return string(xs)
-	}
-}
-
-func funcFromJSON(env *env, f *Func) func(interface{}) interface{} {
-	return func(v interface{}) interface{} {
-		if len(f.Args) != 0 {
-			return &funcNotFoundError{f}
-		}
-		switch v := v.(type) {
-		case string:
-			var w interface{}
-			err := json.Unmarshal([]byte(v), &w)
-			if err != nil {
-				return err
-			}
-			return w
-		default:
-			return &funcTypeError{"fromjson", v}
-		}
+		return w
+	default:
+		return &funcTypeError{"fromjson", v}
 	}
 }
 
