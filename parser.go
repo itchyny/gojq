@@ -15,7 +15,6 @@ var parser = participle.MustBuild(
 		`|(?P<String>"([^"\\]*|\\.)*")`+
 		"|(?P<Punct>[!-/:-@\\[-\\]^-`{-~])",
 	))),
-	participle.Unquote("String"),
 	participle.UseLookahead(2),
 )
 

@@ -1,5 +1,7 @@
 package gojq
 
+import "strconv"
+
 func (env *env) applyQuery(query *Query, c <-chan interface{}) <-chan interface{} {
 	for _, fd := range query.FuncDefs {
 		env.addFuncDef(fd)
@@ -160,7 +162,7 @@ func (env *env) applyTermInternal(t *Term, c <-chan interface{}) (d <-chan inter
 		return env.applyUnary(t.Unary.Op, t.Unary.Term, c)
 	}
 	if t.String != nil {
-		return unitIterator(*t.String)
+		return env.applyString(*t.String, c)
 	}
 	return env.applyPipe(t.Pipe, c)
 }
@@ -366,9 +368,22 @@ func (env *env) applyObject(x *Object, c <-chan interface{}) <-chan interface{} 
 						unitIterator(*kv.KeyOnly),
 						env.applyIndex(&Index{Name: *kv.KeyOnly}, unitIterator(v)))
 				}
+			} else if kv.KeyOnlyString != nil {
+				// todo: use applyString
+				x, err := strconv.Unquote(*kv.KeyOnlyString)
+				if err != nil {
+					return unitIterator(err)
+				}
+				d = objectIterator(d,
+					unitIterator(x),
+					env.applyIndex(&Index{Name: x}, unitIterator(v)))
 			} else if kv.Pipe != nil {
 				d = objectIterator(d,
 					env.applyPipe(kv.Pipe, unitIterator(v)),
+					env.applyExpr(kv.Val, unitIterator(v)))
+			} else if kv.KeyString != nil {
+				d = objectIterator(d,
+					env.applyString(*kv.KeyString, unitIterator(v)),
 					env.applyExpr(kv.Val, unitIterator(v)))
 			} else {
 				d = objectIterator(d,
@@ -393,6 +408,14 @@ func (env *env) applyArray(x *Array, c <-chan interface{}) <-chan interface{} {
 		a = append(a, v)
 	}
 	return unitIterator(a)
+}
+
+func (env *env) applyString(x string, c <-chan interface{}) <-chan interface{} {
+	x, err := strconv.Unquote(x)
+	if err == nil {
+		return unitIterator(x)
+	}
+	return unitIterator(err)
 }
 
 func (env *env) applyUnary(op Operator, x *Term, c <-chan interface{}) <-chan interface{} {
