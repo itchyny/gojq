@@ -113,6 +113,14 @@ func (err *bindVariableNameError) Error() string {
 	return fmt.Sprintf(`variable should start with "$" but got: %q`, err.n)
 }
 
+type stringLiteralError struct {
+	s string
+}
+
+func (err *stringLiteralError) Error() string {
+	return fmt.Sprintf("expected a string but got: %s", err.s)
+}
+
 func typeErrorPreview(v interface{}) string {
 	return typeof(v) + preview(v)
 }

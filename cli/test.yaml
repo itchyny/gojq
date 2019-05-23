@@ -12,9 +12,9 @@
 - name: string
   args:
     - '.'
-  input: '"Hello, world!"'
+  input: '"Hello, world!\n\t\uff06"'
   expected: |
-    "Hello, world!"
+    "Hello, world!\n\t＆"
 
 - name: object
   input: '{"foo": 128}'
@@ -1638,6 +1638,20 @@
       "utf8bytelength cannot be applied to: boolean (true)",
       "utf8bytelength cannot be applied to: boolean (false)"
     ]
+
+- name: string interpolation
+  args:
+    - '["\(.foo[])_\(.bar[])_\(.baz[])"] | join(" ")'
+  input: '{ "foo": [0, 1], "bar": ["x", "y"], "baz": [{"a": 1}, [1], null] }'
+  expected: |
+    "0_x_{\"a\":1} 1_x_{\"a\":1} 0_y_{\"a\":1} 1_y_{\"a\":1} 0_x_[1] 1_x_[1] 0_y_[1] 1_y_[1] 0_x_null 1_x_null 0_y_null 1_y_null"
+
+- name: string interpolation in object
+  args:
+    - '[{a:"\(.foo[])"}, {"\(.foo[])": 1}, {"\(.bar[])"}] | map(tojson) | join(",")'
+  input: '{ "foo": [0, 1], "bar": ["x", "y"], "x": 10, "y": 20 }'
+  expected: |
+    "{\"a\":\"0\"},{\"a\":\"1\"},{\"0\":1},{\"1\":1},{\"x\":10},{\"y\":20}"
 
 - name: tojson function
   args:

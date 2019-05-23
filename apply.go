@@ -1,6 +1,10 @@
 package gojq
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+	"unicode/utf8"
+)
 
 func (env *env) applyQuery(query *Query, c <-chan interface{}) <-chan interface{} {
 	for _, fd := range query.FuncDefs {
@@ -369,14 +373,9 @@ func (env *env) applyObject(x *Object, c <-chan interface{}) <-chan interface{} 
 						env.applyIndex(&Index{Name: *kv.KeyOnly}, unitIterator(v)))
 				}
 			} else if kv.KeyOnlyString != nil {
-				// todo: use applyString
-				x, err := strconv.Unquote(*kv.KeyOnlyString)
-				if err != nil {
-					return unitIterator(err)
-				}
-				d = objectIterator(d,
-					unitIterator(x),
-					env.applyIndex(&Index{Name: x}, unitIterator(v)))
+				d = objectKeyIterator(d,
+					env.applyString(*kv.KeyOnlyString, unitIterator(v)),
+					unitIterator(v))
 			} else if kv.Pipe != nil {
 				d = objectIterator(d,
 					env.applyPipe(kv.Pipe, unitIterator(v)),
@@ -411,11 +410,66 @@ func (env *env) applyArray(x *Array, c <-chan interface{}) <-chan interface{} {
 }
 
 func (env *env) applyString(x string, c <-chan interface{}) <-chan interface{} {
-	x, err := strconv.Unquote(x)
-	if err == nil {
-		return unitIterator(x)
+	if len(x) < 2 || x[0] != '"' || x[len(x)-1] != '"' {
+		return unitIterator(&stringLiteralError{x})
 	}
-	return unitIterator(err)
+	orig := x
+	// ref: strconv.Unquote
+	x = x[1 : len(x)-1]
+	var runeTmp [utf8.UTFMax]byte
+	buf := make([]byte, 0, 3*len(x)/2)
+	var cc func() <-chan interface{}
+	var xs []<-chan interface{}
+	for len(x) > 0 {
+		r, multibyte, ss, err := strconv.UnquoteChar(x, '"')
+		if err != nil {
+			if !strings.HasPrefix(x, "\\(") {
+				return unitIterator(err)
+			}
+			x = x[2:]
+			i, d, b := 0, 1, true
+			for ; i < len(x) && b; i++ {
+				switch x[i] {
+				case '(':
+					d++
+				case ')':
+					d--
+					b = d != 0
+				}
+			}
+			if i == len(x) && b {
+				return unitIterator(&stringLiteralError{orig})
+			}
+			q, err := Parse(x[:i-1])
+			if err != nil {
+				return unitIterator(err)
+			}
+			x = x[i:]
+			if len(buf) > 0 {
+				xs = append(xs, unitIterator(string(buf)))
+				buf = buf[:0]
+			}
+			if cc == nil {
+				cc = reuseIterator(c)
+			}
+			xs = append(xs, env.applyQuery(q, cc()))
+			continue
+		}
+		x = ss
+		if r < utf8.RuneSelf || !multibyte {
+			buf = append(buf, byte(r))
+		} else {
+			n := utf8.EncodeRune(runeTmp[:], r)
+			buf = append(buf, runeTmp[:n]...)
+		}
+	}
+	if len(xs) == 0 {
+		return unitIterator(string(buf))
+	}
+	if len(buf) > 0 {
+		xs = append(xs, unitIterator(string(buf)))
+	}
+	return stringIterator(xs)
 }
 
 func (env *env) applyUnary(op Operator, x *Term, c <-chan interface{}) <-chan interface{} {
