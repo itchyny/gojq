@@ -37,6 +37,14 @@
   expected: |
     128
 
+- name: object index by string
+  args:
+    - '."2\(.foo[])3"'
+  input: '{"foo":[1,2],"213":3,"223":6}'
+  expected: |
+    3
+    6
+
 - name: object index by query
   args:
     - '.[.a + .b]'

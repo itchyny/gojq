@@ -205,6 +205,15 @@ func (env *env) applyObjectIndex(x *Index, m map[string]interface{}) interface{}
 	if x.Name != "" {
 		return m[x.Name]
 	}
+	if x.String != nil {
+		return mapIterator(env.applyString(*x.String, unitIterator(m)), func(s interface{}) interface{} {
+			key, ok := s.(string)
+			if !ok {
+				return &objectKeyNotStringError{s}
+			}
+			return m[key]
+		})
+	}
 	return mapIterator(env.applyPipe(x.Start, unitIterator(m)), func(s interface{}) interface{} {
 		key, ok := s.(string)
 		if !ok {
@@ -249,7 +258,7 @@ func (env *env) applyArrayIndex(x *Index, a []interface{}) interface{} {
 }
 
 func indexIsForObject(x *Index) bool {
-	return (x.Name != "" || x.Start != nil) && !x.IsSlice && x.End == nil
+	return (x.Name != "" || x.String != nil || x.Start != nil) && !x.IsSlice && x.End == nil
 }
 
 func toInt(x interface{}) (int, bool) {

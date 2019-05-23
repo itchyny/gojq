@@ -113,10 +113,11 @@ type Term struct {
 
 // Index ...
 type Index struct {
-	Name    string `"." ( @Ident`
-	Start   *Pipe  `| "[" ( @@`
-	IsSlice bool   `( @":"`
-	End     *Pipe  `@@? )? | ":" @@ ) "]" )`
+	Name    string  `"." ( @Ident`
+	String  *string `| @String`
+	Start   *Pipe   `| "[" ( @@`
+	IsSlice bool    `( @":"`
+	End     *Pipe   `@@? )? | ":" @@ ) "]" )`
 }
 
 // Func ...
