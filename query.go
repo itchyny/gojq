@@ -128,7 +128,7 @@ type Func struct {
 // Object ...
 type Object struct {
 	KeyVals []struct {
-		Key           string  `( ( @Ident`
+		Key           string  `( ( ( @Ident | @Keyword )`
 		KeyString     *string `  | @String )`
 		Pipe          *Pipe   `| "(" @@ ")" ) ":"`
 		Val           *Expr   `@@`
