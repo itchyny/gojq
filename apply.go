@@ -174,6 +174,8 @@ func (env *env) applyTermInternal(t *Term, c <-chan interface{}) (d <-chan inter
 func (env *env) applyIndex(x *Index, c <-chan interface{}) <-chan interface{} {
 	return mapIterator(c, func(v interface{}) interface{} {
 		switch v := v.(type) {
+		case nil:
+			return nil
 		case map[string]interface{}:
 			return env.applyObjectIndex(x, v)
 		case []interface{}:

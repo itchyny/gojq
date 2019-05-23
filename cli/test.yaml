@@ -81,6 +81,13 @@
   error: |
     expected an object but got: number (128)
 
+- name: object index against null
+  args:
+    - '.foo.bar.baz'
+  input: 'null'
+  expected: |
+    null
+
 - name: object optional
   args:
     - '.foo.bar.baz?'
@@ -205,6 +212,13 @@
   input: '{"foo": 128}'
   error: |
     expected an array but got: object ({"foo":128})
+
+- name: array index against null
+  args:
+    - '.[0]'
+  input: 'null'
+  expected: |
+    null
 
 - name: iterator
   args:
