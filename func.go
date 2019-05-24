@@ -44,6 +44,7 @@ func init() {
 		"floor":          mathFunc("floor", math.Floor),
 		"round":          mathFunc("round", math.Round),
 		"ceil":           mathFunc("ceil", math.Ceil),
+		"trunc":          mathFunc("trunc", math.Trunc),
 		"fabs":           mathFunc("fabs", math.Abs),
 		"sqrt":           mathFunc("sqrt", math.Sqrt),
 		"cbrt":           mathFunc("cbrt", math.Cbrt),
