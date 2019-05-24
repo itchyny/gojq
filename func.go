@@ -41,6 +41,12 @@ func init() {
 		"asinh":          mathFunc("asinh", math.Asinh),
 		"acosh":          mathFunc("acosh", math.Acosh),
 		"atanh":          mathFunc("atanh", math.Atanh),
+		"floor":          mathFunc("floor", math.Floor),
+		"round":          mathFunc("round", math.Round),
+		"ceil":           mathFunc("ceil", math.Ceil),
+		"fabs":           mathFunc("fabs", math.Abs),
+		"sqrt":           mathFunc("sqrt", math.Sqrt),
+		"cbrt":           mathFunc("cbrt", math.Cbrt),
 		"_type_error":    internalfuncTypeError,
 	}
 }
