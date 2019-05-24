@@ -38,6 +38,9 @@ func init() {
 		"sinh":           mathFunc("sinh", math.Sinh),
 		"cosh":           mathFunc("cosh", math.Cosh),
 		"tanh":           mathFunc("tanh", math.Tanh),
+		"asinh":          mathFunc("asinh", math.Asinh),
+		"acosh":          mathFunc("acosh", math.Acosh),
+		"atanh":          mathFunc("atanh", math.Atanh),
 		"_type_error":    internalfuncTypeError,
 	}
 }

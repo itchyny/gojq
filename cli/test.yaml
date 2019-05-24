@@ -1788,12 +1788,23 @@
     "1,1.5430806348152437,3.7621956910836314"
     "0,0.7615941559557649,0.9640275800758169"
 
-- name: stringify nan
+- name: inverse hyperbolic functions
   args:
-    - 'asin | tojson,([]|join(","))'
-  input: '2'
+    - 'map(asinh),map(acosh),map(atanh) | join(",")'
+  input: '[0, 1, 2]'
+  expected: |
+    "0,0.881373587019543,1.4436354751788103"
+    "null,0,1.3169578969248166"
+    "0,1.7976931348623157e+308,null"
+
+- name: stringify nan and inf
+  args:
+    - '(2|asin,1|atanh) | tojson,([]|join(","))'
+  input: 'null'
   expected: |
     "null"
+    ""
+    "1.7976931348623157e+308"
     ""
 
 - name: invalid query
