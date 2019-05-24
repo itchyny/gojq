@@ -247,8 +247,14 @@ func funcJoin(env *env, f *Func) func(interface{}) interface{} {
 							s.WriteString(x)
 						}
 						if v != nil {
-							if u, ok := v.(float64); ok && math.IsNaN(u) {
-								s.WriteString("null")
+							if u, ok := v.(float64); ok {
+								if math.IsNaN(u) {
+									s.WriteString("null")
+								} else if math.IsInf(u, 0) {
+									s.WriteString(fmt.Sprint(math.MaxFloat64))
+								} else {
+									s.WriteString(fmt.Sprint(v))
+								}
 							} else {
 								s.WriteString(fmt.Sprint(v))
 							}
@@ -268,8 +274,12 @@ func funcJoin(env *env, f *Func) func(interface{}) interface{} {
 func funcToJSON(v interface{}) interface{} {
 	xs, err := json.Marshal(v)
 	if err != nil {
-		if u, ok := v.(float64); ok && math.IsNaN(u) {
-			return "null"
+		if u, ok := v.(float64); ok {
+			if math.IsNaN(u) {
+				return "null"
+			} else if math.IsInf(u, 0) {
+				return fmt.Sprint(math.MaxFloat64)
+			}
 		}
 		return err
 	}
