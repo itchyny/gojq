@@ -241,7 +241,11 @@ func funcJoin(env *env, f *Func) func(interface{}) interface{} {
 							s.WriteString(x)
 						}
 						if v != nil {
-							s.WriteString(fmt.Sprint(v))
+							if u, ok := v.(float64); ok && math.IsNaN(u) {
+								s.WriteString("null")
+							} else {
+								s.WriteString(fmt.Sprint(v))
+							}
 						}
 					}
 					return s.String()
@@ -258,6 +262,9 @@ func funcJoin(env *env, f *Func) func(interface{}) interface{} {
 func funcToJSON(v interface{}) interface{} {
 	xs, err := json.Marshal(v)
 	if err != nil {
+		if u, ok := v.(float64); ok && math.IsNaN(u) {
+			return "null"
+		}
 		return err
 	}
 	return string(xs)
