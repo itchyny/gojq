@@ -29,6 +29,9 @@ func init() {
 		"join":           funcJoin,
 		"tojson":         noArgFunc(funcToJSON),
 		"fromjson":       noArgFunc(funcFromJSON),
+		"sin":            mathFunc("sin", math.Sin),
+		"cos":            mathFunc("cos", math.Cos),
+		"tan":            mathFunc("tan", math.Tan),
 		"_type_error":    internalfuncTypeError,
 	}
 }
@@ -42,6 +45,19 @@ func noArgFunc(fn func(interface{}) interface{}) function {
 			return fn(v)
 		}
 	}
+}
+
+func mathFunc(name string, f func(x float64) float64) function {
+	return noArgFunc(func(v interface{}) interface{} {
+		switch v := v.(type) {
+		case int:
+			return f(float64(v))
+		case float64:
+			return f(v)
+		default:
+			return &funcTypeError{name, v}
+		}
+	})
 }
 
 func funcNull(_ interface{}) interface{} {

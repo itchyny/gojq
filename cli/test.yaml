@@ -1761,6 +1761,15 @@
   error: |
     variable not defined: $bar
 
+- name: trigonometric functions
+  args:
+    - 'map(sin),map(cos),map(tan) | join(",")'
+  input: '[0, 1, 2]'
+  expected: |
+    "0,0.8414709848078965,0.9092974268256816"
+    "1,0.5403023058681398,-0.4161468365471424"
+    "0,1.557407724654902,-2.185039863261519"
+
 - name: invalid query
   args:
     - '>abc'
