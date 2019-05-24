@@ -35,6 +35,9 @@ func init() {
 		"asin":           mathFunc("asin", math.Asin),
 		"acos":           mathFunc("acos", math.Acos),
 		"atan":           mathFunc("atan", math.Atan),
+		"sinh":           mathFunc("sinh", math.Sinh),
+		"cosh":           mathFunc("cosh", math.Cosh),
+		"tanh":           mathFunc("tanh", math.Tanh),
 		"_type_error":    internalfuncTypeError,
 	}
 }
