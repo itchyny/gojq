@@ -57,6 +57,12 @@ func init() {
 		"log1p":          mathFunc("log1p", math.Log1p),
 		"log2":           mathFunc("log2", math.Log2),
 		"logb":           mathFunc("logb", math.Logb),
+		"erf":            mathFunc("erf", math.Erf),
+		"erfc":           mathFunc("erfc", math.Erfc),
+		"j0":             mathFunc("j0", math.J0),
+		"j1":             mathFunc("j1", math.J1),
+		"y0":             mathFunc("y0", math.Y0),
+		"y1":             mathFunc("y1", math.Y1),
 		"_type_error":    internalfuncTypeError,
 	}
 }
