@@ -1770,6 +1770,23 @@
     "1,0.5403023058681398,-0.4161468365471424"
     "0,1.557407724654902,-2.185039863261519"
 
+- name: inverse trigonometric functions
+  args:
+    - 'map(asin),map(acos),map(atan) | join(",")'
+  input: '[0, 1, 2]'
+  expected: |
+    "0,1.5707963267948966,null"
+    "1.5707963267948966,0,null"
+    "0,0.7853981633974483,1.1071487177940904"
+
+- name: stringify nan
+  args:
+    - 'asin | tojson,([]|join(","))'
+  input: '2'
+  expected: |
+    "null"
+    ""
+
 - name: invalid query
   args:
     - '>abc'
