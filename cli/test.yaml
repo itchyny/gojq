@@ -1828,6 +1828,17 @@
     "[1,2,4,8,16,32,64,128,256,512]"
     "[0,1.71828,6.38905,19.08553,53.59815,147.41315,402.42879,1095.63315,2979.95798,8102.08392]"
 
+- name: log, log10, log1p, log2, logb functions
+  args:
+    - '[range(.) | tan] | map(log),map(log10),map(log1p),map(log2),map(logb) | map(. * 100000 | floor / 100000) | tojson'
+  input: '10'
+  expected: |
+    "[-1.7976931348623157e+308,0.44302,null,null,0.14654,null,null,-0.1376,null,null]"
+    "[-1.7976931348623157e+308,0.1924,null,null,0.06364,null,null,-0.05976,null,null]"
+    "[0,0.93899,null,-0.15379,0.76909,null,-0.34391,0.62671,null,-0.60206]"
+    "[-1.7976931348623157e+308,0.63914,null,null,0.21141,null,null,-0.19852,null,null]"
+    "[-1.7976931348623157e+308,0,1,-3,0,1,-2,-1,2,-2]"
+
 - name: stringify nan and inf
   args:
     - '(2|asin),(1|atanh),(-1|atanh) | tojson,([]|join(",")),.'

@@ -51,6 +51,11 @@ func init() {
 		"exp10":          mathFunc("exp10", func(v float64) float64 { return math.Pow(10, v) }),
 		"exp2":           mathFunc("exp2", math.Exp2),
 		"expm1":          mathFunc("expm1", math.Expm1),
+		"log":            mathFunc("log", math.Log),
+		"log10":          mathFunc("log10", math.Log10),
+		"log1p":          mathFunc("log1p", math.Log1p),
+		"log2":           mathFunc("log2", math.Log2),
+		"logb":           mathFunc("logb", math.Logb),
 		"_type_error":    internalfuncTypeError,
 	}
 }
