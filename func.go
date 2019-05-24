@@ -47,6 +47,10 @@ func init() {
 		"fabs":           mathFunc("fabs", math.Abs),
 		"sqrt":           mathFunc("sqrt", math.Sqrt),
 		"cbrt":           mathFunc("cbrt", math.Cbrt),
+		"exp":            mathFunc("exp", math.Exp),
+		"exp10":          mathFunc("exp10", func(v float64) float64 { return math.Pow(10, v) }),
+		"exp2":           mathFunc("exp2", math.Exp2),
+		"expm1":          mathFunc("expm1", math.Expm1),
 		"_type_error":    internalfuncTypeError,
 	}
 }
