@@ -17,13 +17,8 @@ func objectIterator(c <-chan interface{}, keys <-chan interface{}, values <-chan
 	return mapIterator(c, func(v interface{}) interface{} {
 		m := v.(map[string]interface{})
 		return mapIterator(ks(), func(key interface{}) interface{} {
-			var k string
-			switch key := key.(type) {
-			case string:
-				k = key
-			case error:
-				return key
-			default:
+			k, ok := key.(string)
+			if !ok {
 				return &objectKeyNotStringError{key}
 			}
 			return mapIterator(vs(), func(value interface{}) interface{} {
@@ -44,13 +39,8 @@ func objectKeyIterator(c <-chan interface{}, keys <-chan interface{}, values <-c
 	return mapIterator(c, func(v interface{}) interface{} {
 		m := v.(map[string]interface{})
 		return mapIterator(ks(), func(key interface{}) interface{} {
-			var k string
-			switch key := key.(type) {
-			case string:
-				k = key
-			case error:
-				return key
-			default:
+			k, ok := key.(string)
+			if !ok {
 				return &objectKeyNotStringError{key}
 			}
 			return mapIterator(vs(), func(value interface{}) interface{} {
@@ -58,14 +48,11 @@ func objectKeyIterator(c <-chan interface{}, keys <-chan interface{}, values <-c
 				for k, v := range m {
 					l[k] = v
 				}
-				switch v := value.(type) {
-				case map[string]interface{}:
-					l[k] = v[k]
-				case error:
-					return v
-				default:
+				v, ok := value.(map[string]interface{})
+				if !ok {
 					return &expectedObjectError{v}
 				}
+				l[k] = v[k]
 				return l
 			})
 		})
