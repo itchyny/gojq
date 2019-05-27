@@ -124,13 +124,13 @@ func (env *env) applyTerm(t *Term, c <-chan interface{}) <-chan interface{} {
 	if t.Bind == nil {
 		return env.applyTermInternal(t, c)
 	}
-	if t.Bind.Ident[0] != '$' {
-		return unitIterator(&bindVariableNameError{t.Bind.Ident})
+	if t.Bind.Pattern.Name != "" && t.Bind.Pattern.Name[0] != '$' {
+		return unitIterator(&bindVariableNameError{t.Bind.Pattern.Name})
 	}
 	cc := reuseIterator(c)
 	return mapIterator(env.applyTermInternal(t, cc()), func(v interface{}) interface{} {
 		subEnv := newEnv(env)
-		subEnv.values.Store(t.Bind.Ident, v)
+		subEnv.values.Store(t.Bind.Pattern.Name, v)
 		return subEnv.applyPipe(t.Bind.Body, cc())
 	})
 }

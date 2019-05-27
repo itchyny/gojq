@@ -138,9 +138,14 @@ type Term struct {
 	Pipe       *Pipe     `| "(" @@ ")" )`
 	SuffixList []*Suffix `@@*`
 	Bind       *struct {
-		Ident string `"as" @Ident`
-		Body  *Pipe  `"|" @@`
+		Pattern *Pattern `"as" @@`
+		Body    *Pipe    `"|" @@`
 	} `@@?`
+}
+
+// Pattern ...
+type Pattern struct {
+	Name string `@Ident`
 }
 
 // Index ...
