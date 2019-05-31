@@ -170,8 +170,11 @@ func (cli *cli) printValue(v <-chan interface{}) error {
 			return err
 		}
 		if cli.outputRaw {
-			fmt.Fprint(cli.outStream, x)
-			continue
+			if _, ok := x.(string); ok {
+				fmt.Fprint(cli.outStream, x)
+				cli.outStream.Write([]byte{'\n'})
+				continue
+			}
 		}
 		xs, err := jsonFormatter().Marshal(x)
 		if err != nil {
