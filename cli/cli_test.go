@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"os"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -17,15 +18,19 @@ func TestCliRun(t *testing.T) {
 	defer f.Close()
 
 	var testCases []struct {
-		Name     string
-		Args     []string
-		Input    string
-		Expected string
-		Error    string
+		Name          string
+		Args          []string
+		Input         string
+		Expected      string
+		Error         string
+		SkipOnWindows bool `yaml:"skip-on-windows"`
 	}
 	require.NoError(t, yaml.NewDecoder(f).Decode(&testCases))
 
 	for _, tc := range testCases {
+		if runtime.GOOS == "windows" && tc.SkipOnWindows {
+			continue
+		}
 		t.Run(tc.Name, func(t *testing.T) {
 			outStream := new(bytes.Buffer)
 			errStream := new(bytes.Buffer)

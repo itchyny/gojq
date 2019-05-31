@@ -1982,3 +1982,4 @@
     }
   error: |
     open testdata/4.json: no such file or directory
+  skip-on-windows: true
