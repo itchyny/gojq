@@ -33,6 +33,8 @@ type cli struct {
 	inStream  io.Reader
 	outStream io.Writer
 	errStream io.Writer
+
+	outputRaw bool
 }
 
 func (cli *cli) run(args []string) int {
@@ -52,6 +54,7 @@ Options:
 		fs.PrintDefaults()
 	}
 	var showVersion bool
+	fs.BoolVar(&cli.outputRaw, "r", false, "output raw string")
 	fs.BoolVar(&showVersion, "v", false, "print version")
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
@@ -165,6 +168,10 @@ func (cli *cli) printValue(v <-chan interface{}) error {
 	for x := range v {
 		if err, ok := x.(error); ok {
 			return err
+		}
+		if cli.outputRaw {
+			fmt.Fprint(cli.outStream, x)
+			continue
 		}
 		xs, err := jsonFormatter().Marshal(x)
 		if err != nil {

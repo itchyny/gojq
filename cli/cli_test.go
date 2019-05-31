@@ -47,3 +47,20 @@ func TestCliRun(t *testing.T) {
 		})
 	}
 }
+
+func TestOutputRaw(t *testing.T) {
+	input := `{"foo": [1, null], "baz": {"foo": [true, "bar"], "baz": "multiple\nline"}}`
+	query := `.baz.baz`
+
+	outStream := new(bytes.Buffer)
+	errStream := new(bytes.Buffer)
+	cli := cli{
+		inStream:  strings.NewReader(input),
+		outStream: outStream,
+		errStream: errStream,
+	}
+	code := cli.run([]string{"-r", query})
+	assert.Equal(t, exitCodeOK, code)
+	assert.Equal(t, "multiple\nline", outStream.String())
+	assert.Equal(t, "", errStream.String())
+}
