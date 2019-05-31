@@ -297,8 +297,13 @@
 
 - name: empty value
   args:
-    - '.[] | empty, empty'
+    - '.[] | empty, empty, . + [empty,.][], [empty,.][] / 1, empty < ., . and empty, empty or .'
   input: '[0, 1]'
+  expected: |
+    0
+    0
+    2
+    1
 
 - name: unary operators
   args:

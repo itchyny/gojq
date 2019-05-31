@@ -88,6 +88,9 @@ func binopIteratorAlt(l <-chan interface{}, r <-chan interface{}) <-chan interfa
 				done = true
 				break
 			}
+			if v == struct{}{} {
+				continue
+			}
 			if valueToBool(v) {
 				d <- v
 				done = true
@@ -95,6 +98,9 @@ func binopIteratorAlt(l <-chan interface{}, r <-chan interface{}) <-chan interfa
 		}
 		if !done {
 			for v := range r {
+				if v == struct{}{} {
+					continue
+				}
 				d <- v
 			}
 		}
@@ -112,6 +118,9 @@ func binopIteratorOr(l <-chan interface{}, r <-chan interface{}) <-chan interfac
 				d <- err
 				return
 			}
+			if l == struct{}{} {
+				continue
+			}
 			if valueToBool(l) {
 				d <- true
 			} else {
@@ -119,6 +128,9 @@ func binopIteratorOr(l <-chan interface{}, r <-chan interface{}) <-chan interfac
 					if err, ok := r.(error); ok {
 						d <- err
 						return
+					}
+					if r == struct{}{} {
+						continue
 					}
 					d <- valueToBool(r)
 				}
@@ -138,11 +150,17 @@ func binopIteratorAnd(l <-chan interface{}, r <-chan interface{}) <-chan interfa
 				d <- err
 				return
 			}
+			if l == struct{}{} {
+				continue
+			}
 			if valueToBool(l) {
 				for r := range r() {
 					if err, ok := r.(error); ok {
 						d <- err
 						return
+					}
+					if r == struct{}{} {
+						continue
 					}
 					d <- valueToBool(r)
 				}
@@ -164,10 +182,16 @@ func binopIterator(l <-chan interface{}, r <-chan interface{}, fn func(l, r inte
 				d <- err
 				return
 			}
+			if r == struct{}{} {
+				continue
+			}
 			for l := range l() {
 				if err, ok := l.(error); ok {
 					d <- err
 					return
+				}
+				if l == struct{}{} {
+					continue
 				}
 				d <- fn(l, r)
 			}
