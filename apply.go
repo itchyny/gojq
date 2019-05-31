@@ -48,6 +48,23 @@ func (env *env) applyAlt(e *Alt, c <-chan interface{}) <-chan interface{} {
 }
 
 func (env *env) applyExpr(e *Expr, c <-chan interface{}) <-chan interface{} {
+	if e.Bind == nil {
+		return env.applyExprInternal(e, c)
+	}
+	if e.Bind.Pattern.Name != "" && e.Bind.Pattern.Name[0] != '$' {
+		return unitIterator(&bindVariableNameError{e.Bind.Pattern.Name})
+	}
+	cc := reuseIterator(c)
+	return mapIterator(env.applyExprInternal(e, cc()), func(v interface{}) interface{} {
+		subEnv := newEnv(env)
+		if err := subEnv.applyPattern(e.Bind.Pattern, v); err != nil {
+			return err
+		}
+		return subEnv.applyPipe(e.Bind.Body, cc())
+	})
+}
+
+func (env *env) applyExprInternal(e *Expr, c <-chan interface{}) <-chan interface{} {
 	if e.Logic != nil {
 		return env.applyLogic(e.Logic, c)
 	}
@@ -123,79 +140,7 @@ func (env *env) applyFactor(e *Factor, c <-chan interface{}) <-chan interface{} 
 	return w
 }
 
-func (env *env) applyTerm(t *Term, c <-chan interface{}) <-chan interface{} {
-	if t.Bind == nil {
-		return env.applyTermInternal(t, c)
-	}
-	if t.Bind.Pattern.Name != "" && t.Bind.Pattern.Name[0] != '$' {
-		return unitIterator(&bindVariableNameError{t.Bind.Pattern.Name})
-	}
-	cc := reuseIterator(c)
-	return mapIterator(env.applyTermInternal(t, cc()), func(v interface{}) interface{} {
-		subEnv := newEnv(env)
-		if err := subEnv.applyPattern(t.Bind.Pattern, v); err != nil {
-			return err
-		}
-		return subEnv.applyPipe(t.Bind.Body, cc())
-	})
-}
-
-func (env *env) applyPattern(p *Pattern, v interface{}) error {
-	if p.Name != "" {
-		env.values.Store(p.Name, v)
-	} else if len(p.Array) > 0 {
-		if v == nil {
-			v = []interface{}{}
-		}
-		a, ok := v.([]interface{})
-		if !ok {
-			return &expectedArrayError{v}
-		}
-		for i, pi := range p.Array {
-			if i < len(a) {
-				if err := env.applyPattern(pi, a[i]); err != nil {
-					return err
-				}
-			} else {
-				if err := env.applyPattern(pi, nil); err != nil {
-					return err
-				}
-			}
-		}
-	} else if len(p.Object) > 0 {
-		if v == nil {
-			v = map[string]interface{}{}
-		}
-		m, ok := v.(map[string]interface{})
-		if !ok {
-			return &expectedObjectError{v}
-		}
-		for _, o := range p.Object {
-			if o.KeyOnly != "" {
-				key := o.KeyOnly
-				if key[0] != '$' {
-					return &bindVariableNameError{key}
-				}
-				env.values.Store(key, m[key[1:]])
-				continue
-			}
-			key := o.Key
-			if key != "" && key[0] == '$' {
-				env.values.Store(key, m[key[1:]])
-				key = key[1:]
-			}
-			if o.KeyString != "" {
-				key = o.KeyString
-			}
-			if err := env.applyPattern(o.Val, m[key]); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func (env *env) applyTermInternal(t *Term, c <-chan interface{}) (d <-chan interface{}) {
+func (env *env) applyTerm(t *Term, c <-chan interface{}) (d <-chan interface{}) {
 	defer func() {
 		for _, s := range t.SuffixList {
 			d = env.applySuffix(s, d)
@@ -678,4 +623,59 @@ func (env *env) applyReduce(x *Reduce, c <-chan interface{}) <-chan interface{} 
 			})
 		})
 	})
+}
+
+func (env *env) applyPattern(p *Pattern, v interface{}) error {
+	if p.Name != "" {
+		env.values.Store(p.Name, v)
+	} else if len(p.Array) > 0 {
+		if v == nil {
+			v = []interface{}{}
+		}
+		a, ok := v.([]interface{})
+		if !ok {
+			return &expectedArrayError{v}
+		}
+		for i, pi := range p.Array {
+			if i < len(a) {
+				if err := env.applyPattern(pi, a[i]); err != nil {
+					return err
+				}
+			} else {
+				if err := env.applyPattern(pi, nil); err != nil {
+					return err
+				}
+			}
+		}
+	} else if len(p.Object) > 0 {
+		if v == nil {
+			v = map[string]interface{}{}
+		}
+		m, ok := v.(map[string]interface{})
+		if !ok {
+			return &expectedObjectError{v}
+		}
+		for _, o := range p.Object {
+			if o.KeyOnly != "" {
+				key := o.KeyOnly
+				if key[0] != '$' {
+					return &bindVariableNameError{key}
+				}
+				env.values.Store(key, m[key[1:]])
+				continue
+			}
+			key := o.Key
+			if key != "" && key[0] == '$' {
+				env.values.Store(key, m[key[1:]])
+				key = key[1:]
+			}
+			if o.KeyString != "" {
+				key = o.KeyString
+			}
+			if err := env.applyPattern(o.Val, m[key]); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

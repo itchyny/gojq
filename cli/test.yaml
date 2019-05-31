@@ -1693,6 +1693,20 @@
   expected: |
     45
 
+- name: reduce arrays
+  args:
+    - 'reduce .[] as [$i,$j] (0; . + $i * $j)'
+  input: '[[1,2,10], [3,4,10]]'
+  expected: |
+    14
+
+- name: reduce objects
+  args:
+    - 'reduce .[] as {$i, j:$j} (0; . + $i - $j)'
+  input: '[{"i":2, "j":1}, {"i":5, "j":3}, {"i":6, "j":4}]'
+  expected: |
+    5
+
 - name: reduce null
   args:
     - 'reduce . as $n (.; .)'
@@ -1752,7 +1766,7 @@
 
 - name: defining variable
   args:
-    - '.foo * .foo.bar as $foo | .foo.bar as $bar | {$foo} + {bar: ($bar / 2)} * { baz: 20 }'
+    - '.foo.bar as $foo | .foo.bar as $bar | {$foo} + {bar: ($bar / 2)} * { baz: 20 }'
   input: '{ "foo": { "bar": 10 } }'
   expected: |
     {

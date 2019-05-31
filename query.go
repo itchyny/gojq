@@ -39,10 +39,14 @@ type Alt struct {
 
 // Expr ...
 type Expr struct {
-	Reduce *Reduce `  @@`
+	Logic  *Logic  `( @@`
 	If     *If     `| @@`
 	Try    *Try    `| @@`
-	Logic  *Logic  `| @@`
+	Reduce *Reduce `| @@ )`
+	Bind   *struct {
+		Pattern *Pattern `"as" @@`
+		Body    *Pipe    `"|" @@`
+	} `@@?`
 }
 
 // Logic ...
@@ -106,10 +110,6 @@ type Term struct {
 	String     *string   `| @String`
 	Pipe       *Pipe     `| "(" @@ ")" )`
 	SuffixList []*Suffix `@@*`
-	Bind       *struct {
-		Pattern *Pattern `"as" @@`
-		Body    *Pipe    `"|" @@`
-	} `@@?`
 }
 
 // Pattern ...
@@ -190,7 +190,7 @@ type Try struct {
 
 // Reduce ...
 type Reduce struct {
-	Pipe    *Pipe    `"reduce" @@`
+	Term    *Term    `"reduce" @@`
 	Pattern *Pattern `"as" @@`
 	Start   *Pipe    `"(" @@`
 	Update  *Pipe    `";" @@ ")"`
