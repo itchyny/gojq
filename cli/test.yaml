@@ -1237,6 +1237,13 @@
     "adbdcddde"
     "aebecedee"
 
+- name: join function error
+  args:
+    - 'try join(",") catch .'
+  input: '["1","2",[3,4,5]]'
+  expected: |
+    "cannot add: string (\"1,2,\") and array ([3,4,5])"
+
 - name: ascii_downcase function
   args:
     - 'ascii_downcase'
