@@ -78,5 +78,5 @@ var builtinFuncs = map[string]string{
 			explode | map(if 65 <= . and . <= 90 then . + 32 end) | implode;`,
 	"ascii_upcase": `
 		def ascii_upcase:
-			explode | map(if 97 <= . and . <= 122 then . - 32  end) | implode;`,
+			explode | map(if 97 <= . and . <= 122 then . - 32 end) | implode;`,
 }
