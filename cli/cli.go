@@ -171,8 +171,7 @@ func (cli *cli) printValue(v <-chan interface{}) error {
 		}
 		if cli.outputRaw {
 			if _, ok := x.(string); ok {
-				fmt.Fprint(cli.outStream, x)
-				cli.outStream.Write([]byte{'\n'})
+				fmt.Fprintln(cli.outStream, x)
 				continue
 			}
 		}
