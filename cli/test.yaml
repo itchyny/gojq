@@ -1761,6 +1761,52 @@
   error: |
     variable not defined: $bar
 
+- name: binding an array
+  args:
+    - '. as [$i, $j] | [$j, $i]'
+  input: '[] [10] [20, 30]'
+  expected: |
+    [
+      null,
+      null
+    ]
+    [
+      null,
+      10
+    ]
+    [
+      30,
+      20
+    ]
+
+- name: binding an array deeply
+  args:
+    - '. as [$i, [$j], [[$k]]] | [$i, $j, $k]'
+  input: '[] [10] [20, [30], [[40]]]'
+  expected: |
+    [
+      null,
+      null,
+      null
+    ]
+    [
+      10,
+      null,
+      null
+    ]
+    [
+      20,
+      30,
+      40
+    ]
+
+- name: binding an array error
+  args:
+    - '. as [$i, $j] | [$j, $i]'
+  input: '{ "foo": 10 }'
+  error: |
+    expected an array but got: object ({"foo":10})
+
 - name: trigonometric functions
   args:
     - 'map(sin),map(cos),map(tan) | join(",")'

@@ -130,9 +130,37 @@ func (env *env) applyTerm(t *Term, c <-chan interface{}) <-chan interface{} {
 	cc := reuseIterator(c)
 	return mapIterator(env.applyTermInternal(t, cc()), func(v interface{}) interface{} {
 		subEnv := newEnv(env)
-		subEnv.values.Store(t.Bind.Pattern.Name, v)
+		if err := subEnv.applyPattern(t.Bind.Pattern, v); err != nil {
+			return err
+		}
 		return subEnv.applyPipe(t.Bind.Body, cc())
 	})
+}
+
+func (env *env) applyPattern(p *Pattern, v interface{}) error {
+	if p.Name != "" {
+		env.values.Store(p.Name, v)
+	} else if len(p.Array) > 0 {
+		if v == nil {
+			v = []interface{}{}
+		}
+		a, ok := v.([]interface{})
+		if !ok {
+			return &expectedArrayError{v}
+		}
+		for i, pi := range p.Array {
+			if i < len(a) {
+				if err := env.applyPattern(pi, a[i]); err != nil {
+					return err
+				}
+			} else {
+				if err := env.applyPattern(pi, nil); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func (env *env) applyTermInternal(t *Term, c <-chan interface{}) (d <-chan interface{}) {
