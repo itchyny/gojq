@@ -39,11 +39,12 @@ type Alt struct {
 
 // Expr ...
 type Expr struct {
-	Logic  *Logic  `( @@`
-	If     *If     `| @@`
-	Try    *Try    `| @@`
-	Reduce *Reduce `| @@ )`
-	Bind   *struct {
+	Logic   *Logic   `( @@`
+	If      *If      `| @@`
+	Try     *Try     `| @@`
+	Reduce  *Reduce  `| @@`
+	Foreach *Foreach `| @@ )`
+	Bind    *struct {
 		Pattern *Pattern `"as" @@`
 		Body    *Pipe    `"|" @@`
 	} `@@?`
@@ -194,4 +195,13 @@ type Reduce struct {
 	Pattern *Pattern `"as" @@`
 	Start   *Pipe    `"(" @@`
 	Update  *Pipe    `";" @@ ")"`
+}
+
+// Foreach ...
+type Foreach struct {
+	Term    *Term    `"foreach" @@`
+	Pattern *Pattern `"as" @@`
+	Start   *Pipe    `"(" @@`
+	Update  *Pipe    `";" @@`
+	Extract *Pipe    `(";" @@)? ")"`
 }

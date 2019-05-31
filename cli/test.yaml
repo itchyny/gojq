@@ -1714,6 +1714,35 @@
   expected: |
     null
 
+- name: foreach iterator
+  args:
+    - 'foreach range(5) as $item (0; $item)'
+  input: 'null'
+  expected: |
+    0
+    1
+    2
+    3
+    4
+
+- name: foreach arrays
+  args:
+    - 'foreach .[] as [$i, $j] (0; . + $i - $j)'
+  input: '[[2,1], [5,3], [6,4]]'
+  expected: |
+    1
+    3
+    5
+
+- name: foreach objects
+  args:
+    - 'foreach .[] as {a:$a} (0; . + $a; -.)'
+  input: '[{"a":1}, {"b":2}, {"a":3, "b":4}]'
+  expected: |
+    -1
+    -1
+    -4
+
 - name: string interpolation
   args:
     - '["\(.foo[])_\(.bar[])_\(.baz[])"] | join(" ")'
