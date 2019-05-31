@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"sort"
-	"strings"
 )
 
 type function func(*env, *Func) func(interface{}) interface{}
@@ -27,7 +26,6 @@ func init() {
 		"type":           noArgFunc(funcType),
 		"explode":        noArgFunc(funcExplode),
 		"implode":        noArgFunc(funcImplode),
-		"join":           funcJoin,
 		"tojson":         noArgFunc(funcToJSON),
 		"fromjson":       noArgFunc(funcFromJSON),
 		"sin":            mathFunc("sin", math.Sin),
@@ -265,40 +263,6 @@ func implode(v []interface{}) interface{} {
 		}
 	}
 	return string(rs)
-}
-
-func funcJoin(env *env, f *Func) func(interface{}) interface{} {
-	return func(v interface{}) interface{} {
-		if len(f.Args) != 1 {
-			return &funcNotFoundError{f}
-		}
-		return mapIterator(env.applyPipe(f.Args[0], unitIterator(v)), func(x interface{}) interface{} {
-			switch v := v.(type) {
-			case []interface{}:
-				switch x := x.(type) {
-				case string:
-					var s strings.Builder
-					for i, v := range v {
-						if i > 0 {
-							s.WriteString(x)
-						}
-						if v != nil {
-							if _, ok := v.(float64); ok {
-								s.WriteString(funcToJSON(normalizeValues(v)).(string))
-							} else {
-								s.WriteString(fmt.Sprint(v))
-							}
-						}
-					}
-					return s.String()
-				default:
-					return &funcTypeError{"join", v}
-				}
-			default:
-				return &funcTypeError{"join", v}
-			}
-		})
-	}
 }
 
 func funcToJSON(v interface{}) interface{} {
