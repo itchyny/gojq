@@ -1889,6 +1889,16 @@
     multiple
     line
 
+- name: raw string output option against non-string
+  args:
+    - -r
+    - '.'
+  input: '{ "foo": "multiple\nline" }'
+  expected: |
+    {
+      "foo": "multiple\nline"
+    }
+
 - name: invalid query
   args:
     - '>abc'
