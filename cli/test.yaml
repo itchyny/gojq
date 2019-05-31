@@ -1686,6 +1686,20 @@
       "utf8bytelength cannot be applied to: boolean (false)"
     ]
 
+- name: reduce iterator
+  args:
+    - '[range(.)] | reduce .[] as $i (0; . + $i)'
+  input: '10'
+  expected: |
+    45
+
+- name: reduce null
+  args:
+    - 'reduce . as $n (.; .)'
+  input: 'null'
+  expected: |
+    null
+
 - name: string interpolation
   args:
     - '["\(.foo[])_\(.bar[])_\(.baz[])"] | join(" ")'

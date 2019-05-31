@@ -235,3 +235,25 @@ func mapIteratorWithError(c <-chan interface{}, f func(interface{}) interface{})
 	}()
 	return d
 }
+
+func foldIterator(c <-chan interface{}, x interface{}, f func(interface{}, interface{}) interface{}) <-chan interface{} {
+	d := make(chan interface{}, 1)
+	go func() {
+		defer close(d)
+		for v := range c {
+			x = f(x, v)
+			if _, ok := x.(error); ok {
+				break
+			}
+		}
+		d <- x
+	}()
+	return d
+}
+
+func iteratorLast(c <-chan interface{}) interface{} {
+	var v interface{}
+	for v = range c {
+	}
+	return v
+}

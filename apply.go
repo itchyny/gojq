@@ -57,6 +57,9 @@ func (env *env) applyExpr(e *Expr, c <-chan interface{}) <-chan interface{} {
 	if e.Try != nil {
 		return env.applyTry(e.Try, c)
 	}
+	if e.Reduce != nil {
+		return env.applyReduce(e.Reduce, c)
+	}
 	panic("unreachable expr")
 }
 
@@ -659,6 +662,20 @@ func (env *env) applyTry(x *Try, c <-chan interface{}) <-chan interface{} {
 				return struct{}{}
 			}
 			return w
+		})
+	})
+}
+
+func (env *env) applyReduce(x *Reduce, c <-chan interface{}) <-chan interface{} {
+	return mapIterator(c, func(v interface{}) interface{} {
+		return mapIterator(env.applyPipe(x.Start, unitIterator(v)), func(s interface{}) interface{} {
+			subEnv := newEnv(env)
+			return foldIterator(subEnv.applyTerm(x.Term, unitIterator(v)), s, func(v, w interface{}) interface{} {
+				if err := subEnv.applyPattern(x.Pattern, w); err != nil {
+					return err
+				}
+				return iteratorLast(subEnv.applyPipe(x.Update, unitIterator(v)))
+			})
 		})
 	})
 }
