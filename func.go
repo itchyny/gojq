@@ -65,6 +65,9 @@ func init() {
 		"j1":             mathFunc("j1", math.J1),
 		"y0":             mathFunc("y0", math.Y0),
 		"y1":             mathFunc("y1", math.Y1),
+		"atan2":          mathFunc2("atan2", math.Atan2),
+		"copysign":       mathFunc2("copysign", math.Copysign),
+		"pow":            mathFunc2("pow", math.Pow),
 		"_type_error":    internalfuncTypeError,
 	}
 }
