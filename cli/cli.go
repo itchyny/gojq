@@ -11,8 +11,6 @@ import (
 	"strings"
 
 	"github.com/alecthomas/participle/lexer"
-	"github.com/fatih/color"
-	"github.com/hokaccha/go-prettyjson"
 	"github.com/mattn/go-runewidth"
 
 	"github.com/itchyny/gojq"
@@ -165,17 +163,12 @@ func (cli *cli) printJSONError(input string, err error) {
 }
 
 func (cli *cli) printValue(v <-chan interface{}) error {
+	m := cli.createMarshaler()
 	for x := range v {
 		if err, ok := x.(error); ok {
 			return err
 		}
-		if cli.outputRaw {
-			if _, ok := x.(string); ok {
-				fmt.Fprintln(cli.outStream, x)
-				continue
-			}
-		}
-		xs, err := jsonFormatter().Marshal(x)
+		xs, err := m.Marshal(x)
 		if err != nil {
 			return err
 		}
@@ -185,11 +178,10 @@ func (cli *cli) printValue(v <-chan interface{}) error {
 	return nil
 }
 
-func jsonFormatter() *prettyjson.Formatter {
-	f := prettyjson.NewFormatter()
-	f.StringColor = color.New(color.FgGreen)
-	f.BoolColor = color.New(color.FgYellow)
-	f.NumberColor = color.New(color.FgCyan)
-	f.NullColor = color.New(color.FgHiBlack)
+func (cli *cli) createMarshaler() marshaler {
+	f := jsonFormatter()
+	if cli.outputRaw {
+		return &rawMarshaler{f}
+	}
 	return f
 }
