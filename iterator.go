@@ -84,6 +84,8 @@ func binopIteratorAlt(l <-chan interface{}, r <-chan interface{}) <-chan interfa
 		var done bool
 		for v := range l {
 			if _, ok := v.(error); ok {
+				d <- v
+				done = true
 				break
 			}
 			if valueToBool(v) {
