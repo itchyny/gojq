@@ -23,6 +23,7 @@ func init() {
 		"keys":           noArgFunc(funcKeys),
 		"has":            funcHas,
 		"tonumber":       noArgFunc(funcToNumber),
+		"tostring":       noArgFunc(funcToString),
 		"type":           noArgFunc(funcType),
 		"explode":        noArgFunc(funcExplode),
 		"implode":        noArgFunc(funcImplode),
@@ -211,6 +212,13 @@ func funcToNumber(v interface{}) interface{} {
 	default:
 		return &funcTypeError{"tonumber", v}
 	}
+}
+
+func funcToString(v interface{}) interface{} {
+	if s, ok := v.(string); ok {
+		return s
+	}
+	return funcToJSON(v)
 }
 
 func funcType(v interface{}) interface{} {

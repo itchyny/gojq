@@ -1112,6 +1112,19 @@
       3.14
     ]
 
+- name: tostring function
+  args:
+    - 'map(tostring)'
+  input: '["foo bar", 3.14, {"foo": "-43210"}, false, [1,2,3]]'
+  expected: |
+    [
+      "foo bar",
+      "3.14",
+      "{\"foo\":\"-43210\"}",
+      "false",
+      "[1,2,3]"
+    ]
+
 - name: type function
   args:
     - 'map(type)'
