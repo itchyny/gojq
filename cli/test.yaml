@@ -1224,6 +1224,13 @@
   error: |
     function not defined: abc/0
 
+- name: variable not defined
+  args:
+    - '$abc'
+  input: '{}'
+  error: |
+    variable not defined: $abc
+
 - name: argument count error
   args:
     - 'map(.;.)'
