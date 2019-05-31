@@ -93,6 +93,40 @@ func mathFunc(name string, f func(x float64) float64) function {
 	})
 }
 
+func mathFunc2(name string, g func(x, y float64) float64) function {
+	return func(env *env, f *Func) func(interface{}) interface{} {
+		return func(v interface{}) interface{} {
+			if len(f.Args) != 2 {
+				return &funcNotFoundError{f}
+			}
+			l := reuseIterator(env.applyPipe(f.Args[0], unitIterator(v)))
+			return mapIterator(env.applyPipe(f.Args[1], unitIterator(v)), func(v interface{}) interface{} {
+				var r float64
+				switch v := v.(type) {
+				case int:
+					r = float64(v)
+				case float64:
+					r = v
+				default:
+					return &funcTypeError{name, v}
+				}
+				return mapIterator(l(), func(v interface{}) interface{} {
+					var l float64
+					switch v := v.(type) {
+					case int:
+						l = float64(v)
+					case float64:
+						l = v
+					default:
+						return &funcTypeError{name, v}
+					}
+					return g(l, r)
+				})
+			})
+		}
+	}
+}
+
 func funcNull(_ interface{}) interface{} {
 	return nil
 }
