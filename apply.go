@@ -159,6 +159,35 @@ func (env *env) applyPattern(p *Pattern, v interface{}) error {
 				}
 			}
 		}
+	} else if len(p.Object) > 0 {
+		if v == nil {
+			v = map[string]interface{}{}
+		}
+		m, ok := v.(map[string]interface{})
+		if !ok {
+			return &expectedObjectError{v}
+		}
+		for _, o := range p.Object {
+			if o.KeyOnly != "" {
+				key := o.KeyOnly
+				if key[0] != '$' {
+					return &bindVariableNameError{key}
+				}
+				env.values.Store(key, m[key[1:]])
+				continue
+			}
+			key := o.Key
+			if key != "" && key[0] == '$' {
+				env.values.Store(key, m[key[1:]])
+				key = key[1:]
+			}
+			if o.KeyString != "" {
+				key = o.KeyString
+			}
+			if err := env.applyPattern(o.Val, m[key]); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }

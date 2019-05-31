@@ -145,8 +145,14 @@ type Term struct {
 
 // Pattern ...
 type Pattern struct {
-	Name  string     `( @Ident`
-	Array []*Pattern `| "[" @@ ("," @@)* "]" )`
+	Name   string     `( @Ident`
+	Array  []*Pattern `| "[" @@ ("," @@)* "]"`
+	Object []struct {
+		Key       string   `( ( @Ident | @Keyword )`
+		KeyString string   `| @String ) ":"`
+		Val       *Pattern `@@`
+		KeyOnly   string   `| @Ident`
+	} `| "{" @@ ("," @@)* "}" )`
 }
 
 // Index ...

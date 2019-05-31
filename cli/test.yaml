@@ -1807,6 +1807,68 @@
   error: |
     expected an array but got: object ({"foo":10})
 
+- name: binding an object
+  args:
+    - '. as {$foo, bar: $bar} | {$bar, $foo}'
+  input: '{} {"foo": 10} {"foo": 20, "bar": 30}'
+  expected: |
+    {
+      "bar": null,
+      "foo": null
+    }
+    {
+      "bar": null,
+      "foo": 10
+    }
+    {
+      "bar": 30,
+      "foo": 20
+    }
+
+- name: binding an object deeply
+  args:
+    - '. as {$foo, bar: {baz: {$qux}}} | {$foo, $qux}'
+  input: '{} {"foo": 10} {"foo": 20, "bar": { "baz": { "qux": 30 } } }'
+  expected: |
+    {
+      "foo": null,
+      "qux": null
+    }
+    {
+      "foo": 10,
+      "qux": null
+    }
+    {
+      "foo": 20,
+      "qux": 30
+    }
+
+- name: binding an object error
+  args:
+    - '. as {$i} | [$i]'
+  input: '[10]'
+  error: |
+    expected an object but got: array ([10])
+
+- name: binding object and array deeply
+  args:
+    - '. as {$a, $b: [$c, $d]} | [$a, $b, $c, $d]'
+  input: '{"a":1, "b": [2, {"d": 3}]}'
+  expected: |
+    [
+      1,
+      [
+        2,
+        {
+          "d": 3
+        }
+      ],
+      2,
+      {
+        "d": 3
+      }
+    ]
+
 - name: trigonometric functions
   args:
     - 'map(sin),map(cos),map(tan) | join(",")'
