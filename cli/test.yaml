@@ -1883,9 +1883,11 @@
 - name: raw string output option
   args:
     - -r
-    - '.foo'
-  input: '{ "foo": "multiple\nline" }'
+    - '.foo[]'
+  input: '{ "foo": ["hello", "world", "multiple\nline"] }'
   expected: |
+    hello
+    world
     multiple
     line
 
