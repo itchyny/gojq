@@ -2199,9 +2199,9 @@
 - name: invalid json eof
   input: '{'
   error: |
-    invalid json: unexpected EOF
+    invalid json: <stdin>
         {
-         ^
+         ^  unexpected EOF
 
 - name: invalid json invalid character
   input: |
@@ -2209,9 +2209,9 @@
       "あいうえお" 100
     }
   error: |
-    invalid json: invalid character '1' after object key
+    invalid json: <stdin>
           "あいうえお" 100
-                       ^
+                       ^  invalid character '1' after object key
 
 - name: invalid json string literal
   input: |
@@ -2219,9 +2219,9 @@
       "いろは": n
     }
   error: |
-    invalid json: invalid character '\n' in literal null (expecting 'u')
+    invalid json: <stdin>
           "いろは": n
-                     ^
+                     ^  invalid character '\n' in literal null (expecting 'u')
 
 - name: multiple json in input
   input: '{}[]{"foo":10}{"bar":[]}'
@@ -2255,9 +2255,9 @@
     - '.'
     - 'testdata/3.json'
   error: |
-    invalid json: unexpected EOF
+    invalid json: testdata/3.json
         {
-         ^
+         ^  unexpected EOF
 
 - name: json file not found
   args:

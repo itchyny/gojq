@@ -24,9 +24,9 @@ gojq: invalid query: .foo & .bar
     .foo & .bar
          ^  unexpected token "&"
  $ echo '{"foo": { bar: [] } }' | gojq '.'
-gojq: invalid json: invalid character 'b' looking for beginning of object key string
+gojq: invalid json: <stdin>
     {"foo": { bar: [] } }
-              ^
+              ^  invalid character 'b' looking for beginning of object key string
 ```
 
 ## Installation

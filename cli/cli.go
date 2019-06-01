@@ -79,7 +79,7 @@ Options:
 		return exitCodeErr
 	}
 	if len(args) == 0 {
-		return cli.process(cli.inStream, query)
+		return cli.process("<stdin>", cli.inStream, query)
 	}
 	for _, arg := range args {
 		if exitCode := cli.processFile(arg, query); exitCode != exitCodeOK {
@@ -107,10 +107,10 @@ func (cli *cli) processFile(fname string, query *gojq.Query) int {
 		return exitCodeErr
 	}
 	defer f.Close()
-	return cli.process(f, query)
+	return cli.process(fname, f, query)
 }
 
-func (cli *cli) process(in io.Reader, query *gojq.Query) int {
+func (cli *cli) process(fname string, in io.Reader, query *gojq.Query) int {
 	var buf bytes.Buffer
 	dec := json.NewDecoder(io.TeeReader(in, &buf))
 	for {
@@ -120,8 +120,8 @@ func (cli *cli) process(in io.Reader, query *gojq.Query) int {
 			if buf.String() == "" {
 				return exitCodeOK
 			}
-			fmt.Fprintf(cli.errStream, "%s: invalid json: %s\n", name, err)
-			cli.printJSONError(buf.String(), err)
+			fmt.Fprintf(cli.errStream, "%s: invalid json: %s\n", name, fname)
+			cli.printJSONError(fname, buf.String(), err)
 			return exitCodeErr
 		}
 		if err := cli.printValue(query.Run(v)); err != nil {
@@ -131,11 +131,11 @@ func (cli *cli) process(in io.Reader, query *gojq.Query) int {
 	}
 }
 
-func (cli *cli) printJSONError(input string, err error) {
+func (cli *cli) printJSONError(fname, input string, err error) {
 	if err.Error() == "unexpected EOF" {
 		lines := strings.Split(strings.TrimRight(input, "\n"), "\n")
 		line := lines[len(lines)-1]
-		fmt.Fprintf(cli.errStream, "    %s\n%s\n", line, strings.Repeat(" ", 4+runewidth.StringWidth(line))+"^")
+		fmt.Fprintf(cli.errStream, "    %s\n%s  %s\n", line, strings.Repeat(" ", 4+runewidth.StringWidth(line))+"^", err)
 	} else if err, ok := err.(*json.SyntaxError); ok {
 		var s strings.Builder
 		var i, j int
@@ -158,7 +158,7 @@ func (cli *cli) printJSONError(input string, err error) {
 				s.WriteRune(r)
 			}
 		}
-		fmt.Fprintf(cli.errStream, "    %s\n%s\n", s.String(), strings.Repeat(" ", 3+j)+"^")
+		fmt.Fprintf(cli.errStream, "    %s\n%s  %s\n", s.String(), strings.Repeat(" ", 3+j)+"^", err)
 	}
 }
 
