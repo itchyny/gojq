@@ -106,14 +106,11 @@ func noArgFunc(fn func(interface{}) interface{}) function {
 
 func mathFunc(name string, f func(x float64) float64) function {
 	return noArgFunc(func(v interface{}) interface{} {
-		switch v := v.(type) {
-		case int:
-			return f(float64(v))
-		case float64:
-			return f(v)
-		default:
-			return &funcTypeError{name, v}
+		x, err := toFloat64(name, v)
+		if err != nil {
+			return err
 		}
+		return f(x)
 	})
 }
 
@@ -125,29 +122,30 @@ func mathFunc2(name string, g func(x, y float64) float64) function {
 			}
 			l := reuseIterator(env.applyPipe(f.Args[0], unitIterator(v)))
 			return mapIterator(env.applyPipe(f.Args[1], unitIterator(v)), func(v interface{}) interface{} {
-				var r float64
-				switch v := v.(type) {
-				case int:
-					r = float64(v)
-				case float64:
-					r = v
-				default:
-					return &funcTypeError{name, v}
+				r, err := toFloat64(name, v)
+				if err != nil {
+					return err
 				}
 				return mapIterator(l(), func(v interface{}) interface{} {
-					var l float64
-					switch v := v.(type) {
-					case int:
-						l = float64(v)
-					case float64:
-						l = v
-					default:
-						return &funcTypeError{name, v}
+					l, err := toFloat64(name, v)
+					if err != nil {
+						return err
 					}
 					return g(l, r)
 				})
 			})
 		}
+	}
+}
+
+func toFloat64(name string, v interface{}) (float64, error) {
+	switch v := v.(type) {
+	case int:
+		return float64(v), nil
+	case float64:
+		return v, nil
+	default:
+		return 0, &funcTypeError{name, v}
 	}
 }
 
