@@ -87,6 +87,7 @@ func init() {
 		"remainder":   mathFunc2("remainder", math.Remainder),
 		"scalb":       mathFunc2("scalb", func(l, r float64) float64 { return l * math.Pow(2, r) }),
 		"scalbln":     mathFunc2("scalbln", func(l, r float64) float64 { return l * math.Pow(2, r) }),
+		"yn":          mathFunc2("yn", func(l, r float64) float64 { return math.Yn(int(l), r) }),
 		"pow":         mathFunc2("pow", math.Pow),
 		"_type_error": internalfuncTypeError,
 	}
