@@ -84,6 +84,9 @@ func init() {
 		"ldexp":       mathFunc2("ldexp", func(l, r float64) float64 { return math.Ldexp(l, int(r)) }),
 		"nextafter":   mathFunc2("nextafter", math.Nextafter),
 		"nexttoward":  mathFunc2("nexttoward", math.Nextafter),
+		"remainder":   mathFunc2("remainder", math.Remainder),
+		"scalb":       mathFunc2("scalb", func(l, r float64) float64 { return l * math.Pow(2, r) }),
+		"scalbln":     mathFunc2("scalbln", func(l, r float64) float64 { return l * math.Pow(2, r) }),
 		"pow":         mathFunc2("pow", math.Pow),
 		"_type_error": internalfuncTypeError,
 	}
