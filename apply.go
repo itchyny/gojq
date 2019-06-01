@@ -144,52 +144,57 @@ func (env *env) applyFactor(e *Factor, c <-chan interface{}) <-chan interface{} 
 }
 
 func (env *env) applyTerm(t *Term, c <-chan interface{}) (d <-chan interface{}) {
+	cc := func() <-chan interface{} { return c }
+	if t.Index != nil || t.SuffixList != nil {
+		cc = reuseIterator(c)
+	}
 	defer func() {
 		for _, s := range t.SuffixList {
-			d = env.applySuffix(s, d)
+			d = env.applySuffix(s, d, cc)
 		}
 	}()
 	if x := t.Index; x != nil {
-		return env.applyIndex(x, c)
+		return env.applyIndex(x, cc(), cc())
 	}
 	if t.Identity {
-		return c
+		return cc()
 	}
 	if t.Recurse {
-		return env.applyFunc(&Func{Name: "recurse"}, c)
+		return env.applyFunc(&Func{Name: "recurse"}, cc())
 	}
 	if t.Func != nil {
-		return env.applyFunc(t.Func, c)
+		return env.applyFunc(t.Func, cc())
 	}
 	if t.Object != nil {
-		return env.applyObject(t.Object, c)
+		return env.applyObject(t.Object, cc())
 	}
 	if t.Array != nil {
-		return env.applyArray(t.Array, c)
+		return env.applyArray(t.Array, cc())
 	}
 	if t.Number != nil {
 		return unitIterator(*t.Number)
 	}
 	if t.Unary != nil {
-		return env.applyUnary(t.Unary.Op, t.Unary.Term, c)
+		return env.applyUnary(t.Unary.Op, t.Unary.Term, cc())
 	}
 	if t.String != nil {
-		return env.applyString(*t.String, c)
+		return env.applyString(*t.String, cc())
 	}
-	return env.applyPipe(t.Pipe, c)
+	return env.applyPipe(t.Pipe, cc())
 }
 
-func (env *env) applyIndex(x *Index, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyIndex(x *Index, c <-chan interface{}, d <-chan interface{}) <-chan interface{} {
+	dd := reuseIterator(d)
 	return mapIterator(c, func(v interface{}) interface{} {
 		switch v := v.(type) {
 		case nil:
 			return nil
 		case map[string]interface{}:
-			return env.applyObjectIndex(x, v)
+			return env.applyObjectIndex(x, v, dd())
 		case []interface{}:
-			return env.applyArrayIndex(x, v)
+			return env.applyArrayIndex(x, v, dd())
 		case string:
-			switch v := env.applyArrayIndex(x, explode(v)).(type) {
+			switch v := env.applyArrayIndex(x, explode(v), dd()).(type) {
 			case <-chan interface{}:
 				return mapIterator(v, func(v interface{}) interface{} {
 					return implode(v.([]interface{}))
@@ -206,7 +211,7 @@ func (env *env) applyIndex(x *Index, c <-chan interface{}) <-chan interface{} {
 	})
 }
 
-func (env *env) applyObjectIndex(x *Index, m map[string]interface{}) interface{} {
+func (env *env) applyObjectIndex(x *Index, m map[string]interface{}, c <-chan interface{}) interface{} {
 	if !indexIsForObject(x) {
 		return &expectedArrayError{m}
 	}
@@ -214,7 +219,7 @@ func (env *env) applyObjectIndex(x *Index, m map[string]interface{}) interface{}
 		return m[x.Name]
 	}
 	if x.String != nil {
-		return mapIterator(env.applyString(*x.String, unitIterator(m)), func(s interface{}) interface{} {
+		return mapIterator(env.applyString(*x.String, c), func(s interface{}) interface{} {
 			key, ok := s.(string)
 			if !ok {
 				return &objectKeyNotStringError{s}
@@ -222,7 +227,7 @@ func (env *env) applyObjectIndex(x *Index, m map[string]interface{}) interface{}
 			return m[key]
 		})
 	}
-	return mapIterator(env.applyPipe(x.Start, unitIterator(m)), func(s interface{}) interface{} {
+	return mapIterator(env.applyPipe(x.Start, c), func(s interface{}) interface{} {
 		key, ok := s.(string)
 		if !ok {
 			return &objectKeyNotStringError{s}
@@ -231,15 +236,19 @@ func (env *env) applyObjectIndex(x *Index, m map[string]interface{}) interface{}
 	})
 }
 
-func (env *env) applyArrayIndex(x *Index, a []interface{}) interface{} {
+func (env *env) applyArrayIndex(x *Index, a []interface{}, c <-chan interface{}) interface{} {
+	cc := func() <-chan interface{} { return c }
+	if x.Start != nil && x.End != nil {
+		cc = reuseIterator(c)
+	}
 	if x.Name != "" {
 		return &expectedObjectError{a}
 	}
 	if x.Start != nil {
-		return mapIterator(env.applyPipe(x.Start, unitIterator(a)), func(s interface{}) interface{} {
+		return mapIterator(env.applyPipe(x.Start, cc()), func(s interface{}) interface{} {
 			if start, ok := toInt(s); ok {
 				if x.End != nil {
-					return mapIterator(env.applyPipe(x.End, unitIterator(a)), func(e interface{}) interface{} {
+					return mapIterator(env.applyPipe(x.End, cc()), func(e interface{}) interface{} {
 						if end, ok := toInt(e); ok {
 							return applyArrayIndetInternal(&start, &end, nil, a)
 						}
@@ -255,7 +264,7 @@ func (env *env) applyArrayIndex(x *Index, a []interface{}) interface{} {
 		})
 	}
 	if x.End != nil {
-		return mapIterator(env.applyPipe(x.End, unitIterator(a)), func(e interface{}) interface{} {
+		return mapIterator(env.applyPipe(x.End, cc()), func(e interface{}) interface{} {
 			if end, ok := toInt(e); ok {
 				return applyArrayIndetInternal(nil, &end, nil, a)
 			}
@@ -392,7 +401,7 @@ func (env *env) applyObject(x *Object, c <-chan interface{}) <-chan interface{} 
 				} else {
 					d = objectIterator(d,
 						unitIterator(*kv.KeyOnly),
-						env.applyIndex(&Index{Name: *kv.KeyOnly}, unitIterator(v)))
+						env.applyIndex(&Index{Name: *kv.KeyOnly}, unitIterator(v), unitIterator(v)))
 				}
 			} else if kv.KeyOnlyString != nil {
 				d = objectKeyIterator(d,
@@ -523,7 +532,7 @@ func (env *env) applyUnary(op Operator, x *Term, c <-chan interface{}) <-chan in
 	})
 }
 
-func (env *env) applySuffix(s *Suffix, c <-chan interface{}) <-chan interface{} {
+func (env *env) applySuffix(s *Suffix, c <-chan interface{}, cc func() <-chan interface{}) <-chan interface{} {
 	return mapIteratorWithError(c, func(v interface{}) interface{} {
 		if s.Optional {
 			switch v.(type) {
@@ -537,10 +546,10 @@ func (env *env) applySuffix(s *Suffix, c <-chan interface{}) <-chan interface{} 
 			return v
 		}
 		if x := s.Index; x != nil {
-			return env.applyIndex(x, unitIterator(v))
+			return env.applyIndex(x, unitIterator(v), cc())
 		}
 		if x := s.SuffixIndex; x != nil {
-			return env.applyIndex(&Index{Start: x.Start, IsSlice: x.IsSlice, End: x.End}, unitIterator(v))
+			return env.applyIndex(&Index{Start: x.Start, IsSlice: x.IsSlice, End: x.End}, unitIterator(v), cc())
 		}
 		if s.Iter {
 			return env.applyIterator(unitIterator(v))

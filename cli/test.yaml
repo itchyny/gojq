@@ -47,10 +47,41 @@
 
 - name: object index by query
   args:
-    - '.[.a + .b]'
-  input: '{"a": "b", "b": "c", "bc": 128}'
+    - '.c[.a + .b]'
+  input: '{ "a": "b", "b": "c", "c": {"bc": 128} }'
   expected: |
     128
+
+- name: deep object index by query
+  args:
+    - '.d[.a][.b][.c]'
+  input: '{ "a": "b", "b": "c", "c": "d", "d": { "b": { "c": { "d": 128 } } } }'
+  expected: |
+    128
+
+- name: object index by iterator
+  args:
+    - '.c[][.a[] + .b[]]'
+  input: '{ "a": ["a", "b"], "b": ["c", "d"], "c": [{"ac": 1, "bc": 2, "ad": 3, "bd": 4}, {"ac": 5, "bc": 6, "ad": 7, "bd": 8}] }'
+  expected: | # order is different from jq
+    1
+    2
+    3
+    4
+    5
+    6
+    7
+    8
+
+- name: object index by string iterator
+  args:
+    - '.c[]."\(.a[])"'
+  input: '{ "a": [0,1], "b": [0,2], "c": [{"0":1,"1":2},{"0":3,"1":4}] }'
+  expected: | # order is different from jq
+    1
+    2
+    3
+    4
 
 - name: object index after iterator
   args:
@@ -213,6 +244,44 @@
     0
     1
     2
+
+- name: array index by iterator
+  args:
+    - '.c[][.a[] + .b[]]'
+  input: '{ "a": [0,1], "b": [0,2], "c": [[1,2,3,4],[5,6,7,8]] }'
+  expected: | # order is different from jq
+    1
+    2
+    3
+    4
+    5
+    6
+    7
+    8
+
+- name: array slice by iterator
+  args:
+    - '.c[][.a[] : .b[]]'
+  input: '{ "a": [0,1], "b": [0,2], "c": [[1,2,3,4],[5,6,7,8]] }'
+  expected: | # order is different from jq
+    []
+    [
+      1,
+      2
+    ]
+    []
+    [
+      2
+    ]
+    []
+    [
+      5,
+      6
+    ]
+    []
+    [
+      6
+    ]
 
 - name: expected array
   args:
