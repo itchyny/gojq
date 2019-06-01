@@ -82,6 +82,8 @@ func init() {
 		"hypot":       mathFunc2("hypot", math.Hypot),
 		"jn":          mathFunc2("jn", func(l, r float64) float64 { return math.Jn(int(l), r) }),
 		"ldexp":       mathFunc2("ldexp", func(l, r float64) float64 { return math.Ldexp(l, int(r)) }),
+		"nextafter":   mathFunc2("nextafter", math.Nextafter),
+		"nexttoward":  mathFunc2("nexttoward", math.Nextafter),
 		"pow":         mathFunc2("pow", math.Pow),
 		"_type_error": internalfuncTypeError,
 	}
