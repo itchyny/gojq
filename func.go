@@ -79,6 +79,9 @@ func init() {
 		"fmax":        mathFunc2("fmax", math.Max),
 		"fmin":        mathFunc2("fmin", math.Min),
 		"fmod":        mathFunc2("fmod", math.Mod),
+		"hypot":       mathFunc2("hypot", math.Hypot),
+		"jn":          mathFunc2("jn", func(l, r float64) float64 { return math.Jn(int(l), r) }),
+		"ldexp":       mathFunc2("ldexp", func(l, r float64) float64 { return math.Ldexp(l, int(r)) }),
 		"pow":         mathFunc2("pow", math.Pow),
 		"_type_error": internalfuncTypeError,
 	}
