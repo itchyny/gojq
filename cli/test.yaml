@@ -899,6 +899,20 @@
       }
     ]
 
+- name: flatten/0 function
+  args:
+    - 'map(flatten) | tojson'
+  input: '[[0, [[[[[1]]]]]], [0, [1, [2]], [1, [[3], 2]]]]'
+  expected: |
+    "[[0,1],[0,1,2,1,3,2]]"
+
+- name: flatten/1 function
+  args:
+    - 'map(flatten(2)) | tojson'
+  input: '[[0, [[[[[1]]]]]], [0, [1, [2]], [1, [[3], 2]]]]'
+  expected: |
+    "[[0,[[[1]]]],[0,1,2,1,[3],2]]"
+
 - name: arrays, objects, iterables, booleans, numbers, strings, nulls, values, scalars functions
   args:
     - 'map(arrays), map(objects), map(iterables), map(booleans), map(numbers), map(strings), map(nulls), map(values), map(scalars)'

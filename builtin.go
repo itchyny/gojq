@@ -19,6 +19,10 @@ var builtinFuncs = map[string]string{
 		def until(cond; next):
 			def _until: if cond then . else (next | _until) end;
 			_until;`,
+	"flatten": `
+		def _flatten($x): reduce .[] as $i ([]; if $i | type == "array" and $x != 0 then . + ($i | _flatten($x-1)) else . + [$i] end);
+		def flatten($x): if $x < 0 then error("flatten depth must not be negative") else _flatten($x) end;
+		def flatten: _flatten(-1);`,
 	"range": `
 		def range($x): range(0; $x);
 		def range($start; $end):
