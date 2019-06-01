@@ -1299,6 +1299,19 @@
   expected: |
     "@ABC XYZ[] `ABC XYZ{} ☆"
 
+- name: transpose function
+  args:
+    - 'transpose | map(tostring)'
+  input: '[] [[1,2,3,[]],[4,"foo",{}],[5,6]]'
+  expected: |
+    []
+    [
+      "[1,4,5]",
+      "[2,\"foo\",6]",
+      "[3,{},null]",
+      "[[],null,null]"
+    ]
+
 - name: function not defined
   args:
     - 'abc'

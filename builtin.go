@@ -93,4 +93,14 @@ var builtinFuncs = map[string]string{
 	"ascii_upcase": `
 		def ascii_upcase:
 			explode | map(if 97 <= . and . <= 122 then . - 32 end) | implode;`,
+	"transpose": `
+		def transpose:
+			if . == [] then
+				[]
+			else
+				. as $in
+					| (map(length) | max) as $max
+					| length as $length
+					| reduce range(0; $max) as $j ([]; . + [reduce range(0; $length) as $i ([]; . + [ $in[$i][$j] ] )] )
+			end;`,
 }
