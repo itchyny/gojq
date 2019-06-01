@@ -23,6 +23,10 @@ var builtinFuncs = map[string]string{
 		def _flatten($x): reduce .[] as $i ([]; if $i | type == "array" and $x != 0 then . + ($i | _flatten($x-1)) else . + [$i] end);
 		def flatten($x): if $x < 0 then error("flatten depth must not be negative") else _flatten($x) end;
 		def flatten: _flatten(-1);`,
+	"min":    `def min: min_by(.);`,
+	"min_by": `def min_by(f): reduce .[1:][] as $x (.[0]; if (.|f) > ($x|f) then $x end);`,
+	"max":    `def max: max_by(.);`,
+	"max_by": `def max_by(f): reduce .[1:][] as $x (.[0]; if (.|f) <= ($x|f) then $x end);`,
 	"range": `
 		def range($x): range(0; $x);
 		def range($start; $end):
