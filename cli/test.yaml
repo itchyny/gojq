@@ -2259,14 +2259,23 @@
         {
          ^  unexpected EOF
 
+- name: json file error json
+  args:
+    - '.'
+    - 'testdata/4.json'
+  error: |
+    invalid json: testdata/4.json
+          bar
+          ^  invalid character 'b' looking for beginning of value
+
 - name: json file not found
   args:
     - '.'
     - 'testdata/1.json'
-    - 'testdata/4.json'
+    - 'testdata/5.json'
     - 'testdata/2.json'
   expected: |
     {
       "foo": 10
     }
-  error: 'open testdata/4.json:'
+  error: 'open testdata/5.json:'
