@@ -2148,6 +2148,34 @@
     ""
     -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 
+- name: error/0 function
+  args:
+    - '.foo[] | error'
+  input: '{ "foo": ["error message", "bar"] }'
+  error: |
+    error message
+
+- name: error/0 function error
+  args:
+    - '.foo | error'
+  input: '{ "foo": 1 }'
+  error: |
+    error cannot be applied to: number (1)
+
+- name: error/1 function
+  args:
+    - '.foo | error("error message")'
+  input: '{ "foo": 1 }'
+  error: |
+    error message
+
+- name: error/1 function error
+  args:
+    - '.foo | error({})'
+  input: '{ "foo": "error" }'
+  error: |
+    error cannot be applied to: object ({})
+
 - name: raw string output option
   args:
     - -r

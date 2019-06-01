@@ -2,6 +2,7 @@ package gojq
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"sort"
@@ -89,6 +90,7 @@ func init() {
 		"yn":          mathFunc2("yn", func(l, r float64) float64 { return math.Yn(int(l), r) }),
 		"pow":         mathFunc2("pow", math.Pow),
 		"fma":         mathFunc3("fma", func(x, y, z float64) float64 { return x*y + z }),
+		"error":       funcError,
 		"_type_error": internalfuncTypeError,
 	}
 }
@@ -374,6 +376,30 @@ func funcFromJSON(v interface{}) interface{} {
 		return w
 	default:
 		return &funcTypeError{"fromjson", v}
+	}
+}
+
+func funcError(env *env, f *Func) func(interface{}) interface{} {
+	return func(v interface{}) interface{} {
+		if len(f.Args) == 0 {
+			switch v := v.(type) {
+			case string:
+				return errors.New(v)
+			default:
+				return &funcTypeError{"error", v}
+			}
+		} else if len(f.Args) == 1 {
+			return mapIterator(env.applyPipe(f.Args[0], unitIterator(v)), func(v interface{}) interface{} {
+				switch v := v.(type) {
+				case string:
+					return errors.New(v)
+				default:
+					return &funcTypeError{"error", v}
+				}
+			})
+		} else {
+			return &funcNotFoundError{f}
+		}
 	}
 }
 
