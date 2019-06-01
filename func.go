@@ -67,8 +67,20 @@ func init() {
 		"y1":             mathFunc("y1", math.Y1),
 		"atan2":          mathFunc2("atan2", math.Atan2),
 		"copysign":       mathFunc2("copysign", math.Copysign),
-		"pow":            mathFunc2("pow", math.Pow),
-		"_type_error":    internalfuncTypeError,
+		"drem": mathFunc2("drem", func(l, r float64) float64 {
+			x := math.Remainder(l, r)
+			if x == 0.0 {
+				return math.Copysign(x, l)
+			} else {
+				return x
+			}
+		}),
+		"fdim":        mathFunc2("fdim", math.Dim),
+		"fmax":        mathFunc2("fmax", math.Max),
+		"fmin":        mathFunc2("fmin", math.Min),
+		"fmod":        mathFunc2("fmod", math.Mod),
+		"pow":         mathFunc2("pow", math.Pow),
+		"_type_error": internalfuncTypeError,
 	}
 }
 
