@@ -134,7 +134,7 @@ func (cli *cli) process(fname string, in io.Reader, query *gojq.Query) int {
 func (cli *cli) printJSONError(fname, input string, err error) {
 	if err.Error() == "unexpected EOF" {
 		lines := strings.Split(strings.TrimRight(input, "\n"), "\n")
-		line := lines[len(lines)-1]
+		line := strings.TrimRight(lines[len(lines)-1], "\r")
 		fmt.Fprintf(cli.errStream, "    %s\n%s  %s\n", line, strings.Repeat(" ", 4+runewidth.StringWidth(line))+"^", err)
 	} else if err, ok := err.(*json.SyntaxError); ok {
 		var s strings.Builder
