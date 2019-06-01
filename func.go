@@ -89,6 +89,7 @@ func init() {
 		"scalbln":     mathFunc2("scalbln", func(l, r float64) float64 { return l * math.Pow(2, r) }),
 		"yn":          mathFunc2("yn", func(l, r float64) float64 { return math.Yn(int(l), r) }),
 		"pow":         mathFunc2("pow", math.Pow),
+		"fma":         mathFunc3("fma", func(x, y, z float64) float64 { return x*y + z }),
 		"_type_error": internalfuncTypeError,
 	}
 }
@@ -132,6 +133,37 @@ func mathFunc2(name string, g func(x, y float64) float64) function {
 						return err
 					}
 					return g(l, r)
+				})
+			})
+		}
+	}
+}
+
+func mathFunc3(name string, g func(x, y, z float64) float64) function {
+	return func(env *env, f *Func) func(interface{}) interface{} {
+		return func(v interface{}) interface{} {
+			if len(f.Args) != 3 {
+				return &funcNotFoundError{f}
+			}
+			x := reuseIterator(env.applyPipe(f.Args[0], unitIterator(v)))
+			y := reuseIterator(env.applyPipe(f.Args[1], unitIterator(v)))
+			return mapIterator(env.applyPipe(f.Args[2], unitIterator(v)), func(v interface{}) interface{} {
+				z, err := toFloat64(name, v)
+				if err != nil {
+					return err
+				}
+				return mapIterator(y(), func(v interface{}) interface{} {
+					y, err := toFloat64(name, v)
+					if err != nil {
+						return err
+					}
+					return mapIterator(x(), func(v interface{}) interface{} {
+						x, err := toFloat64(name, v)
+						if err != nil {
+							return err
+						}
+						return g(x, y, z)
+					})
 				})
 			})
 		}
