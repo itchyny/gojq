@@ -71,9 +71,8 @@ func init() {
 			x := math.Remainder(l, r)
 			if x == 0.0 {
 				return math.Copysign(x, l)
-			} else {
-				return x
 			}
+			return x
 		}),
 		"fdim":        mathFunc2("fdim", math.Dim),
 		"fmax":        mathFunc2("fmax", math.Max),
