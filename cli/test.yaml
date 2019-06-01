@@ -2269,5 +2269,4 @@
     {
       "foo": 10
     }
-  error: |
-    open testdata/4.json: no such file or directory
+  error: 'open testdata/4.json:'
