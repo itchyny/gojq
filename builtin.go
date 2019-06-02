@@ -93,6 +93,16 @@ var builtinFuncs = map[string]string{
 	"ascii_upcase": `
 		def ascii_upcase:
 			explode | map(if 97 <= . and . <= 122 then . - 32 end) | implode;`,
+	"walk": `
+		def walk(f):
+			. as $in
+				| if type == "object" then
+						reduce keys[] as $key ({}; . + { ($key): ($in[$key] | walk(f)) }) | f
+					elif type == "array" then
+						map(walk(f)) | f
+					else
+						f
+					end;`,
 	"transpose": `
 		def transpose:
 			if . == [] then
