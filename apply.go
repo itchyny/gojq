@@ -336,7 +336,7 @@ func (env *env) applyFunc(f *Func, c <-chan interface{}) <-chan interface{} {
 		return unitIterator(v)
 	}
 	if p := env.lookupVariable(f.Name); p != nil {
-		return env.applyPipe(p, c)
+		return env.parent.applyPipe(p, c)
 	}
 	if f.Name[0] == '$' {
 		return unitIterator(&variableNotFoundError{f.Name})

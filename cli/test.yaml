@@ -1416,6 +1416,20 @@
     0
     1
 
+- name: function declaration and recursive call
+  args:
+    - 'def f(g): if type == "array" then map(f(g * 2)) else g end; f(.)'
+  input: '[[[1,2]]]'
+  expected: |
+    [
+      [
+        [
+          8,
+          16
+        ]
+      ]
+    ]
+
 - name: argument count error for custom function
   args:
     - 'def f(g): g | g; f'
