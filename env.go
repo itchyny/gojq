@@ -26,12 +26,15 @@ func (env *env) addFuncDef(fd *FuncDef) {
 	m.(map[int]*FuncDef)[len(fd.Args)] = fd
 }
 
-func (env *env) lookupFuncDef(name string) map[int]*FuncDef {
+func (env *env) lookupFuncDef(name string, arg int) *FuncDef {
 	if fds, ok := env.funcDefs.Load(name); ok {
-		return fds.(map[int]*FuncDef)
+		fds := fds.(map[int]*FuncDef)
+		if fd, ok := fds[arg]; ok {
+			return fd
+		}
 	}
 	if env.parent != nil {
-		return env.parent.lookupFuncDef(name)
+		return env.parent.lookupFuncDef(name, arg)
 	}
 	bfn, ok := builtinFuncs[name]
 	if !ok {
@@ -44,8 +47,8 @@ func (env *env) lookupFuncDef(name string) map[int]*FuncDef {
 	for _, fd := range p.FuncDefs {
 		env.addFuncDef(fd)
 	}
-	m, _ := env.funcDefs.Load(name)
-	return m.(map[int]*FuncDef)
+	fds, _ := env.funcDefs.Load(name)
+	return fds.(map[int]*FuncDef)[arg]
 }
 
 func (env *env) lookupVariable(name string) *Pipe {
