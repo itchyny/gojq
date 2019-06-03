@@ -36,6 +36,16 @@ var builtinFuncs = map[string]string{
 						| ([$xs[] | select([f] < $fx)] | _sort_by) + [$x] + ([$xs[] | select([f] >= $fx)] | _sort_by)
 				end;
 			_sort_by;`,
+	"group_by": `
+		def group_by(f):
+			def _group_by:
+				if length > 0 then
+					.[0] as $x | .[1:] as $xs | ($x|[f]) as $fx
+						| [$x, $xs[] | select([f] == $fx)], ([$xs[] | select([f] != $fx)] | _group_by)
+				else
+					empty
+				end;
+			sort_by(f) | [_group_by];`,
 	"range": `
 		def range($x): range(0; $x);
 		def range($start; $end):
