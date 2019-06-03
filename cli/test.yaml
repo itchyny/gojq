@@ -1017,6 +1017,16 @@
     "[[{\"a\":3,\"b\":2,\"c\":1}],[{\"a\":4,\"b\":1,\"c\":2}],[{\"a\":1,\"b\":4,\"c\":3}],[{\"a\":1,\"b\":4,\"c\":5}]]"
     "[[{\"a\":1,\"b\":4,\"c\":5},{\"a\":4,\"b\":1,\"c\":2},{\"a\":3,\"b\":2,\"c\":1}],[{\"a\":1,\"b\":4,\"c\":3}]]"
 
+- name: unique, unique_by functions
+  args:
+    - 'unique, unique_by(length) | tojson'
+  input: '[7,3,5,1,4,2,5,3,6,1,7,4,3] ["cat", "dog", "hello", "world", "banana", "apple"]'
+  expected: |
+    "[1,2,3,4,5,6,7]"
+    "[1,2,3,4,5,6,7]"
+    "[\"apple\",\"banana\",\"cat\",\"dog\",\"hello\",\"world\"]"
+    "[\"cat\",\"hello\",\"banana\"]"
+
 - name: arrays, objects, iterables, booleans, numbers, strings, nulls, values, scalars functions
   args:
     - 'map(arrays), map(objects), map(iterables), map(booleans), map(numbers), map(strings), map(nulls), map(values), map(scalars)'

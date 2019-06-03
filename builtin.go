@@ -46,6 +46,8 @@ var builtinFuncs = map[string]string{
 					empty
 				end;
 			sort_by(f) | [_group_by];`,
+	"unique":    `def unique: group_by(.) | map(.[0]);`,
+	"unique_by": `def unique_by(f): group_by(f) | map(.[0]);`,
 	"range": `
 		def range($x): range(0; $x);
 		def range($start; $end):
