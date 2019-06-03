@@ -259,6 +259,23 @@ func (env *env) applyArrayIndex(x *Index, a []interface{}, c <-chan interface{})
 					return applyArrayIndetInternal(&start, nil, nil, a)
 				}
 				return applyArrayIndetInternal(nil, nil, &start, a)
+			} else if b, ok := s.([]interface{}); ok {
+				var xs []interface{}
+				if len(b) == 0 {
+					return xs
+				}
+				for i := 0; i < len(a) && i < len(a)-len(b)+1; i++ {
+					var neq bool
+					for j, y := range b {
+						if neq = compare(a[i+j], y) != 0; neq {
+							break
+						}
+					}
+					if !neq {
+						xs = append(xs, i)
+					}
+				}
+				return xs
 			}
 			return &arrayIndexNotNumberError{s}
 		})
