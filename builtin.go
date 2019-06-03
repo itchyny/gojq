@@ -27,6 +27,15 @@ var builtinFuncs = map[string]string{
 	"min_by": `def min_by(f): reduce .[1:][] as $x (.[0]; if (.|f) > ($x|f) then $x end);`,
 	"max":    `def max: max_by(.);`,
 	"max_by": `def max_by(f): reduce .[1:][] as $x (.[0]; if (.|f) <= ($x|f) then $x end);`,
+	"sort":   `def sort: sort_by(.);`,
+	"sort_by": `
+		def sort_by(f):
+			def _sort_by:
+				if length > 1 then
+					.[0] as $x | .[1:] as $xs | ($x|[f]) as $fx
+						| ([$xs[] | select([f] < $fx)] | _sort_by) + [$x] + ([$xs[] | select([f] >= $fx)] | _sort_by)
+				end;
+			_sort_by;`,
 	"range": `
 		def range($x): range(0; $x);
 		def range($start; $end):
