@@ -2394,6 +2394,46 @@
   expected: |
     null
 
+- name: slurp option
+  args:
+    - -s
+    - '.'
+  input: |
+    null
+    false
+    []
+    { "foo": "bar" }
+  expected: |
+    [
+      null,
+      false,
+      [],
+      {
+        "foo": "bar"
+      }
+    ]
+
+- name: slurp option with raw strings input option
+  args:
+    - -s
+    - -R
+    - '.'
+  input: |
+    null
+    false
+    foo
+    bar
+  expected: |
+    "null\nfalse\nfoo\nbar\n"
+
+- name: slurp option with null input option
+  args:
+    - -s
+    - -n
+    - '.'
+  expected: |
+    null
+
 - name: invalid query
   args:
     - '>abc'

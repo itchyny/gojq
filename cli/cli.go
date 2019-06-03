@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"runtime"
 	"strings"
@@ -34,9 +35,10 @@ type cli struct {
 	errStream io.Writer
 
 	outputCompact bool
-	inputNull     bool
 	outputRaw     bool
+	inputNull     bool
 	inputRaw      bool
+	inputSlurp    bool
 }
 
 func (cli *cli) run(args []string) int {
@@ -57,9 +59,10 @@ Options:
 	}
 	var showVersion bool
 	fs.BoolVar(&cli.outputCompact, "c", false, "compact output")
-	fs.BoolVar(&cli.inputNull, "n", false, "use null as input value")
 	fs.BoolVar(&cli.outputRaw, "r", false, "output raw string")
+	fs.BoolVar(&cli.inputNull, "n", false, "use null as input value")
 	fs.BoolVar(&cli.inputRaw, "R", false, "read input as raw strings")
+	fs.BoolVar(&cli.inputSlurp, "s", false, "read all inputs into an array")
 	fs.BoolVar(&showVersion, "v", false, "print version")
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
@@ -128,6 +131,18 @@ func (cli *cli) process(fname string, in io.Reader, query *gojq.Query) int {
 }
 
 func (cli *cli) processRaw(fname string, in io.Reader, query *gojq.Query) int {
+	if cli.inputSlurp {
+		xs, err := ioutil.ReadAll(in)
+		if err != nil {
+			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+			return exitCodeErr
+		}
+		if err := cli.printValue(query.Run(string(xs))); err != nil {
+			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+			return exitCodeErr
+		}
+		return exitCodeOK
+	}
 	s := bufio.NewScanner(in)
 	exitCode := exitCodeOK
 	for s.Scan() {
@@ -146,16 +161,27 @@ func (cli *cli) processRaw(fname string, in io.Reader, query *gojq.Query) int {
 func (cli *cli) processJSON(fname string, in io.Reader, query *gojq.Query) int {
 	var buf bytes.Buffer
 	dec := json.NewDecoder(io.TeeReader(in, &buf))
+	var vs []interface{}
 	for {
 		buf.Reset()
 		var v interface{}
 		if err := dec.Decode(&v); err != nil {
-			if buf.String() == "" {
+			if err == io.EOF {
+				if cli.inputSlurp && !cli.inputNull {
+					if err := cli.printValue(query.Run(vs)); err != nil {
+						fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+						return exitCodeErr
+					}
+				}
 				return exitCodeOK
 			}
 			fmt.Fprintf(cli.errStream, "%s: invalid json: %s\n", name, fname)
 			cli.printJSONError(fname, buf.String(), err)
 			return exitCodeErr
+		}
+		if cli.inputSlurp && !cli.inputNull {
+			vs = append(vs, v)
+			continue
 		}
 		if err := cli.printValue(query.Run(v)); err != nil {
 			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
