@@ -1319,6 +1319,43 @@
       0
     ]
 
+- name: indices function for array
+  args:
+    - 'indices(1), indices([]), indices([1,2]), indices([3,4,5])'
+  input: '[0, 1, 2, 3, 4, 3, 2, 1, 2, 1, 2, 3, 4]'
+  expected: |
+    [
+      1,
+      7,
+      9
+    ]
+    []
+    [
+      1,
+      7,
+      9
+    ]
+    []
+
+- name: indices function for string
+  args:
+    - 'indices(""), indices("ell"), indices("wor"), indices("ol"), indices("うえ")'
+  input: '"hello, world, hello, word あいうえお"'
+  expected: | # different from jq due to multibyte characters
+    []
+    [
+      1,
+      15
+    ]
+    [
+      7,
+      21
+    ]
+    []
+    [
+      28
+    ]
+
 - name: startswith function
   args:
     - 'map(startswith("foo"))'

@@ -66,6 +66,12 @@ var builtinFuncs = map[string]string{
 	"values":    `def values: select(. != null);`,
 	"scalars":   `def scalars: select(type |. != "array" and . != "object");`,
 	"reverse":   `def reverse: [.[length - 1 - range(0;length)]];`,
+	"indices": `
+		def indices($x):
+			if type == "array" and ($x|type) == "array" then .[$x]
+			elif type == "array" then .[[$x]]
+			elif type == "string" and ($x|type) == "string" then explode | .[$x|explode]
+			else .[$x] end;`,
 	"startswith": `
 		def startswith($x):
 			if type == "string" then
