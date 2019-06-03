@@ -2344,6 +2344,30 @@
       "foo": "multiple\nline"
     }
 
+- name: raw strings input option
+  args:
+    - -R
+    - '.'
+  input: |
+    {
+      "foo": "bar"
+    }
+  expected: |
+    "{"
+    "  \"foo\": \"bar\""
+    "}"
+
+- name: raw strings input option error
+  args:
+    - -R
+    - '. / 2'
+  input: |
+    {
+      "foo": "bar"
+    }
+  error: |
+    cannot divide: string ("}") and number (2)
+
 - name: null input value option
   args:
     - -n
@@ -2360,6 +2384,15 @@
     - '[.,.]'
   expected: |
     [null,null]
+
+- name: null input value option with raw strings input option
+  args:
+    - -n
+    - -R
+    - '.'
+  input: 'foo'
+  expected: |
+    null
 
 - name: invalid query
   args:

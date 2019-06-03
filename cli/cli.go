@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"flag"
@@ -35,6 +36,7 @@ type cli struct {
 	outputCompact bool
 	inputNull     bool
 	outputRaw     bool
+	inputRaw      bool
 }
 
 func (cli *cli) run(args []string) int {
@@ -57,6 +59,7 @@ Options:
 	fs.BoolVar(&cli.outputCompact, "c", false, "compact output")
 	fs.BoolVar(&cli.inputNull, "n", false, "use null as input value")
 	fs.BoolVar(&cli.outputRaw, "r", false, "output raw string")
+	fs.BoolVar(&cli.inputRaw, "R", false, "read input as raw strings")
 	fs.BoolVar(&showVersion, "v", false, "print version")
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
@@ -118,6 +121,29 @@ func (cli *cli) processFile(fname string, query *gojq.Query) int {
 }
 
 func (cli *cli) process(fname string, in io.Reader, query *gojq.Query) int {
+	if cli.inputRaw && !cli.inputNull {
+		return cli.processRaw(fname, in, query)
+	}
+	return cli.processJSON(fname, in, query)
+}
+
+func (cli *cli) processRaw(fname string, in io.Reader, query *gojq.Query) int {
+	s := bufio.NewScanner(in)
+	exitCode := exitCodeOK
+	for s.Scan() {
+		if err := cli.printValue(query.Run(s.Text())); err != nil {
+			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+			exitCode = exitCodeErr
+		}
+	}
+	if err := s.Err(); err != nil {
+		fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+		return exitCodeErr
+	}
+	return exitCode
+}
+
+func (cli *cli) processJSON(fname string, in io.Reader, query *gojq.Query) int {
 	var buf bytes.Buffer
 	dec := json.NewDecoder(io.TeeReader(in, &buf))
 	for {
