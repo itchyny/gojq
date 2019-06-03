@@ -163,7 +163,6 @@ func (cli *cli) processJSON(fname string, in io.Reader, query *gojq.Query) int {
 	dec := json.NewDecoder(io.TeeReader(in, &buf))
 	var vs []interface{}
 	for {
-		buf.Reset()
 		var v interface{}
 		if err := dec.Decode(&v); err != nil {
 			if err == io.EOF {
