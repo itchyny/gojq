@@ -89,6 +89,7 @@ Options:
 		return exitCodeErr
 	}
 	if cli.inputNull {
+		cli.inputRaw, cli.inputSlurp = false, false
 		return cli.process("<null>", bytes.NewReader([]byte("null")), query)
 	}
 	if len(args) == 0 {
@@ -124,7 +125,7 @@ func (cli *cli) processFile(fname string, query *gojq.Query) int {
 }
 
 func (cli *cli) process(fname string, in io.Reader, query *gojq.Query) int {
-	if cli.inputRaw && !cli.inputNull {
+	if cli.inputRaw {
 		return cli.processRaw(fname, in, query)
 	}
 	return cli.processJSON(fname, in, query)
@@ -166,7 +167,7 @@ func (cli *cli) processJSON(fname string, in io.Reader, query *gojq.Query) int {
 		var v interface{}
 		if err := dec.Decode(&v); err != nil {
 			if err == io.EOF {
-				if cli.inputSlurp && !cli.inputNull {
+				if cli.inputSlurp {
 					if err := cli.printValue(query.Run(vs)); err != nil {
 						fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 						return exitCodeErr
@@ -178,7 +179,7 @@ func (cli *cli) processJSON(fname string, in io.Reader, query *gojq.Query) int {
 			cli.printJSONError(fname, buf.String(), err)
 			return exitCodeErr
 		}
-		if cli.inputSlurp && !cli.inputNull {
+		if cli.inputSlurp {
 			vs = append(vs, v)
 			continue
 		}
