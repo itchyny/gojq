@@ -1,9 +1,12 @@
 package gojq
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
 
 type env struct {
-	funcDefs  *sync.Map // map[string]map[int]*FuncDef
+	funcDefs  *sync.Map // map[string]*FuncDef
 	variables *sync.Map // map[string]*Pipe
 	values    *sync.Map // map[string]interface{}
 	parent    *env
@@ -19,19 +22,12 @@ func newEnv(parent *env) *env {
 }
 
 func (env *env) addFuncDef(fd *FuncDef) {
-	if _, ok := env.funcDefs.Load(fd.Name); !ok {
-		env.funcDefs.Store(fd.Name, make(map[int]*FuncDef))
-	}
-	m, _ := env.funcDefs.Load(fd.Name)
-	m.(map[int]*FuncDef)[len(fd.Args)] = fd
+	env.funcDefs.Store(fd.Name+"/"+fmt.Sprint(len(fd.Args)), fd)
 }
 
 func (env *env) lookupFuncDef(name string, arg int) *FuncDef {
-	if fds, ok := env.funcDefs.Load(name); ok {
-		fds := fds.(map[int]*FuncDef)
-		if fd, ok := fds[arg]; ok {
-			return fd
-		}
+	if fd, ok := env.funcDefs.Load(name + "/" + fmt.Sprint(arg)); ok {
+		return fd.(*FuncDef)
 	}
 	if env.parent != nil {
 		return env.parent.lookupFuncDef(name, arg)
@@ -47,8 +43,11 @@ func (env *env) lookupFuncDef(name string, arg int) *FuncDef {
 	for _, fd := range p.FuncDefs {
 		env.addFuncDef(fd)
 	}
-	fds, _ := env.funcDefs.Load(name)
-	return fds.(map[int]*FuncDef)[arg]
+	fd, ok := env.funcDefs.Load(name + "/" + fmt.Sprint(arg))
+	if !ok {
+		return nil
+	}
+	return fd.(*FuncDef)
 }
 
 func (env *env) lookupVariable(name string) *Pipe {
