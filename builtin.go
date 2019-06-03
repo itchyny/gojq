@@ -72,6 +72,8 @@ var builtinFuncs = map[string]string{
 			elif type == "array" then .[[$x]]
 			elif type == "string" and ($x|type) == "string" then explode | .[$x|explode]
 			else .[$x] end;`,
+	"index":  `def index($x): indices($x) | .[0];`,
+	"rindex": `def rindex($x): indices($x) | .[-1:][0];`,
 	"startswith": `
 		def startswith($x):
 			if type == "string" then

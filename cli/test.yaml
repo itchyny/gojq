@@ -1356,6 +1356,20 @@
       28
     ]
 
+- name: index, rindex functions
+  args:
+    - 'index(","), rindex(","), indices(",")'
+  input: '"a,bc,def,ghij,klmno"'
+  expected: |
+    1
+    13
+    [
+      1,
+      4,
+      8,
+      13
+    ]
+
 - name: startswith function
   args:
     - 'map(startswith("foo"))'
