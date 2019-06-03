@@ -297,6 +297,20 @@
   expected: |
     null
 
+- name: array index error
+  args:
+    - '.["foo"]'
+  input: '[]'
+  error: |
+    expected a number for indexing an array but got: string ("foo")
+
+- name: array slice error
+  args:
+    - '.[:{}]'
+  input: '[]'
+  error: |
+    expected a number for indexing an array but got: object ({})
+
 - name: iterator
   args:
     - '.foo | .[] | .'

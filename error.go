@@ -38,6 +38,14 @@ func (err *objectKeyNotStringError) Error() string {
 	return fmt.Sprintf("expected a string for object key but got: %s", typeErrorPreview(err.v))
 }
 
+type arrayIndexNotNumberError struct {
+	v interface{}
+}
+
+func (err *arrayIndexNotNumberError) Error() string {
+	return fmt.Sprintf("expected a number for indexing an array but got: %s", typeErrorPreview(err.v))
+}
+
 type funcNotFoundError struct {
 	f *Func
 }

@@ -252,7 +252,7 @@ func (env *env) applyArrayIndex(x *Index, a []interface{}, c <-chan interface{})
 						if end, ok := toInt(e); ok {
 							return applyArrayIndetInternal(&start, &end, nil, a)
 						}
-						return e
+						return &arrayIndexNotNumberError{e}
 					})
 				}
 				if x.IsSlice {
@@ -260,7 +260,7 @@ func (env *env) applyArrayIndex(x *Index, a []interface{}, c <-chan interface{})
 				}
 				return applyArrayIndetInternal(nil, nil, &start, a)
 			}
-			return s
+			return &arrayIndexNotNumberError{s}
 		})
 	}
 	if x.End != nil {
@@ -268,7 +268,7 @@ func (env *env) applyArrayIndex(x *Index, a []interface{}, c <-chan interface{})
 			if end, ok := toInt(e); ok {
 				return applyArrayIndetInternal(nil, &end, nil, a)
 			}
-			return e
+			return &arrayIndexNotNumberError{e}
 		})
 	}
 	return a
