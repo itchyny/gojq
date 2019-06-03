@@ -33,6 +33,7 @@ type cli struct {
 	errStream io.Writer
 
 	outputCompact bool
+	inputNull     bool
 	outputRaw     bool
 }
 
@@ -54,6 +55,7 @@ Options:
 	}
 	var showVersion bool
 	fs.BoolVar(&cli.outputCompact, "c", false, "compact output")
+	fs.BoolVar(&cli.inputNull, "n", false, "use null as input value")
 	fs.BoolVar(&cli.outputRaw, "r", false, "output raw string")
 	fs.BoolVar(&showVersion, "v", false, "print version")
 	if err := fs.Parse(args); err != nil {
@@ -79,6 +81,9 @@ Options:
 		fmt.Fprintf(cli.errStream, "%s: invalid query: %s\n", name, arg)
 		cli.printParseError(arg, err)
 		return exitCodeErr
+	}
+	if cli.inputNull {
+		return cli.process("<null>", bytes.NewReader([]byte("null")), query)
 	}
 	if len(args) == 0 {
 		return cli.process("<stdin>", cli.inStream, query)

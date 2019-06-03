@@ -2344,6 +2344,23 @@
       "foo": "multiple\nline"
     }
 
+- name: null input value option
+  args:
+    - -n
+    - '[.]'
+  expected: |
+    [
+      null
+    ]
+
+- name: null input value option with compact option
+  args:
+    - -n
+    - -c
+    - '[.,.]'
+  expected: |
+    [null,null]
+
 - name: invalid query
   args:
     - '>abc'
