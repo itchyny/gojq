@@ -32,7 +32,8 @@ type cli struct {
 	outStream io.Writer
 	errStream io.Writer
 
-	outputRaw bool
+	outputCompact bool
+	outputRaw     bool
 }
 
 func (cli *cli) run(args []string) int {
@@ -52,6 +53,7 @@ Options:
 		fs.PrintDefaults()
 	}
 	var showVersion bool
+	fs.BoolVar(&cli.outputCompact, "c", false, "compact output")
 	fs.BoolVar(&cli.outputRaw, "r", false, "output raw string")
 	fs.BoolVar(&showVersion, "v", false, "print version")
 	if err := fs.Parse(args); err != nil {
@@ -180,6 +182,10 @@ func (cli *cli) printValue(v <-chan interface{}) error {
 
 func (cli *cli) createMarshaler() marshaler {
 	f := jsonFormatter()
+	if cli.outputCompact {
+		f.Indent = 0
+		f.Newline = ""
+	}
 	if cli.outputRaw {
 		return &rawMarshaler{f}
 	}

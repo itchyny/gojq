@@ -2315,6 +2315,14 @@
   error: |
     error cannot be applied to: object ({})
 
+- name: compact output option
+  args:
+    - -c
+    - '.'
+  input: '{ "foo": ["hello", "world"] }'
+  expected: |
+    {"foo":["hello","world"]}
+
 - name: raw string output option
   args:
     - -r
