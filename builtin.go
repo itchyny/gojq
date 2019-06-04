@@ -149,4 +149,12 @@ var builtinFuncs = map[string]string{
 		def last: .[-1];
 		def last(g): reduce g as $item (null; $item);`,
 	"isempty": `def isempty(g): first((g|false), true);`,
+	"all": `
+		def all: all(.[]; .);
+		def all(y): all(.[]; y);
+		def all(g; y): isempty(g|y and empty);`,
+	"any": `
+		def any: any(.[]; .);
+		def any(y): any(.[]; y);
+		def any(g; y): isempty(g|y or empty) | not;`,
 }

@@ -1773,6 +1773,37 @@
   expected: |
     [1,5]
 
+- name: all/0, any/0 functions
+  args:
+    - -c
+    - '[all, any]'
+  input: '[] [false, false] [false, true] [true, true]'
+  expected: |
+    [true,false]
+    [false,false]
+    [false,true]
+    [true,true]
+
+- name: all/1, any/1 functions
+  args:
+    - -c
+    - '[all(not), any(not)]'
+  input: '[] [false, false] [false, true] [true, true]'
+  expected: |
+    [true,false]
+    [true,true]
+    [false,true]
+    [false,false]
+
+- name: all/2, any/2 functions
+  args:
+    - -c
+    - '[all(range(.); not), any(range(.); not)]'
+  input: '0 1'
+  expected: |
+    [true,false]
+    [false,false]
+
 - name: isempty function
   args:
     - -c
