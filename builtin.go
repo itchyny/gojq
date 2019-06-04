@@ -157,4 +157,15 @@ var builtinFuncs = map[string]string{
 		def any: any(.[]; .);
 		def any(y): any(.[]; y);
 		def any(g; y): isempty(g|y or empty) | not;`,
+	"limit": `
+		def limit($n; g):
+			if $n > 0 then
+				label $out
+					| foreach g as $item
+						($n; .-1; $item, if . <= 0 then break $out else empty end)
+			elif $n == 0 then
+				empty
+			else
+				g
+			end;`,
 }
