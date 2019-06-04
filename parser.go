@@ -8,7 +8,7 @@ import (
 var parser = participle.MustBuild(
 	&Query{},
 	participle.Lexer(lexer.Must(lexer.Regexp(`(\s+)`+
-		`|(?P<Keyword>(null|true|false|if|then|elif|else|end|or|and|as|try|catch|reduce|foreach)\b)`+
+		`|(?P<Keyword>(null|true|false|if|then|elif|else|end|or|and|as|try|catch|reduce|foreach|label|break)\b)`+
 		`|(?P<Ident>\$?[a-zA-Z_][a-zA-Z0-9_]*)`+
 		`|(?P<Op>(\.\.|//))`+
 		`|(?P<CompareOp>([=!]=|[<>]=?))`+

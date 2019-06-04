@@ -80,6 +80,9 @@ func (env *env) applyExprInternal(e *Expr, c <-chan interface{}) <-chan interfac
 	if e.Foreach != nil {
 		return env.applyForeach(e.Foreach, c)
 	}
+	if e.Label != nil {
+		return env.applyLabel(e.Label, c)
+	}
 	panic("unreachable expr")
 }
 
@@ -188,6 +191,9 @@ func (env *env) applyTerm(t *Term, c <-chan interface{}) (d <-chan interface{}) 
 	}
 	if t.False {
 		return unitIterator(false)
+	}
+	if t.Break != "" {
+		return unitIterator(&breakError{t.Break})
 	}
 	return env.applyPipe(t.Pipe, cc())
 }
@@ -742,4 +748,18 @@ func (env *env) applyPattern(p *Pattern, v interface{}) error {
 		}
 	}
 	return nil
+}
+
+func (env *env) applyLabel(x *Label, c <-chan interface{}) <-chan interface{} {
+	if x.Ident[0] != '$' {
+		return unitIterator(&labelNameError{x.Ident})
+	}
+	return mapIterator(c, func(v interface{}) interface{} {
+		return mapIteratorWithError(env.applyPipe(x.Body, unitIterator(v)), func(v interface{}) interface{} {
+			if e, ok := v.(*breakError); ok && x.Ident == e.n {
+				return struct{}{}
+			}
+			return v
+		})
+	})
 }

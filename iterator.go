@@ -251,10 +251,16 @@ func mapIteratorWithError(c <-chan interface{}, f func(interface{}) interface{})
 				for v := range y {
 					if v == struct{}{} {
 						continue
+					} else if e, ok := v.(*breakError); ok {
+						d <- e
+						return
 					}
 					d <- v
 				}
 				continue
+			} else if e, ok := x.(*breakError); ok {
+				d <- e
+				return
 			}
 			d <- x
 		}

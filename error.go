@@ -121,6 +121,22 @@ func (err *bindVariableNameError) Error() string {
 	return fmt.Sprintf(`variable should start with "$" but got: %q`, err.n)
 }
 
+type labelNameError struct {
+	n string
+}
+
+func (err *labelNameError) Error() string {
+	return fmt.Sprintf(`label should start with "$" but got: %q`, err.n)
+}
+
+type breakError struct {
+	n string
+}
+
+func (err *breakError) Error() string {
+	return fmt.Sprintf(`label not defined: %q`, err.n)
+}
+
 type stringLiteralError struct {
 	s string
 }

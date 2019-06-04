@@ -1551,6 +1551,27 @@
     -1
     -4
 
+- name: label and break syntax
+  args:
+    - '[(label $x | .[] | if . > 2 then break $x else . end), 0]'
+  input: '[1,2,3,2,1]'
+  expected: |
+    [
+      1,
+      2,
+      0
+    ]
+
+- name: label and break in foreach syntax
+  args:
+    - '[range(.)] | label $x | foreach .[] as $i (0; if . > 5 then break $x else . + $i end)'
+  input: '10'
+  expected: |
+    0
+    1
+    3
+    6
+
 - name: string interpolation
   args:
     - -c

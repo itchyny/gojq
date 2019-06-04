@@ -48,6 +48,7 @@ type Expr struct {
 		Pattern *Pattern `"as" @@`
 		Body    *Pipe    `"|" @@`
 	} `@@?`
+	Label *Label `| @@`
 }
 
 // Logic ...
@@ -112,6 +113,7 @@ type Term struct {
 	Null       bool      `| @"null"`
 	True       bool      `| @"true"`
 	False      bool      `| @"false"`
+	Break      string    `| "break" @Ident`
 	Pipe       *Pipe     `| "(" @@ ")" )`
 	SuffixList []*Suffix `@@*`
 }
@@ -207,4 +209,10 @@ type Foreach struct {
 	Start   *Pipe    `"(" @@`
 	Update  *Pipe    `";" @@`
 	Extract *Pipe    `(";" @@)? ")"`
+}
+
+// Label ...
+type Label struct {
+	Ident string `"label" @Ident`
+	Body  *Pipe  `"|" @@`
 }
