@@ -109,6 +109,9 @@ type Term struct {
 		Term *Term    `@@`
 	} `| @@`
 	String     *string   `| @String`
+	Null       bool      `| @"null"`
+	True       bool      `| @"true"`
+	False      bool      `| @"false"`
 	Pipe       *Pipe     `| "(" @@ ")" )`
 	SuffixList []*Suffix `@@*`
 }

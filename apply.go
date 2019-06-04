@@ -180,6 +180,15 @@ func (env *env) applyTerm(t *Term, c <-chan interface{}) (d <-chan interface{}) 
 	if t.String != nil {
 		return env.applyString(*t.String, cc())
 	}
+	if t.Null {
+		return unitIterator(nil)
+	}
+	if t.True {
+		return unitIterator(true)
+	}
+	if t.False {
+		return unitIterator(false)
+	}
 	return env.applyPipe(t.Pipe, cc())
 }
 

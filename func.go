@@ -24,9 +24,6 @@ var internalFuncs map[string]function
 
 func init() {
 	internalFuncs = map[string]function{
-		"null":           noArgFunc(funcNull),
-		"true":           noArgFunc(funcTrue),
-		"false":          noArgFunc(funcFalse),
 		"empty":          noArgFunc(funcEmpty),
 		"length":         noArgFunc(funcLength),
 		"utf8bytelength": noArgFunc(funcUtf8ByteLength),
@@ -202,18 +199,6 @@ func toFloat64(name string, v interface{}) (float64, error) {
 	default:
 		return 0, &funcTypeError{name, v}
 	}
-}
-
-func funcNull(_ interface{}) interface{} {
-	return nil
-}
-
-func funcTrue(_ interface{}) interface{} {
-	return true
-}
-
-func funcFalse(_ interface{}) interface{} {
-	return false
 }
 
 func funcEmpty(_ interface{}) interface{} {
