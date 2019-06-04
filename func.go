@@ -59,6 +59,8 @@ func init() {
 		"exp10":          mathFunc("exp10", func(v float64) float64 { return math.Pow(10, v) }),
 		"exp2":           mathFunc("exp2", math.Exp2),
 		"expm1":          mathFunc("expm1", math.Expm1),
+		"frexp":          noArgFunc(funcFrexp),
+		"modf":           noArgFunc(funcModf),
 		"log":            mathFunc("log", math.Log),
 		"log10":          mathFunc("log10", math.Log10),
 		"log1p":          mathFunc("log1p", math.Log1p),
@@ -381,6 +383,24 @@ func funcFromJSON(v interface{}) interface{} {
 	default:
 		return &funcTypeError{"fromjson", v}
 	}
+}
+
+func funcFrexp(v interface{}) interface{} {
+	x, err := toFloat64("frexp", v)
+	if err != nil {
+		return err
+	}
+	f, e := math.Frexp(x)
+	return []interface{}{f, e}
+}
+
+func funcModf(v interface{}) interface{} {
+	x, err := toFloat64("modf", v)
+	if err != nil {
+		return err
+	}
+	i, f := math.Modf(x)
+	return []interface{}{f, i}
 }
 
 func funcError(env *env, f *Func) func(interface{}) interface{} {
