@@ -1773,6 +1773,14 @@
   expected: |
     [1,5]
 
+- name: isempty function
+  args:
+    - -c
+    - '[isempty(empty), isempty(range(10000000000000)), isempty(1,error("foo"))]'
+  input: 'null'
+  expected: |
+    [true,false,false]
+
 - name: trigonometric functions
   args:
     - 'map(sin),map(cos),map(tan) | join(",")'
