@@ -1933,6 +1933,13 @@
   error: |
     error cannot be applied to: object ({})
 
+- name: builtins function
+  args:
+    - 'builtins|length > 100'
+  input: 'null'
+  expected: |
+    true
+
 - name: compact output option
   args:
     - -c

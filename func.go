@@ -101,6 +101,7 @@ func init() {
 		"pow":         mathFunc2("pow", math.Pow),
 		"fma":         mathFunc3("fma", func(x, y, z float64) float64 { return x*y + z }),
 		"error":       function{argcount0 | argcount1, funcError},
+		"builtins":    noArgFunc(funcBuiltins),
 		"_type_error": argFunc1(internalfuncTypeError),
 	}
 }
@@ -427,4 +428,34 @@ func internalfuncTypeError(env *env, f *Func) func(interface{}) interface{} {
 			return &funcTypeError{x.(string), v}
 		})
 	}
+}
+
+func funcBuiltins(_ interface{}) interface{} {
+	var xs []string
+	for name, fn := range internalFuncs {
+		if name[0] != '_' {
+			for i, cnt := 0, fn.argcount; cnt > 0; i, cnt = i+1, cnt>>1 {
+				if cnt&1 > 0 {
+					xs = append(xs, name+"/"+fmt.Sprint(i))
+				}
+			}
+		}
+	}
+	for _, fn := range builtinFuncs {
+		p, err := Parse(fn)
+		if err != nil {
+			panic(err)
+		}
+		for _, fd := range p.FuncDefs {
+			if fd.Name[0] != '_' {
+				xs = append(xs, fd.Name+"/"+fmt.Sprint(len(fd.Args)))
+			}
+		}
+	}
+	sort.Strings(xs)
+	ys := make([]interface{}, len(xs))
+	for i, x := range xs {
+		ys[i] = x
+	}
+	return ys
 }
