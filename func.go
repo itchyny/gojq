@@ -8,7 +8,17 @@ import (
 	"sort"
 )
 
-type function func(*env, *Func) func(interface{}) interface{}
+const (
+	argcount0 = 1 << iota
+	argcount1
+	argcount2
+	argcount3
+)
+
+type function struct {
+	argcount int
+	callback func(*env, *Func) func(interface{}) interface{}
+}
 
 var internalFuncs map[string]function
 
@@ -21,7 +31,7 @@ func init() {
 		"length":         noArgFunc(funcLength),
 		"utf8bytelength": noArgFunc(funcUtf8ByteLength),
 		"keys":           noArgFunc(funcKeys),
-		"has":            funcHas,
+		"has":            argFunc1(funcHas),
 		"tonumber":       noArgFunc(funcToNumber),
 		"tostring":       noArgFunc(funcToString),
 		"type":           noArgFunc(funcType),
@@ -90,20 +100,31 @@ func init() {
 		"yn":          mathFunc2("yn", func(l, r float64) float64 { return math.Yn(int(l), r) }),
 		"pow":         mathFunc2("pow", math.Pow),
 		"fma":         mathFunc3("fma", func(x, y, z float64) float64 { return x*y + z }),
-		"error":       funcError,
-		"_type_error": internalfuncTypeError,
+		"error":       function{argcount0 | argcount1, funcError},
+		"_type_error": argFunc1(internalfuncTypeError),
 	}
 }
 
 func noArgFunc(fn func(interface{}) interface{}) function {
-	return func(_ *env, f *Func) func(interface{}) interface{} {
+	return function{argcount0, func(_ *env, f *Func) func(interface{}) interface{} {
 		return func(v interface{}) interface{} {
 			if len(f.Args) != 0 {
 				return &funcNotFoundError{f}
 			}
 			return fn(v)
 		}
-	}
+	}}
+}
+
+func argFunc1(fn func(*env, *Func) func(interface{}) interface{}) function {
+	return function{argcount1, func(env *env, f *Func) func(interface{}) interface{} {
+		return func(v interface{}) interface{} {
+			if len(f.Args) != 1 {
+				return &funcNotFoundError{f}
+			}
+			return fn(env, f)(v)
+		}
+	}}
 }
 
 func mathFunc(name string, f func(x float64) float64) function {
@@ -117,7 +138,7 @@ func mathFunc(name string, f func(x float64) float64) function {
 }
 
 func mathFunc2(name string, g func(x, y float64) float64) function {
-	return func(env *env, f *Func) func(interface{}) interface{} {
+	return function{argcount2, func(env *env, f *Func) func(interface{}) interface{} {
 		return func(v interface{}) interface{} {
 			if len(f.Args) != 2 {
 				return &funcNotFoundError{f}
@@ -137,11 +158,11 @@ func mathFunc2(name string, g func(x, y float64) float64) function {
 				})
 			})
 		}
-	}
+	}}
 }
 
 func mathFunc3(name string, g func(x, y, z float64) float64) function {
-	return func(env *env, f *Func) func(interface{}) interface{} {
+	return function{argcount3, func(env *env, f *Func) func(interface{}) interface{} {
 		return func(v interface{}) interface{} {
 			if len(f.Args) != 3 {
 				return &funcNotFoundError{f}
@@ -168,7 +189,7 @@ func mathFunc3(name string, g func(x, y, z float64) float64) function {
 				})
 			})
 		}
-	}
+	}}
 }
 
 func toFloat64(name string, v interface{}) (float64, error) {
@@ -257,9 +278,6 @@ func funcKeys(v interface{}) interface{} {
 
 func funcHas(env *env, f *Func) func(interface{}) interface{} {
 	return func(v interface{}) interface{} {
-		if len(f.Args) != 1 {
-			return &funcNotFoundError{f}
-		}
 		return mapIterator(env.applyPipe(f.Args[0], unitIterator(v)), func(x interface{}) interface{} {
 			switch v := v.(type) {
 			case []interface{}:
@@ -405,9 +423,6 @@ func funcError(env *env, f *Func) func(interface{}) interface{} {
 
 func internalfuncTypeError(env *env, f *Func) func(interface{}) interface{} {
 	return func(v interface{}) interface{} {
-		if len(f.Args) != 1 {
-			return &funcNotFoundError{f}
-		}
 		return mapIterator(env.applyPipe(f.Args[0], unitIterator(v)), func(x interface{}) interface{} {
 			return &funcTypeError{x.(string), v}
 		})

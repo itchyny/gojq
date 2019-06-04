@@ -368,7 +368,7 @@ func (env *env) applyFunc(f *Func, c <-chan interface{}) <-chan interface{} {
 		return unitIterator(&variableNotFoundError{f.Name})
 	}
 	if fn, ok := internalFuncs[f.Name]; ok {
-		return mapIterator(c, fn(env, f))
+		return mapIterator(c, fn.callback(env, f))
 	}
 	fd := env.lookupFuncDef(f.Name, len(f.Args))
 	if fd == nil {
