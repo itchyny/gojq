@@ -290,7 +290,16 @@ func foreachIterator(c <-chan interface{}, x interface{}, f func(interface{}, in
 		defer close(d)
 		for v := range c {
 			x, y = f(x, v)
-			d <- y
+			if e, ok := y.(<-chan interface{}); ok {
+				for v := range e {
+					if v == struct{}{} {
+						continue
+					}
+					d <- v
+				}
+			} else {
+				d <- y
+			}
 			if _, ok := x.(error); ok {
 				break
 			}

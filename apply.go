@@ -689,7 +689,7 @@ func (env *env) applyForeach(x *Foreach, c <-chan interface{}) <-chan interface{
 				if x.Extract == nil {
 					return u, u
 				}
-				return u, iteratorLast(subEnv.applyPipe(x.Extract, unitIterator(u)))
+				return u, subEnv.applyPipe(x.Extract, unitIterator(u))
 			})
 		})
 	})
