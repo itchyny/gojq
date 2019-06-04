@@ -168,4 +168,14 @@ var builtinFuncs = map[string]string{
 			else
 				g
 			end;`,
+	"nth": `
+		def nth($n): .[$n];
+		def nth($n; g):
+			if $n < 0 then
+				error("nth doesn't support negative indices")
+			else
+				label $out
+					| foreach g as $item
+						($n; .-1; . < 0 or empty|$item, break $out)
+			end;`,
 }

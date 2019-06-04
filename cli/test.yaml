@@ -1765,13 +1765,13 @@
   expected: |
     [1,5]
 
-- name: first/1, last/1 functions
+- name: first/1, last/1, nth functions
   args:
     - -c
-    - '[first(.[]), last(.[])]'
+    - '[first(.[]), last(.[]), nth(0), nth(3), nth(0;.[]), nth(3;.[])]'
   input: '[1,2,3,4,5]'
   expected: |
-    [1,5]
+    [1,5,1,4,1,4]
 
 - name: limit/2 function
   args:
