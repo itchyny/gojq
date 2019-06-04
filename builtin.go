@@ -142,4 +142,10 @@ var builtinFuncs = map[string]string{
 					| length as $length
 					| reduce range(0; $max) as $j ([]; . + [reduce range(0; $length) as $i ([]; . + [ $in[$i][$j] ] )] )
 			end;`,
+	"first": `
+		def first: .[0];
+		def first(g): label $out | g | ., break $out;`,
+	"last": `
+		def last: .[-1];
+		def last(g): reduce g as $item (null; $item);`,
 }

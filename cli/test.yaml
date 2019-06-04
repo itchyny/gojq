@@ -1757,6 +1757,22 @@
       }
     ]
 
+- name: first/0, last/0 functions
+  args:
+    - -c
+    - '[first, last]'
+  input: '[1,2,3,4,5]'
+  expected: |
+    [1,5]
+
+- name: first/1, last/1 functions
+  args:
+    - -c
+    - '[first(.[]), last(.[])]'
+  input: '[1,2,3,4,5]'
+  expected: |
+    [1,5]
+
 - name: trigonometric functions
   args:
     - 'map(sin),map(cos),map(tan) | join(",")'
