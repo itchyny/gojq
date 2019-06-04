@@ -146,104 +146,30 @@
 
 - name: array slice
   args:
+    - -c
     - '.[2:], .[:2], .[1:3], .[0:4], .[2:1], .[-2:], .[:-2], .[-2:-1], .[-10:], .[:10], .[10:], .[:-10]'
   input: '[16, 32, 48, 64]'
   expected: |
-    [
-      48,
-      64
-    ]
-    [
-      16,
-      32
-    ]
-    [
-      32,
-      48
-    ]
-    [
-      16,
-      32,
-      48,
-      64
-    ]
+    [48,64]
+    [16,32]
+    [32,48]
+    [16,32,48,64]
     []
-    [
-      48,
-      64
-    ]
-    [
-      16,
-      32
-    ]
-    [
-      48
-    ]
-    [
-      16,
-      32,
-      48,
-      64
-    ]
-    [
-      16,
-      32,
-      48,
-      64
-    ]
+    [48,64]
+    [16,32]
+    [48]
+    [16,32,48,64]
+    [16,32,48,64]
     []
     []
 
 - name: iterator in array index
   args:
-    - '.[.[]],.[.[]:],.[:.[]],.[.[]:.[]],.[-.[]],.[--.[]]'
+    - -c
+    - '[.[.[]],.[.[]:],.[:.[]],.[.[]:.[]],.[-.[]],.[--.[]]]'
   input: '[0, 1, 2]'
   expected: |
-    0
-    1
-    2
-    [
-      0,
-      1,
-      2
-    ]
-    [
-      1,
-      2
-    ]
-    [
-      2
-    ]
-    []
-    [
-      0
-    ]
-    [
-      0,
-      1
-    ]
-    []
-    [
-      0
-    ]
-    [
-      0,
-      1
-    ]
-    []
-    []
-    [
-      1
-    ]
-    []
-    []
-    []
-    0
-    2
-    1
-    0
-    1
-    2
+    [0,1,2,[0,1,2],[1,2],[2],[],[0],[0,1],[],[0],[0,1],[],[],[1],[],[],[],0,2,1,0,1,2]
 
 - name: array index by iterator
   args:
@@ -261,27 +187,18 @@
 
 - name: array slice by iterator
   args:
+    - -c
     - '.c[][.a[] : .b[]]'
   input: '{ "a": [0,1], "b": [0,2], "c": [[1,2,3,4],[5,6,7,8]] }'
   expected: | # order is different from jq
     []
-    [
-      1,
-      2
-    ]
+    [1,2]
     []
-    [
-      2
-    ]
+    [2]
     []
-    [
-      5,
-      6
-    ]
+    [5,6]
     []
-    [
-      6
-    ]
+    [6]
 
 - name: expected array
   args:
@@ -299,22 +216,15 @@
 
 - name: array index with array
   args:
+    - -c
     - '.[[1],[5,7,9],[],5,[3]]'
   input: '[1,3,5,7,9,8,6,5,4,3,2,1]'
   expected: |
-    [
-      0,
-      11
-    ]
-    [
-      2
-    ]
+    [0,11]
+    [2]
     []
     8
-    [
-      1,
-      9
-    ]
+    [1,9]
 
 - name: array index error
   args:
@@ -332,10 +242,11 @@
 
 - name: string index and slice
   args:
-    - '[.[-5],.[-1],.[0],.[3],.[4],.[6],.[2:4],.[-4:-2]] | join(",")'
+    - -c
+    - '[.[-5],.[-1],.[0],.[3],.[4],.[6],.[2:4],.[-4:-2]]'
   input: '"あいうえお"'
   expected: |
-    "あ,お,あ,え,お,,うえ,いう"
+    ["あ","お","あ","え","お","","うえ","いう"]
 
 - name: iterator
   args:
@@ -416,38 +327,20 @@
 
 - name: unary operators
   args:
+    - -c
     - 'map(-.[]), map(+.[])'
   input: '[[1,2,3]]'
   expected: |
-    [
-      -1,
-      -2,
-      -3
-    ]
-    [
-      1,
-      2,
-      3
-    ]
+    [-1,-2,-3]
+    [1,2,3]
 
 - name: object construction
   args:
+    - -c
     - '{ foo: .foo.bar, "bar": .foo, "": false }'
   input: '{"foo":{"bar":["a","b"]}}'
   expected: |
-    {
-      "": false,
-      "bar": {
-        "bar": [
-          "a",
-          "b"
-        ]
-      },
-      "foo": [
-        "a",
-        "b"
-      ]
-    }
+    {"":false,"bar":{"bar":["a","b"]},"foo":["a","b"]}
 
 - name: object construction shortcut
   args:
@@ -470,138 +363,70 @@
 
 - name: iterator in object
   args:
+    - -c
     - '{ foo: .foo[], bar: .bar[] }'
   input: '{"foo":[1,2],"bar":["a","b"]}'
   expected: |
-    {
-      "bar": "a",
-      "foo": 1
-    }
-    {
-      "bar": "b",
-      "foo": 1
-    }
-    {
-      "bar": "a",
-      "foo": 2
-    }
-    {
-      "bar": "b",
-      "foo": 2
-    }
+    {"bar":"a","foo":1}
+    {"bar":"b","foo":1}
+    {"bar":"a","foo":2}
+    {"bar":"b","foo":2}
 
 - name: iterator in object key
   args:
+    - -c
     - '{ (.[]): .. }'
   input: '["a", "b"]'
   expected: |
-    {
-      "a": [
-        "a",
-        "b"
-      ]
-    }
-    {
-      "a": "a"
-    }
-    {
-      "a": "b"
-    }
-    {
-      "b": [
-        "a",
-        "b"
-      ]
-    }
-    {
-      "b": "a"
-    }
-    {
-      "b": "b"
-    }
+    {"a":["a","b"]}
+    {"a":"a"}
+    {"a":"b"}
+    {"b":["a","b"]}
+    {"b":"a"}
+    {"b":"b"}
 
 - name: binary operator in object key and value
   args:
+    - -c
     - '{ (.[] + .[]): (.[] + .[]) }'
   input: '["foo", "bar"]'
   expected: |
-    {
-      "foofoo": "foofoo"
-    }
-    {
-      "foofoo": "barfoo"
-    }
-    {
-      "foofoo": "foobar"
-    }
-    {
-      "foofoo": "barbar"
-    }
-    {
-      "barfoo": "foofoo"
-    }
-    {
-      "barfoo": "barfoo"
-    }
-    {
-      "barfoo": "foobar"
-    }
-    {
-      "barfoo": "barbar"
-    }
-    {
-      "foobar": "foofoo"
-    }
-    {
-      "foobar": "barfoo"
-    }
-    {
-      "foobar": "foobar"
-    }
-    {
-      "foobar": "barbar"
-    }
-    {
-      "barbar": "foofoo"
-    }
-    {
-      "barbar": "barfoo"
-    }
-    {
-      "barbar": "foobar"
-    }
-    {
-      "barbar": "barbar"
-    }
+    {"foofoo":"foofoo"}
+    {"foofoo":"barfoo"}
+    {"foofoo":"foobar"}
+    {"foofoo":"barbar"}
+    {"barfoo":"foofoo"}
+    {"barfoo":"barfoo"}
+    {"barfoo":"foobar"}
+    {"barfoo":"barbar"}
+    {"foobar":"foofoo"}
+    {"foobar":"barfoo"}
+    {"foobar":"foobar"}
+    {"foobar":"barbar"}
+    {"barbar":"foofoo"}
+    {"barbar":"barfoo"}
+    {"barbar":"foobar"}
+    {"barbar":"barbar"}
 
 - name: error in object key
   args:
+    - -c
     - '{ (.[]): .. }'
   input: '["a", 1]'
   expected: |
-    {
-      "a": [
-        "a",
-        1
-      ]
-    }
-    {
-      "a": "a"
-    }
-    {
-      "a": 1
-    }
+    {"a":["a",1]}
+    {"a":"a"}
+    {"a":1}
   error: |
     expected a string for object key but got: number (1)
 
 - name: error in object value
   args:
+    - -c
     - '.[] | { (.k): .a.b }'
   input: '[{"a":{"b":10},"k":"a"}, {"a":10,"k":"b"}]'
   expected: |
-    {
-      "a": 10
-    }
+    {"a":10}
   error: |
     expected an object but got: number (10)
 
@@ -630,28 +455,11 @@
 
 - name: keyword in object key
   args:
+    - -c
     - '{if:0,and:1,or:2,then:3,else:4,elif:5,end:6,as:7,def:8,reduce:9,foreach:10,try:11,catch:12,label:13,import:14,include:15,module:16}'
   input: 'null'
   expected: |
-    {
-      "and": 1,
-      "as": 7,
-      "catch": 12,
-      "def": 8,
-      "elif": 5,
-      "else": 4,
-      "end": 6,
-      "foreach": 10,
-      "if": 0,
-      "import": 14,
-      "include": 15,
-      "label": 13,
-      "module": 16,
-      "or": 2,
-      "reduce": 9,
-      "then": 3,
-      "try": 11
-    }
+    {"and":1,"as":7,"catch":12,"def":8,"elif":5,"else":4,"end":6,"foreach":10,"if":0,"import":14,"include":15,"label":13,"module":16,"or":2,"reduce":9,"then":3,"try":11}
 
 - name: array
   args:
@@ -713,49 +521,21 @@
 
 - name: multiple iterators in array
   args:
+    - -c
     - '[.[],..,.[]]'
   input: '[1, 2, 3]'
   expected: |
-    [
-      1,
-      2,
-      3,
-      [
-        1,
-        2,
-        3
-      ],
-      1,
-      2,
-      3,
-      1,
-      2,
-      3
-    ]
+    [1,2,3,[1,2,3],1,2,3,1,2,3]
 
 - name: recurse
   args:
+    - -c
     - '..'
   input: '{"foo":{"bar":["a","b"]}}'
   expected: |
-    {
-      "foo": {
-        "bar": [
-          "a",
-          "b"
-        ]
-      }
-    }
-    {
-      "bar": [
-        "a",
-        "b"
-      ]
-    }
-    [
-      "a",
-      "b"
-    ]
+    {"foo":{"bar":["a","b"]}}
+    {"bar":["a","b"]}
+    ["a","b"]
     "a"
     "b"
 
@@ -787,51 +567,25 @@
     }
     null
 
-- name: recurse in object key
+- name: recurse in object value
   args:
+    - -c
     - '{ foo: .. }'
   input: '{"foo":[1,2,3]}'
   expected: |
-    {
-      "foo": {
-        "foo": [
-          1,
-          2,
-          3
-        ]
-      }
-    }
-    {
-      "foo": [
-        1,
-        2,
-        3
-      ]
-    }
-    {
-      "foo": 1
-    }
-    {
-      "foo": 2
-    }
-    {
-      "foo": 3
-    }
+    {"foo":{"foo":[1,2,3]}}
+    {"foo":[1,2,3]}
+    {"foo":1}
+    {"foo":2}
+    {"foo":3}
 
 - name: length function
   args:
+    - -c
     - 'map(length)'
   input: '[42, -42, {"a":1,"b":2}, [3,4,5], "Hello, world", "あいうえお", null]'
   expected: |
-    [
-      42,
-      42,
-      2,
-      3,
-      12,
-      5,
-      0
-    ]
+    [42,42,2,3,12,5,0]
 
 - name: length function error
   args:
@@ -938,283 +692,132 @@
 
 - name: map function
   args:
+    - -c
     - 'map(..)'
   input: '[{"a":{"b":1}}, [2,3,4]]'
   expected: |
-    [
-      {
-        "a": {
-          "b": 1
-        }
-      },
-      {
-        "b": 1
-      },
-      1,
-      [
-        2,
-        3,
-        4
-      ],
-      2,
-      3,
-      4
-    ]
+    [{"a":{"b":1}},{"b":1},1,[2,3,4],2,3,4]
 
 - name: to_entries function
   args:
+    - -c
     - 'to_entries'
   input: '[10, 20] {"a": 10, "b": []}'
   expected: |
-    [
-      {
-        "key": 0,
-        "value": 10
-      },
-      {
-        "key": 1,
-        "value": 20
-      }
-    ]
-    [
-      {
-        "key": "a",
-        "value": 10
-      },
-      {
-        "key": "b",
-        "value": []
-      }
-    ]
+    [{"key":0,"value":10},{"key":1,"value":20}]
+    [{"key":"a","value":10},{"key":"b","value":[]}]
 
 - name: add function
   args:
+    - -c
     - 'map(add)'
   input: '[[], [1,2,3], ["a","b","c"], [[3],[4,5],[6]], [{"a":1}, {"b":2}, {"a":3}]]'
   expected: |
-    [
-      null,
-      6,
-      "abc",
-      [
-        3,
-        4,
-        5,
-        6
-      ],
-      {
-        "a": 3,
-        "b": 2
-      }
-    ]
+    [null,6,"abc",[3,4,5,6],{"a":3,"b":2}]
 
 - name: flatten/0 function
   args:
-    - 'map(flatten) | tojson'
+    - -c
+    - 'map(flatten)'
   input: '[[0, [[[[[1]]]]]], [0, [1, [2]], [1, [[3], 2]]]]'
   expected: |
-    "[[0,1],[0,1,2,1,3,2]]"
+    [[0,1],[0,1,2,1,3,2]]
 
 - name: flatten/1 function
   args:
-    - 'map(flatten(2)) | tojson'
+    - -c
+    - 'map(flatten(2))'
   input: '[[0, [[[[[1]]]]]], [0, [1, [2]], [1, [[3], 2]]]]'
   expected: |
-    "[[0,[[[1]]]],[0,1,2,1,[3],2]]"
+    [[0,[[[1]]]],[0,1,2,1,[3],2]]
 
 - name: min, min_by, max, max_by functions
   args:
-    - '[min, min_by(.[1]), min_by(.[2]), max, max_by(.[1]), max_by(.[2])] | map(tojson)'
+    - -c
+    - '[min, min_by(.[1]), min_by(.[2]), max, max_by(.[1]), max_by(.[2])]'
   input: '[] [[4,2,"a"],[3,1,"a"],[2,4,"a"],[1,3,"a"]]'
   expected: |
-    [
-      "null",
-      "null",
-      "null",
-      "null",
-      "null",
-      "null"
-    ]
-    [
-      "[1,3,\"a\"]",
-      "[3,1,\"a\"]",
-      "[4,2,\"a\"]",
-      "[4,2,\"a\"]",
-      "[2,4,\"a\"]",
-      "[1,3,\"a\"]"
-    ]
+    [null,null,null,null,null,null]
+    [[1,3,"a"],[3,1,"a"],[4,2,"a"],[4,2,"a"],[2,4,"a"],[1,3,"a"]]
 
 - name: sort, sort_by, group_by functions
   args:
-    - 'sort, sort_by(.a), sort_by(.b), sort_by(.b, .c), group_by(.b), group_by(.c, .a), group_by(.a + .b - .c == 2) | tojson'
+    - -c
+    - 'sort, sort_by(.a), sort_by(.b), sort_by(.b, .c), group_by(.b), group_by(.c, .a), group_by(.a + .b - .c == 2)'
   input: '[{"a": 1, "b": 4, "c": 5}, {"a": 4, "b": 1, "c": 2}, {"a": 1, "b": 4, "c": 3}, {"a": 3, "b": 2, "c": 1}]'
   expected: |
-    "[{\"a\":1,\"b\":4,\"c\":3},{\"a\":1,\"b\":4,\"c\":5},{\"a\":3,\"b\":2,\"c\":1},{\"a\":4,\"b\":1,\"c\":2}]"
-    "[{\"a\":1,\"b\":4,\"c\":5},{\"a\":1,\"b\":4,\"c\":3},{\"a\":3,\"b\":2,\"c\":1},{\"a\":4,\"b\":1,\"c\":2}]"
-    "[{\"a\":4,\"b\":1,\"c\":2},{\"a\":3,\"b\":2,\"c\":1},{\"a\":1,\"b\":4,\"c\":5},{\"a\":1,\"b\":4,\"c\":3}]"
-    "[{\"a\":4,\"b\":1,\"c\":2},{\"a\":3,\"b\":2,\"c\":1},{\"a\":1,\"b\":4,\"c\":3},{\"a\":1,\"b\":4,\"c\":5}]"
-    "[[{\"a\":4,\"b\":1,\"c\":2}],[{\"a\":3,\"b\":2,\"c\":1}],[{\"a\":1,\"b\":4,\"c\":5},{\"a\":1,\"b\":4,\"c\":3}]]"
-    "[[{\"a\":3,\"b\":2,\"c\":1}],[{\"a\":4,\"b\":1,\"c\":2}],[{\"a\":1,\"b\":4,\"c\":3}],[{\"a\":1,\"b\":4,\"c\":5}]]"
-    "[[{\"a\":1,\"b\":4,\"c\":5},{\"a\":4,\"b\":1,\"c\":2},{\"a\":3,\"b\":2,\"c\":1}],[{\"a\":1,\"b\":4,\"c\":3}]]"
+    [{"a":1,"b":4,"c":3},{"a":1,"b":4,"c":5},{"a":3,"b":2,"c":1},{"a":4,"b":1,"c":2}]
+    [{"a":1,"b":4,"c":5},{"a":1,"b":4,"c":3},{"a":3,"b":2,"c":1},{"a":4,"b":1,"c":2}]
+    [{"a":4,"b":1,"c":2},{"a":3,"b":2,"c":1},{"a":1,"b":4,"c":5},{"a":1,"b":4,"c":3}]
+    [{"a":4,"b":1,"c":2},{"a":3,"b":2,"c":1},{"a":1,"b":4,"c":3},{"a":1,"b":4,"c":5}]
+    [[{"a":4,"b":1,"c":2}],[{"a":3,"b":2,"c":1}],[{"a":1,"b":4,"c":5},{"a":1,"b":4,"c":3}]]
+    [[{"a":3,"b":2,"c":1}],[{"a":4,"b":1,"c":2}],[{"a":1,"b":4,"c":3}],[{"a":1,"b":4,"c":5}]]
+    [[{"a":1,"b":4,"c":5},{"a":4,"b":1,"c":2},{"a":3,"b":2,"c":1}],[{"a":1,"b":4,"c":3}]]
 
 - name: unique, unique_by functions
   args:
-    - 'unique, unique_by(length) | tojson'
+    - -c
+    - 'unique, unique_by(length)'
   input: '[7,3,5,1,4,2,5,3,6,1,7,4,3] ["cat", "dog", "hello", "world", "banana", "apple"]'
   expected: |
-    "[1,2,3,4,5,6,7]"
-    "[1,2,3,4,5,6,7]"
-    "[\"apple\",\"banana\",\"cat\",\"dog\",\"hello\",\"world\"]"
-    "[\"cat\",\"hello\",\"banana\"]"
+    [1,2,3,4,5,6,7]
+    [1,2,3,4,5,6,7]
+    ["apple","banana","cat","dog","hello","world"]
+    ["cat","hello","banana"]
 
 - name: arrays, objects, iterables, booleans, numbers, strings, nulls, values, scalars functions
   args:
+    - -c
     - 'map(arrays), map(objects), map(iterables), map(booleans), map(numbers), map(strings), map(nulls), map(values), map(scalars)'
   input: '[null, true, false, 0, 1, "", "foo", [], [2, []], {}, { "foo": [] }]'
   expected: |
-    [
-      [],
-      [
-        2,
-        []
-      ]
-    ]
-    [
-      {},
-      {
-        "foo": []
-      }
-    ]
-    [
-      [],
-      [
-        2,
-        []
-      ],
-      {},
-      {
-        "foo": []
-      }
-    ]
-    [
-      true,
-      false
-    ]
-    [
-      0,
-      1
-    ]
-    [
-      "",
-      "foo"
-    ]
-    [
-      null
-    ]
-    [
-      true,
-      false,
-      0,
-      1,
-      "",
-      "foo",
-      [],
-      [
-        2,
-        []
-      ],
-      {},
-      {
-        "foo": []
-      }
-    ]
-    [
-      null,
-      true,
-      false,
-      0,
-      1,
-      "",
-      "foo"
-    ]
+    [[],[2,[]]]
+    [{},{"foo":[]}]
+    [[],[2,[]],{},{"foo":[]}]
+    [true,false]
+    [0,1]
+    ["","foo"]
+    [null]
+    [true,false,0,1,"","foo",[],[2,[]],{},{"foo":[]}]
+    [null,true,false,0,1,"","foo"]
 
 - name: recurse/0 function
   args:
+    - -c
     - 'recurse'
   input: '{"a":{"b":[1]}}'
   expected: |
-    {
-      "a": {
-        "b": [
-          1
-        ]
-      }
-    }
-    {
-      "b": [
-        1
-      ]
-    }
-    [
-      1
-    ]
+    {"a":{"b":[1]}}
+    {"b":[1]}
+    [1]
     1
 
 - name: recurse/1 function
   args:
+    - -c
     - 'recurse(.a[])'
   input: '{"a":[{"a": []}, {"a":[{"a":[]}]}]}'
   expected: |
-    {
-      "a": [
-        {
-          "a": []
-        },
-        {
-          "a": [
-            {
-              "a": []
-            }
-          ]
-        }
-      ]
-    }
-    {
-      "a": []
-    }
-    {
-      "a": [
-        {
-          "a": []
-        }
-      ]
-    }
-    {
-      "a": []
-    }
+    {"a":[{"a":[]},{"a":[{"a":[]}]}]}
+    {"a":[]}
+    {"a":[{"a":[]}]}
+    {"a":[]}
 
 - name: recurse/2 function
   args:
-    - 'recurse(. + .; . < 1000)'
+    - -c
+    - '[recurse(. + .; . < 1000)]'
   input: '1'
   expected: |
-    1
-    2
-    4
-    8
-    16
-    32
-    64
-    128
-    256
-    512
+    [1,2,4,8,16,32,64,128,256,512]
 
 - name: while function
   args:
-    - '[while(.[0]<100; [.[1], .[0]+.[1]]) | .[0]] | join(",")'
+    - -c
+    - '[while(.[0]<100; [.[1], .[0]+.[1]]) | .[0]]'
   input: '[0, 1]'
   expected: |
-    "0,1,1,2,3,5,8,13,21,34,55,89"
+    [0,1,1,2,3,5,8,13,21,34,55,89]
 
 - name: until function
   args:
@@ -1225,53 +828,32 @@
 
 - name: range function
   args:
+    - -c
     - '[range(.)], [range(. + 1)], [range(3; 5)], [range(0; 10; 3)], [range(0; 10; -1)], [range(5; -5; -3)]'
   input: '3'
   expected: |
-    [
-      0,
-      1,
-      2
-    ]
-    [
-      0,
-      1,
-      2,
-      3
-    ]
-    [
-      3,
-      4
-    ]
-    [
-      0,
-      3,
-      6,
-      9
-    ]
+    [0,1,2]
+    [0,1,2,3]
+    [3,4]
+    [0,3,6,9]
     []
-    [
-      5,
-      2,
-      -1,
-      -4
-    ]
+    [5,2,-1,-4]
 
 - name: range function with iterators in argument
   args:
-    - '[range(-.; .+1)] | [range(.[]; .[]; .[])] | recurse(.[26:];.[0])|.[:26] | map(.+3) | join(",")'
+    - -c
+    - '[range(-.; .+1)] | [range(.[]; .[]; .[])] | recurse(.[26:];.[0])|.[:26] | map(.+3)'
   input: '3'
   expected: |
-    "0,0,0,0,1,0,0,0,1,2,0,2,0,0,1,2,3,0,2,0,3,0,1,2,3,4"
-    "0,2,4,0,3,0,1,2,3,4,5,0,2,4,0,3,1,1,1,1,1,1,1,2,1,1"
-    "1,2,3,1,3,1,1,2,3,4,1,3,1,4,1,2,3,4,5,1,3,5,1,4,2,2"
-    "2,1,2,2,2,2,2,2,2,3,2,2,2,3,4,2,4,2,2,3,4,5,2,4,2,5"
-    "3,3,1,3,2,1,3,3,3,2,3,3,3,3,3,3,3,4,3,3,3,4,5,3,5,3"
-    "4,1,4,2,4,3,2,1,4,4,2,4,3,2,4,4,4,3,4,4,4,4,4,4,4,5"
-    "4,4,5,2,5,3,1,5,4,3,2,1,5,2,5,3,5,4,3,2,5,5,3,5,4,3"
-    "5,5,5,4,5,5,5,5,5,5,6,3,6,4,2,6,5,4,3,2,1,6,3,6,4,2"
-    "6,5,4,3,2,6,3,6,4,6,5,4,3,6,6,4,6,5,4,6,6,6,5,6,6,6"
-
+    [0,0,0,0,1,0,0,0,1,2,0,2,0,0,1,2,3,0,2,0,3,0,1,2,3,4]
+    [0,2,4,0,3,0,1,2,3,4,5,0,2,4,0,3,1,1,1,1,1,1,1,2,1,1]
+    [1,2,3,1,3,1,1,2,3,4,1,3,1,4,1,2,3,4,5,1,3,5,1,4,2,2]
+    [2,1,2,2,2,2,2,2,2,3,2,2,2,3,4,2,4,2,2,3,4,5,2,4,2,5]
+    [3,3,1,3,2,1,3,3,3,2,3,3,3,3,3,3,3,4,3,3,3,4,5,3,5,3]
+    [4,1,4,2,4,3,2,1,4,4,2,4,3,2,4,4,4,3,4,4,4,4,4,4,4,5]
+    [4,4,5,2,5,3,1,5,4,3,2,1,5,2,5,3,5,4,3,2,5,5,3,5,4,3]
+    [5,5,5,4,5,5,5,5,5,5,6,3,6,4,2,6,5,4,3,2,1,6,3,6,4,2]
+    [6,5,4,3,2,6,3,6,4,6,5,4,3,6,6,4,6,5,4,6,6,6,5,6,6,6]
 
 - name: tonumber function
   args:
@@ -1431,17 +1013,19 @@
 
 - name: combinations/0 function
   args:
-    - '[combinations | join("")] | join(",")'
+    - -c
+    - '[combinations]'
   input: '[[1, 2, 3], [4, 5, 6]]'
   expected: |
-    "14,15,16,24,25,26,34,35,36"
+    [[1,4],[1,5],[1,6],[2,4],[2,5],[2,6],[3,4],[3,5],[3,6]]
 
 - name: combinations/1 function
   args:
-    - '[combinations(3) | join("")] | join(",")'
+    - -c
+    - '[combinations(3)]'
   input: '[0, 1]'
   expected: |
-    "000,001,010,011,100,101,110,111"
+    [[0,0,0],[0,0,1],[0,1,0],[0,1,1],[1,0,0],[1,0,1],[1,1,0],[1,1,1]]
 
 - name: join function
   args:
@@ -1484,23 +1068,25 @@
 
 - name: walk function
   args:
-    - 'walk(if type == "boolean" then not else . + . end) | tostring'
+    - -c
+    - 'walk(if type == "boolean" then not else . + . end) | .[]'
   input: '[1, ["a", {"b": []}], {"c": [null, false, true]}]'
   expected: |
-    "[2,[\"aa\",{\"b\":[]},\"aa\",{\"b\":[]}],{\"c\":[null,true,false,null,true,false]},2,[\"aa\",{\"b\":[]},\"aa\",{\"b\":[]}],{\"c\":[null,true,false,null,true,false]}]"
+    2
+    ["aa",{"b":[]},"aa",{"b":[]}]
+    {"c":[null,true,false,null,true,false]}
+    2
+    ["aa",{"b":[]},"aa",{"b":[]}]
+    {"c":[null,true,false,null,true,false]}
 
 - name: transpose function
   args:
-    - 'transpose | map(tostring)'
+    - -c
+    - 'transpose'
   input: '[] [[1,2,3,[]],[4,"foo",{}],[5,6]]'
   expected: |
     []
-    [
-      "[1,4,5]",
-      "[2,\"foo\",6]",
-      "[3,{},null]",
-      "[[],null,null]"
-    ]
+    [[1,4,5],[2,"foo",6],[3,{},null],[[],null,null]]
 
 - name: function not defined
   args:
@@ -1560,17 +1146,18 @@
 
 - name: add, subtract, multiply, divide, modulo numbers
   args:
-    - '[.[] + .[] % .[] * .[] - .[] / .[]] | while(length>0; .[8:]) | .[:8] | join(",")'
+    - -c
+    - '[.[] + .[] % .[] * .[] - .[] / .[]] | while(length>0; .[8:]) | .[:8]'
   input: '[5, 16]'
   expected: |
-    "4,15,9,20,29,40,4,15"
-    "4,15,20,31,84,95,4,15"
-    "1.7999999999999998,12.8,6.8,17.8,26.8,37.8,1.7999999999999998,12.8"
-    "1.7999999999999998,12.8,17.8,28.8,81.8,92.8,1.7999999999999998,12.8"
-    "4.6875,15.6875,9.6875,20.6875,29.6875,40.6875,4.6875,15.6875"
-    "4.6875,15.6875,20.6875,31.6875,84.6875,95.6875,4.6875,15.6875"
-    "4,15,9,20,29,40,4,15"
-    "4,15,20,31,84,95,4,15"
+    [4,15,9,20,29,40,4,15]
+    [4,15,20,31,84,95,4,15]
+    [1.7999999999999998,12.8,6.8,17.8,26.8,37.8,1.7999999999999998,12.8]
+    [1.7999999999999998,12.8,17.8,28.8,81.8,92.8,1.7999999999999998,12.8]
+    [4.6875,15.6875,9.6875,20.6875,29.6875,40.6875,4.6875,15.6875]
+    [4.6875,15.6875,20.6875,31.6875,84.6875,95.6875,4.6875,15.6875]
+    [4,15,9,20,29,40,4,15]
+    [4,15,20,31,84,95,4,15]
 
 - name: zero division
   args:
@@ -1633,129 +1220,56 @@
 
 - name: multiply objects
   args:
+    - -c
     - '.[] * .[]'
   input: '[{"foo": 10, "bar": {"qux": 20}}, {"foo": 20, "bar": {"baz": "quux"}}]'
   expected: |
-    {
-      "bar": {
-        "qux": 20
-      },
-      "foo": 10
-    }
-    {
-      "bar": {
-        "baz": "quux",
-        "qux": 20
-      },
-      "foo": 10
-    }
-    {
-      "bar": {
-        "baz": "quux",
-        "qux": 20
-      },
-      "foo": 20
-    }
-    {
-      "bar": {
-        "baz": "quux"
-      },
-      "foo": 20
-    }
+    {"bar":{"qux":20},"foo":10}
+    {"bar":{"baz":"quux","qux":20},"foo":10}
+    {"bar":{"baz":"quux","qux":20},"foo":20}
+    {"bar":{"baz":"quux"},"foo":20}
 
 - name: divide strings
   args:
+    - -c
     - '.[] / .[]'
   input: '["abc", "a", "b"]'
   expected: |
-    [
-      "",
-      ""
-    ]
-    [
-      "a"
-    ]
-    [
-      "b"
-    ]
-    [
-      "",
-      "bc"
-    ]
-    [
-      "",
-      ""
-    ]
-    [
-      "b"
-    ]
-    [
-      "a",
-      "c"
-    ]
-    [
-      "a"
-    ]
-    [
-      "",
-      ""
-    ]
+    ["",""]
+    ["a"]
+    ["b"]
+    ["","bc"]
+    ["",""]
+    ["b"]
+    ["a","c"]
+    ["a"]
+    ["",""]
 
 - name: add and subtract arrays
   args:
+    - -c
     - '.[] + .[] - .[]'
   input: '[[1, 2], [3, 4]]'
   expected: |
     []
-    [
-      3,
-      4
-    ]
-    [
-      3,
-      4
-    ]
-    [
-      3,
-      4,
-      3,
-      4
-    ]
-    [
-      1,
-      2,
-      1,
-      2
-    ]
-    [
-      1,
-      2
-    ]
-    [
-      1,
-      2
-    ]
+    [3,4]
+    [3,4]
+    [3,4,3,4]
+    [1,2,1,2]
+    [1,2]
+    [1,2]
     []
 
 - name: add object
   args:
+    - -c
     - '.[] + .[]'
   input: '[{"a":1},{"b":2}]'
   expected: |
-    {
-      "a": 1
-    }
-    {
-      "a": 1,
-      "b": 2
-    }
-    {
-      "a": 1,
-      "b": 2
-    }
-    {
-      "b": 2
-    }
+    {"a":1}
+    {"a":1,"b":2}
+    {"a":1,"b":2}
+    {"b":2}
 
 - name: add null
   args:
@@ -1884,39 +1398,27 @@
 
 - name: alternative operator
   args:
-    - '.a // .b, .b // null // .a, .c[] // .d[], .d[] // .c, .c // .a, .e.a // .c[]'
+    - -c
+    - '[.a // .b, .b // null // .a, .c[] // .d[], .d[] // .c, .c // .a, .e.a // .c[]]'
   input: '{ "a": 5, "b": false, "c": [null,false], "d": [false,3], "e": null }'
   expected: |
-    5
-    5
-    false
-    3
-    3
-    [
-      null,
-      false
-    ]
-    null
-    false
+    [5,5,false,3,3,[null,false],null,false]
 
 - name: explode function
   args:
-    - 'map(explode | join(",")) | join("/")'
+    - -c
+    - 'map(explode)'
   input: '["", "foo bar", "あいうえお", "\n\t"]'
   expected: |
-    "/102,111,111,32,98,97,114/12354,12356,12358,12360,12362/10,9"
+    [[],[102,111,111,32,98,97,114],[12354,12356,12358,12360,12362],[10,9]]
 
 - name: implode function
   args:
-    - '. / "/" | map(. / "," | map(tonumber) | implode)'
-  input: '"/102,111,111,32,98,97,114/12354,12356,12358,12360,12362/10,9.9"'
+    - -c
+    - 'map(implode)'
+  input: '[[],[102,111,111,32,98,97,114],[12354,12356,12358,12360,12362],[10,9]]'
   expected: |
-    [
-      "",
-      "foo bar",
-      "あいうえお",
-      "\n\t"
-    ]
+    ["","foo bar","あいうえお","\n\t"]
 
 - name: condition
   args:
@@ -2051,17 +1553,19 @@
 
 - name: string interpolation
   args:
-    - '["\(.foo[])_\(.bar[])_\(.baz[])"] | join(" ")'
+    - -c
+    - '["\(.foo[])_\(.bar[])_\(.baz[])"]'
   input: '{ "foo": [0, 1], "bar": ["x", "y"], "baz": [{"a": 1}, [1], null] }'
   expected: |
-    "0_x_{\"a\":1} 1_x_{\"a\":1} 0_y_{\"a\":1} 1_y_{\"a\":1} 0_x_[1] 1_x_[1] 0_y_[1] 1_y_[1] 0_x_null 1_x_null 0_y_null 1_y_null"
+    ["0_x_{\"a\":1}","1_x_{\"a\":1}","0_y_{\"a\":1}","1_y_{\"a\":1}","0_x_[1]","1_x_[1]","0_y_[1]","1_y_[1]","0_x_null","1_x_null","0_y_null","1_y_null"]
 
 - name: string interpolation in object
   args:
-    - '[{a:"\(.foo[])"}, {"\(.foo[])": 1}, {"\(.bar[])"}] | map(tojson) | join(",")'
+    - -c
+    - '[{a:"\(.foo[])"}, {"\(.foo[])": 1}, {"\(.bar[])"}]'
   input: '{ "foo": [0, 1], "bar": ["x", "y"], "x": 10, "y": 20 }'
   expected: |
-    "{\"a\":\"0\"},{\"a\":\"1\"},{\"0\":1},{\"1\":1},{\"x\":10},{\"y\":20}"
+    [{"a":"0"},{"a":"1"},{"0":1},{"1":1},{"x":10},{"y":20}]
 
 - name: tojson function
   args:
