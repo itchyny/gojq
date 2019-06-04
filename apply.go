@@ -197,7 +197,16 @@ func (env *env) applyIndex(x *Index, c <-chan interface{}, d <-chan interface{})
 			switch v := env.applyArrayIndex(x, explode(v), dd()).(type) {
 			case <-chan interface{}:
 				return mapIterator(v, func(v interface{}) interface{} {
-					return implode(v.([]interface{}))
+					switch v := v.(type) {
+					case []interface{}:
+						return implode(v)
+					case int:
+						return implode([]interface{}{v})
+					case nil:
+						return ""
+					default:
+						panic(v)
+					}
 				})
 			default:
 				return v

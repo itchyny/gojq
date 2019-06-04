@@ -330,6 +330,13 @@
   error: |
     expected a number for indexing an array but got: object ({})
 
+- name: string index and slice
+  args:
+    - '[.[-5],.[-1],.[0],.[3],.[4],.[6],.[2:4],.[-4:-2]] | join(",")'
+  input: '"あいうえお"'
+  expected: |
+    "あ,お,あ,え,お,,うえ,いう"
+
 - name: iterator
   args:
     - '.foo | .[] | .'
