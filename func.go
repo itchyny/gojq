@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"os"
 	"sort"
+	"strings"
 )
 
 const (
@@ -102,6 +104,7 @@ func init() {
 		"fma":         mathFunc3("fma", func(x, y, z float64) float64 { return x*y + z }),
 		"error":       function{argcount0 | argcount1, funcError},
 		"builtins":    noArgFunc(funcBuiltins),
+		"env":         noArgFunc(funcEnv),
 		"_type_error": argFunc1(internalfuncTypeError),
 	}
 }
@@ -428,14 +431,6 @@ func funcError(env *env, f *Func) func(interface{}) interface{} {
 	}
 }
 
-func internalfuncTypeError(env *env, f *Func) func(interface{}) interface{} {
-	return func(v interface{}) interface{} {
-		return mapIterator(env.applyPipe(f.Args[0], unitIterator(v)), func(x interface{}) interface{} {
-			return &funcTypeError{x.(string), v}
-		})
-	}
-}
-
 func funcBuiltins(_ interface{}) interface{} {
 	var xs []string
 	for name, fn := range internalFuncs {
@@ -464,4 +459,21 @@ func funcBuiltins(_ interface{}) interface{} {
 		ys[i] = x
 	}
 	return ys
+}
+
+func funcEnv(_ interface{}) interface{} {
+	env := make(map[string]interface{})
+	for _, kv := range os.Environ() {
+		xs := strings.SplitN(kv, "=", 2)
+		env[xs[0]] = xs[1]
+	}
+	return env
+}
+
+func internalfuncTypeError(env *env, f *Func) func(interface{}) interface{} {
+	return func(v interface{}) interface{} {
+		return mapIterator(env.applyPipe(f.Args[0], unitIterator(v)), func(x interface{}) interface{} {
+			return &funcTypeError{x.(string), v}
+		})
+	}
 }

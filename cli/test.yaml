@@ -1949,6 +1949,13 @@
   expected: |
     true
 
+- name: env function
+  args:
+    - 'env|length > 0'
+  input: 'null'
+  expected: |
+    true
+
 - name: compact output option
   args:
     - -c
