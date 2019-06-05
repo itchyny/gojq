@@ -1572,6 +1572,13 @@
     3
     6
 
+- name: label not defined error for break syntax
+  args:
+    - 'break $test'
+  input: '1'
+  error: |
+    label not defined: "$test"
+
 - name: string interpolation
   args:
     - -c
