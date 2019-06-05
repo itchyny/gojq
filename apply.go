@@ -22,6 +22,9 @@ func (env *env) applyPipe(p *Pipe, c <-chan interface{}) <-chan interface{} {
 
 func (env *env) applyComma(o *Comma, c <-chan interface{}) <-chan interface{} {
 	return mapIterator(c, func(v interface{}) interface{} {
+		if len(o.Alts) == 1 {
+			return env.applyAlt(o.Alts[0], unitIterator(v))
+		}
 		d := make(chan interface{}, 1)
 		go func() {
 			defer close(d)
