@@ -1,9 +1,6 @@
 package gojq
 
-import (
-	"fmt"
-	"sync"
-)
+import "sync"
 
 type env struct {
 	funcDefs  *sync.Map // map[string]*FuncDef
@@ -22,11 +19,11 @@ func newEnv(parent *env) *env {
 }
 
 func (env *env) addFuncDef(fd *FuncDef) {
-	env.funcDefs.Store(fd.Name+"/"+fmt.Sprint(len(fd.Args)), fd)
+	env.funcDefs.Store(fd.Name+string(rune(len(fd.Args))), fd)
 }
 
 func (env *env) lookupFuncDef(name string, arg int) *FuncDef {
-	if fd, ok := env.funcDefs.Load(name + "/" + fmt.Sprint(arg)); ok {
+	if fd, ok := env.funcDefs.Load(name + string(rune(arg))); ok {
 		return fd.(*FuncDef)
 	}
 	if env.parent != nil {
@@ -40,14 +37,14 @@ func (env *env) lookupFuncDef(name string, arg int) *FuncDef {
 	if err != nil {
 		panic(err)
 	}
+	var f *FuncDef
 	for _, fd := range p.FuncDefs {
 		env.addFuncDef(fd)
+		if len(fd.Args) == arg {
+			f = fd
+		}
 	}
-	fd, ok := env.funcDefs.Load(name + "/" + fmt.Sprint(arg))
-	if !ok {
-		return nil
-	}
-	return fd.(*FuncDef)
+	return f
 }
 
 func (env *env) lookupVariable(name string) *Pipe {
