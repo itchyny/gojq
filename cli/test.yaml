@@ -1551,6 +1551,21 @@
     -1
     -4
 
+- name: foreach with iterator in update
+  args:
+    - 'foreach .[] as $i (1; ., . + $i, range(.))'
+  input: '[1, 2, 3]'
+  expected: |
+    1
+    2
+    0
+    0
+    2
+    2
+    5
+    0
+    1
+
 - name: label and break syntax
   args:
     - '[(label $x | .[] | if . > 2 then break $x else . end), 0]'

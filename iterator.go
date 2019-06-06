@@ -283,22 +283,18 @@ func foldIterator(c <-chan interface{}, x interface{}, f func(interface{}, inter
 	return d
 }
 
-func foreachIterator(c <-chan interface{}, x interface{}, f func(interface{}, interface{}) (interface{}, interface{})) <-chan interface{} {
+func foreachIterator(c <-chan interface{}, x interface{}, f func(interface{}, interface{}) (interface{}, <-chan interface{})) <-chan interface{} {
 	d := make(chan interface{}, 1)
 	go func() {
-		var y interface{}
+		var y <-chan interface{}
 		defer close(d)
 		for v := range c {
 			x, y = f(x, v)
-			if e, ok := y.(<-chan interface{}); ok {
-				for v := range e {
-					if v == struct{}{} {
-						continue
-					}
-					d <- v
+			for v := range y {
+				if v == struct{}{} {
+					continue
 				}
-			} else {
-				d <- y
+				d <- v
 			}
 			if _, ok := x.(error); ok {
 				break

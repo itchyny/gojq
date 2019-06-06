@@ -684,15 +684,15 @@ func (env *env) applyForeach(x *Foreach, c <-chan interface{}) <-chan interface{
 	return mapIterator(c, func(v interface{}) interface{} {
 		return mapIterator(env.applyPipe(x.Start, unitIterator(v)), func(s interface{}) interface{} {
 			subEnv := newEnv(env)
-			return foreachIterator(subEnv.applyTerm(x.Term, unitIterator(v)), s, func(v, w interface{}) (interface{}, interface{}) {
+			return foreachIterator(subEnv.applyTerm(x.Term, unitIterator(v)), s, func(v, w interface{}) (interface{}, <-chan interface{}) {
 				if err := subEnv.applyPattern(x.Pattern, w); err != nil {
-					return err, err
+					return err, unitIterator(err)
 				}
-				u := iteratorLast(subEnv.applyPipe(x.Update, unitIterator(v)))
+				u := reuseIterator(subEnv.applyPipe(x.Update, unitIterator(v)))
 				if x.Extract == nil {
-					return u, u
+					return iteratorLast(u()), u()
 				}
-				return u, subEnv.applyPipe(x.Extract, unitIterator(u))
+				return iteratorLast(u()), subEnv.applyPipe(x.Extract, u())
 			})
 		})
 	})
