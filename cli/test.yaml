@@ -2020,6 +2020,58 @@
     ""
     -179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 
+- name: setpath function
+  args:
+    - -c
+    - 'setpath([["a","b",0,1,2],[1,2,"a","b"]][]; 1,2)'
+  input: 'null'
+  expected: |
+    {"a":{"b":[[null,[null,null,1]]]}}
+    [null,[null,null,{"a":{"b":1}}]]
+    {"a":{"b":[[null,[null,null,2]]]}}
+    [null,[null,null,{"a":{"b":2}}]]
+
+- name: setpath function
+  args:
+    - -c
+    - 'setpath(["a","b",0,1]; 1,2)'
+  input: '{"a":{"b":[]}}'
+  expected: |
+    {"a":{"b":[[null,1]]}}
+    {"a":{"b":[[null,2]]}}
+
+- name: setpath function
+  args:
+    - -c
+    - 'setpath([]; 10)'
+  input: 'null'
+  expected: |
+    10
+
+- name: setpath function error
+  args:
+    - -c
+    - 'setpath(["a","b","c"]; 10)'
+  input: '{"a":{"b":[]}}'
+  error: |
+    expected an object but got: array ([])
+
+- name: setpath function error
+  args:
+    - -c
+    - 'setpath(["a",1]; 10)'
+  input: '{"a":{"b":[]}}'
+  error: |
+    expected an array but got: object ({"b":[]})
+
+- name: setpath function error
+  args:
+    - -c
+    - 'setpath(["a",{}]; 10)'
+  input: 'null'
+  error: |
+    expected a string for object key but got: object ({})
+
 - name: error/0 function
   args:
     - '.foo[] | error'
