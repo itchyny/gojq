@@ -88,6 +88,41 @@ func (op Operator) String() string {
 	panic(op)
 }
 
+// GoString implements GoStringer.
+func (op Operator) GoString() string {
+	switch op {
+	case OpAdd:
+		return "OpAdd"
+	case OpSub:
+		return "OpSub"
+	case OpMul:
+		return "OpMul"
+	case OpDiv:
+		return "OpDiv"
+	case OpMod:
+		return "OpMod"
+	case OpEq:
+		return "OpEq"
+	case OpNe:
+		return "OpNe"
+	case OpGt:
+		return "OpGt"
+	case OpLt:
+		return "OpLt"
+	case OpGe:
+		return "OpGe"
+	case OpLe:
+		return "OpLe"
+	case OpAnd:
+		return "OpAnd"
+	case OpOr:
+		return "OpOr"
+	case OpAlt:
+		return "OpAlt"
+	}
+	panic(op)
+}
+
 // Eval the expression.
 func (op Operator) Eval(l, r interface{}) interface{} {
 	switch op {
