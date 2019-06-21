@@ -127,7 +127,7 @@ type Term struct {
 	Array      *Array    `| @@`
 	Number     *float64  `| @Number`
 	Unary      *Unary    `| @@`
-	String     *string   `| @String`
+	String     string    `| @String`
 	Null       bool      `| @"null"`
 	True       bool      `| @"true"`
 	False      bool      `| @"false"`
@@ -159,11 +159,11 @@ type PatternObject struct {
 
 // Index ...
 type Index struct {
-	Name    string  `"." ( @Ident`
-	String  *string `| @String`
-	Start   *Pipe   `| "[" ( @@`
-	IsSlice bool    `( @":"`
-	End     *Pipe   `@@? )? | ":" @@ ) "]" )`
+	Name    string `"." ( @Ident`
+	String  string `| @String`
+	Start   *Pipe  `| "[" ( @@`
+	IsSlice bool   `( @":"`
+	End     *Pipe  `@@? )? | ":" @@ ) "]" )`
 }
 
 // Func ...
@@ -180,11 +180,11 @@ type Object struct {
 // ObjectKeyVal ...
 type ObjectKeyVal struct {
 	Key           string  `( ( ( @Ident | @Keyword )`
-	KeyString     *string `  | @String )`
+	KeyString     string  `  | @String )`
 	Pipe          *Pipe   `| "(" @@ ")" ) ":"`
 	Val           *Expr   `@@`
 	KeyOnly       *string `| @Ident`
-	KeyOnlyString *string `| @String`
+	KeyOnlyString string  `| @String`
 }
 
 // Array ...

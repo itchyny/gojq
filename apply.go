@@ -183,8 +183,8 @@ func (env *env) applyTerm(t *Term, c <-chan interface{}) (d <-chan interface{}) 
 	if t.Unary != nil {
 		return env.applyUnary(t.Unary.Op, t.Unary.Term, cc())
 	}
-	if t.String != nil {
-		return env.applyString(*t.String, cc())
+	if t.String != "" {
+		return env.applyString(t.String, cc())
 	}
 	if t.Null {
 		return unitIterator(nil)
@@ -245,8 +245,8 @@ func (env *env) applyObjectIndex(x *Index, m map[string]interface{}, c <-chan in
 	if x.Name != "" {
 		return m[x.Name]
 	}
-	if x.String != nil {
-		return mapIterator(env.applyString(*x.String, c), func(s interface{}) interface{} {
+	if x.String != "" {
+		return mapIterator(env.applyString(x.String, c), func(s interface{}) interface{} {
 			key, ok := s.(string)
 			if !ok {
 				return &objectKeyNotStringError{s}
@@ -319,7 +319,7 @@ func (env *env) applyArrayIndex(x *Index, a []interface{}, c <-chan interface{})
 }
 
 func indexIsForObject(x *Index) bool {
-	return (x.Name != "" || x.String != nil || x.Start != nil) && !x.IsSlice && x.End == nil
+	return (x.Name != "" || x.String != "" || x.Start != nil) && !x.IsSlice && x.End == nil
 }
 
 func toInt(x interface{}) (int, bool) {
@@ -443,17 +443,17 @@ func (env *env) applyObject(x *Object, c <-chan interface{}) <-chan interface{} 
 						unitIterator(*kv.KeyOnly),
 						env.applyIndex(&Index{Name: *kv.KeyOnly}, unitIterator(v), unitIterator(v)))
 				}
-			} else if kv.KeyOnlyString != nil {
+			} else if kv.KeyOnlyString != "" {
 				d = objectKeyIterator(d,
-					env.applyString(*kv.KeyOnlyString, unitIterator(v)),
+					env.applyString(kv.KeyOnlyString, unitIterator(v)),
 					unitIterator(v))
 			} else if kv.Pipe != nil {
 				d = objectIterator(d,
 					env.applyPipe(kv.Pipe, unitIterator(v)),
 					env.applyExpr(kv.Val, unitIterator(v)))
-			} else if kv.KeyString != nil {
+			} else if kv.KeyString != "" {
 				d = objectIterator(d,
-					env.applyString(*kv.KeyString, unitIterator(v)),
+					env.applyString(kv.KeyString, unitIterator(v)),
 					env.applyExpr(kv.Val, unitIterator(v)))
 			} else {
 				d = objectIterator(d,
