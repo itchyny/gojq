@@ -7,26 +7,53 @@ type Iter interface {
 	Next() (interface{}, bool)
 }
 
-func chanIterator(c <-chan interface{}) Iter {
-	return &chanIter{c}
-}
-
-type chanIter struct {
-	c <-chan interface{}
-}
-
-func (t *chanIter) Next() (interface{}, bool) {
-	v, ok := <-t.c
-	return v, ok
-}
-
 func unitIterator(v interface{}) Iter {
-	d := make(chan interface{}, 1)
-	defer func() {
-		defer close(d)
-		d <- v
-	}()
-	return chanIterator(d)
+	return &unitIter{v: v}
+}
+
+type unitIter struct {
+	v    interface{}
+	done bool
+}
+
+func (c *unitIter) Next() (interface{}, bool) {
+	if !c.done {
+		c.done = true
+		return c.v, true
+	}
+	return nil, false
+}
+
+func indexIterator(get func(int) (interface{}, bool)) Iter {
+	return &indexIter{get: get}
+}
+
+type indexIter struct {
+	get   func(int) (interface{}, bool)
+	index int
+	done  bool
+}
+
+func (c *indexIter) Next() (interface{}, bool) {
+	if c.done {
+		return nil, false
+	}
+	v, ok := c.get(c.index)
+	if !ok {
+		c.done = true
+		return nil, false
+	}
+	c.index++
+	return v, true
+}
+
+func sliceIterator(xs []interface{}) Iter {
+	return indexIterator(func(i int) (interface{}, bool) {
+		if i < len(xs) {
+			return xs[i], true
+		}
+		return nil, false
+	})
 }
 
 func objectIterator(c Iter, keys Iter, values Iter) Iter {
@@ -96,196 +123,200 @@ func stringIterator(xs []Iter) Iter {
 }
 
 func binopIteratorAlt(l Iter, r Iter) Iter {
-	d := make(chan interface{}, 1)
-	go func() {
-		defer close(d)
-		var done bool
-		for {
-			v, ok := l.Next()
-			if !ok {
-				break
-			}
-			if _, ok := v.(error); ok {
-				d <- v
-				done = true
-				break
-			}
-			if v == struct{}{} {
-				continue
-			}
-			if valueToBool(v) {
-				d <- v
-				done = true
-			}
-		}
-		if !done {
-			for {
-				v, ok := r.Next()
-				if !ok {
-					break
+	return &binopIterAlt{l: l, r: r}
+}
+
+type binopIterAlt struct {
+	l, r        Iter
+	ldone, done bool
+}
+
+func (c *binopIterAlt) Next() (interface{}, bool) {
+	for !c.done {
+		if !c.ldone {
+			if v, ok := c.l.Next(); ok {
+				if _, ok := v.(error); ok {
+					c.done = true
+					return v, true
 				}
 				if v == struct{}{} {
 					continue
 				}
-				d <- v
+				if valueToBool(v) {
+					c.done = true
+					return v, true
+				}
+				continue
+			} else {
+				c.ldone = true
 			}
 		}
-	}()
-	return chanIterator(d)
+		if v, ok := c.r.Next(); ok {
+			if v == struct{}{} {
+				continue
+			}
+			return v, true
+		}
+		c.done = true
+	}
+	return nil, false
 }
 
 func binopIteratorOr(l Iter, r Iter) Iter {
-	d := make(chan interface{}, 1)
-	go func() {
-		defer close(d)
-		r := reuseIterator(r)
-		for {
-			l, ok := l.Next()
-			if !ok {
-				break
-			}
-			if err, ok := l.(error); ok {
-				d <- err
-				return
-			}
-			if l == struct{}{} {
-				continue
-			}
-			if valueToBool(l) {
-				d <- true
-			} else {
-				iter := r()
-				for {
-					r, ok := iter.Next()
-					if !ok {
-						break
-					}
-					if err, ok := r.(error); ok {
-						d <- err
-						return
-					}
-					if r == struct{}{} {
-						continue
-					}
-					d <- valueToBool(r)
+	return &binopOrIter{l: l, riter: reuseIterator(r)}
+}
+
+type binopOrIter struct {
+	l     Iter
+	riter func() Iter
+	r     Iter
+	done  bool
+}
+
+func (c *binopOrIter) Next() (interface{}, bool) {
+	for !c.done {
+		if c.r != nil {
+			if r, ok := c.r.Next(); ok {
+				if r == struct{}{} {
+					continue
 				}
+				if err, ok := r.(error); ok {
+					c.done = true
+					return err, true
+				}
+				return valueToBool(r), true
 			}
+			c.r = nil
 		}
-	}()
-	return chanIterator(d)
+		l, ok := c.l.Next()
+		if !ok {
+			c.done = true
+			break
+		}
+		if err, ok := l.(error); ok {
+			c.done = true
+			return err, ok
+		}
+		if l == struct{}{} {
+			continue
+		}
+		if valueToBool(l) {
+			return true, true
+		}
+		c.r = c.riter()
+	}
+	return nil, false
 }
 
 func binopIteratorAnd(l Iter, r Iter) Iter {
-	d := make(chan interface{}, 1)
-	go func() {
-		defer close(d)
-		r := reuseIterator(r)
-		for {
-			l, ok := l.Next()
-			if !ok {
-				break
-			}
-			if err, ok := l.(error); ok {
-				d <- err
-				return
-			}
-			if l == struct{}{} {
-				continue
-			}
-			if valueToBool(l) {
-				iter := r()
-				for {
-					r, ok := iter.Next()
-					if !ok {
-						break
-					}
-					if err, ok := r.(error); ok {
-						d <- err
-						return
-					}
-					if r == struct{}{} {
-						continue
-					}
-					d <- valueToBool(r)
+	return &binopAndIter{l: l, riter: reuseIterator(r)}
+}
+
+type binopAndIter struct {
+	l     Iter
+	riter func() Iter
+	r     Iter
+	done  bool
+}
+
+func (c *binopAndIter) Next() (interface{}, bool) {
+	for !c.done {
+		if c.r != nil {
+			if r, ok := c.r.Next(); ok {
+				if r == struct{}{} {
+					continue
 				}
-			} else {
-				d <- false
+				if err, ok := r.(error); ok {
+					c.done = true
+					return err, true
+				}
+				return valueToBool(r), true
 			}
+			c.r = nil
 		}
-	}()
-	return chanIterator(d)
+		l, ok := c.l.Next()
+		if !ok {
+			c.done = true
+			break
+		}
+		if err, ok := l.(error); ok {
+			c.done = true
+			return err, true
+		}
+		if l == struct{}{} {
+			continue
+		}
+		if !valueToBool(l) {
+			return false, true
+		}
+		c.r = c.riter()
+	}
+	return nil, false
 }
 
 func binopIterator(l Iter, r Iter, fn func(l, r interface{}) interface{}) Iter {
-	d := make(chan interface{}, 1)
-	go func() {
-		defer close(d)
-		l := reuseIterator(l)
-		for {
-			r, ok := r.Next()
-			if !ok {
-				break
-			}
-			if err, ok := r.(error); ok {
-				d <- err
-				return
-			}
-			if r == struct{}{} {
-				continue
-			}
-			iter := l()
-			for {
-				l, ok := iter.Next()
-				if !ok {
-					break
-				}
-				if err, ok := l.(error); ok {
-					d <- err
-					return
-				}
+	return &binopIter{liter: reuseIterator(l), r: r, fn: fn}
+}
+
+type binopIter struct {
+	liter func() Iter
+	r     Iter
+	fn    func(l, r interface{}) interface{}
+	l     Iter
+	rval  interface{}
+	done  bool
+}
+
+func (c *binopIter) Next() (interface{}, bool) {
+	for !c.done {
+		if c.l != nil {
+			if l, ok := c.l.Next(); ok {
 				if l == struct{}{} {
 					continue
 				}
-				d <- fn(l, r)
+				if err, ok := l.(error); ok {
+					c.done = true
+					return err, true
+				}
+				return c.fn(l, c.rval), true
 			}
+			c.l = nil
 		}
-	}()
-	return chanIterator(d)
+		r, ok := c.r.Next()
+		if !ok {
+			break
+		}
+		if err, ok := r.(error); ok {
+			c.done = true
+			return err, true
+		}
+		if r == struct{}{} {
+			continue
+		}
+		c.rval, c.l = r, c.liter()
+	}
+	return nil, false
 }
 
 func reuseIterator(c Iter) func() Iter {
 	xs, m := []interface{}{}, new(sync.Mutex)
-	get := func(i int) (interface{}, bool) {
-		m.Lock()
-		defer m.Unlock()
-		if i < len(xs) {
-			return xs[i], false
-		}
-		for {
-			v, ok := c.Next()
-			if !ok {
-				break
-			}
-			xs = append(xs, v)
-			return v, false
-		}
-		return nil, true
-	}
 	return func() Iter {
-		d := make(chan interface{}, 1)
-		go func() {
-			defer close(d)
-			var i int
-			for {
-				v, done := get(i)
-				if done {
-					return
-				}
-				d <- v
-				i++
+		return indexIterator(func(i int) (interface{}, bool) {
+			m.Lock()
+			defer m.Unlock()
+			if i < len(xs) {
+				return xs[i], true
 			}
-		}()
-		return chanIterator(d)
+			for {
+				v, ok := c.Next()
+				if !ok {
+					break
+				}
+				xs = append(xs, v)
+				return v, true
+			}
+			return nil, false
+		})
 	}
 }
 
@@ -299,86 +330,111 @@ func mapIterator(c Iter, f func(interface{}) interface{}) Iter {
 }
 
 func mapIteratorWithError(c Iter, f func(interface{}) interface{}) Iter {
-	d := make(chan interface{}, 1)
-	go func() {
-		defer close(d)
-		for {
-			v, ok := c.Next()
-			if !ok {
-				break
-			}
-			x := f(v)
-			if y, ok := x.(Iter); ok {
-				for {
-					v, ok := y.Next()
-					if !ok {
-						break
-					}
-					if v == struct{}{} {
-						continue
-					} else if e, ok := v.(*breakError); ok {
-						d <- e
-						return
-					}
-					d <- v
+	return &mapWithErrorIter{src: c, f: f}
+}
+
+type mapWithErrorIter struct {
+	src  Iter
+	f    func(interface{}) interface{}
+	iter Iter
+	done bool
+}
+
+func (c *mapWithErrorIter) Next() (interface{}, bool) {
+	for !c.done {
+		if c.iter != nil {
+			if v, ok := c.iter.Next(); ok {
+				switch v.(type) {
+				case struct{}:
+					continue
+				case *breakError:
+					c.done = true
+					return v, true
+				default:
+					return v, true
 				}
-				continue
-			} else if e, ok := x.(*breakError); ok {
-				d <- e
-				return
 			}
-			d <- x
+			c.iter = nil
 		}
-	}()
-	return chanIterator(d)
+		v, ok := c.src.Next()
+		if !ok {
+			c.done = true
+			return nil, false
+		}
+		x := c.f(v)
+		if y, ok := x.(Iter); ok {
+			c.iter = y
+			continue
+		}
+		return x, true
+	}
+	return nil, false
 }
 
 func foldIterator(c Iter, x interface{}, f func(interface{}, interface{}) interface{}) Iter {
-	d := make(chan interface{}, 1)
-	go func() {
-		defer close(d)
-		for {
-			v, ok := c.Next()
-			if !ok {
-				break
-			}
-			x = f(x, v)
-			if _, ok := x.(error); ok {
-				break
-			}
+	return &foldIter{src: c, x: x, f: f}
+}
+
+type foldIter struct {
+	src  Iter
+	x    interface{}
+	f    func(interface{}, interface{}) interface{}
+	done bool
+}
+
+func (c *foldIter) Next() (interface{}, bool) {
+	if c.done {
+		return nil, false
+	}
+	for {
+		v, ok := c.src.Next()
+		if !ok {
+			break
 		}
-		d <- x
-	}()
-	return chanIterator(d)
+		c.x = c.f(c.x, v)
+		if _, ok := c.x.(error); ok {
+			break
+		}
+	}
+	c.done = true
+	return c.x, true
 }
 
 func foreachIterator(c Iter, x interface{}, f func(interface{}, interface{}) (interface{}, Iter)) Iter {
-	d := make(chan interface{}, 1)
-	go func() {
-		var y Iter
-		defer close(d)
-		for {
-			v, ok := c.Next()
-			if !ok {
-				break
-			}
-			x, y = f(x, v)
-			for {
-				v, ok := y.Next()
-				if !ok {
-					break
-				}
+	return &foreachIter{src: c, x: x, f: f}
+}
+
+type foreachIter struct {
+	src  Iter
+	x    interface{}
+	f    func(interface{}, interface{}) (interface{}, Iter)
+	iter Iter
+	done bool
+}
+
+func (c *foreachIter) Next() (interface{}, bool) {
+	for !c.done {
+		if c.iter != nil {
+			if v, ok := c.iter.Next(); ok {
 				if v == struct{}{} {
 					continue
 				}
-				d <- v
+				if _, ok := v.(error); ok {
+					c.done = true
+					return nil, false
+				}
+				return v, true
 			}
-			if _, ok := x.(error); ok {
-				break
-			}
+			c.iter = nil
 		}
-	}()
-	return chanIterator(d)
+		v, ok := c.src.Next()
+		if !ok {
+			c.done = true
+			break
+		}
+		c.x, c.iter = c.f(c.x, v)
+	}
+	return nil, false
 }
 
 func iteratorLast(c Iter) interface{} {

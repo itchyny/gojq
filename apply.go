@@ -25,22 +25,33 @@ func (env *env) applyComma(o *Comma, c Iter) Iter {
 		if len(o.Alts) == 1 {
 			return env.applyAlt(o.Alts[0], unitIterator(v))
 		}
-		d := make(chan interface{}, 1)
-		go func() {
-			defer close(d)
-			for _, e := range o.Alts {
-				iter := env.applyAlt(e, unitIterator(v))
-				for {
-					v, ok := iter.Next()
-					if !ok {
-						break
-					}
-					d <- v
-				}
-			}
-		}()
-		return chanIterator(d)
+		return &commaIter{env: env, alts: o.Alts, v: v}
 	})
+}
+
+type commaIter struct {
+	env   *env
+	alts  []*Alt
+	v     interface{}
+	iter  Iter
+	index int
+}
+
+func (c *commaIter) Next() (interface{}, bool) {
+	for {
+		if c.iter != nil {
+			if v, ok := c.iter.Next(); ok {
+				return v, true
+			}
+		}
+		if c.index < len(c.alts) {
+			c.iter = c.env.applyAlt(c.alts[c.index], unitIterator(c.v))
+			c.index++
+		} else {
+			break
+		}
+	}
+	return nil, false
 }
 
 func (env *env) applyAlt(e *Alt, c Iter) Iter {
@@ -217,8 +228,8 @@ func (env *env) applyIndex(x *Index, c Iter, d Iter) Iter {
 		case []interface{}:
 			return env.applyArrayIndex(x, v, dd())
 		case string:
-			switch v := env.applyArrayIndex(x, explode(v), dd()).(type) {
-			case Iter:
+			t := env.applyArrayIndex(x, explode(v), dd())
+			if v, ok := t.(Iter); ok {
 				return mapIterator(v, func(v interface{}) interface{} {
 					switch v := v.(type) {
 					case []interface{}:
@@ -231,9 +242,8 @@ func (env *env) applyIndex(x *Index, c Iter, d Iter) Iter {
 						panic(v)
 					}
 				})
-			default:
-				return v
 			}
+			return t
 		default:
 			if indexIsForObject(x) {
 				return &expectedObjectError{v}
@@ -610,23 +620,15 @@ func (env *env) applySuffix(s *Suffix, c Iter, cc func() Iter) Iter {
 func (env *env) applyIterator(c Iter) Iter {
 	return mapIterator(c, func(v interface{}) interface{} {
 		if a, ok := v.([]interface{}); ok {
-			d := make(chan interface{}, 1)
-			go func() {
-				defer close(d)
-				for _, v := range a {
-					d <- v
-				}
-			}()
-			return chanIterator(d)
+			return sliceIterator(a)
 		} else if o, ok := v.(map[string]interface{}); ok {
-			d := make(chan interface{}, 1)
-			go func() {
-				defer close(d)
-				for _, v := range o {
-					d <- v
-				}
-			}()
-			return chanIterator(d)
+			a := make([]interface{}, len(o))
+			var i int
+			for _, v := range o {
+				a[i] = v
+				i++
+			}
+			return sliceIterator(a)
 		} else {
 			return &iteratorError{v}
 		}
