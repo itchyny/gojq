@@ -391,6 +391,9 @@ func applyArrayIndetInternal(start, end, index *int, a []interface{}) interface{
 }
 
 func (env *env) applyFunc(f *Func, c Iter) Iter {
+	if f.funcDef != nil {
+		return env.applyFuncDef(f, c)
+	}
 	if v, ok := env.lookupValue(f.Name); ok {
 		return unitIterator(v)
 	}
@@ -407,10 +410,15 @@ func (env *env) applyFunc(f *Func, c Iter) Iter {
 	if fd == nil {
 		return unitIterator(&funcNotFoundError{f})
 	}
+	f.funcDef = fd
+	return env.applyFuncDef(f, c)
+}
+
+func (env *env) applyFuncDef(f *Func, c Iter) Iter {
 	subEnv := newEnv(env)
 	var cc func() Iter
 	var d Iter
-	for i, arg := range fd.Args {
+	for i, arg := range f.funcDef.Args {
 		if arg[0] == '$' {
 			if cc == nil {
 				cc = reuseIterator(c)
@@ -424,7 +432,7 @@ func (env *env) applyFunc(f *Func, c Iter) Iter {
 		}
 	}
 	if d == nil {
-		return subEnv.applyQuery(fd.Body, c)
+		return subEnv.applyQuery(f.funcDef.Body, c)
 	}
 	return mapIterator(d, func(v interface{}) interface{} {
 		m := v.(map[string]interface{})
@@ -435,7 +443,7 @@ func (env *env) applyFunc(f *Func, c Iter) Iter {
 		for k, v := range m {
 			e.values[k] = v
 		}
-		return e.applyQuery(fd.Body, cc())
+		return e.applyQuery(f.funcDef.Body, cc())
 	})
 }
 

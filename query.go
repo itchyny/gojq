@@ -168,8 +168,9 @@ type Index struct {
 
 // Func ...
 type Func struct {
-	Name string  `@Ident`
-	Args []*Pipe `( "(" @@ (";" @@)* ")" )?`
+	Name    string  `@Ident`
+	Args    []*Pipe `( "(" @@ (";" @@)* ")" )?`
+	funcDef *FuncDef
 }
 
 // Object ...
