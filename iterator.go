@@ -1,7 +1,5 @@
 package gojq
 
-import "sync"
-
 // Iter ...
 type Iter interface {
 	Next() (interface{}, bool)
@@ -299,11 +297,9 @@ func (c *binopIter) Next() (interface{}, bool) {
 }
 
 func reuseIterator(c Iter) func() Iter {
-	xs, m := []interface{}{}, new(sync.Mutex)
+	xs := []interface{}{}
 	return func() Iter {
 		return indexIterator(func(i int) (interface{}, bool) {
-			m.Lock()
-			defer m.Unlock()
 			if i < len(xs) {
 				return xs[i], true
 			}

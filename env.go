@@ -1,30 +1,28 @@
 package gojq
 
-import "sync"
-
 type env struct {
-	funcDefs  *sync.Map // map[string]*FuncDef
-	variables *sync.Map // map[string]*Pipe
-	values    *sync.Map // map[string]interface{}
+	funcDefs  map[string]*FuncDef
+	variables map[string]*Pipe
+	values    map[string]interface{}
 	parent    *env
 }
 
 func newEnv(parent *env) *env {
 	return &env{
-		funcDefs:  new(sync.Map),
-		variables: new(sync.Map),
-		values:    new(sync.Map),
+		funcDefs:  make(map[string]*FuncDef),
+		variables: make(map[string]*Pipe),
+		values:    make(map[string]interface{}),
 		parent:    parent,
 	}
 }
 
 func (env *env) addFuncDef(fd *FuncDef) {
-	env.funcDefs.Store(fd.Name+string(rune(len(fd.Args))), fd)
+	env.funcDefs[fd.Name+string(rune(len(fd.Args)))] = fd
 }
 
 func (env *env) lookupFuncDef(name string, arg int) *FuncDef {
-	if fd, ok := env.funcDefs.Load(name + string(rune(arg))); ok {
-		return fd.(*FuncDef)
+	if fd, ok := env.funcDefs[name+string(rune(arg))]; ok {
+		return fd
 	}
 	if env.parent != nil {
 		return env.parent.lookupFuncDef(name, arg)
@@ -44,8 +42,8 @@ func (env *env) lookupFuncDef(name string, arg int) *FuncDef {
 }
 
 func (env *env) lookupVariable(name string) *Pipe {
-	if p, ok := env.variables.Load(name); ok {
-		return p.(*Pipe)
+	if p, ok := env.variables[name]; ok {
+		return p
 	}
 	if env.parent != nil {
 		return env.parent.lookupVariable(name)
@@ -54,7 +52,7 @@ func (env *env) lookupVariable(name string) *Pipe {
 }
 
 func (env *env) lookupValue(name string) (interface{}, bool) {
-	if p, ok := env.values.Load(name); ok {
+	if p, ok := env.values[name]; ok {
 		return p, true
 	}
 	if env.parent != nil {

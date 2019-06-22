@@ -420,7 +420,7 @@ func (env *env) applyFunc(f *Func, c Iter) Iter {
 				unitIterator(arg),
 				env.applyPipe(f.Args[i], cc()))
 		} else {
-			subEnv.variables.Store(arg, f.Args[i])
+			subEnv.variables[arg] = f.Args[i]
 		}
 	}
 	if d == nil {
@@ -429,12 +429,11 @@ func (env *env) applyFunc(f *Func, c Iter) Iter {
 	return mapIterator(d, func(v interface{}) interface{} {
 		m := v.(map[string]interface{})
 		e := newEnv(env)
-		subEnv.variables.Range(func(k, v interface{}) bool {
-			e.variables.Store(k, v)
-			return false
-		})
+		for k, v := range subEnv.variables {
+			e.variables[k] = v
+		}
 		for k, v := range m {
-			e.values.Store(k, v)
+			e.values[k] = v
 		}
 		return e.applyQuery(fd.Body, cc())
 	})
@@ -711,7 +710,7 @@ func (env *env) applyForeach(x *Foreach, c Iter) Iter {
 
 func (env *env) applyPattern(p *Pattern, v interface{}) error {
 	if p.Name != "" {
-		env.values.Store(p.Name, v)
+		env.values[p.Name] = v
 	} else if len(p.Array) > 0 {
 		if v == nil {
 			v = []interface{}{}
@@ -745,12 +744,12 @@ func (env *env) applyPattern(p *Pattern, v interface{}) error {
 				if key[0] != '$' {
 					return &bindVariableNameError{key}
 				}
-				env.values.Store(key, m[key[1:]])
+				env.values[key] = m[key[1:]]
 				continue
 			}
 			key := o.Key
 			if key != "" && key[0] == '$' {
-				env.values.Store(key, m[key[1:]])
+				env.values[key] = m[key[1:]]
 				key = key[1:]
 			}
 			if o.KeyString != "" {
