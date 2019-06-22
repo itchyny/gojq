@@ -6,21 +6,21 @@ import (
 	"unicode/utf8"
 )
 
-func (env *env) applyQuery(query *Query, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyQuery(query *Query, c Iter) Iter {
 	for _, fd := range query.FuncDefs {
 		env.addFuncDef(fd)
 	}
 	return env.applyPipe(query.Pipe, c)
 }
 
-func (env *env) applyPipe(p *Pipe, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyPipe(p *Pipe, c Iter) Iter {
 	for _, o := range p.Commas {
 		c = env.applyComma(o, c)
 	}
 	return c
 }
 
-func (env *env) applyComma(o *Comma, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyComma(o *Comma, c Iter) Iter {
 	return mapIterator(c, func(v interface{}) interface{} {
 		if len(o.Alts) == 1 {
 			return env.applyAlt(o.Alts[0], unitIterator(v))
@@ -34,11 +34,11 @@ func (env *env) applyComma(o *Comma, c <-chan interface{}) <-chan interface{} {
 				}
 			}
 		}()
-		return (<-chan interface{})(d)
+		return (Iter)(d)
 	})
 }
 
-func (env *env) applyAlt(e *Alt, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyAlt(e *Alt, c Iter) Iter {
 	if len(e.Right) == 0 {
 		return env.applyExpr(e.Left, c)
 	}
@@ -50,7 +50,7 @@ func (env *env) applyAlt(e *Alt, c <-chan interface{}) <-chan interface{} {
 	return w
 }
 
-func (env *env) applyExpr(e *Expr, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyExpr(e *Expr, c Iter) Iter {
 	if e.Bind == nil {
 		return env.applyExprInternal(e, c)
 	}
@@ -67,7 +67,7 @@ func (env *env) applyExpr(e *Expr, c <-chan interface{}) <-chan interface{} {
 	})
 }
 
-func (env *env) applyExprInternal(e *Expr, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyExprInternal(e *Expr, c Iter) Iter {
 	if e.Logic != nil {
 		return env.applyLogic(e.Logic, c)
 	}
@@ -89,7 +89,7 @@ func (env *env) applyExprInternal(e *Expr, c <-chan interface{}) <-chan interfac
 	panic("unreachable expr")
 }
 
-func (env *env) applyLogic(e *Logic, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyLogic(e *Logic, c Iter) Iter {
 	if len(e.Right) == 0 {
 		return env.applyAndExpr(e.Left, c)
 	}
@@ -101,7 +101,7 @@ func (env *env) applyLogic(e *Logic, c <-chan interface{}) <-chan interface{} {
 	return w
 }
 
-func (env *env) applyAndExpr(e *AndExpr, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyAndExpr(e *AndExpr, c Iter) Iter {
 	if len(e.Right) == 0 {
 		return env.applyCompare(e.Left, c)
 	}
@@ -113,7 +113,7 @@ func (env *env) applyAndExpr(e *AndExpr, c <-chan interface{}) <-chan interface{
 	return w
 }
 
-func (env *env) applyCompare(e *Compare, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyCompare(e *Compare, c Iter) Iter {
 	if e.Right == nil {
 		return env.applyArith(e.Left, c)
 	}
@@ -125,7 +125,7 @@ func (env *env) applyCompare(e *Compare, c <-chan interface{}) <-chan interface{
 	return w
 }
 
-func (env *env) applyArith(e *Arith, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyArith(e *Arith, c Iter) Iter {
 	if len(e.Right) == 0 {
 		return env.applyFactor(e.Left, c)
 	}
@@ -137,7 +137,7 @@ func (env *env) applyArith(e *Arith, c <-chan interface{}) <-chan interface{} {
 	return w
 }
 
-func (env *env) applyFactor(e *Factor, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyFactor(e *Factor, c Iter) Iter {
 	if len(e.Right) == 0 {
 		return env.applyTerm(e.Left, c)
 	}
@@ -149,8 +149,8 @@ func (env *env) applyFactor(e *Factor, c <-chan interface{}) <-chan interface{} 
 	return w
 }
 
-func (env *env) applyTerm(t *Term, c <-chan interface{}) (d <-chan interface{}) {
-	cc := func() <-chan interface{} { return c }
+func (env *env) applyTerm(t *Term, c Iter) (d Iter) {
+	cc := func() Iter { return c }
 	if t.Index != nil || t.SuffixList != nil {
 		cc = reuseIterator(c)
 	}
@@ -201,7 +201,7 @@ func (env *env) applyTerm(t *Term, c <-chan interface{}) (d <-chan interface{}) 
 	return env.applyPipe(t.Pipe, cc())
 }
 
-func (env *env) applyIndex(x *Index, c <-chan interface{}, d <-chan interface{}) <-chan interface{} {
+func (env *env) applyIndex(x *Index, c Iter, d Iter) Iter {
 	dd := reuseIterator(d)
 	return mapIterator(c, func(v interface{}) interface{} {
 		switch v := v.(type) {
@@ -213,7 +213,7 @@ func (env *env) applyIndex(x *Index, c <-chan interface{}, d <-chan interface{})
 			return env.applyArrayIndex(x, v, dd())
 		case string:
 			switch v := env.applyArrayIndex(x, explode(v), dd()).(type) {
-			case <-chan interface{}:
+			case Iter:
 				return mapIterator(v, func(v interface{}) interface{} {
 					switch v := v.(type) {
 					case []interface{}:
@@ -238,7 +238,7 @@ func (env *env) applyIndex(x *Index, c <-chan interface{}, d <-chan interface{})
 	})
 }
 
-func (env *env) applyObjectIndex(x *Index, m map[string]interface{}, c <-chan interface{}) interface{} {
+func (env *env) applyObjectIndex(x *Index, m map[string]interface{}, c Iter) interface{} {
 	if !indexIsForObject(x) {
 		return &expectedArrayError{m}
 	}
@@ -263,8 +263,8 @@ func (env *env) applyObjectIndex(x *Index, m map[string]interface{}, c <-chan in
 	})
 }
 
-func (env *env) applyArrayIndex(x *Index, a []interface{}, c <-chan interface{}) interface{} {
-	cc := func() <-chan interface{} { return c }
+func (env *env) applyArrayIndex(x *Index, a []interface{}, c Iter) interface{} {
+	cc := func() Iter { return c }
 	if x.Start != nil && x.End != nil {
 		cc = reuseIterator(c)
 	}
@@ -375,7 +375,7 @@ func applyArrayIndetInternal(start, end, index *int, a []interface{}) interface{
 	return a
 }
 
-func (env *env) applyFunc(f *Func, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyFunc(f *Func, c Iter) Iter {
 	if v, ok := env.lookupValue(f.Name); ok {
 		return unitIterator(v)
 	}
@@ -393,8 +393,8 @@ func (env *env) applyFunc(f *Func, c <-chan interface{}) <-chan interface{} {
 		return unitIterator(&funcNotFoundError{f})
 	}
 	subEnv := newEnv(env)
-	var cc func() <-chan interface{}
-	var d <-chan interface{}
+	var cc func() Iter
+	var d Iter
 	for i, arg := range fd.Args {
 		if arg[0] == '$' {
 			if cc == nil {
@@ -425,7 +425,7 @@ func (env *env) applyFunc(f *Func, c <-chan interface{}) <-chan interface{} {
 	})
 }
 
-func (env *env) applyObject(x *Object, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyObject(x *Object, c Iter) Iter {
 	return mapIterator(c, func(v interface{}) interface{} {
 		d := unitIterator(map[string]interface{}{})
 		for _, kv := range x.KeyVals {
@@ -465,7 +465,7 @@ func (env *env) applyObject(x *Object, c <-chan interface{}) <-chan interface{} 
 	})
 }
 
-func (env *env) applyArray(x *Array, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyArray(x *Array, c Iter) Iter {
 	if x.Pipe == nil {
 		return unitIterator([]interface{}{})
 	}
@@ -480,7 +480,7 @@ func (env *env) applyArray(x *Array, c <-chan interface{}) <-chan interface{} {
 	return unitIterator(a)
 }
 
-func (env *env) applyString(x string, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyString(x string, c Iter) Iter {
 	if len(x) < 2 || x[0] != '"' || x[len(x)-1] != '"' {
 		return unitIterator(&stringLiteralError{x})
 	}
@@ -489,8 +489,8 @@ func (env *env) applyString(x string, c <-chan interface{}) <-chan interface{} {
 	x = x[1 : len(x)-1]
 	var runeTmp [utf8.UTFMax]byte
 	buf := make([]byte, 0, 3*len(x)/2)
-	var cc func() <-chan interface{}
-	var xs []<-chan interface{}
+	var cc func() Iter
+	var xs []Iter
 	for len(x) > 0 {
 		r, multibyte, ss, err := strconv.UnquoteChar(x, '"')
 		if err != nil {
@@ -543,7 +543,7 @@ func (env *env) applyString(x string, c <-chan interface{}) <-chan interface{} {
 	return stringIterator(xs)
 }
 
-func (env *env) applyUnary(op Operator, x *Term, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyUnary(op Operator, x *Term, c Iter) Iter {
 	return mapIterator(c, func(v interface{}) interface{} {
 		return mapIterator(env.applyTerm(x, unitIterator(v)), func(v interface{}) interface{} {
 			switch op {
@@ -572,7 +572,7 @@ func (env *env) applyUnary(op Operator, x *Term, c <-chan interface{}) <-chan in
 	})
 }
 
-func (env *env) applySuffix(s *Suffix, c <-chan interface{}, cc func() <-chan interface{}) <-chan interface{} {
+func (env *env) applySuffix(s *Suffix, c Iter, cc func() Iter) Iter {
 	return mapIteratorWithError(c, func(v interface{}) interface{} {
 		if s.Optional {
 			switch v.(type) {
@@ -598,7 +598,7 @@ func (env *env) applySuffix(s *Suffix, c <-chan interface{}, cc func() <-chan in
 	})
 }
 
-func (env *env) applyIterator(c <-chan interface{}) <-chan interface{} {
+func (env *env) applyIterator(c Iter) Iter {
 	return mapIterator(c, func(v interface{}) interface{} {
 		if a, ok := v.([]interface{}); ok {
 			d := make(chan interface{}, 1)
@@ -608,7 +608,7 @@ func (env *env) applyIterator(c <-chan interface{}) <-chan interface{} {
 					d <- v
 				}
 			}()
-			return (<-chan interface{})(d)
+			return (Iter)(d)
 		} else if o, ok := v.(map[string]interface{}); ok {
 			d := make(chan interface{}, 1)
 			go func() {
@@ -617,14 +617,14 @@ func (env *env) applyIterator(c <-chan interface{}) <-chan interface{} {
 					d <- v
 				}
 			}()
-			return (<-chan interface{})(d)
+			return (Iter)(d)
 		} else {
 			return &iteratorError{v}
 		}
 	})
 }
 
-func (env *env) applyIf(x *If, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyIf(x *If, c Iter) Iter {
 	return mapIterator(c, func(v interface{}) interface{} {
 		return mapIterator(env.applyPipe(x.Cond, unitIterator(v)), func(w interface{}) interface{} {
 			if valueToBool(w) {
@@ -652,7 +652,7 @@ func valueToBool(v interface{}) bool {
 	}
 }
 
-func (env *env) applyTry(x *Try, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyTry(x *Try, c Iter) Iter {
 	return mapIterator(c, func(v interface{}) interface{} {
 		return mapIteratorWithError(env.applyPipe(x.Body, unitIterator(v)), func(w interface{}) interface{} {
 			if err, ok := w.(error); ok {
@@ -666,7 +666,7 @@ func (env *env) applyTry(x *Try, c <-chan interface{}) <-chan interface{} {
 	})
 }
 
-func (env *env) applyReduce(x *Reduce, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyReduce(x *Reduce, c Iter) Iter {
 	return mapIterator(c, func(v interface{}) interface{} {
 		return mapIterator(env.applyPipe(x.Start, unitIterator(v)), func(s interface{}) interface{} {
 			subEnv := newEnv(env)
@@ -680,11 +680,11 @@ func (env *env) applyReduce(x *Reduce, c <-chan interface{}) <-chan interface{} 
 	})
 }
 
-func (env *env) applyForeach(x *Foreach, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyForeach(x *Foreach, c Iter) Iter {
 	return mapIterator(c, func(v interface{}) interface{} {
 		return mapIterator(env.applyPipe(x.Start, unitIterator(v)), func(s interface{}) interface{} {
 			subEnv := newEnv(env)
-			return foreachIterator(subEnv.applyTerm(x.Term, unitIterator(v)), s, func(v, w interface{}) (interface{}, <-chan interface{}) {
+			return foreachIterator(subEnv.applyTerm(x.Term, unitIterator(v)), s, func(v, w interface{}) (interface{}, Iter) {
 				if err := subEnv.applyPattern(x.Pattern, w); err != nil {
 					return err, unitIterator(err)
 				}
@@ -753,7 +753,7 @@ func (env *env) applyPattern(p *Pattern, v interface{}) error {
 	return nil
 }
 
-func (env *env) applyLabel(x *Label, c <-chan interface{}) <-chan interface{} {
+func (env *env) applyLabel(x *Label, c Iter) Iter {
 	if x.Ident[0] != '$' {
 		return unitIterator(&labelNameError{x.Ident})
 	}

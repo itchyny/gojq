@@ -221,7 +221,7 @@ func (cli *cli) printJSONError(fname, input string, err error) {
 	}
 }
 
-func (cli *cli) printValue(v <-chan interface{}) error {
+func (cli *cli) printValue(v gojq.Iter) error {
 	m := cli.createMarshaler()
 	for x := range v {
 		if err, ok := x.(error); ok {

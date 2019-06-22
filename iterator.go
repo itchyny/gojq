@@ -2,7 +2,10 @@ package gojq
 
 import "sync"
 
-func unitIterator(v interface{}) <-chan interface{} {
+// Iter ...
+type Iter = <-chan interface{}
+
+func unitIterator(v interface{}) Iter {
 	d := make(chan interface{}, 1)
 	defer func() {
 		defer close(d)
@@ -11,7 +14,7 @@ func unitIterator(v interface{}) <-chan interface{} {
 	return d
 }
 
-func objectIterator(c <-chan interface{}, keys <-chan interface{}, values <-chan interface{}) <-chan interface{} {
+func objectIterator(c Iter, keys Iter, values Iter) Iter {
 	ks := reuseIterator(keys)
 	vs := reuseIterator(values)
 	return mapIterator(c, func(v interface{}) interface{} {
@@ -33,7 +36,7 @@ func objectIterator(c <-chan interface{}, keys <-chan interface{}, values <-chan
 	})
 }
 
-func objectKeyIterator(c <-chan interface{}, keys <-chan interface{}, values <-chan interface{}) <-chan interface{} {
+func objectKeyIterator(c Iter, keys Iter, values Iter) Iter {
 	ks := reuseIterator(keys)
 	vs := reuseIterator(values)
 	return mapIterator(c, func(v interface{}) interface{} {
@@ -59,7 +62,7 @@ func objectKeyIterator(c <-chan interface{}, keys <-chan interface{}, values <-c
 	})
 }
 
-func stringIterator(xs []<-chan interface{}) <-chan interface{} {
+func stringIterator(xs []Iter) Iter {
 	if len(xs) == 0 {
 		return unitIterator("")
 	}
@@ -77,7 +80,7 @@ func stringIterator(xs []<-chan interface{}) <-chan interface{} {
 	})
 }
 
-func binopIteratorAlt(l <-chan interface{}, r <-chan interface{}) <-chan interface{} {
+func binopIteratorAlt(l Iter, r Iter) Iter {
 	d := make(chan interface{}, 1)
 	go func() {
 		defer close(d)
@@ -108,7 +111,7 @@ func binopIteratorAlt(l <-chan interface{}, r <-chan interface{}) <-chan interfa
 	return d
 }
 
-func binopIteratorOr(l <-chan interface{}, r <-chan interface{}) <-chan interface{} {
+func binopIteratorOr(l Iter, r Iter) Iter {
 	d := make(chan interface{}, 1)
 	go func() {
 		defer close(d)
@@ -140,7 +143,7 @@ func binopIteratorOr(l <-chan interface{}, r <-chan interface{}) <-chan interfac
 	return d
 }
 
-func binopIteratorAnd(l <-chan interface{}, r <-chan interface{}) <-chan interface{} {
+func binopIteratorAnd(l Iter, r Iter) Iter {
 	d := make(chan interface{}, 1)
 	go func() {
 		defer close(d)
@@ -172,7 +175,7 @@ func binopIteratorAnd(l <-chan interface{}, r <-chan interface{}) <-chan interfa
 	return d
 }
 
-func binopIterator(l <-chan interface{}, r <-chan interface{}, fn func(l, r interface{}) interface{}) <-chan interface{} {
+func binopIterator(l Iter, r Iter, fn func(l, r interface{}) interface{}) Iter {
 	d := make(chan interface{}, 1)
 	go func() {
 		defer close(d)
@@ -200,7 +203,7 @@ func binopIterator(l <-chan interface{}, r <-chan interface{}, fn func(l, r inte
 	return d
 }
 
-func reuseIterator(c <-chan interface{}) func() <-chan interface{} {
+func reuseIterator(c Iter) func() Iter {
 	xs, m := []interface{}{}, new(sync.Mutex)
 	get := func(i int) (interface{}, bool) {
 		m.Lock()
@@ -214,7 +217,7 @@ func reuseIterator(c <-chan interface{}) func() <-chan interface{} {
 		}
 		return nil, true
 	}
-	return func() <-chan interface{} {
+	return func() Iter {
 		d := make(chan interface{}, 1)
 		go func() {
 			defer close(d)
@@ -232,7 +235,7 @@ func reuseIterator(c <-chan interface{}) func() <-chan interface{} {
 	}
 }
 
-func mapIterator(c <-chan interface{}, f func(interface{}) interface{}) <-chan interface{} {
+func mapIterator(c Iter, f func(interface{}) interface{}) Iter {
 	return mapIteratorWithError(c, func(v interface{}) interface{} {
 		if _, ok := v.(error); ok {
 			return v
@@ -241,13 +244,13 @@ func mapIterator(c <-chan interface{}, f func(interface{}) interface{}) <-chan i
 	})
 }
 
-func mapIteratorWithError(c <-chan interface{}, f func(interface{}) interface{}) <-chan interface{} {
+func mapIteratorWithError(c Iter, f func(interface{}) interface{}) Iter {
 	d := make(chan interface{}, 1)
 	go func() {
 		defer close(d)
 		for v := range c {
 			x := f(v)
-			if y, ok := x.(<-chan interface{}); ok {
+			if y, ok := x.(Iter); ok {
 				for v := range y {
 					if v == struct{}{} {
 						continue
@@ -268,7 +271,7 @@ func mapIteratorWithError(c <-chan interface{}, f func(interface{}) interface{})
 	return d
 }
 
-func foldIterator(c <-chan interface{}, x interface{}, f func(interface{}, interface{}) interface{}) <-chan interface{} {
+func foldIterator(c Iter, x interface{}, f func(interface{}, interface{}) interface{}) Iter {
 	d := make(chan interface{}, 1)
 	go func() {
 		defer close(d)
@@ -283,10 +286,10 @@ func foldIterator(c <-chan interface{}, x interface{}, f func(interface{}, inter
 	return d
 }
 
-func foreachIterator(c <-chan interface{}, x interface{}, f func(interface{}, interface{}) (interface{}, <-chan interface{})) <-chan interface{} {
+func foreachIterator(c Iter, x interface{}, f func(interface{}, interface{}) (interface{}, Iter)) Iter {
 	d := make(chan interface{}, 1)
 	go func() {
-		var y <-chan interface{}
+		var y Iter
 		defer close(d)
 		for v := range c {
 			x, y = f(x, v)
@@ -304,7 +307,7 @@ func foreachIterator(c <-chan interface{}, x interface{}, f func(interface{}, in
 	return d
 }
 
-func iteratorLast(c <-chan interface{}) interface{} {
+func iteratorLast(c Iter) interface{} {
 	var v interface{}
 	for v = range c {
 	}

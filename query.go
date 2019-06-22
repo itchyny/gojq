@@ -7,7 +7,7 @@ type Query struct {
 }
 
 // Run query.
-func (q *Query) Run(v interface{}) <-chan interface{} {
+func (q *Query) Run(v interface{}) Iter {
 	return mapIterator(newEnv(nil).applyQuery(q, unitIterator(v)), normalizeValues)
 }
 
