@@ -3,7 +3,22 @@ package gojq
 import "sync"
 
 // Iter ...
-type Iter = <-chan interface{}
+type Iter interface {
+	Next() (interface{}, bool)
+}
+
+func chanIterator(c <-chan interface{}) Iter {
+	return &chanIter{c}
+}
+
+type chanIter struct {
+	c <-chan interface{}
+}
+
+func (t *chanIter) Next() (interface{}, bool) {
+	v, ok := <-t.c
+	return v, ok
+}
 
 func unitIterator(v interface{}) Iter {
 	d := make(chan interface{}, 1)
@@ -11,7 +26,7 @@ func unitIterator(v interface{}) Iter {
 		defer close(d)
 		d <- v
 	}()
-	return d
+	return chanIterator(d)
 }
 
 func objectIterator(c Iter, keys Iter, values Iter) Iter {
@@ -85,7 +100,11 @@ func binopIteratorAlt(l Iter, r Iter) Iter {
 	go func() {
 		defer close(d)
 		var done bool
-		for v := range l {
+		for {
+			v, ok := l.Next()
+			if !ok {
+				break
+			}
 			if _, ok := v.(error); ok {
 				d <- v
 				done = true
@@ -100,7 +119,11 @@ func binopIteratorAlt(l Iter, r Iter) Iter {
 			}
 		}
 		if !done {
-			for v := range r {
+			for {
+				v, ok := r.Next()
+				if !ok {
+					break
+				}
 				if v == struct{}{} {
 					continue
 				}
@@ -108,7 +131,7 @@ func binopIteratorAlt(l Iter, r Iter) Iter {
 			}
 		}
 	}()
-	return d
+	return chanIterator(d)
 }
 
 func binopIteratorOr(l Iter, r Iter) Iter {
@@ -116,7 +139,11 @@ func binopIteratorOr(l Iter, r Iter) Iter {
 	go func() {
 		defer close(d)
 		r := reuseIterator(r)
-		for l := range l {
+		for {
+			l, ok := l.Next()
+			if !ok {
+				break
+			}
 			if err, ok := l.(error); ok {
 				d <- err
 				return
@@ -127,7 +154,12 @@ func binopIteratorOr(l Iter, r Iter) Iter {
 			if valueToBool(l) {
 				d <- true
 			} else {
-				for r := range r() {
+				iter := r()
+				for {
+					r, ok := iter.Next()
+					if !ok {
+						break
+					}
 					if err, ok := r.(error); ok {
 						d <- err
 						return
@@ -140,7 +172,7 @@ func binopIteratorOr(l Iter, r Iter) Iter {
 			}
 		}
 	}()
-	return d
+	return chanIterator(d)
 }
 
 func binopIteratorAnd(l Iter, r Iter) Iter {
@@ -148,7 +180,11 @@ func binopIteratorAnd(l Iter, r Iter) Iter {
 	go func() {
 		defer close(d)
 		r := reuseIterator(r)
-		for l := range l {
+		for {
+			l, ok := l.Next()
+			if !ok {
+				break
+			}
 			if err, ok := l.(error); ok {
 				d <- err
 				return
@@ -157,7 +193,12 @@ func binopIteratorAnd(l Iter, r Iter) Iter {
 				continue
 			}
 			if valueToBool(l) {
-				for r := range r() {
+				iter := r()
+				for {
+					r, ok := iter.Next()
+					if !ok {
+						break
+					}
 					if err, ok := r.(error); ok {
 						d <- err
 						return
@@ -172,7 +213,7 @@ func binopIteratorAnd(l Iter, r Iter) Iter {
 			}
 		}
 	}()
-	return d
+	return chanIterator(d)
 }
 
 func binopIterator(l Iter, r Iter, fn func(l, r interface{}) interface{}) Iter {
@@ -180,7 +221,11 @@ func binopIterator(l Iter, r Iter, fn func(l, r interface{}) interface{}) Iter {
 	go func() {
 		defer close(d)
 		l := reuseIterator(l)
-		for r := range r {
+		for {
+			r, ok := r.Next()
+			if !ok {
+				break
+			}
 			if err, ok := r.(error); ok {
 				d <- err
 				return
@@ -188,7 +233,12 @@ func binopIterator(l Iter, r Iter, fn func(l, r interface{}) interface{}) Iter {
 			if r == struct{}{} {
 				continue
 			}
-			for l := range l() {
+			iter := l()
+			for {
+				l, ok := iter.Next()
+				if !ok {
+					break
+				}
 				if err, ok := l.(error); ok {
 					d <- err
 					return
@@ -200,7 +250,7 @@ func binopIterator(l Iter, r Iter, fn func(l, r interface{}) interface{}) Iter {
 			}
 		}
 	}()
-	return d
+	return chanIterator(d)
 }
 
 func reuseIterator(c Iter) func() Iter {
@@ -211,7 +261,11 @@ func reuseIterator(c Iter) func() Iter {
 		if i < len(xs) {
 			return xs[i], false
 		}
-		for v := range c {
+		for {
+			v, ok := c.Next()
+			if !ok {
+				break
+			}
 			xs = append(xs, v)
 			return v, false
 		}
@@ -231,7 +285,7 @@ func reuseIterator(c Iter) func() Iter {
 				i++
 			}
 		}()
-		return d
+		return chanIterator(d)
 	}
 }
 
@@ -248,10 +302,18 @@ func mapIteratorWithError(c Iter, f func(interface{}) interface{}) Iter {
 	d := make(chan interface{}, 1)
 	go func() {
 		defer close(d)
-		for v := range c {
+		for {
+			v, ok := c.Next()
+			if !ok {
+				break
+			}
 			x := f(v)
 			if y, ok := x.(Iter); ok {
-				for v := range y {
+				for {
+					v, ok := y.Next()
+					if !ok {
+						break
+					}
 					if v == struct{}{} {
 						continue
 					} else if e, ok := v.(*breakError); ok {
@@ -268,14 +330,18 @@ func mapIteratorWithError(c Iter, f func(interface{}) interface{}) Iter {
 			d <- x
 		}
 	}()
-	return d
+	return chanIterator(d)
 }
 
 func foldIterator(c Iter, x interface{}, f func(interface{}, interface{}) interface{}) Iter {
 	d := make(chan interface{}, 1)
 	go func() {
 		defer close(d)
-		for v := range c {
+		for {
+			v, ok := c.Next()
+			if !ok {
+				break
+			}
 			x = f(x, v)
 			if _, ok := x.(error); ok {
 				break
@@ -283,7 +349,7 @@ func foldIterator(c Iter, x interface{}, f func(interface{}, interface{}) interf
 		}
 		d <- x
 	}()
-	return d
+	return chanIterator(d)
 }
 
 func foreachIterator(c Iter, x interface{}, f func(interface{}, interface{}) (interface{}, Iter)) Iter {
@@ -291,9 +357,17 @@ func foreachIterator(c Iter, x interface{}, f func(interface{}, interface{}) (in
 	go func() {
 		var y Iter
 		defer close(d)
-		for v := range c {
+		for {
+			v, ok := c.Next()
+			if !ok {
+				break
+			}
 			x, y = f(x, v)
-			for v := range y {
+			for {
+				v, ok := y.Next()
+				if !ok {
+					break
+				}
 				if v == struct{}{} {
 					continue
 				}
@@ -304,12 +378,17 @@ func foreachIterator(c Iter, x interface{}, f func(interface{}, interface{}) (in
 			}
 		}
 	}()
-	return d
+	return chanIterator(d)
 }
 
 func iteratorLast(c Iter) interface{} {
 	var v interface{}
-	for v = range c {
+	for {
+		w, ok := c.Next()
+		if !ok {
+			break
+		}
+		v = w
 	}
 	return v
 }

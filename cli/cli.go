@@ -223,7 +223,11 @@ func (cli *cli) printJSONError(fname, input string, err error) {
 
 func (cli *cli) printValue(v gojq.Iter) error {
 	m := cli.createMarshaler()
-	for x := range v {
+	for {
+		x, ok := v.Next()
+		if !ok {
+			break
+		}
 		if err, ok := x.(error); ok {
 			return err
 		}

@@ -29,12 +29,17 @@ func (env *env) applyComma(o *Comma, c Iter) Iter {
 		go func() {
 			defer close(d)
 			for _, e := range o.Alts {
-				for v := range env.applyAlt(e, unitIterator(v)) {
+				iter := env.applyAlt(e, unitIterator(v))
+				for {
+					v, ok := iter.Next()
+					if !ok {
+						break
+					}
 					d <- v
 				}
 			}
 		}()
-		return (Iter)(d)
+		return chanIterator(d)
 	})
 }
 
@@ -471,7 +476,11 @@ func (env *env) applyArray(x *Array, c Iter) Iter {
 	}
 	c = env.applyPipe(x.Pipe, c)
 	a := []interface{}{}
-	for v := range c {
+	for {
+		v, ok := c.Next()
+		if !ok {
+			break
+		}
 		if err, ok := v.(error); ok {
 			return unitIterator(err)
 		}
@@ -608,7 +617,7 @@ func (env *env) applyIterator(c Iter) Iter {
 					d <- v
 				}
 			}()
-			return (Iter)(d)
+			return chanIterator(d)
 		} else if o, ok := v.(map[string]interface{}); ok {
 			d := make(chan interface{}, 1)
 			go func() {
@@ -617,7 +626,7 @@ func (env *env) applyIterator(c Iter) Iter {
 					d <- v
 				}
 			}()
-			return (Iter)(d)
+			return chanIterator(d)
 		} else {
 			return &iteratorError{v}
 		}
