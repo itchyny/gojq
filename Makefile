@@ -9,8 +9,12 @@ export GO111MODULE=on
 all: clean build
 
 .PHONY: build
-build:
+build: builtin_gen.go
 	go build -ldflags=$(BUILD_LDFLAGS) -o build/$(BIN) ./cmd/$(BIN)
+
+builtin_gen.go: builtin.go query.go operator.go
+	rm -f $@
+	go generate
 
 .PHONY: install
 install:

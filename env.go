@@ -29,16 +29,12 @@ func (env *env) lookupFuncDef(name string, arg int) *FuncDef {
 	if env.parent != nil {
 		return env.parent.lookupFuncDef(name, arg)
 	}
-	bfn, ok := builtinFuncs[name]
+	q, ok := builtinFuncs[name]
 	if !ok {
 		return nil
 	}
-	p, err := Parse(bfn)
-	if err != nil {
-		panic(err)
-	}
 	var f *FuncDef
-	for _, fd := range p.FuncDefs {
+	for _, fd := range q.FuncDefs {
 		env.addFuncDef(fd)
 		if len(fd.Args) == arg {
 			f = fd

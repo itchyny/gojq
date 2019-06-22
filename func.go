@@ -522,12 +522,8 @@ func funcBuiltins(_ interface{}) interface{} {
 			}
 		}
 	}
-	for _, fn := range builtinFuncs {
-		p, err := Parse(fn)
-		if err != nil {
-			panic(err)
-		}
-		for _, fd := range p.FuncDefs {
+	for _, q := range builtinFuncs {
+		for _, fd := range q.FuncDefs {
 			if fd.Name[0] != '_' {
 				xs = append(xs, fd.Name+"/"+fmt.Sprint(len(fd.Args)))
 			}

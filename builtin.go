@@ -1,6 +1,10 @@
 package gojq
 
-var builtinFuncs = map[string]string{
+//go:generate go run _tools/gen_builtin.go -o builtin_gen.go
+var builtinFuncs map[string]*Query
+
+// BuiltinFuncDefinitions defines the builtin functions.
+var BuiltinFuncDefinitions = map[string]string{
 	"not":        `def not: if . then false else true end;`,
 	"in":         `def in(xs): . as $x | xs | has($x);`,
 	"map":        `def map(f): [.[] | f];`,
