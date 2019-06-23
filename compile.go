@@ -79,6 +79,35 @@ func (env *env) compileFactor(e *Factor) error {
 }
 
 func (env *env) compileTerm(e *Term) error {
+	if len(e.SuffixList) > 0 {
+		return errors.New("compileTerm")
+	}
+	if e.Identity {
+		return nil
+	}
+	if e.Number != nil {
+		env.append(&code{op: opconst, v: *e.Number})
+		return nil
+	}
+	if e.Number != nil {
+		env.append(&code{op: opconst, v: *e.Number})
+		return nil
+	}
+	if e.Null {
+		env.append(&code{op: opconst, v: nil})
+		return nil
+	}
+	if e.True {
+		env.append(&code{op: opconst, v: true})
+		return nil
+	}
+	if e.False {
+		env.append(&code{op: opconst, v: false})
+		return nil
+	}
+	if e.Pipe != nil {
+		return env.compilePipe(e.Pipe)
+	}
 	return errors.New("compileTerm")
 }
 

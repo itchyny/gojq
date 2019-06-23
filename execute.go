@@ -13,6 +13,9 @@ loop:
 		switch c.op {
 		case opload:
 			env.push(c.v)
+		case opconst:
+			env.pop()
+			env.push(c.v)
 		case opret:
 			pc++
 			break loop
@@ -27,12 +30,12 @@ loop:
 	return env.pop(), true
 }
 
+func (env *env) push(v interface{}) {
+	env.stack = append(env.stack, v)
+}
+
 func (env *env) pop() interface{} {
 	v := env.stack[len(env.stack)-1]
 	env.stack = env.stack[:len(env.stack)-1]
 	return v
-}
-
-func (env *env) push(v interface{}) {
-	env.stack = append(env.stack, v)
 }

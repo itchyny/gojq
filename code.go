@@ -9,5 +9,6 @@ type opcode int
 
 const (
 	opload opcode = iota
+	opconst
 	opret
 )
