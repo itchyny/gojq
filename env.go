@@ -5,6 +5,9 @@ type env struct {
 	variables map[string]*Pipe
 	values    map[string]interface{}
 	parent    *env
+	pc        int
+	stack     []interface{}
+	codes     []*code
 }
 
 func newEnv(parent *env) *env {
@@ -13,6 +16,9 @@ func newEnv(parent *env) *env {
 		variables: make(map[string]*Pipe),
 		values:    make(map[string]interface{}),
 		parent:    parent,
+		pc:        0,
+		stack:     []interface{}{},
+		codes:     []*code{},
 	}
 }
 
