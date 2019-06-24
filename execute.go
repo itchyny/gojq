@@ -13,6 +13,10 @@ loop:
 		switch c.op {
 		case opload:
 			env.push(c.v)
+		case opswap:
+			x, y := env.pop(), env.pop()
+			env.push(x)
+			env.push(y)
 		case opconst:
 			env.pop()
 			env.push(c.v)
