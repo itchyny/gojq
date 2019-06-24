@@ -2,6 +2,7 @@ package gojq
 
 func (env *env) execute(v interface{}) Iter {
 	env.push(v)
+	env.debugCodes()
 	return env
 }
 
@@ -9,6 +10,7 @@ func (env *env) Next() (interface{}, bool) {
 	pc := env.pc
 loop:
 	for ; 0 <= pc && pc < len(env.codes); pc++ {
+		env.debugState(pc)
 		c := env.codes[pc]
 		switch c.op {
 		case opload:
@@ -60,10 +62,16 @@ func (env *env) pop() interface{} {
 
 func (env *env) pushfork(pc int, v interface{}) {
 	env.forks = append(env.forks, &fork{pc, v})
+	if debug {
+		env.debugForks(pc, ">>>")
+	}
 }
 
 func (env *env) popfork() *fork {
 	v := env.forks[len(env.forks)-1]
+	if debug {
+		env.debugForks(v.pc, "<<<")
+	}
 	env.forks = env.forks[:len(env.forks)-1]
 	return v
 }
