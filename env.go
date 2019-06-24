@@ -8,6 +8,12 @@ type env struct {
 	pc        int
 	stack     []interface{}
 	codes     []*code
+	forks     []*fork
+}
+
+type fork struct {
+	pc int
+	v  interface{}
 }
 
 func newEnv(parent *env) *env {
@@ -19,6 +25,7 @@ func newEnv(parent *env) *env {
 		pc:        0,
 		stack:     []interface{}{},
 		codes:     []*code{},
+		forks:     []*fork{},
 	}
 }
 

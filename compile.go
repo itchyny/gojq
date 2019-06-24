@@ -23,10 +23,23 @@ func (env *env) compilePipe(e *Pipe) error {
 }
 
 func (env *env) compileComma(e *Comma) error {
-	if len(e.Alts) > 1 {
-		return errors.New("compileComma")
+	return env.compileAlts(e.Alts)
+}
+
+func (env *env) compileAlts(xs []*Alt) error {
+	if len(xs) == 1 {
+		return env.compileAlt(xs[0])
 	}
-	return env.compileAlt(e.Alts[0])
+	if err := env.compileLazy(
+		func() (*code, error) { return &code{op: opfork, v: len(env.codes) + 1}, nil },
+		func() error { return env.compileAlts(xs[:len(xs)-1]) },
+	); err != nil {
+		return err
+	}
+	return env.compileLazy(
+		func() (*code, error) { return &code{op: opjump, v: len(env.codes) - 1}, nil },
+		func() error { return env.compileAlt(xs[len(xs)-1]) },
+	)
 }
 
 func (env *env) compileAlt(e *Alt) error {
@@ -113,4 +126,15 @@ func (env *env) compileTerm(e *Term) error {
 
 func (env *env) append(c *code) {
 	env.codes = append(env.codes, c)
+}
+
+func (env *env) compileLazy(f func() (*code, error), g func() error) error {
+	i := len(env.codes)
+	env.codes = append(env.codes, &code{})
+	err := g()
+	if err != nil {
+		return err
+	}
+	env.codes[i], err = f()
+	return err
 }
