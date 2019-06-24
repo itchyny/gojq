@@ -98,9 +98,8 @@ func (env *env) compileTerm(e *Term) error {
 	if e.Identity {
 		return nil
 	}
-	if e.Number != nil {
-		env.append(&code{op: opconst, v: *e.Number})
-		return nil
+	if e.Array != nil {
+		return env.compileArray(e.Array)
 	}
 	if e.Number != nil {
 		env.append(&code{op: opconst, v: *e.Number})
@@ -122,6 +121,28 @@ func (env *env) compileTerm(e *Term) error {
 		return env.compilePipe(e.Pipe)
 	}
 	return errors.New("compileTerm")
+}
+
+func (env *env) compileArray(e *Array) error {
+	if e.Pipe == nil {
+		env.append(&code{op: opconst, v: []interface{}{}})
+		return nil
+	}
+	env.append(&code{op: opload, v: []interface{}{}})
+	env.append(&code{op: opswap})
+	return env.compileLazy(
+		func() (*code, error) {
+			return &code{op: opfork, v: len(env.codes) - 1}, nil
+		},
+		func() error {
+			if err := env.compilePipe(e.Pipe); err != nil {
+				return err
+			}
+			env.append(&code{op: oparray})
+			env.append(&code{op: oppop})
+			return nil
+		},
+	)
 }
 
 func (env *env) append(c *code) {

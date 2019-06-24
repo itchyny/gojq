@@ -13,6 +13,8 @@ loop:
 		switch c.op {
 		case opload:
 			env.push(c.v)
+		case oppop:
+			env.pop()
 		case opswap:
 			x, y := env.pop(), env.pop()
 			env.push(x)
@@ -25,6 +27,11 @@ loop:
 		case opjump:
 			pc = c.v.(int)
 		case opret:
+			env.pc = pc + 1
+			return env.pop(), true
+		case oparray:
+			x, y := env.pop(), env.pop()
+			env.push(append(y.([]interface{}), x))
 			pc++
 			break loop
 		default:
@@ -32,9 +39,6 @@ loop:
 		}
 	}
 	env.pc = pc
-	if len(env.stack) > 0 {
-		return env.pop(), true
-	}
 	if len(env.forks) > 0 {
 		f := env.popfork()
 		pc = f.pc

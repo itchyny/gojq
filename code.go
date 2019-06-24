@@ -9,17 +9,21 @@ type opcode int
 
 const (
 	opload opcode = iota
+	oppop
 	opswap
 	opconst
 	opfork
 	opjump
 	opret
+	oparray
 )
 
 func (op opcode) String() string {
 	switch op {
 	case opload:
 		return "load"
+	case oppop:
+		return "pop"
 	case opswap:
 		return "swap"
 	case opconst:
@@ -30,6 +34,8 @@ func (op opcode) String() string {
 		return "jump"
 	case opret:
 		return "ret"
+	case oparray:
+		return "array"
 	default:
 		panic(op)
 	}

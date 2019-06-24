@@ -248,6 +248,17 @@
   expected: |
     ["あ","お","あ","え","お","","うえ","いう"]
 
+- name: array construction
+  args:
+    - -c
+    - '.,[3,[[2]]],[1],[[.],3]|[.,.]'
+  input: 'null'
+  expected: |
+    [null,null]
+    [[3,[[2]]],[3,[[2]]]]
+    [[1],[1]]
+    [[[null],3],[[null],3]]
+
 - name: iterator
   args:
     - '.foo | .[] | .'
