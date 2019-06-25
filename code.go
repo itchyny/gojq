@@ -17,6 +17,7 @@ const (
 	opstore
 	opfork
 	opjump
+	opjumpifnot
 	opret
 	oparray
 )
@@ -41,6 +42,8 @@ func (op opcode) String() string {
 		return "fork"
 	case opjump:
 		return "jump"
+	case opjumpifnot:
+		return "jumpifnot"
 	case opret:
 		return "ret"
 	case oparray:

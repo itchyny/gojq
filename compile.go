@@ -50,8 +50,14 @@ func (env *env) compileAlt(e *Alt) error {
 }
 
 func (env *env) compileExpr(e *Expr) error {
-	if e.Logic != nil && e.Bind == nil && e.Label == nil {
+	if e.Bind != nil || e.Label != nil {
+		return errors.New("compileExpr")
+	}
+	if e.Logic != nil {
 		return env.compileLogic(e.Logic)
+	}
+	if e.If != nil {
+		return env.compileIf(e.If)
 	}
 	return errors.New("compileExpr")
 }
@@ -61,6 +67,41 @@ func (env *env) compileLogic(e *Logic) error {
 		return errors.New("compileLogic")
 	}
 	return env.compileAndExpr(e.Left)
+}
+
+func (env *env) compileIf(e *If) error {
+	env.append(&code{op: opdup})
+	idx := env.newVariable()
+	env.append(&code{op: opstore, v: idx}) // store the current value for then or else clause
+	if err := env.compilePipe(e.Cond); err != nil {
+		return err
+	}
+	if err := env.compileLazy(
+		func() (*code, error) {
+			return &code{op: opjumpifnot, v: len(env.codes)}, nil // if falsy, skip then clause
+		},
+		func() error {
+			env.append(&code{op: opload, v: idx})
+			return env.compilePipe(e.Then)
+		},
+	); err != nil {
+		return err
+	}
+	return env.compileLazy(
+		func() (*code, error) {
+			return &code{op: opjump, v: len(env.codes) - 1}, nil // jump to ret after then clause
+		},
+		func() error {
+			env.append(&code{op: opload, v: idx})
+			if len(e.Elif) > 0 {
+				return env.compileIf(&If{e.Elif[0].Cond, e.Elif[0].Then, e.Elif[1:], e.Else})
+			}
+			if e.Else != nil {
+				return env.compilePipe(e.Else)
+			}
+			return nil
+		},
+	)
 }
 
 func (env *env) compileAndExpr(e *AndExpr) error {

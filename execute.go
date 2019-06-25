@@ -36,6 +36,10 @@ loop:
 			env.pushfork(c.v.(int), env.stack[len(env.stack)-1])
 		case opjump:
 			pc = c.v.(int)
+		case opjumpifnot:
+			if !valueToBool(env.pop()) {
+				pc = c.v.(int)
+			}
 		case opret:
 			env.pc = pc + 1
 			return env.pop(), true
