@@ -10,6 +10,7 @@ type opcode int
 const (
 	oppush opcode = iota
 	oppop
+	opdup
 	opswap
 	opconst
 	opfork
@@ -24,6 +25,8 @@ func (op opcode) String() string {
 		return "push"
 	case oppop:
 		return "pop"
+	case opdup:
+		return "dup"
 	case opswap:
 		return "swap"
 	case opconst:

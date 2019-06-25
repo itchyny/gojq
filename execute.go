@@ -17,6 +17,10 @@ loop:
 			env.push(c.v)
 		case oppop:
 			env.pop()
+		case opdup:
+			x := env.pop()
+			env.push(x)
+			env.push(x)
 		case opswap:
 			x, y := env.pop(), env.pop()
 			env.push(x)
