@@ -7,6 +7,7 @@ type env struct {
 	parent    *env
 	pc        int
 	stack     []interface{}
+	value     []interface{}
 	codes     []*code
 	forks     []*fork
 }
@@ -24,6 +25,7 @@ func newEnv(parent *env) *env {
 		parent:    parent,
 		pc:        0,
 		stack:     []interface{}{},
+		value:     []interface{}{},
 		codes:     []*code{},
 		forks:     []*fork{},
 	}
@@ -72,4 +74,10 @@ func (env *env) lookupValue(name string) (interface{}, bool) {
 		return env.parent.lookupValue(name)
 	}
 	return nil, false
+}
+
+func (env *env) newVariable() int {
+	i := len(env.value)
+	env.value = append(env.value, nil)
+	return i
 }

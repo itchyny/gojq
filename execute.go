@@ -28,6 +28,10 @@ loop:
 		case opconst:
 			env.pop()
 			env.push(c.v)
+		case opload:
+			env.push(env.value[c.v.(int)])
+		case opstore:
+			env.value[c.v.(int)] = env.pop()
 		case opfork:
 			env.pushfork(c.v.(int), env.stack[len(env.stack)-1])
 		case opjump:
