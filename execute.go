@@ -13,7 +13,7 @@ loop:
 		env.debugState(pc)
 		c := env.codes[pc]
 		switch c.op {
-		case opload:
+		case oppush:
 			env.push(c.v)
 		case oppop:
 			env.pop()

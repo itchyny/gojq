@@ -8,7 +8,7 @@ type code struct {
 type opcode int
 
 const (
-	opload opcode = iota
+	oppush opcode = iota
 	oppop
 	opswap
 	opconst
@@ -20,8 +20,8 @@ const (
 
 func (op opcode) String() string {
 	switch op {
-	case opload:
-		return "load"
+	case oppush:
+		return "push"
 	case oppop:
 		return "pop"
 	case opswap:

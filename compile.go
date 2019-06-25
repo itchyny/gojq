@@ -128,7 +128,7 @@ func (env *env) compileArray(e *Array) error {
 		env.append(&code{op: opconst, v: []interface{}{}})
 		return nil
 	}
-	env.append(&code{op: opload, v: []interface{}{}})
+	env.append(&code{op: oppush, v: []interface{}{}})
 	env.append(&code{op: opswap})
 	return env.compileLazy(
 		func() (*code, error) {
