@@ -180,6 +180,7 @@ func (env *env) compileArray(e *Array) error {
 				return err
 			}
 			env.append(&code{op: oparray})
+			env.append(&code{op: opbacktrack})
 			env.append(&code{op: oppop})
 			return nil
 		},

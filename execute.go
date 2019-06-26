@@ -34,6 +34,9 @@ loop:
 			env.value[c.v.(int)] = env.pop()
 		case opfork:
 			env.pushfork(c.v.(int), env.stack[len(env.stack)-1])
+		case opbacktrack:
+			pc++
+			break loop
 		case opjump:
 			pc = c.v.(int)
 		case opjumpifnot:
@@ -46,8 +49,6 @@ loop:
 		case oparray:
 			x, y := env.pop(), env.pop()
 			env.push(append(y.([]interface{}), x))
-			pc++
-			break loop
 		default:
 			panic(c.op)
 		}

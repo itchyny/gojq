@@ -16,6 +16,7 @@ const (
 	opload
 	opstore
 	opfork
+	opbacktrack
 	opjump
 	opjumpifnot
 	opret
@@ -40,6 +41,8 @@ func (op opcode) String() string {
 		return "store"
 	case opfork:
 		return "fork"
+	case opbacktrack:
+		return "backtrack"
 	case opjump:
 		return "jump"
 	case opjumpifnot:
