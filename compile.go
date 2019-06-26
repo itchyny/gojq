@@ -43,10 +43,38 @@ func (env *env) compileAlts(xs []*Alt) error {
 }
 
 func (env *env) compileAlt(e *Alt) error {
-	if len(e.Right) > 0 {
-		return errors.New("compileAlt")
+	if len(e.Right) == 0 {
+		return env.compileExpr(e.Left)
 	}
-	return env.compileExpr(e.Left)
+	env.append(&code{op: oppush, v: false})
+	found := env.newVariable()
+	env.append(&code{op: opstore, v: found})
+	if err := env.compileLazy(
+		func() (*code, error) {
+			return &code{op: opfork, v: len(env.codes) + 7}, nil // opload found
+		},
+		func() error { return env.compileExpr(e.Left) },
+	); err != nil {
+		return err
+	}
+	env.append(&code{op: opdup})
+	env.append(&code{op: opjumpifnot, v: len(env.codes) + 3}) // oppop
+	env.append(&code{op: oppush, v: true})                    // found some value
+	env.append(&code{op: opstore, v: found})
+	return env.compileLazy(
+		func() (*code, error) {
+			return &code{op: opjump, v: len(env.codes) - 1}, nil // ret
+		},
+		func() error {
+			env.append(&code{op: oppop})
+			env.append(&code{op: opbacktrack})
+			env.append(&code{op: opload, v: found})
+			env.append(&code{op: opjumpifnot, v: len(env.codes) + 2})
+			env.append(&code{op: opbacktrack}) // if found, backtrack
+			env.append(&code{op: oppop})
+			return env.compileAlt(&Alt{e.Right[0].Right, e.Right[1:]})
+		},
+	)
 }
 
 func (env *env) compileExpr(e *Expr) error {
