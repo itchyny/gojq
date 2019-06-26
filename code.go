@@ -20,6 +20,7 @@ const (
 	opjump
 	opjumpifnot
 	opret
+	opcall
 	oparray
 )
 
@@ -49,6 +50,8 @@ func (op opcode) String() string {
 		return "jumpifnot"
 	case opret:
 		return "ret"
+	case opcall:
+		return "call"
 	case oparray:
 		return "array"
 	default:

@@ -46,6 +46,8 @@ loop:
 		case opret:
 			env.pc = pc + 1
 			return env.pop(), true
+		case opcall:
+			env.push(internalFuncs[c.v.(string)].callback(nil, nil)(env.pop()))
 		case oparray:
 			x, y := env.pop(), env.pop()
 			env.push(append(y.([]interface{}), x))

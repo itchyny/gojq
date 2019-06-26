@@ -167,6 +167,9 @@ func (env *env) compileTerm(e *Term) error {
 	if e.Identity {
 		return nil
 	}
+	if e.Func != nil {
+		return env.compileFunc(e.Func)
+	}
 	if e.Array != nil {
 		return env.compileArray(e.Array)
 	}
@@ -190,6 +193,14 @@ func (env *env) compileTerm(e *Term) error {
 		return env.compilePipe(e.Pipe)
 	}
 	return errors.New("compileTerm")
+}
+
+func (env *env) compileFunc(e *Func) error {
+	if fn, ok := internalFuncs[e.Name]; ok && len(e.Args) == 0 && fn.argcount == argcount0 {
+		env.append(&code{op: opcall, v: e.Name})
+		return nil
+	}
+	return errors.New("compileFunc")
 }
 
 func (env *env) compileArray(e *Array) error {

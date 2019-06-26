@@ -111,11 +111,11 @@ func init() {
 }
 
 func noArgFunc(fn func(interface{}) interface{}) function {
-	return function{argcount0, func(_ *env, f *Func) func(interface{}) interface{} {
+	return function{argcount0, func(*env, *Func) func(interface{}) interface{} {
 		return func(v interface{}) interface{} {
-			if len(f.Args) != 0 {
-				return &funcNotFoundError{f}
-			}
+			// if len(f.Args) != 0 {
+			// 	return &funcNotFoundError{f}
+			// }
 			return fn(v)
 		}
 	}}
