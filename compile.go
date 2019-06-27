@@ -10,6 +10,7 @@ func (env *env) compileQuery(q *Query) error {
 		return err
 	}
 	env.append(&code{op: opret})
+	env.optimizeJumps()
 	return nil
 }
 
@@ -280,4 +281,20 @@ func (env *env) compileLazy(f func() (*code, error), g func() error) error {
 	}
 	env.codes[i], err = f()
 	return err
+}
+
+func (env *env) optimizeJumps() {
+	for i := len(env.codes) - 1; i >= 0; i-- {
+		c := env.codes[i]
+		if c.op != opjump {
+			continue
+		}
+		for {
+			d := env.codes[c.v.(int)+1]
+			if d.op != opjump {
+				break
+			}
+			c.v = d.v
+		}
+	}
 }
