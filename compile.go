@@ -197,6 +197,11 @@ func (env *env) compileTerm(e *Term) error {
 
 func (env *env) compileFunc(e *Func) error {
 	if fn, ok := internalFuncs[e.Name]; ok && len(e.Args) == 0 && fn.argcount == argcount0 {
+		if e.Name == "empty" {
+			env.append(&code{op: oppop})
+			env.append(&code{op: opbacktrack})
+			return nil
+		}
 		env.append(&code{op: opcall, v: e.Name})
 		return nil
 	}
