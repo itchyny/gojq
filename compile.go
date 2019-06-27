@@ -24,22 +24,18 @@ func (env *env) compilePipe(e *Pipe) error {
 }
 
 func (env *env) compileComma(e *Comma) error {
-	return env.compileAlts(e.Alts)
-}
-
-func (env *env) compileAlts(xs []*Alt) error {
-	if len(xs) == 1 {
-		return env.compileAlt(xs[0])
+	if len(e.Alts) == 1 {
+		return env.compileAlt(e.Alts[0])
 	}
-	if err := env.compileLazy(
+	if err := env.lazyCode(
 		func() (*code, error) { return &code{op: opfork, v: len(env.codes) + 1}, nil },
-		func() error { return env.compileAlts(xs[:len(xs)-1]) },
+		func() error { return env.compileComma(&Comma{e.Alts[:len(e.Alts)-1]}) },
 	); err != nil {
 		return err
 	}
-	return env.compileLazy(
+	return env.lazyCode(
 		func() (*code, error) { return &code{op: opjump, v: len(env.codes) - 1}, nil },
-		func() error { return env.compileAlt(xs[len(xs)-1]) },
+		func() error { return env.compileAlt(e.Alts[len(e.Alts)-1]) },
 	)
 }
 
@@ -50,7 +46,7 @@ func (env *env) compileAlt(e *Alt) error {
 	env.append(&code{op: oppush, v: false})
 	found := env.newVariable()
 	env.append(&code{op: opstore, v: found})
-	if err := env.compileLazy(
+	if err := env.lazyCode(
 		func() (*code, error) {
 			return &code{op: opfork, v: len(env.codes) + 7}, nil // opload found
 		},
@@ -62,7 +58,7 @@ func (env *env) compileAlt(e *Alt) error {
 	env.append(&code{op: opjumpifnot, v: len(env.codes) + 3}) // oppop
 	env.append(&code{op: oppush, v: true})                    // found some value
 	env.append(&code{op: opstore, v: found})
-	return env.compileLazy(
+	return env.lazyCode(
 		func() (*code, error) {
 			return &code{op: opjump, v: len(env.codes) - 1}, nil // ret
 		},
@@ -105,7 +101,7 @@ func (env *env) compileIf(e *If) error {
 	if err := env.compilePipe(e.Cond); err != nil {
 		return err
 	}
-	if err := env.compileLazy(
+	if err := env.lazyCode(
 		func() (*code, error) {
 			return &code{op: opjumpifnot, v: len(env.codes)}, nil // if falsy, skip then clause
 		},
@@ -116,7 +112,7 @@ func (env *env) compileIf(e *If) error {
 	); err != nil {
 		return err
 	}
-	return env.compileLazy(
+	return env.lazyCode(
 		func() (*code, error) {
 			return &code{op: opjump, v: len(env.codes) - 1}, nil // jump to ret after then clause
 		},
@@ -221,7 +217,7 @@ func (env *env) compileArray(e *Array) error {
 	}
 	env.append(&code{op: oppush, v: []interface{}{}})
 	env.append(&code{op: opswap})
-	return env.compileLazy(
+	return env.lazyCode(
 		func() (*code, error) {
 			return &code{op: opfork, v: len(env.codes) - 1}, nil
 		},
@@ -272,7 +268,7 @@ func (env *env) append(c *code) {
 	env.codes = append(env.codes, c)
 }
 
-func (env *env) compileLazy(f func() (*code, error), g func() error) error {
+func (env *env) lazyCode(f func() (*code, error), g func() error) error {
 	i := len(env.codes)
 	env.codes = append(env.codes, &code{})
 	err := g()
