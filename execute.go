@@ -28,6 +28,10 @@ loop:
 		case opconst:
 			env.pop()
 			env.push(c.v)
+		case oplt:
+			env.push(env.pop().(int) < env.pop().(int))
+		case opincr:
+			env.push(env.pop().(int) + 1)
 		case opload:
 			env.push(env.value[c.v.(int)])
 		case opstore:
@@ -51,6 +55,9 @@ loop:
 		case oparray:
 			x, y := env.pop(), env.pop()
 			env.push(append(y.([]interface{}), x))
+		case opindex:
+			x, y := env.pop(), env.pop()
+			env.push(y.([]interface{})[x.(int)])
 		default:
 			panic(c.op)
 		}

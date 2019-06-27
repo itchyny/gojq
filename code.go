@@ -13,6 +13,8 @@ const (
 	opdup
 	opswap
 	opconst
+	oplt
+	opincr
 	opload
 	opstore
 	opfork
@@ -22,6 +24,7 @@ const (
 	opret
 	opcall
 	oparray
+	opindex
 )
 
 func (op opcode) String() string {
@@ -36,6 +39,10 @@ func (op opcode) String() string {
 		return "swap"
 	case opconst:
 		return "const"
+	case oplt:
+		return "lt"
+	case opincr:
+		return "incr"
 	case opload:
 		return "load"
 	case opstore:
@@ -54,6 +61,8 @@ func (op opcode) String() string {
 		return "call"
 	case oparray:
 		return "array"
+	case opindex:
+		return "index"
 	default:
 		panic(op)
 	}
