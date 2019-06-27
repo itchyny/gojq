@@ -33,6 +33,7 @@ func init() {
 		"has":            argFunc1(funcHas),
 		"tonumber":       noArgFunc(funcToNumber),
 		"tostring":       noArgFunc(funcToString),
+		"_toarray":       noArgFunc(funcToArray),
 		"type":           noArgFunc(funcType),
 		"explode":        noArgFunc(funcExplode),
 		"implode":        noArgFunc(funcImplode),
@@ -328,6 +329,22 @@ func funcToString(v interface{}) interface{} {
 		return s
 	}
 	return funcToJSON(v)
+}
+
+func funcToArray(v interface{}) interface{} {
+	if a, ok := v.([]interface{}); ok {
+		return a
+	} else if o, ok := v.(map[string]interface{}); ok {
+		a := make([]interface{}, len(o))
+		var i int
+		for _, v := range o {
+			a[i] = v
+			i++
+		}
+		return a
+	} else {
+		return &iteratorError{v}
+	}
 }
 
 func funcType(v interface{}) interface{} {

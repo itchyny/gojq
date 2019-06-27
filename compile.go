@@ -160,10 +160,15 @@ func (env *env) compileFactor(e *Factor) error {
 	return env.compileTerm(e.Left)
 }
 
-func (env *env) compileTerm(e *Term) error {
-	if len(e.SuffixList) > 0 {
-		return errors.New("compileTerm")
-	}
+func (env *env) compileTerm(e *Term) (err error) {
+	defer func() {
+		for _, s := range e.SuffixList {
+			if err != nil {
+				break
+			}
+			err = env.compileSuffix(s)
+		}
+	}()
 	if e.Identity {
 		return nil
 	}
@@ -229,6 +234,37 @@ func (env *env) compileArray(e *Array) error {
 			return nil
 		},
 	)
+}
+
+func (env *env) compileSuffix(e *Suffix) error {
+	if e.Iter {
+		return env.compileIter()
+	}
+	return errors.New("compileSuffix")
+}
+
+func (env *env) compileIter() error {
+	length, idx := env.newVariable(), env.newVariable()
+	env.append(&code{op: opcall, v: "_toarray"})
+	env.append(&code{op: opdup})
+	env.append(&code{op: opcall, v: "length"})
+	env.append(&code{op: opstore, v: length})
+	env.append(&code{op: oppush, v: 0})
+	env.append(&code{op: opstore, v: idx})
+	env.append(&code{op: opload, v: length})
+	env.append(&code{op: opload, v: idx})
+	env.append(&code{op: oplt})
+	env.append(&code{op: opjumpifnot, v: len(env.codes) + 7}) // oppop
+	env.append(&code{op: opfork, v: len(env.codes) - 4})      // opload length
+	env.append(&code{op: opload, v: idx})
+	env.append(&code{op: opindex})
+	env.append(&code{op: opload, v: idx})
+	env.append(&code{op: opincr})
+	env.append(&code{op: opstore, v: idx})
+	env.append(&code{op: opjump, v: len(env.codes) + 2})
+	env.append(&code{op: oppop})
+	env.append(&code{op: opbacktrack})
+	return nil
 }
 
 func (env *env) append(c *code) {
