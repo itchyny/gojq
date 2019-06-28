@@ -15,6 +15,8 @@ loop:
 		env.debugState(pc)
 		code := env.codes[pc]
 		switch code.op {
+		case opnop:
+			// nop
 		case oppush:
 			env.push(code.v)
 		case oppop:

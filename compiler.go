@@ -35,6 +35,7 @@ func (c *compiler) compileQuery(q *Query) error {
 	}
 	c.append(&code{op: opret})
 	c.optimizeJumps()
+	c.optimizeNop()
 	return nil
 }
 
@@ -315,6 +316,14 @@ func (c *compiler) optimizeJumps() {
 				break
 			}
 			code.v = d.v
+		}
+	}
+}
+
+func (c *compiler) optimizeNop() {
+	for i, code := range c.codes {
+		if code.op == opjump && code.v.(int) == i {
+			c.codes[i].op = opnop
 		}
 	}
 }
