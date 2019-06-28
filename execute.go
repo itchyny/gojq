@@ -9,7 +9,7 @@ func (env *env) execute(bc *bytecode, v interface{}) Iter {
 }
 
 func (env *env) Next() (interface{}, bool) {
-	pc := env.pc
+	pc, depth := env.pc, env.depth
 loop:
 	for ; 0 <= pc && pc < len(env.codes); pc++ {
 		env.debugState(pc)
@@ -41,7 +41,7 @@ loop:
 		case opstore:
 			env.value[code.v.(int)] = env.pop()
 		case opfork:
-			env.pushfork(code.v.(int), env.stack[len(env.stack)-1])
+			env.pushfork(code.op, code.v.(int), env.stack[len(env.stack)-1])
 		case opbacktrack:
 			pc++
 			break loop
@@ -52,10 +52,23 @@ loop:
 				pc = code.v.(int)
 			}
 		case opret:
+			if depth > 0 {
+				break loop
+			}
 			env.pc = pc + 1
 			return env.pop(), true
 		case opcall:
-			env.push(internalFuncs[code.v.(string)].callback(nil, nil)(env.pop()))
+			switch v := code.v.(type) {
+			case int:
+				env.pushfork(code.op, pc+1, env.stack[len(env.stack)-1])
+				pc = v
+				depth++
+				env.depth = depth
+			case string:
+				env.push(internalFuncs[v].callback(nil, nil)(env.pop()))
+			default:
+				panic(v)
+			}
 		case oparray:
 			x, y := env.pop(), env.pop()
 			env.push(append(y.([]interface{}), x))
@@ -70,7 +83,13 @@ loop:
 	if len(env.forks) > 0 {
 		f := env.popfork()
 		pc = f.pc
-		env.push(f.v)
+		if depth != f.depth {
+			depth = f.depth
+			env.depth = depth
+		}
+		if f.op != opcall {
+			env.push(f.v)
+		}
 		goto loop
 	}
 	return nil, false
@@ -86,8 +105,8 @@ func (env *env) pop() interface{} {
 	return v
 }
 
-func (env *env) pushfork(pc int, v interface{}) {
-	env.forks = append(env.forks, &fork{pc, v})
+func (env *env) pushfork(op opcode, pc int, v interface{}) {
+	env.forks = append(env.forks, &fork{op, pc, v, env.depth})
 	if debug {
 		env.debugForks(pc, ">>>")
 	}
