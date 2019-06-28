@@ -264,8 +264,8 @@ func (env *env) compileIter() error {
 	return nil
 }
 
-func (env *env) append(c *code) {
-	env.codes = append(env.codes, c)
+func (env *env) append(code *code) {
+	env.codes = append(env.codes, code)
 }
 
 func (env *env) lazyCode(f func() (*code, error), g func() error) error {
@@ -281,16 +281,16 @@ func (env *env) lazyCode(f func() (*code, error), g func() error) error {
 
 func (env *env) optimizeJumps() {
 	for i := len(env.codes) - 1; i >= 0; i-- {
-		c := env.codes[i]
-		if c.op != opjump {
+		code := env.codes[i]
+		if code.op != opjump {
 			continue
 		}
 		for {
-			d := env.codes[c.v.(int)+1]
+			d := env.codes[code.v.(int)+1]
 			if d.op != opjump {
 				break
 			}
-			c.v = d.v
+			code.v = d.v
 		}
 	}
 }

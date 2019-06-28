@@ -11,10 +11,10 @@ func (env *env) Next() (interface{}, bool) {
 loop:
 	for ; 0 <= pc && pc < len(env.codes); pc++ {
 		env.debugState(pc)
-		c := env.codes[pc]
-		switch c.op {
+		code := env.codes[pc]
+		switch code.op {
 		case oppush:
-			env.push(c.v)
+			env.push(code.v)
 		case oppop:
 			env.pop()
 		case opdup:
@@ -27,31 +27,31 @@ loop:
 			env.push(y)
 		case opconst:
 			env.pop()
-			env.push(c.v)
+			env.push(code.v)
 		case oplt:
 			env.push(env.pop().(int) < env.pop().(int))
 		case opincr:
 			env.push(env.pop().(int) + 1)
 		case opload:
-			env.push(env.value[c.v.(int)])
+			env.push(env.value[code.v.(int)])
 		case opstore:
-			env.value[c.v.(int)] = env.pop()
+			env.value[code.v.(int)] = env.pop()
 		case opfork:
-			env.pushfork(c.v.(int), env.stack[len(env.stack)-1])
+			env.pushfork(code.v.(int), env.stack[len(env.stack)-1])
 		case opbacktrack:
 			pc++
 			break loop
 		case opjump:
-			pc = c.v.(int)
+			pc = code.v.(int)
 		case opjumpifnot:
 			if !valueToBool(env.pop()) {
-				pc = c.v.(int)
+				pc = code.v.(int)
 			}
 		case opret:
 			env.pc = pc + 1
 			return env.pop(), true
 		case opcall:
-			env.push(internalFuncs[c.v.(string)].callback(nil, nil)(env.pop()))
+			env.push(internalFuncs[code.v.(string)].callback(nil, nil)(env.pop()))
 		case oparray:
 			x, y := env.pop(), env.pop()
 			env.push(append(y.([]interface{}), x))
@@ -59,7 +59,7 @@ loop:
 			x, y := env.pop(), env.pop()
 			env.push(y.([]interface{})[x.(int)])
 		default:
-			panic(c.op)
+			panic(code.op)
 		}
 	}
 	env.pc = pc
