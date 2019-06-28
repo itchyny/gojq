@@ -8,11 +8,10 @@ type Query struct {
 
 // Run query.
 func (q *Query) Run(v interface{}) Iter {
-	env := newEnv(nil)
-	if err := env.compileQuery(q); err == nil {
-		return mapIterator(env.execute(v), normalizeValues)
+	if code, err := compile(q); err == nil {
+		return mapIterator(newEnv(nil).execute(code, v), normalizeValues)
 	}
-	return mapIterator(env.applyQuery(q, unitIterator(v)), normalizeValues)
+	return mapIterator(newEnv(nil).applyQuery(q, unitIterator(v)), normalizeValues)
 }
 
 // FuncDef ...

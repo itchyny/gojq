@@ -1,6 +1,8 @@
 package gojq
 
-func (env *env) execute(v interface{}) Iter {
+func (env *env) execute(bc *bytecode, v interface{}) Iter {
+	env.codes = bc.codes
+	env.value = make([]interface{}, bc.varcnt)
 	env.push(v)
 	env.debugCodes()
 	return env

@@ -75,9 +75,3 @@ func (env *env) lookupValue(name string) (interface{}, bool) {
 	}
 	return nil, false
 }
-
-func (env *env) newVariable() int {
-	i := len(env.value)
-	env.value = append(env.value, nil)
-	return i
-}
