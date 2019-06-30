@@ -15,8 +15,9 @@ type bytecode struct {
 }
 
 type funcinfo struct {
-	name string
-	pc   int
+	name   string
+	argcnt int
+	pc     int
 }
 
 func compile(q *Query) (*bytecode, error) {
@@ -38,7 +39,7 @@ func (c *compiler) newVariable() int {
 
 func (c *compiler) compileQuery(q *Query) error {
 	for _, fd := range q.FuncDefs {
-		if err := c.compileFuncDef(fd); err != nil {
+		if err := c.compileFuncDef(fd, false); err != nil {
 			return err
 		}
 	}
@@ -51,14 +52,22 @@ func (c *compiler) compileQuery(q *Query) error {
 	return nil
 }
 
-func (c *compiler) compileFuncDef(e *FuncDef) error {
+func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
+	if builtin {
+		for i := len(c.funcs) - 1; i >= 0; i-- {
+			f := c.funcs[i]
+			if f.name == e.Name && f.argcnt == len(e.Args) {
+				return nil
+			}
+		}
+	}
 	return c.lazyCode(
 		func() (*code, error) {
 			return &code{op: opjump, v: c.pc() - 1}, nil
 		},
 		func() error {
 			pc := c.pc()
-			c.funcs = append(c.funcs, funcinfo{e.Name, pc - 1})
+			c.funcs = append(c.funcs, funcinfo{e.Name, len(e.Args), pc - 1})
 			cc := &compiler{offset: pc, varcnt: c.varcnt, funcs: c.funcs}
 			bs, err := cc.compile(e.Body)
 			if err != nil {
@@ -260,6 +269,20 @@ func (c *compiler) compileFunc(e *Func) error {
 		if f.name == e.Name && f.argcnt == len(e.Args) {
 			c.append(&code{op: opcall, v: f.pc})
 			return nil
+		}
+	}
+	if q, ok := builtinFuncs[e.Name]; ok {
+		for _, fd := range q.FuncDefs {
+			if err := c.compileFuncDef(fd, true); err != nil {
+				return err
+			}
+		}
+		for i := len(c.funcs) - 1; i >= 0; i-- {
+			f := c.funcs[i]
+			if f.name == e.Name && f.argcnt == len(e.Args) {
+				c.append(&code{op: opcall, v: f.pc})
+				return nil
+			}
 		}
 	}
 	if fn, ok := internalFuncs[e.Name]; ok && len(e.Args) == 0 && fn.argcount == argcount0 {
