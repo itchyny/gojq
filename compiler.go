@@ -267,7 +267,9 @@ func (c *compiler) compileFunc(e *Func) error {
 	for i := len(c.funcs) - 1; i >= 0; i-- {
 		f := c.funcs[i]
 		if f.name == e.Name && f.argcnt == len(e.Args) {
-			c.append(&code{op: opcall, v: f.pc})
+			if err := c.compileCall(f.pc, e.Args); err != nil {
+				return err
+			}
 			return nil
 		}
 	}
@@ -280,18 +282,22 @@ func (c *compiler) compileFunc(e *Func) error {
 		for i := len(c.funcs) - 1; i >= 0; i-- {
 			f := c.funcs[i]
 			if f.name == e.Name && f.argcnt == len(e.Args) {
-				c.append(&code{op: opcall, v: f.pc})
+				if err := c.compileCall(f.pc, e.Args); err != nil {
+					return err
+				}
 				return nil
 			}
 		}
 	}
-	if fn, ok := internalFuncs[e.Name]; ok && len(e.Args) == 0 && fn.argcount == argcount0 {
+	if fn, ok := internalFuncs[e.Name]; ok && fn.accept(len(e.Args)) {
 		if e.Name == "empty" {
 			c.append(&code{op: oppop})
 			c.append(&code{op: opbacktrack})
 			return nil
 		}
-		c.append(&code{op: opcall, v: e.Name})
+		if err := c.compileCall(e.Name, e.Args); err != nil {
+			return err
+		}
 		return nil
 	}
 	return errors.New("compileFunc")
@@ -329,9 +335,13 @@ func (c *compiler) compileSuffix(e *Suffix) error {
 
 func (c *compiler) compileIter() error {
 	length, idx := c.newVariable(), c.newVariable()
-	c.append(&code{op: opcall, v: "_toarray"})
+	if err := c.compileCall("_toarray", nil); err != nil {
+		return err
+	}
 	c.append(&code{op: opdup})
-	c.append(&code{op: opcall, v: "length"})
+	if err := c.compileCall("length", nil); err != nil {
+		return err
+	}
 	c.append(&code{op: opstore, v: length})
 	c.append(&code{op: oppush, v: 0})
 	c.append(&code{op: opstore, v: idx})
@@ -348,6 +358,24 @@ func (c *compiler) compileIter() error {
 	c.append(&code{op: opjump, v: c.pc() + 2})
 	c.append(&code{op: oppop})
 	c.append(&code{op: opbacktrack})
+	return nil
+}
+
+func (c *compiler) compileCall(fn interface{}, args []*Pipe) error {
+	if len(args) == 0 {
+		c.append(&code{op: opcall, v: []interface{}{fn, len(args)}})
+		return nil
+	}
+	idx := c.newVariable()
+	c.append(&code{op: opstore, v: idx})
+	for _, p := range args {
+		c.append(&code{op: opload, v: idx})
+		if err := c.compilePipe(p); err != nil {
+			return err
+		}
+	}
+	c.append(&code{op: opload, v: idx})
+	c.append(&code{op: opcall, v: []interface{}{fn, len(args)}})
 	return nil
 }
 

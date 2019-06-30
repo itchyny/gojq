@@ -58,14 +58,20 @@ loop:
 			env.pc = pc + 1
 			return env.pop(), true
 		case opcall:
-			switch v := code.v.(type) {
+			xs := code.v.([]interface{})
+			argcnt := xs[1].(int)
+			switch v := xs[0].(type) {
 			case int:
 				env.pushfork(code.op, pc+1, env.stack[len(env.stack)-1])
 				pc = v
 				depth++
 				env.depth = depth
 			case string:
-				env.push(internalFuncs[v].callback(nil, nil)(env.pop()))
+				x, args := env.pop(), make([]interface{}, argcnt)
+				for i := argcnt - 1; i >= 0; i-- {
+					args[i] = env.pop()
+				}
+				env.push(internalFuncs[v].callback(x, args))
 			default:
 				panic(v)
 			}

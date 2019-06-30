@@ -19,7 +19,22 @@ const (
 
 type function struct {
 	argcount int
-	callback func(*env, *Func) func(interface{}) interface{}
+	callback func(interface{}, []interface{}) interface{}
+}
+
+func (fn function) accept(argcount int) bool {
+	switch argcount {
+	case 0:
+		return fn.argcount&argcount0 > 0
+	case 1:
+		return fn.argcount&argcount1 > 0
+	case 2:
+		return fn.argcount&argcount2 > 0
+	case 3:
+		return fn.argcount&argcount3 > 0
+	default:
+		return false
+	}
 }
 
 var internalFuncs map[string]function
