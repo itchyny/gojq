@@ -1,6 +1,7 @@
 package gojq
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -403,8 +404,42 @@ func (env *env) applyFunc(f *Func, c Iter) Iter {
 	if f.Name[0] == '$' {
 		return unitIterator(&variableNotFoundError{f.Name})
 	}
-	if fn, ok := internalFuncs[f.Name]; ok {
-		return mapIterator(c, fn.callback(env, f))
+	if fn, ok := internalFuncs[f.Name]; ok && fn.accept(len(f.Args)) {
+		switch len(f.Args) {
+		case 0:
+			return mapIterator(c, func(v interface{}) interface{} {
+				return fn.callback(v, []interface{}{})
+			})
+		case 1:
+			return mapIterator(c, func(v interface{}) interface{} {
+				return mapIterator(env.applyPipe(f.Args[0], unitIterator(v)), func(x interface{}) interface{} {
+					return fn.callback(v, []interface{}{x})
+				})
+			})
+		case 2:
+			return mapIterator(c, func(v interface{}) interface{} {
+				x := reuseIterator(env.applyPipe(f.Args[0], unitIterator(v)))
+				return mapIterator(env.applyPipe(f.Args[1], unitIterator(v)), func(y interface{}) interface{} {
+					return mapIterator(x(), func(x interface{}) interface{} {
+						return fn.callback(v, []interface{}{x, y})
+					})
+				})
+			})
+		case 3:
+			return mapIterator(c, func(v interface{}) interface{} {
+				x := reuseIterator(env.applyPipe(f.Args[0], unitIterator(v)))
+				y := reuseIterator(env.applyPipe(f.Args[1], unitIterator(v)))
+				return mapIterator(env.applyPipe(f.Args[2], unitIterator(v)), func(z interface{}) interface{} {
+					return mapIterator(y(), func(y interface{}) interface{} {
+						return mapIterator(x(), func(x interface{}) interface{} {
+							return fn.callback(v, []interface{}{x, y, z})
+						})
+					})
+				})
+			})
+		default:
+			return unitIterator(fmt.Errorf("internal func: %s", f.Name))
+		}
 	}
 	fd := env.lookupFuncDef(f.Name, len(f.Args))
 	if fd == nil {

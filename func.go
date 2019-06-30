@@ -127,36 +127,31 @@ func init() {
 }
 
 func noArgFunc(fn func(interface{}) interface{}) function {
-	return function{argcount0, func(*env, *Func) func(interface{}) interface{} {
-		return func(v interface{}) interface{} {
-			// if len(f.Args) != 0 {
-			// 	return &funcNotFoundError{f}
-			// }
-			return fn(v)
-		}
-	}}
+	return function{argcount0, func(v interface{}, _ []interface{}) interface{} {
+		return fn(v)
+	},
+	}
 }
 
-func argFunc1(fn func(*env, *Func) func(interface{}) interface{}) function {
-	return function{argcount1, func(env *env, f *Func) func(interface{}) interface{} {
-		return func(v interface{}) interface{} {
-			if len(f.Args) != 1 {
-				return &funcNotFoundError{f}
-			}
-			return fn(env, f)(v)
-		}
-	}}
+func argFunc1(fn func(interface{}, interface{}) interface{}) function {
+	return function{argcount1, func(v interface{}, args []interface{}) interface{} {
+		return fn(v, args[0])
+	},
+	}
 }
 
-func argFunc2(fn func(*env, *Func) func(interface{}) interface{}) function {
-	return function{argcount2, func(env *env, f *Func) func(interface{}) interface{} {
-		return func(v interface{}) interface{} {
-			if len(f.Args) != 2 {
-				return &funcNotFoundError{f}
-			}
-			return fn(env, f)(v)
-		}
-	}}
+func argFunc2(fn func(interface{}, interface{}, interface{}) interface{}) function {
+	return function{argcount2, func(v interface{}, args []interface{}) interface{} {
+		return fn(v, args[0], args[1])
+	},
+	}
+}
+
+func argFunc3(fn func(interface{}, interface{}, interface{}, interface{}) interface{}) function {
+	return function{argcount3, func(v interface{}, args []interface{}) interface{} {
+		return fn(v, args[0], args[1], args[2])
+	},
+	}
 }
 
 func mathFunc(name string, f func(x float64) float64) function {
@@ -170,58 +165,35 @@ func mathFunc(name string, f func(x float64) float64) function {
 }
 
 func mathFunc2(name string, g func(x, y float64) float64) function {
-	return function{argcount2, func(env *env, f *Func) func(interface{}) interface{} {
-		return func(v interface{}) interface{} {
-			if len(f.Args) != 2 {
-				return &funcNotFoundError{f}
-			}
-			l := reuseIterator(env.applyPipe(f.Args[0], unitIterator(v)))
-			return mapIterator(env.applyPipe(f.Args[1], unitIterator(v)), func(v interface{}) interface{} {
-				r, err := toFloat64(name, v)
-				if err != nil {
-					return err
-				}
-				return mapIterator(l(), func(v interface{}) interface{} {
-					l, err := toFloat64(name, v)
-					if err != nil {
-						return err
-					}
-					return g(l, r)
-				})
-			})
+	return argFunc2(func(_, x, y interface{}) interface{} {
+		l, err := toFloat64(name, x)
+		if err != nil {
+			return err
 		}
-	}}
+		r, err := toFloat64(name, y)
+		if err != nil {
+			return err
+		}
+		return g(l, r)
+	})
 }
 
 func mathFunc3(name string, g func(x, y, z float64) float64) function {
-	return function{argcount3, func(env *env, f *Func) func(interface{}) interface{} {
-		return func(v interface{}) interface{} {
-			if len(f.Args) != 3 {
-				return &funcNotFoundError{f}
-			}
-			x := reuseIterator(env.applyPipe(f.Args[0], unitIterator(v)))
-			y := reuseIterator(env.applyPipe(f.Args[1], unitIterator(v)))
-			return mapIterator(env.applyPipe(f.Args[2], unitIterator(v)), func(v interface{}) interface{} {
-				z, err := toFloat64(name, v)
-				if err != nil {
-					return err
-				}
-				return mapIterator(y(), func(v interface{}) interface{} {
-					y, err := toFloat64(name, v)
-					if err != nil {
-						return err
-					}
-					return mapIterator(x(), func(v interface{}) interface{} {
-						x, err := toFloat64(name, v)
-						if err != nil {
-							return err
-						}
-						return g(x, y, z)
-					})
-				})
-			})
+	return argFunc3(func(_, a, b, c interface{}) interface{} {
+		x, err := toFloat64(name, a)
+		if err != nil {
+			return err
 		}
-	}}
+		y, err := toFloat64(name, b)
+		if err != nil {
+			return err
+		}
+		z, err := toFloat64(name, c)
+		if err != nil {
+			return err
+		}
+		return g(x, y, z)
+	})
 }
 
 func toFloat64(name string, v interface{}) (float64, error) {
@@ -296,31 +268,27 @@ func funcKeys(v interface{}) interface{} {
 	}
 }
 
-func funcHas(env *env, f *Func) func(interface{}) interface{} {
-	return func(v interface{}) interface{} {
-		return mapIterator(env.applyPipe(f.Args[0], unitIterator(v)), func(x interface{}) interface{} {
-			switch v := v.(type) {
-			case []interface{}:
-				switch x := x.(type) {
-				case int:
-					return 0 <= x && x < len(v)
-				case float64:
-					return 0 <= int(x) && int(x) < len(v)
-				default:
-					return &hasKeyTypeError{v, x}
-				}
-			case map[string]interface{}:
-				switch x := x.(type) {
-				case string:
-					_, ok := v[x]
-					return ok
-				default:
-					return &hasKeyTypeError{v, x}
-				}
-			default:
-				return &hasKeyTypeError{v, x}
-			}
-		})
+func funcHas(v, x interface{}) interface{} {
+	switch v := v.(type) {
+	case []interface{}:
+		switch x := x.(type) {
+		case int:
+			return 0 <= x && x < len(v)
+		case float64:
+			return 0 <= int(x) && int(x) < len(v)
+		default:
+			return &hasKeyTypeError{v, x}
+		}
+	case map[string]interface{}:
+		switch x := x.(type) {
+		case string:
+			_, ok := v[x]
+			return ok
+		default:
+			return &hasKeyTypeError{v, x}
+		}
+	default:
+		return &hasKeyTypeError{v, x}
 	}
 }
 
@@ -451,95 +419,84 @@ func funcModf(v interface{}) interface{} {
 	return []interface{}{f, i}
 }
 
-func funcSetpath(env *env, f *Func) func(interface{}) interface{} {
-	return func(v interface{}) interface{} {
-		return mapIterator(env.applyPipe(f.Args[1], unitIterator(v)), func(w interface{}) interface{} {
-			return mapIterator(env.applyPipe(f.Args[0], unitIterator(v)), func(p interface{}) interface{} {
-				keys, ok := p.([]interface{})
-				if !ok {
-					return &funcTypeError{"setpath", v}
-				}
-				if len(keys) == 0 {
-					return w
-				}
-				v := v
-				u := v
-				f := func(w interface{}) interface{} { v = w; return w }
-				for i, x := range keys {
-					switch x := x.(type) {
-					case string:
-						if u == nil {
-							u = f(make(map[string]interface{}))
-						}
-						switch uu := u.(type) {
-						case map[string]interface{}:
-							if i < len(keys)-1 {
-								u = uu[x]
-								f = func(w interface{}) interface{} { uu[x] = w; return w }
-							} else {
-								uu[x] = w
-							}
-						default:
-							return &expectedObjectError{u}
-						}
-					case int, float64:
-						if u == nil {
-							u = f([]interface{}{})
-						}
-						y, _ := toInt(x)
-						switch uu := u.(type) {
-						case []interface{}:
-							if y >= len(uu) {
-								ys := make([]interface{}, y+1)
-								copy(ys, uu)
-								uu = ys
-								f(uu)
-							}
-							if i < len(keys)-1 {
-								u = uu[y]
-								f = func(w interface{}) interface{} { uu[y] = w; return w }
-							} else {
-								uu[y] = w
-							}
-						default:
-							return &expectedArrayError{u}
-						}
-					default:
-						switch u.(type) {
-						case []interface{}:
-							return &arrayIndexNotNumberError{x}
-						default:
-							return &objectKeyNotStringError{x}
-						}
-					}
-				}
-				return v
-			})
-		})
+func funcSetpath(v, p, w interface{}) interface{} {
+	keys, ok := p.([]interface{})
+	if !ok {
+		return &funcTypeError{"setpath", p}
 	}
+	if len(keys) == 0 {
+		return w
+	}
+	u := v
+	f := func(w interface{}) interface{} { v = w; return w }
+	for i, x := range keys {
+		switch x := x.(type) {
+		case string:
+			if u == nil {
+				u = f(make(map[string]interface{}))
+			}
+			switch uu := u.(type) {
+			case map[string]interface{}:
+				if i < len(keys)-1 {
+					u = uu[x]
+					f = func(w interface{}) interface{} { uu[x] = w; return w }
+				} else {
+					uu[x] = w
+				}
+			default:
+				return &expectedObjectError{u}
+			}
+		case int, float64:
+			if u == nil {
+				u = f([]interface{}{})
+			}
+			y, _ := toInt(x)
+			switch uu := u.(type) {
+			case []interface{}:
+				if y >= len(uu) {
+					ys := make([]interface{}, y+1)
+					copy(ys, uu)
+					uu = ys
+					f(uu)
+				}
+				if i < len(keys)-1 {
+					u = uu[y]
+					f = func(w interface{}) interface{} { uu[y] = w; return w }
+				} else {
+					uu[y] = w
+				}
+			default:
+				return &expectedArrayError{u}
+			}
+		default:
+			switch u.(type) {
+			case []interface{}:
+				return &arrayIndexNotNumberError{x}
+			default:
+				return &objectKeyNotStringError{x}
+			}
+		}
+	}
+	return v
 }
 
-func funcError(env *env, f *Func) func(interface{}) interface{} {
-	return func(v interface{}) interface{} {
-		if len(f.Args) == 0 {
-			switch v := v.(type) {
-			case string:
-				return errors.New(v)
-			default:
-				return &funcTypeError{"error", v}
-			}
-		} else if len(f.Args) == 1 {
-			return mapIterator(env.applyPipe(f.Args[0], unitIterator(v)), func(v interface{}) interface{} {
-				switch v := v.(type) {
-				case string:
-					return errors.New(v)
-				default:
-					return &funcTypeError{"error", v}
-				}
-			})
-		} else {
-			return &funcNotFoundError{f}
+func funcError(v interface{}, args []interface{}) interface{} {
+	if len(args) == 0 {
+		switch v := v.(type) {
+		case string:
+			return errors.New(v)
+		default:
+			return &funcTypeError{"error", v}
 		}
+	} else if len(args) == 1 {
+		switch v := args[0].(type) {
+		case string:
+			return errors.New(v)
+		default:
+			return &funcTypeError{"error", v}
+		}
+	} else {
+		return nil
 	}
 }
 
@@ -578,10 +535,6 @@ func funcEnv(_ interface{}) interface{} {
 	return env
 }
 
-func internalfuncTypeError(env *env, f *Func) func(interface{}) interface{} {
-	return func(v interface{}) interface{} {
-		return mapIterator(env.applyPipe(f.Args[0], unitIterator(v)), func(x interface{}) interface{} {
-			return &funcTypeError{x.(string), v}
-		})
-	}
+func internalfuncTypeError(x, v interface{}) interface{} {
+	return &funcTypeError{x.(string), v}
 }
