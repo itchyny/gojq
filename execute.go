@@ -47,6 +47,8 @@ loop:
 			break loop
 		case opjump:
 			pc = code.v.(int)
+		case opjumppop:
+			pc = env.pop().(int)
 		case opjumpifnot:
 			if !valueToBool(env.pop()) {
 				pc = code.v.(int)
