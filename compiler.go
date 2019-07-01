@@ -43,8 +43,10 @@ func (c *compiler) compileQuery(q *Query) error {
 			return err
 		}
 	}
-	if err := c.compilePipe(q.Pipe); err != nil {
-		return err
+	if q.Pipe != nil {
+		if err := c.compilePipe(q.Pipe); err != nil {
+			return err
+		}
 	}
 	c.append(&code{op: opret})
 	c.optimizeJumps()
