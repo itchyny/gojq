@@ -92,43 +92,37 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 			}
 		}
 	}
-	return c.lazyCode(
-		func() (*code, error) {
-			return &code{op: opjump, v: c.pc() - 1}, nil
-		},
-		func() error {
-			pc := c.pc()
-			c.funcs = append(c.funcs, funcinfo{e.Name, len(e.Args), pc - 1})
-			bs, scopecnt, err := func() (*bytecode, int, error) {
-				cc := &compiler{offset: pc, scopecnt: c.scopecnt, funcs: c.funcs}
-				scope := cc.newScope()
-				cc.scopes = append(c.scopes, scope)
-				defer cc.lazy(func() *code {
-					return &code{op: opscope, v: [2]int{scope.id, len(scope.variables)}}
-				})()
-				if len(e.Args) > 0 {
-					v := cc.newVariable()
-					cc.append(&code{op: opstore, v: v})
-					variables := make([][2]int, len(e.Args))
-					for i, name := range e.Args {
-						variables[i] = cc.pushVariable(name)
-					}
-					for i := len(e.Args) - 1; i >= 0; i-- {
-						cc.append(&code{op: opstore, v: variables[i]})
-					}
-					cc.append(&code{op: opload, v: v})
-				}
-				bs, err := cc.compile(e.Body)
-				return bs, cc.scopecnt, err
-			}()
-			if err != nil {
-				return err
-			}
-			c.codes = append(c.codes, bs.codes...)
-			c.scopecnt = scopecnt
-			return nil
-		},
-	)
+	defer c.lazy(func() *code {
+		return &code{op: opjump, v: c.pc() - 1}
+	})()
+	pc := c.pc()
+	c.funcs = append(c.funcs, funcinfo{e.Name, len(e.Args), pc - 1})
+	cc := &compiler{offset: pc, scopecnt: c.scopecnt, funcs: c.funcs}
+	scope := cc.newScope()
+	cc.scopes = append(c.scopes, scope)
+	setscope := cc.lazy(func() *code {
+		return &code{op: opscope, v: [2]int{scope.id, len(scope.variables)}}
+	})
+	if len(e.Args) > 0 {
+		v := cc.newVariable()
+		cc.append(&code{op: opstore, v: v})
+		variables := make([][2]int, len(e.Args))
+		for i, name := range e.Args {
+			variables[i] = cc.pushVariable(name)
+		}
+		for i := len(e.Args) - 1; i >= 0; i-- {
+			cc.append(&code{op: opstore, v: variables[i]})
+		}
+		cc.append(&code{op: opload, v: v})
+	}
+	bs, err := cc.compile(e.Body)
+	if err != nil {
+		return err
+	}
+	setscope()
+	c.codes = append(c.codes, bs.codes...)
+	c.scopecnt = cc.scopecnt
+	return nil
 }
 
 func (c *compiler) compilePipe(e *Pipe) error {
@@ -144,16 +138,17 @@ func (c *compiler) compileComma(e *Comma) error {
 	if len(e.Alts) == 1 {
 		return c.compileAlt(e.Alts[0])
 	}
-	if err := c.lazyCode(
-		func() (*code, error) { return &code{op: opfork, v: c.pc() + 1}, nil },
-		func() error { return c.compileComma(&Comma{e.Alts[:len(e.Alts)-1]}) },
-	); err != nil {
+	setfork := c.lazy(func() *code {
+		return &code{op: opfork, v: c.pc() + 1}
+	})
+	if err := c.compileComma(&Comma{e.Alts[:len(e.Alts)-1]}); err != nil {
 		return err
 	}
-	return c.lazyCode(
-		func() (*code, error) { return &code{op: opjump, v: c.pc() - 1}, nil },
-		func() error { return c.compileAlt(e.Alts[len(e.Alts)-1]) },
-	)
+	setfork()
+	defer c.lazy(func() *code {
+		return &code{op: opjump, v: c.pc() - 1}
+	})()
+	return c.compileAlt(e.Alts[len(e.Alts)-1])
 }
 
 func (c *compiler) compileAlt(e *Alt) error {
@@ -163,32 +158,27 @@ func (c *compiler) compileAlt(e *Alt) error {
 	c.append(&code{op: oppush, v: false})
 	found := c.newVariable()
 	c.append(&code{op: opstore, v: found})
-	if err := c.lazyCode(
-		func() (*code, error) {
-			return &code{op: opfork, v: c.pc() + 7}, nil // opload found
-		},
-		func() error { return c.compileExpr(e.Left) },
-	); err != nil {
+	setfork := c.lazy(func() *code {
+		return &code{op: opfork, v: c.pc() + 7} // opload found
+	})
+	if err := c.compileExpr(e.Left); err != nil {
 		return err
 	}
+	setfork()
 	c.append(&code{op: opdup})
 	c.append(&code{op: opjumpifnot, v: c.pc() + 3}) // oppop
 	c.append(&code{op: oppush, v: true})            // found some value
 	c.append(&code{op: opstore, v: found})
-	return c.lazyCode(
-		func() (*code, error) {
-			return &code{op: opjump, v: c.pc() - 1}, nil // ret
-		},
-		func() error {
-			c.append(&code{op: oppop})
-			c.append(&code{op: opbacktrack})
-			c.append(&code{op: opload, v: found})
-			c.append(&code{op: opjumpifnot, v: c.pc() + 2})
-			c.append(&code{op: opbacktrack}) // if found, backtrack
-			c.append(&code{op: oppop})
-			return c.compileAlt(&Alt{e.Right[0].Right, e.Right[1:]})
-		},
-	)
+	defer c.lazy(func() *code {
+		return &code{op: opjump, v: c.pc() - 1} // ret
+	})()
+	c.append(&code{op: oppop})
+	c.append(&code{op: opbacktrack})
+	c.append(&code{op: opload, v: found})
+	c.append(&code{op: opjumpifnot, v: c.pc() + 2})
+	c.append(&code{op: opbacktrack}) // if found, backtrack
+	c.append(&code{op: oppop})
+	return c.compileAlt(&Alt{e.Right[0].Right, e.Right[1:]})
 }
 
 func (c *compiler) compileExpr(e *Expr) error {
@@ -218,32 +208,25 @@ func (c *compiler) compileIf(e *If) error {
 	if err := c.compilePipe(e.Cond); err != nil {
 		return err
 	}
-	if err := c.lazyCode(
-		func() (*code, error) {
-			return &code{op: opjumpifnot, v: c.pc()}, nil // if falsy, skip then clause
-		},
-		func() error {
-			c.append(&code{op: opload, v: idx})
-			return c.compilePipe(e.Then)
-		},
-	); err != nil {
+	setjumpifnot := c.lazy(func() *code {
+		return &code{op: opjumpifnot, v: c.pc()} // if falsy, skip then clause
+	})
+	c.append(&code{op: opload, v: idx})
+	if err := c.compilePipe(e.Then); err != nil {
 		return err
 	}
-	return c.lazyCode(
-		func() (*code, error) {
-			return &code{op: opjump, v: c.pc() - 1}, nil // jump to ret after then clause
-		},
-		func() error {
-			c.append(&code{op: opload, v: idx})
-			if len(e.Elif) > 0 {
-				return c.compileIf(&If{e.Elif[0].Cond, e.Elif[0].Then, e.Elif[1:], e.Else})
-			}
-			if e.Else != nil {
-				return c.compilePipe(e.Else)
-			}
-			return nil
-		},
-	)
+	setjumpifnot()
+	defer c.lazy(func() *code {
+		return &code{op: opjump, v: c.pc() - 1} // jump to ret after else clause
+	})()
+	c.append(&code{op: opload, v: idx})
+	if len(e.Elif) > 0 {
+		return c.compileIf(&If{e.Elif[0].Cond, e.Elif[0].Then, e.Elif[1:], e.Else})
+	}
+	if e.Else != nil {
+		return c.compilePipe(e.Else)
+	}
+	return nil
 }
 
 func (c *compiler) compileAndExpr(e *AndExpr) error {
@@ -372,20 +355,16 @@ func (c *compiler) compileArray(e *Array) error {
 	}
 	c.append(&code{op: oppush, v: []interface{}{}})
 	c.append(&code{op: opswap})
-	return c.lazyCode(
-		func() (*code, error) {
-			return &code{op: opfork, v: c.pc() - 1}, nil
-		},
-		func() error {
-			if err := c.compilePipe(e.Pipe); err != nil {
-				return err
-			}
-			c.append(&code{op: oparray})
-			c.append(&code{op: opbacktrack})
-			c.append(&code{op: oppop})
-			return nil
-		},
-	)
+	defer c.lazy(func() *code {
+		return &code{op: opfork, v: c.pc() - 1}
+	})()
+	if err := c.compilePipe(e.Pipe); err != nil {
+		return err
+	}
+	c.append(&code{op: oparray})
+	c.append(&code{op: opbacktrack})
+	c.append(&code{op: oppop})
+	return nil
 }
 
 func (c *compiler) compileSuffix(e *Suffix) error {
@@ -450,17 +429,6 @@ func (c *compiler) append(code *code) {
 
 func (c *compiler) pc() int {
 	return c.offset + len(c.codes)
-}
-
-func (c *compiler) lazyCode(f func() (*code, error), g func() error) error {
-	i := len(c.codes)
-	c.codes = append(c.codes, nil)
-	err := g()
-	if err != nil {
-		return err
-	}
-	c.codes[i], err = f()
-	return err
 }
 
 func (c *compiler) lazy(f func() *code) func() {
