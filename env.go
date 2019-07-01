@@ -8,16 +8,21 @@ type env struct {
 	pc        int
 	stack     []interface{}
 	value     []interface{}
+	scopes    []*scope
 	codes     []*code
 	forks     []*fork
-	depth     int
+}
+
+type scope struct {
+	id     int
+	offset int
 }
 
 type fork struct {
 	op    opcode
 	pc    int
 	v     interface{}
-	depth int
+	scope int
 }
 
 func newEnv(parent *env) *env {
@@ -29,9 +34,9 @@ func newEnv(parent *env) *env {
 		pc:        0,
 		stack:     []interface{}{},
 		value:     []interface{}{},
+		scopes:    []*scope{},
 		codes:     []*code{},
 		forks:     []*fork{},
-		depth:     0,
 	}
 }
 

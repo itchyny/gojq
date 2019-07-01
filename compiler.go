@@ -3,15 +3,15 @@ package gojq
 import "errors"
 
 type compiler struct {
-	codes  []*code
-	offset int
-	varcnt int
-	funcs  []funcinfo
+	codes    []*code
+	offset   int
+	scopes   []*scopeinfo
+	scopecnt int
+	funcs    []funcinfo
 }
 
 type bytecode struct {
-	codes  []*code
-	varcnt int
+	codes []*code
 }
 
 type funcinfo struct {
@@ -20,21 +20,50 @@ type funcinfo struct {
 	pc     int
 }
 
+type scopeinfo struct {
+	id        int
+	offset    int
+	variables []varinfo
+}
+
+type varinfo struct {
+	name  string
+	index [2]int
+}
+
 func compile(q *Query) (*bytecode, error) {
-	return (&compiler{}).compile(q)
+	c := &compiler{}
+	scope := c.newScope()
+	c.scopes = []*scopeinfo{scope}
+	defer c.lazy(func() *code {
+		return &code{op: opscope, v: [2]int{scope.id, len(scope.variables)}}
+	})()
+	return c.compile(q)
 }
 
 func (c *compiler) compile(q *Query) (*bytecode, error) {
 	if err := c.compileQuery(q); err != nil {
 		return nil, err
 	}
-	return &bytecode{c.codes, c.varcnt}, nil
+	return &bytecode{c.codes}, nil
 }
 
-func (c *compiler) newVariable() int {
-	i := c.varcnt
-	c.varcnt++
-	return i
+func (c *compiler) newVariable() [2]int {
+	return c.pushVariable("")
+}
+
+func (c *compiler) pushVariable(name string) [2]int {
+	s := c.scopes[len(c.scopes)-1]
+	i := len(s.variables)
+	v := [2]int{s.id, i}
+	s.variables = append(s.variables, varinfo{name, v})
+	return v
+}
+
+func (c *compiler) newScope() *scopeinfo {
+	i := c.scopecnt // do not use len(c.scopes) because it pops
+	c.scopecnt++
+	return &scopeinfo{i, 0, nil}
 }
 
 func (c *compiler) compileQuery(q *Query) error {
@@ -70,13 +99,33 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 		func() error {
 			pc := c.pc()
 			c.funcs = append(c.funcs, funcinfo{e.Name, len(e.Args), pc - 1})
-			cc := &compiler{offset: pc, varcnt: c.varcnt, funcs: c.funcs}
-			bs, err := cc.compile(e.Body)
+			bs, scopecnt, err := func() (*bytecode, int, error) {
+				cc := &compiler{offset: pc, scopecnt: c.scopecnt, funcs: c.funcs}
+				scope := cc.newScope()
+				cc.scopes = append(c.scopes, scope)
+				defer cc.lazy(func() *code {
+					return &code{op: opscope, v: [2]int{scope.id, len(scope.variables)}}
+				})()
+				if len(e.Args) > 0 {
+					v := cc.newVariable()
+					cc.append(&code{op: opstore, v: v})
+					variables := make([][2]int, len(e.Args))
+					for i, name := range e.Args {
+						variables[i] = cc.pushVariable(name)
+					}
+					for i := len(e.Args) - 1; i >= 0; i-- {
+						cc.append(&code{op: opstore, v: variables[i]})
+					}
+					cc.append(&code{op: opload, v: v})
+				}
+				bs, err := cc.compile(e.Body)
+				return bs, cc.scopecnt, err
+			}()
 			if err != nil {
 				return err
 			}
 			c.codes = append(c.codes, bs.codes...)
-			c.varcnt = bs.varcnt
+			c.scopecnt = scopecnt
 			return nil
 		},
 	)
@@ -266,6 +315,17 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 }
 
 func (c *compiler) compileFunc(e *Func) error {
+	for i := len(c.scopes) - 1; i >= 0; i-- {
+		s := c.scopes[i]
+		for j := len(s.variables) - 1; j >= 0; j-- {
+			v := s.variables[j]
+			if v.name == e.Name && len(e.Args) == 0 {
+				c.append(&code{op: opload, v: v.index})
+				c.append(&code{op: opjumppop})
+				return nil
+			}
+		}
+	}
 	for i := len(c.funcs) - 1; i >= 0; i-- {
 		f := c.funcs[i]
 		if f.name == e.Name && f.argcnt == len(e.Args) {
@@ -365,19 +425,22 @@ func (c *compiler) compileIter() error {
 
 func (c *compiler) compileCall(fn interface{}, args []*Pipe) error {
 	if len(args) == 0 {
-		c.append(&code{op: opcall, v: []interface{}{fn, len(args)}})
+		c.append(&code{op: opcall, v: [2]interface{}{fn, len(args)}})
 		return nil
 	}
-	idx := c.newVariable()
-	c.append(&code{op: opstore, v: idx})
-	for _, p := range args {
-		c.append(&code{op: opload, v: idx})
-		if err := c.compilePipe(p); err != nil {
-			return err
+	if len(args) > 0 {
+		idx := c.newVariable()
+		c.append(&code{op: opstore, v: idx})
+		for _, p := range args {
+			pc := c.pc() // ref: compileFuncDef
+			if err := c.compileFuncDef(&FuncDef{Body: &Query{Pipe: p}}, false); err != nil {
+				return err
+			}
+			c.append(&code{op: oppush, v: pc})
 		}
+		c.append(&code{op: opload, v: idx})
 	}
-	c.append(&code{op: opload, v: idx})
-	c.append(&code{op: opcall, v: []interface{}{fn, len(args)}})
+	c.append(&code{op: opcall, v: [2]interface{}{fn, len(args)}})
 	return nil
 }
 
@@ -391,13 +454,19 @@ func (c *compiler) pc() int {
 
 func (c *compiler) lazyCode(f func() (*code, error), g func() error) error {
 	i := len(c.codes)
-	c.codes = append(c.codes, &code{})
+	c.codes = append(c.codes, nil)
 	err := g()
 	if err != nil {
 		return err
 	}
 	c.codes[i], err = f()
 	return err
+}
+
+func (c *compiler) lazy(f func() *code) func() {
+	i := len(c.codes)
+	c.codes = append(c.codes, &code{op: opnop})
+	return func() { c.codes[i] = f() }
 }
 
 func (c *compiler) optimizeJumps() {

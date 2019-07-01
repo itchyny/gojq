@@ -1156,6 +1156,13 @@
       ]
     ]
 
+- name: function declaration with duplicate argument name
+  args:
+    - 'def f(g;g): g; f(1;2)'
+  input: 'null'
+  expected: |
+    2
+
 - name: argument count error for custom function
   args:
     - 'def f(g): g | g; f'

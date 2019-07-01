@@ -2,14 +2,13 @@ package gojq
 
 func (env *env) execute(bc *bytecode, v interface{}) Iter {
 	env.codes = bc.codes
-	env.value = make([]interface{}, bc.varcnt)
 	env.push(v)
 	env.debugCodes()
 	return env
 }
 
 func (env *env) Next() (interface{}, bool) {
-	pc, depth := env.pc, env.depth
+	pc := env.pc
 loop:
 	for ; 0 <= pc && pc < len(env.codes); pc++ {
 		env.debugState(pc)
@@ -37,9 +36,17 @@ loop:
 		case opincr:
 			env.push(env.pop().(int) + 1)
 		case opload:
-			env.push(env.value[code.v.(int)])
+			xs := code.v.([2]int)
+			env.push(env.value[env.scopeOffset(xs[0])-xs[1]])
 		case opstore:
-			env.value[code.v.(int)] = env.pop()
+			xs := code.v.([2]int)
+			i := env.scopeOffset(xs[0]) - xs[1]
+			if i >= len(env.value) {
+				vs := make([]interface{}, (i+1)*2)
+				copy(vs, env.value)
+				env.value = vs
+			}
+			env.value[i] = env.pop()
 		case opfork:
 			env.pushfork(code.op, code.v.(int), env.stack[len(env.stack)-1])
 		case opbacktrack:
@@ -54,21 +61,19 @@ loop:
 				pc = code.v.(int)
 			}
 		case opret:
-			if depth > 0 {
+			if env.scopes[len(env.scopes)-1].id > 0 {
 				break loop
 			}
 			env.pc = pc + 1
 			return env.pop(), true
 		case opcall:
-			xs := code.v.([]interface{})
-			argcnt := xs[1].(int)
+			xs := code.v.([2]interface{})
 			switch v := xs[0].(type) {
 			case int:
 				env.pushfork(code.op, pc+1, env.stack[len(env.stack)-1])
 				pc = v
-				depth++
-				env.depth = depth
 			case string:
+				argcnt := xs[1].(int)
 				x, args := env.pop(), make([]interface{}, argcnt)
 				for i := argcnt - 1; i >= 0; i-- {
 					args[i] = env.pop()
@@ -77,6 +82,13 @@ loop:
 			default:
 				panic(v)
 			}
+		case opscope:
+			xs := code.v.([2]int)
+			offset := -1
+			if len(env.scopes) > 0 {
+				offset = env.scopes[len(env.scopes)-1].offset
+			}
+			env.scopes = append(env.scopes, &scope{xs[0], offset + xs[1]})
 		case oparray:
 			x, y := env.pop(), env.pop()
 			env.push(append(y.([]interface{}), x))
@@ -91,10 +103,6 @@ loop:
 	if len(env.forks) > 0 {
 		f := env.popfork()
 		pc = f.pc
-		if depth != f.depth {
-			depth = f.depth
-			env.depth = depth
-		}
 		if f.op != opcall {
 			env.push(f.v)
 		}
@@ -114,17 +122,33 @@ func (env *env) pop() interface{} {
 }
 
 func (env *env) pushfork(op opcode, pc int, v interface{}) {
-	env.forks = append(env.forks, &fork{op, pc, v, env.depth})
+	env.forks = append(env.forks, &fork{op, pc, v, env.scopes[len(env.scopes)-1].id})
 	if debug {
 		env.debugForks(pc, ">>>")
 	}
 }
 
 func (env *env) popfork() *fork {
-	v := env.forks[len(env.forks)-1]
+	f := env.forks[len(env.forks)-1]
 	if debug {
-		env.debugForks(v.pc, "<<<")
+		env.debugForks(f.pc, "<<<")
 	}
 	env.forks = env.forks[:len(env.forks)-1]
-	return v
+	for i := len(env.scopes) - 1; i >= 0; i-- {
+		if env.scopes[i].id == f.scope {
+			env.scopes = env.scopes[:i+1]
+			break
+		}
+	}
+	return f
+}
+
+func (env *env) scopeOffset(id int) int {
+	for i := len(env.scopes) - 1; i >= 0; i-- {
+		scope := env.scopes[i]
+		if scope.id == id {
+			return scope.offset
+		}
+	}
+	panic("scope not found")
 }

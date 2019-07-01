@@ -25,6 +25,7 @@ const (
 	opjumpifnot
 	opret
 	opcall
+	opscope
 	oparray
 	opindex
 )
@@ -65,6 +66,8 @@ func (op opcode) String() string {
 		return "ret"
 	case opcall:
 		return "call"
+	case opscope:
+		return "scope"
 	case oparray:
 		return "array"
 	case opindex:
