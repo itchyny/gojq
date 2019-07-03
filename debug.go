@@ -1,3 +1,5 @@
+// +build debug
+
 package gojq
 
 import (
@@ -23,6 +25,19 @@ func init() {
 			debugOut = os.Stderr
 		}
 	}
+}
+
+func (c *compiler) appendCodeInfo(name string) {
+	if !debug {
+		return
+	}
+	var prefix string
+	var diff int
+	if c.codes[len(c.codes)-1].op == opret {
+		prefix = "end of "
+		diff = -1
+	}
+	c.codeinfos = append(c.codeinfos, &codeinfo{prefix + name, c.pc() + diff})
 }
 
 func (env *env) lookupFuncName(pc int) string {
@@ -93,6 +108,9 @@ func formatOp(c opcode) string {
 }
 
 func (env *env) debugForks(pc int, op string) {
+	if !debug {
+		return
+	}
 	buf := new(bytes.Buffer)
 	for i, v := range env.forks {
 		if i > 0 {

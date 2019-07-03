@@ -105,8 +105,8 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	defer c.lazy(func() *code {
 		return &code{op: opjump, v: c.pc() - 1}
 	})()
-	c.appendCodeInfo(e.Name, 0, "")
-	defer c.appendCodeInfo(e.Name, -1, "end of ")
+	c.appendCodeInfo(e.Name)
+	defer c.appendCodeInfo(e.Name)
 	pc := c.pc()
 	c.funcs = append(c.funcs, funcinfo{e.Name, len(e.Args), pc - 1})
 	cc := &compiler{offset: pc, scopecnt: c.scopecnt, funcs: c.funcs}
@@ -471,11 +471,5 @@ func (c *compiler) optimizeJumps() {
 			}
 			code.v = d.v
 		}
-	}
-}
-
-func (c *compiler) appendCodeInfo(name string, diff int, prefix string) {
-	if debug {
-		c.codeinfos = append(c.codeinfos, &codeinfo{prefix + name, c.pc() + diff})
 	}
 }

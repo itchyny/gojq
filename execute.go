@@ -124,16 +124,12 @@ func (env *env) pop() interface{} {
 
 func (env *env) pushfork(op opcode, pc int, v interface{}) {
 	env.forks = append(env.forks, &fork{op, pc, v, env.scopes[len(env.scopes)-1].id})
-	if debug {
-		env.debugForks(pc, ">>>")
-	}
+	env.debugForks(pc, ">>>")
 }
 
 func (env *env) popfork() *fork {
 	f := env.forks[len(env.forks)-1]
-	if debug {
-		env.debugForks(f.pc, "<<<")
-	}
+	env.debugForks(f.pc, "<<<")
 	env.forks = env.forks[:len(env.forks)-1]
 	for i := len(env.scopes) - 1; i >= 0; i-- {
 		if env.scopes[i].id == f.scope {

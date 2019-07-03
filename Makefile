@@ -12,6 +12,10 @@ all: clean build
 build: builtin_gen.go
 	go build -ldflags=$(BUILD_LDFLAGS) -o build/$(BIN) ./cmd/$(BIN)
 
+.PHONY: build-debug
+build-debug: builtin_gen.go
+	go build -tags debug -ldflags=$(BUILD_LDFLAGS) -o build/$(BIN) ./cmd/$(BIN)
+
 builtin_gen.go: builtin.go query.go operator.go
 	rm -f $@
 	go generate
@@ -19,6 +23,10 @@ builtin_gen.go: builtin.go query.go operator.go
 .PHONY: install
 install:
 	go install -ldflags=$(BUILD_LDFLAGS) ./...
+
+.PHONY: install-debug
+install-debug:
+	go install -tags debug -ldflags=$(BUILD_LDFLAGS) ./...
 
 .PHONY: show-version
 show-version:
