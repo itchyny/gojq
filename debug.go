@@ -25,12 +25,36 @@ func init() {
 	}
 }
 
+func (env *env) lookupFuncName(pc int) string {
+	for _, ci := range env.codeinfos {
+		if ci.pc == pc {
+			return ci.name
+		}
+	}
+	return ""
+}
+
 func (env *env) debugCodes() {
 	if !debug {
 		return
 	}
 	for i, c := range env.codes {
-		fmt.Fprintf(debugOut, "\t%d\t%s\t%s\n", i, formatOp(c.op), debugJSON(c.v))
+		pc := i
+		if c.op == opcall {
+			xs := c.v.([2]interface{})
+			if x, ok := xs[0].(int); ok {
+				pc = x + 1
+			}
+		}
+		var s string
+		if name := env.lookupFuncName(pc); name != "" {
+			if c.op == opcall {
+				s = "\t## call " + name
+			} else {
+				s = "\t## " + name
+			}
+		}
+		fmt.Fprintf(debugOut, "\t%d\t%s\t%s%s\n", i, formatOp(c.op), debugJSON(c.v), s)
 	}
 	fmt.Fprintln(debugOut, "\t"+strings.Repeat("-", 20))
 }
@@ -40,12 +64,26 @@ func (env *env) debugState(pc int) {
 		return
 	}
 	buf := new(bytes.Buffer)
-	fmt.Fprintf(buf, "\t%d\t%s\t", pc, formatOp(env.codes[pc].op))
-	buf.WriteString(debugJSON(env.codes[pc].v))
+	c := env.codes[pc]
+	fmt.Fprintf(buf, "\t%d\t%s\t", pc, formatOp(c.op))
+	buf.WriteString(debugJSON(c.v))
 	buf.WriteString("\t|")
 	for _, v := range env.stack {
 		buf.WriteString("\t")
 		buf.WriteString(debugJSON(v))
+	}
+	if c.op == opcall {
+		xs := c.v.([2]interface{})
+		if x, ok := xs[0].(int); ok {
+			pc = x + 1
+		}
+	}
+	if name := env.lookupFuncName(pc); name != "" {
+		if c.op == opcall {
+			buf.WriteString("\t\t\t## call " + name)
+		} else {
+			buf.WriteString("\t\t\t## " + name)
+		}
 	}
 	fmt.Fprintln(debugOut, buf.String())
 }

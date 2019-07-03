@@ -1,17 +1,27 @@
 package gojq
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type compiler struct {
-	codes    []*code
-	offset   int
-	scopes   []*scopeinfo
-	scopecnt int
-	funcs    []funcinfo
+	codes     []*code
+	codeinfos []*codeinfo
+	offset    int
+	scopes    []*scopeinfo
+	scopecnt  int
+	funcs     []funcinfo
 }
 
 type bytecode struct {
-	codes []*code
+	codes     []*code
+	codeinfos []*codeinfo
+}
+
+type codeinfo struct {
+	name string
+	pc   int
 }
 
 type funcinfo struct {
@@ -45,7 +55,7 @@ func (c *compiler) compile(q *Query) (*bytecode, error) {
 	if err := c.compileQuery(q); err != nil {
 		return nil, err
 	}
-	return &bytecode{c.codes}, nil
+	return &bytecode{c.codes, c.codeinfos}, nil
 }
 
 func (c *compiler) newVariable() [2]int {
@@ -95,6 +105,8 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	defer c.lazy(func() *code {
 		return &code{op: opjump, v: c.pc() - 1}
 	})()
+	c.appendCodeInfo(e.Name, 0, "")
+	defer c.appendCodeInfo(e.Name, -1, "end of ")
 	pc := c.pc()
 	c.funcs = append(c.funcs, funcinfo{e.Name, len(e.Args), pc - 1})
 	cc := &compiler{offset: pc, scopecnt: c.scopecnt, funcs: c.funcs}
@@ -121,6 +133,7 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	}
 	setscope()
 	c.codes = append(c.codes, bs.codes...)
+	c.codeinfos = append(c.codeinfos, bs.codeinfos...)
 	c.scopecnt = cc.scopecnt
 	return nil
 }
@@ -412,7 +425,7 @@ func (c *compiler) compileCall(fn interface{}, args []*Pipe) error {
 		c.append(&code{op: opstore, v: idx})
 		for _, p := range args {
 			pc := c.pc() // ref: compileFuncDef
-			if err := c.compileFuncDef(&FuncDef{Body: &Query{Pipe: p}}, false); err != nil {
+			if err := c.compileFuncDef(&FuncDef{Name: fmt.Sprintf("lambda:%d", pc+1), Body: &Query{Pipe: p}}, false); err != nil {
 				return err
 			}
 			c.append(&code{op: oppush, v: pc})
@@ -458,5 +471,11 @@ func (c *compiler) optimizeJumps() {
 			}
 			code.v = d.v
 		}
+	}
+}
+
+func (c *compiler) appendCodeInfo(name string, diff int, prefix string) {
+	if debug {
+		c.codeinfos = append(c.codeinfos, &codeinfo{prefix + name, c.pc() + diff})
 	}
 }

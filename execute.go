@@ -2,6 +2,7 @@ package gojq
 
 func (env *env) execute(bc *bytecode, v interface{}) Iter {
 	env.codes = bc.codes
+	env.codeinfos = bc.codeinfos
 	env.push(v)
 	env.debugCodes()
 	return env
