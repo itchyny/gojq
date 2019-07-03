@@ -236,8 +236,8 @@ func (e *CompareRight) String() string {
 
 // Arith ...
 type Arith struct {
-	Left  *Factor      `( @@`
-	Right []ArithRight `@@* )`
+	Left  *Factor      `@@`
+	Right []ArithRight `@@*`
 }
 
 func (e *Arith) String() string {
@@ -352,9 +352,9 @@ func (e *Unary) String() string {
 
 // Pattern ...
 type Pattern struct {
-	Name   string          `( @Ident`
+	Name   string          `  @Ident`
 	Array  []*Pattern      `| "[" @@ ("," @@)* "]"`
-	Object []PatternObject `| "{" @@ ("," @@)* "}" )`
+	Object []PatternObject `| "{" @@ ("," @@)* "}"`
 }
 
 func (e *Pattern) String() string {
