@@ -200,8 +200,8 @@ func (env *env) applyTerm(t *Term, c Iter) (d Iter) {
 	if t.Unary != nil {
 		return env.applyUnary(t.Unary.Op, t.Unary.Term, cc())
 	}
-	if t.String != "" {
-		return env.applyString(t.String, cc())
+	if t.Str != "" {
+		return env.applyString(t.Str, cc())
 	}
 	if t.Null {
 		return unitIterator(nil)
@@ -261,8 +261,8 @@ func (env *env) applyObjectIndex(x *Index, m map[string]interface{}, c Iter) int
 	if x.Name != "" {
 		return m[x.Name]
 	}
-	if x.String != "" {
-		return mapIterator(env.applyString(x.String, c), func(s interface{}) interface{} {
+	if x.Str != "" {
+		return mapIterator(env.applyString(x.Str, c), func(s interface{}) interface{} {
 			key, ok := s.(string)
 			if !ok {
 				return &objectKeyNotStringError{s}
@@ -335,7 +335,7 @@ func (env *env) applyArrayIndex(x *Index, a []interface{}, c Iter) interface{} {
 }
 
 func indexIsForObject(x *Index) bool {
-	return (x.Name != "" || x.String != "" || x.Start != nil) && !x.IsSlice && x.End == nil
+	return (x.Name != "" || x.Str != "" || x.Start != nil) && !x.IsSlice && x.End == nil
 }
 
 func toInt(x interface{}) (int, bool) {

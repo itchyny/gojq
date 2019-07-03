@@ -130,7 +130,7 @@ type Term struct {
 	Array      *Array    `| @@`
 	Number     *float64  `| @Number`
 	Unary      *Unary    `| @@`
-	String     string    `| @String`
+	Str        string    `| @String`
 	Null       bool      `| @"null"`
 	True       bool      `| @"true"`
 	False      bool      `| @"false"`
@@ -163,7 +163,7 @@ type PatternObject struct {
 // Index ...
 type Index struct {
 	Name    string `"." ( @Ident`
-	String  string `| @String`
+	Str     string `| @String`
 	Start   *Pipe  `| "[" ( @@`
 	IsSlice bool   `( @":"`
 	End     *Pipe  `@@? )? | ":" @@ ) "]" )`
