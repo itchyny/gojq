@@ -62,11 +62,12 @@ loop:
 				pc = code.v.(int)
 			}
 		case opret:
-			if env.scopes[len(env.scopes)-1].id > 0 {
-				break loop
+			if env.scopes.top().(scope).id == 0 {
+				env.pc = len(env.codes)
+				return env.pop(), true
 			}
-			env.pc = pc + 1
-			return env.pop(), true
+			env.scopes.pop()
+			pc = env.scopes.top().(scope).pc
 		case opcall:
 			xs := code.v.([2]interface{})
 			switch v := xs[0].(type) {
@@ -86,10 +87,10 @@ loop:
 		case opscope:
 			xs := code.v.([2]int)
 			offset := -1
-			if len(env.scopes) > 0 {
-				offset = env.scopes[len(env.scopes)-1].offset
+			if !env.scopes.empty() {
+				offset = env.scopes.top().(scope).offset
 			}
-			env.scopes = append(env.scopes, &scope{xs[0], offset + xs[1]})
+			env.scopes.push(scope{xs[0], offset + xs[1], 0})
 		case oparray:
 			x, y := env.pop(), env.pop()
 			env.push(append(y.([]interface{}), x))
@@ -119,7 +120,8 @@ func (env *env) pop() interface{} {
 
 func (env *env) pushfork(op opcode, pc int) {
 	f := &fork{op: op, pc: pc}
-	env.stack.save(f)
+	env.stack.save(&f.stackindex, &f.stacklimit)
+	env.scopes.save(&f.scopeindex, &f.scopelimit)
 	env.forks = append(env.forks, f)
 	env.debugForks(pc, ">>>")
 }
@@ -128,16 +130,13 @@ func (env *env) popfork() *fork {
 	f := env.forks[len(env.forks)-1]
 	env.debugForks(f.pc, "<<<")
 	env.forks = env.forks[:len(env.forks)-1]
-	env.stack.restore(f)
+	env.stack.restore(f.stackindex, f.stacklimit)
+	env.scopes.restore(f.scopeindex, f.scopelimit)
 	return f
 }
 
 func (env *env) scopeOffset(id int) int {
-	for i := len(env.scopes) - 1; i >= 0; i-- {
-		scope := env.scopes[i]
-		if scope.id == id {
-			return scope.offset
-		}
-	}
-	panic("scope not found")
+	return env.scopes.lookup(func(v interface{}) bool {
+		return v.(scope).id == id
+	}).(scope).offset
 }

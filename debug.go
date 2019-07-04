@@ -123,7 +123,7 @@ func (env *env) debugForks(pc int, op string) {
 		if i == len(env.forks)-1 {
 			buf.WriteByte('<')
 		}
-		fmt.Fprintf(buf, "%d, %s", v.pc, debugJSON(env.stack.data[v.index].value))
+		fmt.Fprintf(buf, "%d, %s", v.pc, debugJSON(env.stack.data[v.stackindex].value))
 		if i == len(env.forks)-1 {
 			buf.WriteByte('>')
 		}

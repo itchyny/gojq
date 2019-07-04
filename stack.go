@@ -35,13 +35,30 @@ func (s *stack) pop() interface{} {
 	return b.value
 }
 
-func (s *stack) save(f *fork) {
+func (s *stack) top() interface{} {
+	return s.data[s.index].value
+}
+
+func (s *stack) empty() bool {
+	return s.index < 0
+}
+
+func (s *stack) lookup(f func(v interface{}) bool) interface{} {
+	for i := s.index; i >= 0; i = s.data[i].next {
+		if f(s.data[i].value) {
+			return s.data[i].value
+		}
+	}
+	panic("stack.lookup")
+}
+
+func (s *stack) save(index, limit *int) {
 	if s.index >= s.limit {
 		s.limit = s.index
 	}
-	f.index, f.limit = s.index, s.limit
+	*index, *limit = s.index, s.limit
 }
 
-func (s *stack) restore(f *fork) {
-	s.index, s.limit = f.index, f.limit
+func (s *stack) restore(index, limit int) {
+	s.index, s.limit = index, limit
 }
