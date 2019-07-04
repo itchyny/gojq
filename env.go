@@ -6,7 +6,7 @@ type env struct {
 	values    map[string]interface{}
 	parent    *env
 	pc        int
-	stack     []interface{}
+	stack     *stack
 	value     []interface{}
 	scopes    []*scope
 	codes     []*code
@@ -22,8 +22,8 @@ type scope struct {
 type fork struct {
 	op    opcode
 	pc    int
-	v     interface{}
-	scope int
+	index int
+	limit int
 }
 
 func newEnv(parent *env) *env {
@@ -33,7 +33,7 @@ func newEnv(parent *env) *env {
 		values:    make(map[string]interface{}),
 		parent:    parent,
 		pc:        0,
-		stack:     []interface{}{},
+		stack:     newStack(),
 		value:     []interface{}{},
 		scopes:    []*scope{},
 		codes:     []*code{},

@@ -83,9 +83,13 @@ func (env *env) debugState(pc int) {
 	fmt.Fprintf(buf, "\t%d\t%s\t", pc, formatOp(c.op))
 	buf.WriteString(debugJSON(c.v))
 	buf.WriteString("\t|")
-	for _, v := range env.stack {
+	var xs []int
+	for i := env.stack.index; i >= 0; i = env.stack.data[i].next {
+		xs = append(xs, i)
+	}
+	for i := len(xs) - 1; i >= 0; i-- {
 		buf.WriteString("\t")
-		buf.WriteString(debugJSON(v))
+		buf.WriteString(debugJSON(env.stack.data[xs[i]].value))
 	}
 	if c.op == opcall {
 		xs := c.v.([2]interface{})
@@ -119,7 +123,7 @@ func (env *env) debugForks(pc int, op string) {
 		if i == len(env.forks)-1 {
 			buf.WriteByte('<')
 		}
-		fmt.Fprintf(buf, "%d, %s", v.pc, debugJSON(v.v))
+		fmt.Fprintf(buf, "%d, %s", v.pc, debugJSON(env.stack.data[v.index].value))
 		if i == len(env.forks)-1 {
 			buf.WriteByte('>')
 		}

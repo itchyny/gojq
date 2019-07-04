@@ -49,7 +49,7 @@ loop:
 			}
 			env.value[i] = env.pop()
 		case opfork:
-			env.pushfork(code.op, code.v.(int), env.stack[len(env.stack)-1])
+			env.pushfork(code.op, code.v.(int))
 		case opbacktrack:
 			pc++
 			break loop
@@ -71,7 +71,7 @@ loop:
 			xs := code.v.([2]interface{})
 			switch v := xs[0].(type) {
 			case int:
-				env.pushfork(code.op, pc+1, env.stack[len(env.stack)-1])
+				env.pushfork(code.op, pc+1)
 				pc = v
 			case string:
 				argcnt := xs[1].(int)
@@ -104,26 +104,23 @@ loop:
 	if len(env.forks) > 0 {
 		f := env.popfork()
 		pc = f.pc
-		if f.op != opcall {
-			env.push(f.v)
-		}
 		goto loop
 	}
 	return nil, false
 }
 
 func (env *env) push(v interface{}) {
-	env.stack = append(env.stack, v)
+	env.stack.push(v)
 }
 
 func (env *env) pop() interface{} {
-	v := env.stack[len(env.stack)-1]
-	env.stack = env.stack[:len(env.stack)-1]
-	return v
+	return env.stack.pop()
 }
 
-func (env *env) pushfork(op opcode, pc int, v interface{}) {
-	env.forks = append(env.forks, &fork{op, pc, v, env.scopes[len(env.scopes)-1].id})
+func (env *env) pushfork(op opcode, pc int) {
+	f := &fork{op: op, pc: pc}
+	env.stack.save(f)
+	env.forks = append(env.forks, f)
 	env.debugForks(pc, ">>>")
 }
 
@@ -131,12 +128,7 @@ func (env *env) popfork() *fork {
 	f := env.forks[len(env.forks)-1]
 	env.debugForks(f.pc, "<<<")
 	env.forks = env.forks[:len(env.forks)-1]
-	for i := len(env.scopes) - 1; i >= 0; i-- {
-		if env.scopes[i].id == f.scope {
-			env.scopes = env.scopes[:i+1]
-			break
-		}
-	}
+	env.stack.restore(f)
 	return f
 }
 
