@@ -55,6 +55,7 @@ loop:
 				pc++
 				break loop
 			}
+			return nil, false
 		case opjump:
 			pc = code.v.(int)
 		case opjumppop:
