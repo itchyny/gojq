@@ -67,6 +67,9 @@ loop:
 			pc = env.scopes.pop().(scope).pc
 			if env.scopes.empty() {
 				env.pc = len(env.codes)
+				if env.stack.empty() {
+					return nil, false
+				}
 				return env.pop(), true
 			}
 		case opcall:
