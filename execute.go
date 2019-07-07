@@ -33,17 +33,18 @@ loop:
 			env.pop()
 			env.push(code.v)
 		case opload:
-			xs := code.v.([2]int)
-			env.push(env.value[env.scopeOffset(xs[0])-xs[1]])
+			env.push(env.value[env.index(code.v.([2]int))])
 		case opstore:
-			xs := code.v.([2]int)
-			i := env.scopeOffset(xs[0]) - xs[1]
+			i := env.index(code.v.([2]int))
 			if i >= len(env.value) {
 				vs := make([]interface{}, (i+1)*2)
 				copy(vs, env.value)
 				env.value = vs
 			}
 			env.value[i] = env.pop()
+		case opappend:
+			i := env.index(code.v.([2]int))
+			env.value[i] = append(env.value[i].([]interface{}), env.pop())
 		case opfork:
 			env.pushfork(code.op, code.v.(int))
 		case opbacktrack:
@@ -91,10 +92,6 @@ loop:
 				offset = env.scopes.top().(scope).offset
 			}
 			env.scopes.push(scope{xs[0], offset + xs[1], callpc})
-		case opappend:
-			xs := code.v.([2]int)
-			i := env.scopeOffset(xs[0]) - xs[1]
-			env.value[i] = append(env.value[i].([]interface{}), env.pop())
 		case opeach:
 			switch v := env.pop().(type) {
 			case []interface{}:
@@ -168,4 +165,8 @@ func (env *env) scopeOffset(id int) int {
 	return env.scopes.lookup(func(v interface{}) bool {
 		return v.(scope).id == id
 	}).(scope).offset
+}
+
+func (env *env) index(v [2]int) int {
+	return env.scopeOffset(v[0]) - v[1]
 }

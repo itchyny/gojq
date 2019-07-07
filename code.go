@@ -16,6 +16,7 @@ const (
 	opconst
 	opload
 	opstore
+	opappend
 	opfork
 	opbacktrack
 	opjump
@@ -24,7 +25,6 @@ const (
 	opret
 	opcall
 	opscope
-	opappend
 	opeach
 )
 
@@ -46,6 +46,8 @@ func (op opcode) String() string {
 		return "load"
 	case opstore:
 		return "store"
+	case opappend:
+		return "append"
 	case opfork:
 		return "fork"
 	case opbacktrack:
@@ -62,8 +64,6 @@ func (op opcode) String() string {
 		return "call"
 	case opscope:
 		return "scope"
-	case opappend:
-		return "append"
 	case opeach:
 		return "each"
 	default:
