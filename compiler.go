@@ -119,6 +119,11 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 		v := cc.newVariable()
 		cc.append(&code{op: opstore, v: v})
 		for _, name := range e.Args {
+			if name[0] == '$' {
+				cc.append(&code{op: opload, v: v})
+				cc.append(&code{op: opswap})
+				cc.append(&code{op: opjumppop})
+			}
 			cc.append(&code{op: opstore, v: cc.pushVariable(name)})
 		}
 		cc.append(&code{op: opload, v: v})
@@ -329,8 +334,13 @@ func (c *compiler) compileFunc(e *Func) error {
 		for j := len(s.variables) - 1; j >= 0; j-- {
 			v := s.variables[j]
 			if v.name == e.Name && len(e.Args) == 0 {
-				c.append(&code{op: opload, v: v.index})
-				c.append(&code{op: opjumppop})
+				if e.Name[0] == '$' {
+					c.append(&code{op: oppop})
+					c.append(&code{op: opload, v: v.index})
+				} else {
+					c.append(&code{op: opload, v: v.index})
+					c.append(&code{op: opjumppop})
+				}
 				return nil
 			}
 		}
