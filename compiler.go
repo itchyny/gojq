@@ -88,7 +88,6 @@ func (c *compiler) compileQuery(q *Query) error {
 		}
 	}
 	c.append(&code{op: opret})
-	c.optimizeNop()
 	c.optimizeJumps()
 	return nil
 }
@@ -457,18 +456,14 @@ func (c *compiler) lazy(f func() *code) func() {
 	return func() { c.codes[i] = f() }
 }
 
-func (c *compiler) optimizeNop() {
-	for i, code := range c.codes {
-		if code.op == opjump && code.v.(int) == i {
-			c.codes[i].op = opnop
-		}
-	}
-}
-
 func (c *compiler) optimizeJumps() {
 	for i := len(c.codes) - 1; i >= 0; i-- {
 		code := c.codes[i]
 		if code.op != opjump {
+			continue
+		}
+		if code.v.(int) == i {
+			c.codes[i].op = opnop
 			continue
 		}
 		for {
