@@ -32,10 +32,6 @@ loop:
 		case opconst:
 			env.pop()
 			env.push(code.v)
-		case oplt:
-			env.push(env.pop().(int) < env.pop().(int))
-		case opincr:
-			env.push(env.pop().(int) + 1)
 		case opload:
 			xs := code.v.([2]int)
 			env.push(env.value[env.scopeOffset(xs[0])-xs[1]])

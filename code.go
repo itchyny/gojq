@@ -14,8 +14,6 @@ const (
 	opdup
 	opswap
 	opconst
-	oplt
-	opincr
 	opload
 	opstore
 	opfork
@@ -44,10 +42,6 @@ func (op opcode) String() string {
 		return "swap"
 	case opconst:
 		return "const"
-	case oplt:
-		return "lt"
-	case opincr:
-		return "incr"
 	case opload:
 		return "load"
 	case opstore:
