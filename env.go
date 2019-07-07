@@ -10,7 +10,7 @@ type env struct {
 	value     []interface{}
 	scopes    *stack
 	codes     []*code
-	codeinfos []*codeinfo
+	codeinfos []codeinfo
 	forks     []*fork
 }
 

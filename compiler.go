@@ -7,7 +7,7 @@ import (
 
 type compiler struct {
 	codes     []*code
-	codeinfos []*codeinfo
+	codeinfos []codeinfo
 	offset    int
 	scopes    []*scopeinfo
 	scopecnt  int
@@ -16,7 +16,7 @@ type compiler struct {
 
 type bytecode struct {
 	codes     []*code
-	codeinfos []*codeinfo
+	codeinfos []codeinfo
 }
 
 type codeinfo struct {

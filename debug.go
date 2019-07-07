@@ -37,7 +37,7 @@ func (c *compiler) appendCodeInfo(name string) {
 		prefix = "end of "
 		diff = -1
 	}
-	c.codeinfos = append(c.codeinfos, &codeinfo{prefix + name, c.pc() + diff})
+	c.codeinfos = append(c.codeinfos, codeinfo{prefix + name, c.pc() + diff})
 }
 
 func (env *env) lookupFuncName(pc int) string {
