@@ -80,7 +80,7 @@ loop:
 			case string:
 				argcnt := xs[1].(int)
 				x, args := env.pop(), make([]interface{}, argcnt)
-				for i := argcnt - 1; i >= 0; i-- {
+				for i := 0; i < argcnt; i++ {
 					args[i] = env.pop()
 				}
 				env.push(internalFuncs[v].callback(x, args))

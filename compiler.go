@@ -118,12 +118,8 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	if len(e.Args) > 0 {
 		v := cc.newVariable()
 		cc.append(&code{op: opstore, v: v})
-		variables := make([][2]int, len(e.Args))
-		for i, name := range e.Args {
-			variables[i] = cc.pushVariable(name)
-		}
-		for i := len(e.Args) - 1; i >= 0; i-- {
-			cc.append(&code{op: opstore, v: variables[i]})
+		for _, name := range e.Args {
+			cc.append(&code{op: opstore, v: cc.pushVariable(name)})
 		}
 		cc.append(&code{op: opload, v: v})
 	}
@@ -402,9 +398,9 @@ func (c *compiler) compileCall(fn interface{}, args []*Pipe) error {
 	}
 	idx := c.newVariable()
 	c.append(&code{op: opstore, v: idx})
-	for _, p := range args {
+	for i := len(args) - 1; i >= 0; i-- {
 		pc := c.pc() // ref: compileFuncDef
-		if err := c.compileFuncDef(&FuncDef{Name: fmt.Sprintf("lambda:%d", pc+1), Body: &Query{Pipe: p}}, false); err != nil {
+		if err := c.compileFuncDef(&FuncDef{Name: fmt.Sprintf("lambda:%d", pc+1), Body: &Query{Pipe: args[i]}}, false); err != nil {
 			return err
 		}
 		if _, ok := fn.(string); ok {
