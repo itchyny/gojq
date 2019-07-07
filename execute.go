@@ -91,9 +91,10 @@ loop:
 				offset = env.scopes.top().(scope).offset
 			}
 			env.scopes.push(scope{xs[0], offset + xs[1], callpc})
-		case oparray:
-			x, y := env.pop(), env.pop()
-			env.push(append(y.([]interface{}), x))
+		case opappend:
+			xs := code.v.([2]int)
+			i := env.scopeOffset(xs[0]) - xs[1]
+			env.value[i] = append(env.value[i].([]interface{}), env.pop())
 		case opindex:
 			x, y := env.pop(), env.pop()
 			env.push(y.([]interface{})[x.(int)])

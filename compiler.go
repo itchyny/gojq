@@ -367,16 +367,18 @@ func (c *compiler) compileArray(e *Array) error {
 		return nil
 	}
 	c.append(&code{op: oppush, v: []interface{}{}})
-	c.append(&code{op: opswap})
+	arr := c.newVariable()
+	c.append(&code{op: opstore, v: arr})
 	defer c.lazy(func() *code {
-		return &code{op: opfork, v: c.pc() - 1}
+		return &code{op: opfork, v: c.pc() - 2}
 	})()
 	if err := c.compilePipe(e.Pipe); err != nil {
 		return err
 	}
-	c.append(&code{op: oparray})
+	c.append(&code{op: opappend, v: arr})
 	c.append(&code{op: opbacktrack})
 	c.append(&code{op: oppop})
+	c.append(&code{op: opload, v: arr})
 	return nil
 }
 

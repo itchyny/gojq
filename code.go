@@ -26,7 +26,7 @@ const (
 	opret
 	opcall
 	opscope
-	oparray
+	opappend
 	opindex
 )
 
@@ -68,8 +68,8 @@ func (op opcode) String() string {
 		return "call"
 	case opscope:
 		return "scope"
-	case oparray:
-		return "array"
+	case opappend:
+		return "append"
 	case opindex:
 		return "index"
 	default:
