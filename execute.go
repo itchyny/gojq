@@ -9,7 +9,7 @@ func (env *env) execute(bc *bytecode, v interface{}) Iter {
 }
 
 func (env *env) Next() (interface{}, bool) {
-	pc := env.pc
+	pc, callpc := env.pc, 0
 loop:
 	for ; 0 <= pc && pc < len(env.codes); pc++ {
 		env.debugState(pc)
@@ -51,29 +51,29 @@ loop:
 		case opfork:
 			env.pushfork(code.op, code.v.(int))
 		case opbacktrack:
-			pc++
-			break loop
+			if len(env.forks) > 0 {
+				pc++
+				break loop
+			}
 		case opjump:
 			pc = code.v.(int)
 		case opjumppop:
-			pc = env.pop().(int)
+			pc, callpc = env.pop().(int), pc
 		case opjumpifnot:
 			if !valueToBool(env.pop()) {
 				pc = code.v.(int)
 			}
 		case opret:
-			if env.scopes.top().(scope).id == 0 {
+			pc = env.scopes.pop().(scope).pc
+			if env.scopes.empty() {
 				env.pc = len(env.codes)
 				return env.pop(), true
 			}
-			env.scopes.pop()
-			pc = env.scopes.top().(scope).pc
 		case opcall:
 			xs := code.v.([2]interface{})
 			switch v := xs[0].(type) {
 			case int:
-				env.pushfork(code.op, pc+1)
-				pc = v
+				pc, callpc = v, pc
 			case string:
 				argcnt := xs[1].(int)
 				x, args := env.pop(), make([]interface{}, argcnt)
@@ -90,7 +90,7 @@ loop:
 			if !env.scopes.empty() {
 				offset = env.scopes.top().(scope).offset
 			}
-			env.scopes.push(scope{xs[0], offset + xs[1], 0})
+			env.scopes.push(scope{xs[0], offset + xs[1], callpc})
 		case oparray:
 			x, y := env.pop(), env.pop()
 			env.push(append(y.([]interface{}), x))
