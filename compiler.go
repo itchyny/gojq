@@ -390,29 +390,7 @@ func (c *compiler) compileSuffix(e *Suffix) error {
 }
 
 func (c *compiler) compileIter() error {
-	length, idx := c.newVariable(), c.newVariable()
-	if err := c.compileCall("_toarray", nil); err != nil {
-		return err
-	}
-	c.append(&code{op: opdup})
-	if err := c.compileCall("length", nil); err != nil {
-		return err
-	}
-	c.append(&code{op: opstore, v: length})
-	c.append(&code{op: oppush, v: 0})
-	c.append(&code{op: opstore, v: idx})
-	c.append(&code{op: opload, v: length})
-	c.append(&code{op: opload, v: idx})
-	c.append(&code{op: oplt})
-	c.append(&code{op: opjumpifnot, v: c.pc() + 7}) // oppop
-	c.append(&code{op: opfork, v: c.pc() - 4})      // opload length
-	c.append(&code{op: opload, v: idx})
-	c.append(&code{op: opindex})
-	c.append(&code{op: opload, v: idx})
-	c.append(&code{op: opincr})
-	c.append(&code{op: opstore, v: idx})
-	c.append(&code{op: opjump, v: c.pc() + 2})
-	c.append(&code{op: oppop})
+	c.append(&code{op: opeach})
 	c.append(&code{op: opbacktrack})
 	return nil
 }

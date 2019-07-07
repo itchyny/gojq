@@ -95,9 +95,37 @@ loop:
 			xs := code.v.([2]int)
 			i := env.scopeOffset(xs[0]) - xs[1]
 			env.value[i] = append(env.value[i].([]interface{}), env.pop())
-		case opindex:
-			x, y := env.pop(), env.pop()
-			env.push(y.([]interface{})[x.(int)])
+		case opeach:
+			switch v := env.pop().(type) {
+			case []interface{}:
+				if len(v) > 0 {
+					if len(v) > 1 {
+						env.push(v[1:])
+						env.pushfork(code.op, pc)
+						env.pop()
+					}
+					env.push(v[0])
+					pc++
+				}
+			case map[string]interface{}:
+				a := make([]interface{}, len(v))
+				var i int
+				for _, v := range v {
+					a[i] = v
+					i++
+				}
+				if len(a) > 0 {
+					if len(v) > 1 {
+						env.push(a[1:])
+						env.pushfork(code.op, pc)
+						env.pop()
+					}
+					env.push(a[0])
+					pc++
+				}
+			default:
+				env.push(&iteratorError{v})
+			}
 		default:
 			panic(code.op)
 		}

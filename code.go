@@ -27,7 +27,7 @@ const (
 	opcall
 	opscope
 	opappend
-	opindex
+	opeach
 )
 
 func (op opcode) String() string {
@@ -70,8 +70,8 @@ func (op opcode) String() string {
 		return "scope"
 	case opappend:
 		return "append"
-	case opindex:
-		return "index"
+	case opeach:
+		return "each"
 	default:
 		panic(op)
 	}
