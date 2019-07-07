@@ -92,6 +92,10 @@ func (e *Comma) String() string {
 	return s.String()
 }
 
+func (e *Comma) toPipe() *Pipe {
+	return &Pipe{[]*Comma{e}}
+}
+
 // Alt ...
 type Alt struct {
 	Left  *Expr      `@@`
@@ -105,6 +109,10 @@ func (e *Alt) String() string {
 		fmt.Fprint(&s, e)
 	}
 	return s.String()
+}
+
+func (e *Alt) toPipe() *Pipe {
+	return (&Comma{[]*Alt{e}}).toPipe()
 }
 
 // AltRight ...
@@ -126,6 +134,10 @@ type Expr struct {
 	Foreach *Foreach  `| @@ )`
 	Bind    *ExprBind `@@?`
 	Label   *Label    `| @@`
+}
+
+func (e *Expr) toPipe() *Pipe {
+	return (&Alt{Left: e}).toPipe()
 }
 
 func (e *Expr) String() string {
@@ -174,6 +186,10 @@ func (e *Logic) String() string {
 	return s.String()
 }
 
+func (e *Logic) toPipe() *Pipe {
+	return (&Expr{Logic: e}).toPipe()
+}
+
 // LogicRight ...
 type LogicRight struct {
 	Op    Operator `@"or"`
@@ -199,6 +215,10 @@ func (e *AndExpr) String() string {
 	return s.String()
 }
 
+func (e *AndExpr) toPipe() *Pipe {
+	return (&Logic{Left: e}).toPipe()
+}
+
 // AndExprRight ...
 type AndExprRight struct {
 	Op    Operator `@"and"`
@@ -213,6 +233,10 @@ func (e AndExprRight) String() string {
 type Compare struct {
 	Left  *Arith        `@@`
 	Right *CompareRight `@@?`
+}
+
+func (e *Compare) toPipe() *Pipe {
+	return (&AndExpr{Left: e}).toPipe()
 }
 
 func (e *Compare) String() string {
@@ -249,6 +273,10 @@ func (e *Arith) String() string {
 	return s.String()
 }
 
+func (e *Arith) toPipe() *Pipe {
+	return (&Compare{Left: e}).toPipe()
+}
+
 // ArithRight ...
 type ArithRight struct {
 	Op    Operator `@("+" | "-")`
@@ -272,6 +300,10 @@ func (e *Factor) String() string {
 		fmt.Fprint(&s, e)
 	}
 	return s.String()
+}
+
+func (e *Factor) toPipe() *Pipe {
+	return (&Arith{Left: e}).toPipe()
 }
 
 // FactorRight ...
@@ -338,6 +370,10 @@ func (e *Term) String() string {
 		fmt.Fprint(&s, e)
 	}
 	return s.String()
+}
+
+func (e *Term) toPipe() *Pipe {
+	return (&Factor{Left: e}).toPipe()
 }
 
 // Unary ...
