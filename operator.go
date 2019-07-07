@@ -135,6 +135,18 @@ func (op Operator) getFunc() string {
 		return "_divide"
 	case OpMod:
 		return "_modulo"
+	case OpEq:
+		return "_equal"
+	case OpNe:
+		return "_notequal"
+	case OpGt:
+		return "_greater"
+	case OpLt:
+		return "_less"
+	case OpGe:
+		return "_greatereq"
+	case OpLe:
+		return "_lesseq"
 	case OpAnd:
 		panic("unreachable")
 	case OpOr:
@@ -159,17 +171,17 @@ func (op Operator) Eval(l, r interface{}) interface{} {
 	case OpMod:
 		return funcOpMod(nil, l, r)
 	case OpEq:
-		return funcOpEq(l, r)
+		return funcOpEq(nil, l, r)
 	case OpNe:
-		return funcOpNe(l, r)
+		return funcOpNe(nil, l, r)
 	case OpGt:
-		return funcOpGt(l, r)
+		return funcOpGt(nil, l, r)
 	case OpLt:
-		return funcOpLt(l, r)
+		return funcOpLt(nil, l, r)
 	case OpGe:
-		return funcOpGe(l, r)
+		return funcOpGe(nil, l, r)
 	case OpLe:
-		return funcOpLe(l, r)
+		return funcOpLe(nil, l, r)
 	case OpAnd:
 		panic("unreachable")
 	case OpOr:
@@ -392,26 +404,26 @@ func funcOpMod(_, l, r interface{}) interface{} {
 	)
 }
 
-func funcOpEq(l, r interface{}) interface{} {
+func funcOpEq(_, l, r interface{}) interface{} {
 	return compare(l, r) == 0
 }
 
-func funcOpNe(l, r interface{}) interface{} {
+func funcOpNe(_, l, r interface{}) interface{} {
 	return compare(l, r) != 0
 }
 
-func funcOpGt(l, r interface{}) interface{} {
+func funcOpGt(_, l, r interface{}) interface{} {
 	return compare(l, r) > 0
 }
 
-func funcOpLt(l, r interface{}) interface{} {
+func funcOpLt(_, l, r interface{}) interface{} {
 	return compare(l, r) < 0
 }
 
-func funcOpGe(l, r interface{}) interface{} {
+func funcOpGe(_, l, r interface{}) interface{} {
 	return compare(l, r) >= 0
 }
 
-func funcOpLe(l, r interface{}) interface{} {
+func funcOpLe(_, l, r interface{}) interface{} {
 	return compare(l, r) <= 0
 }

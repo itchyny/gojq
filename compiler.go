@@ -246,10 +246,13 @@ func (c *compiler) compileAndExpr(e *AndExpr) error {
 }
 
 func (c *compiler) compileCompare(e *Compare) error {
-	if e.Right != nil {
-		return errors.New("compileCompare")
+	if e.Right == nil {
+		return c.compileArith(e.Left)
 	}
-	return c.compileArith(e.Left)
+	return c.compileCall(
+		e.Right.Op.getFunc(),
+		[]*Pipe{e.Left.toPipe(), e.Right.Right.toPipe()},
+	)
 }
 
 func (c *compiler) compileArith(e *Arith) error {
