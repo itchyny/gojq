@@ -336,6 +336,16 @@
     2
     1
 
+- name: empty function
+  args:
+    - 'def f: 1,empty,empty,2; f,f'
+  input: '[0, 1]'
+  expected: |
+    1
+    2
+    1
+    2
+
 - name: unary operators
   args:
     - -c
@@ -1141,6 +1151,16 @@
   input: '[0, 1]'
   expected: |
     [0,1]
+
+- name: function declaration
+  args:
+    - -c
+    - 'def f: .,.; def g: [f,f]; f,g'
+  input: '[0, 1]'
+  expected: |
+    [0,1]
+    [0,1]
+    [[0,1],[0,1],[0,1],[0,1]]
 
 - name: function declaration and recursive call
   args:
