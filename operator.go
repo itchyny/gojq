@@ -123,19 +123,41 @@ func (op Operator) GoString() string {
 	panic(op)
 }
 
+func (op Operator) getFunc() string {
+	switch op {
+	case OpAdd:
+		return "_add"
+	case OpSub:
+		return "_subtract"
+	case OpMul:
+		return "_multiply"
+	case OpDiv:
+		return "_divide"
+	case OpMod:
+		return "_modulo"
+	case OpAnd:
+		panic("unreachable")
+	case OpOr:
+		panic("unreachable")
+	case OpAlt:
+		panic("unreachable")
+	}
+	panic(op)
+}
+
 // Eval the expression.
 func (op Operator) Eval(l, r interface{}) interface{} {
 	switch op {
 	case OpAdd:
-		return funcOpAdd(l, r)
+		return funcOpAdd(nil, l, r)
 	case OpSub:
-		return funcOpSub(l, r)
+		return funcOpSub(nil, l, r)
 	case OpMul:
-		return funcOpMul(l, r)
+		return funcOpMul(nil, l, r)
 	case OpDiv:
-		return funcOpDiv(l, r)
+		return funcOpDiv(nil, l, r)
 	case OpMod:
-		return funcOpMod(l, r)
+		return funcOpMod(nil, l, r)
 	case OpEq:
 		return funcOpEq(l, r)
 	case OpNe:
@@ -211,7 +233,7 @@ func binopTypeSwitch(
 	}
 }
 
-func funcOpAdd(l, r interface{}) interface{} {
+func funcOpAdd(_, l, r interface{}) interface{} {
 	if l == nil {
 		return r
 	} else if r == nil {
@@ -236,7 +258,7 @@ func funcOpAdd(l, r interface{}) interface{} {
 	)
 }
 
-func funcOpSub(l, r interface{}) interface{} {
+func funcOpSub(_, l, r interface{}) interface{} {
 	return binopTypeSwitch(l, r,
 		func(l, r int) interface{} { return l - r },
 		func(l, r float64) interface{} { return l - r },
@@ -262,7 +284,7 @@ func funcOpSub(l, r interface{}) interface{} {
 	)
 }
 
-func funcOpMul(l, r interface{}) interface{} {
+func funcOpMul(_, l, r interface{}) interface{} {
 	return binopTypeSwitch(l, r,
 		func(l, r int) interface{} { return l * r },
 		func(l, r float64) interface{} { return l * r },
@@ -318,7 +340,7 @@ func deepMergeObjects(l, r map[string]interface{}) interface{} {
 	return m
 }
 
-func funcOpDiv(l, r interface{}) interface{} {
+func funcOpDiv(_, l, r interface{}) interface{} {
 	return binopTypeSwitch(l, r,
 		func(l, r int) interface{} {
 			if r == 0 {
@@ -349,7 +371,7 @@ func funcOpDiv(l, r interface{}) interface{} {
 	)
 }
 
-func funcOpMod(l, r interface{}) interface{} {
+func funcOpMod(_, l, r interface{}) interface{} {
 	return binopTypeSwitch(l, r,
 		func(l, r int) interface{} {
 			if r == 0 {

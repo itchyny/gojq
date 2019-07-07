@@ -253,17 +253,31 @@ func (c *compiler) compileCompare(e *Compare) error {
 }
 
 func (c *compiler) compileArith(e *Arith) error {
-	if e.Right != nil {
-		return errors.New("compileArith")
+	if len(e.Right) == 0 {
+		return c.compileFactor(e.Left)
 	}
-	return c.compileFactor(e.Left)
+	r := e.Right[len(e.Right)-1]
+	return c.compileCall(
+		r.Op.getFunc(),
+		[]*Pipe{
+			(&Arith{e.Left, e.Right[:len(e.Right)-1]}).toPipe(),
+			r.Right.toPipe(),
+		},
+	)
 }
 
 func (c *compiler) compileFactor(e *Factor) error {
-	if len(e.Right) > 0 {
-		return errors.New("compileFactor")
+	if len(e.Right) == 0 {
+		return c.compileTerm(e.Left)
 	}
-	return c.compileTerm(e.Left)
+	r := e.Right[len(e.Right)-1]
+	return c.compileCall(
+		r.Op.getFunc(),
+		[]*Pipe{
+			(&Factor{e.Left, e.Right[:len(e.Right)-1]}).toPipe(),
+			r.Right.toPipe(),
+		},
+	)
 }
 
 func (c *compiler) compileTerm(e *Term) (err error) {
