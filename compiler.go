@@ -400,18 +400,22 @@ func (c *compiler) compileCall(fn interface{}, args []*Pipe) error {
 		c.append(&code{op: opcall, v: [2]interface{}{fn, len(args)}})
 		return nil
 	}
-	if len(args) > 0 {
-		idx := c.newVariable()
-		c.append(&code{op: opstore, v: idx})
-		for _, p := range args {
-			pc := c.pc() // ref: compileFuncDef
-			if err := c.compileFuncDef(&FuncDef{Name: fmt.Sprintf("lambda:%d", pc+1), Body: &Query{Pipe: p}}, false); err != nil {
-				return err
-			}
+	idx := c.newVariable()
+	c.append(&code{op: opstore, v: idx})
+	for _, p := range args {
+		pc := c.pc() // ref: compileFuncDef
+		if err := c.compileFuncDef(&FuncDef{Name: fmt.Sprintf("lambda:%d", pc+1), Body: &Query{Pipe: p}}, false); err != nil {
+			return err
+		}
+		if _, ok := fn.(string); ok {
+			c.append(&code{op: opload, v: idx})
+			c.append(&code{op: oppush, v: pc})
+			c.append(&code{op: opjumppop})
+		} else {
 			c.append(&code{op: oppush, v: pc})
 		}
-		c.append(&code{op: opload, v: idx})
 	}
+	c.append(&code{op: opload, v: idx})
 	c.append(&code{op: opcall, v: [2]interface{}{fn, len(args)}})
 	return nil
 }
