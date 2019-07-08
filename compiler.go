@@ -426,7 +426,10 @@ func (c *compiler) compileCall(fn interface{}, args []*Pipe) error {
 	c.append(&code{op: opstore, v: idx})
 	for i := len(args) - 1; i >= 0; i-- {
 		pc := c.pc() // ref: compileFuncDef
-		if err := c.compileFuncDef(&FuncDef{Name: fmt.Sprintf("lambda:%d", pc+1), Body: &Query{Pipe: args[i]}}, false); err != nil {
+		if err := c.compileFuncDef(&FuncDef{
+			Name: fmt.Sprintf("lambda:%d", pc+1),
+			Body: &Query{Pipe: args[i]},
+		}, false); err != nil {
 			return err
 		}
 		if _, ok := fn.(string); ok {
