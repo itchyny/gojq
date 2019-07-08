@@ -215,16 +215,13 @@ func (c *compiler) compileLogic(e *Logic) error {
 }
 
 func (c *compiler) compileIf(e *If) error {
-	c.append(&code{op: opdup})
-	idx := c.newVariable()
-	c.append(&code{op: opstore, v: idx}) // store the current value for then or else clause
+	c.append(&code{op: opdup}) // duplicate the value for then or else clause
 	if err := c.compilePipe(e.Cond); err != nil {
 		return err
 	}
 	setjumpifnot := c.lazy(func() *code {
 		return &code{op: opjumpifnot, v: c.pc()} // if falsy, skip then clause
 	})
-	c.append(&code{op: opload, v: idx})
 	if err := c.compilePipe(e.Then); err != nil {
 		return err
 	}
@@ -232,7 +229,6 @@ func (c *compiler) compileIf(e *If) error {
 	defer c.lazy(func() *code {
 		return &code{op: opjump, v: c.pc() - 1} // jump to ret after else clause
 	})()
-	c.append(&code{op: opload, v: idx})
 	if len(e.Elif) > 0 {
 		return c.compileIf(&If{e.Elif[0].Cond, e.Elif[0].Then, e.Elif[1:], e.Else})
 	}
