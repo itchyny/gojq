@@ -234,10 +234,20 @@ func (c *compiler) compilePattern(p *Pattern) error {
 }
 
 func (c *compiler) compileLogic(e *Logic) error {
-	if len(e.Right) > 0 {
-		return errors.New("compileLogic")
+	if len(e.Right) == 0 {
+		return c.compileAndExpr(e.Left)
 	}
-	return c.compileAndExpr(e.Left)
+	return c.compileIf(
+		&If{
+			Cond: (&Logic{e.Left, e.Right[:len(e.Right)-1]}).toPipe(),
+			Then: (&Term{True: true}).toPipe(),
+			Else: (&Expr{If: &If{
+				Cond: e.Right[len(e.Right)-1].Right.toPipe(),
+				Then: (&Term{True: true}).toPipe(),
+				Else: (&Term{False: true}).toPipe(),
+			}}).toPipe(),
+		},
+	)
 }
 
 func (c *compiler) compileIf(e *If) error {
