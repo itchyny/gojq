@@ -265,10 +265,20 @@ func (c *compiler) compileIf(e *If) error {
 }
 
 func (c *compiler) compileAndExpr(e *AndExpr) error {
-	if len(e.Right) > 0 {
-		return errors.New("compileAndExpr")
+	if len(e.Right) == 0 {
+		return c.compileCompare(e.Left)
 	}
-	return c.compileCompare(e.Left)
+	return c.compileIf(
+		&If{
+			Cond: (&AndExpr{e.Left, e.Right[:len(e.Right)-1]}).toPipe(),
+			Then: (&Expr{If: &If{
+				Cond: e.Right[len(e.Right)-1].Right.toPipe(),
+				Then: (&Term{True: true}).toPipe(),
+				Else: (&Term{False: true}).toPipe(),
+			}}).toPipe(),
+			Else: (&Term{False: true}).toPipe(),
+		},
+	)
 }
 
 func (c *compiler) compileCompare(e *Compare) error {
