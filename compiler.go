@@ -194,8 +194,23 @@ func (c *compiler) compileAlt(e *Alt) error {
 	return c.compileAlt(&Alt{e.Right[0].Right, e.Right[1:]})
 }
 
-func (c *compiler) compileExpr(e *Expr) error {
-	if e.Bind != nil || e.Label != nil {
+func (c *compiler) compileExpr(e *Expr) (err error) {
+	if e.Bind != nil {
+		c.append(&code{op: opdup})
+	}
+	defer func() {
+		if err != nil {
+			return
+		}
+		if b := e.Bind; b != nil {
+			if err = c.compilePattern(b.Pattern); err != nil {
+				return
+			}
+			err = c.compilePipe(b.Body)
+			return
+		}
+	}()
+	if e.Label != nil {
 		return errors.New("compileExpr")
 	}
 	if e.Logic != nil {
@@ -205,6 +220,17 @@ func (c *compiler) compileExpr(e *Expr) error {
 		return c.compileIf(e.If)
 	}
 	return errors.New("compileExpr")
+}
+
+func (c *compiler) compilePattern(p *Pattern) error {
+	if p.Name != "" {
+		if p.Name[0] != '$' {
+			return &bindVariableNameError{p.Name}
+		}
+		c.append(&code{op: opstore, v: c.pushVariable(p.Name)})
+		return nil
+	}
+	return errors.New("compilePattern")
 }
 
 func (c *compiler) compileLogic(e *Logic) error {
