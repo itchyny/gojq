@@ -415,6 +415,17 @@ func funcIndex(v, x interface{}) interface{} {
 				return nil
 			case []interface{}:
 				return applyArrayIndexInternal(nil, nil, &index, v)
+			case string:
+				switch v := applyArrayIndexInternal(nil, nil, &index, explode(v)).(type) {
+				case []interface{}:
+					return implode(v)
+				case int:
+					return implode([]interface{}{v})
+				case nil:
+					return ""
+				default:
+					panic(v)
+				}
 			default:
 				return &expectedObjectError{v}
 			}
@@ -423,7 +434,22 @@ func funcIndex(v, x interface{}) interface{} {
 	}
 }
 
-func funcSlice(v, start, end interface{}) interface{} {
+func funcSlice(v, start, end interface{}) (r interface{}) {
+	if w, ok := v.(string); ok {
+		v = explode(w)
+		defer func() {
+			switch s := r.(type) {
+			case []interface{}:
+				r = implode(s)
+			case int:
+				r = implode([]interface{}{s})
+			case nil:
+				r = ""
+			default:
+				panic(r)
+			}
+		}()
+	}
 	switch v := v.(type) {
 	case nil:
 		return nil
