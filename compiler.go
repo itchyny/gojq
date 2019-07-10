@@ -355,6 +355,10 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 		c.append(&code{op: opconst, v: *e.Number})
 		return nil
 	}
+	if e.Str != "" && !strings.Contains(e.Str, "\\(") {
+		c.append(&code{op: opconst, v: e.Str[1 : len(e.Str)-1]})
+		return nil
+	}
 	if e.RawStr != "" {
 		c.append(&code{op: opconst, v: e.RawStr})
 		return nil
