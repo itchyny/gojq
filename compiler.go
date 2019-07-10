@@ -481,7 +481,11 @@ func (c *compiler) compileArray(e *Array) error {
 }
 
 func (c *compiler) compileSuffix(e *Suffix) error {
-	if e.Iter {
+	if e.Index != nil {
+		return c.compileIndex(e.Index)
+	} else if x := e.SuffixIndex; x != nil {
+		return c.compileIndex(&Index{Start: x.Start, IsSlice: x.IsSlice, End: x.End})
+	} else if e.Iter {
 		return c.compileIter()
 	}
 	return errors.New("compileSuffix")
