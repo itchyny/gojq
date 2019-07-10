@@ -293,15 +293,15 @@ func (env *env) applyArrayIndex(x *Index, a []interface{}, c Iter) interface{} {
 				if x.End != nil {
 					return mapIterator(env.applyPipe(x.End, cc()), func(e interface{}) interface{} {
 						if end, ok := toInt(e); ok {
-							return applyArrayIndetInternal(&start, &end, nil, a)
+							return applyArrayIndexInternal(&start, &end, nil, a)
 						}
 						return &arrayIndexNotNumberError{e}
 					})
 				}
 				if x.IsSlice {
-					return applyArrayIndetInternal(&start, nil, nil, a)
+					return applyArrayIndexInternal(&start, nil, nil, a)
 				}
-				return applyArrayIndetInternal(nil, nil, &start, a)
+				return applyArrayIndexInternal(nil, nil, &start, a)
 			} else if b, ok := s.([]interface{}); ok {
 				var xs []interface{}
 				if len(b) == 0 {
@@ -326,7 +326,7 @@ func (env *env) applyArrayIndex(x *Index, a []interface{}, c Iter) interface{} {
 	if x.End != nil {
 		return mapIterator(env.applyPipe(x.End, cc()), func(e interface{}) interface{} {
 			if end, ok := toInt(e); ok {
-				return applyArrayIndetInternal(nil, &end, nil, a)
+				return applyArrayIndexInternal(nil, &end, nil, a)
 			}
 			return &arrayIndexNotNumberError{e}
 		})
@@ -349,7 +349,7 @@ func toInt(x interface{}) (int, bool) {
 	}
 }
 
-func applyArrayIndetInternal(start, end, index *int, a []interface{}) interface{} {
+func applyArrayIndexInternal(start, end, index *int, a []interface{}) interface{} {
 	l := len(a)
 	toIndex := func(i int) int {
 		switch {
