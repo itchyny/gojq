@@ -3,6 +3,7 @@ package gojq
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 type compiler struct {
@@ -338,6 +339,9 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 			err = c.compileSuffix(s)
 		}
 	}()
+	if e.Index != nil {
+		return c.compileIndex(e.Index)
+	}
 	if e.Identity {
 		return nil
 	}
@@ -349,6 +353,10 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 	}
 	if e.Number != nil {
 		c.append(&code{op: opconst, v: *e.Number})
+		return nil
+	}
+	if e.RawStr != "" {
+		c.append(&code{op: opconst, v: e.RawStr})
 		return nil
 	}
 	if e.Null {
@@ -367,6 +375,19 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 		return c.compilePipe(e.Pipe)
 	}
 	return errors.New("compileTerm")
+}
+
+func (c *compiler) compileIndex(e *Index) error {
+	if e.Name != "" {
+		return c.compileCall("_index", []*Pipe{(&Term{RawStr: e.Name}).toPipe()})
+	}
+	if e.Str != "" {
+		if strings.Contains(e.Str, "\\(") {
+			return errors.New("compileIndex")
+		}
+		return c.compileCall("_index", []*Pipe{(&Term{Str: e.Str}).toPipe()})
+	}
+	return errors.New("compileIndex")
 }
 
 func (c *compiler) compileFunc(e *Func) error {

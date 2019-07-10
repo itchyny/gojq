@@ -327,6 +327,7 @@ type Term struct {
 	Number     *float64  `| @Number`
 	Unary      *Unary    `| @@`
 	Str        string    `| @String`
+	RawStr     string    `| @" "` // never matches, used in compiler
 	Null       bool      `| @"null"`
 	True       bool      `| @"true"`
 	False      bool      `| @"false"`

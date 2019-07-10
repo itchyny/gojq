@@ -53,6 +53,7 @@ func init() {
 		"implode":        noArgFunc(funcImplode),
 		"tojson":         noArgFunc(funcToJSON),
 		"fromjson":       noArgFunc(funcFromJSON),
+		"_index":         argFunc1(funcIndex),
 		"_add":           argFunc2(funcOpAdd),
 		"_subtract":      argFunc2(funcOpSub),
 		"_multiply":      argFunc2(funcOpMul),
@@ -392,6 +393,22 @@ func funcFromJSON(v interface{}) interface{} {
 		return w
 	default:
 		return &funcTypeError{"fromjson", v}
+	}
+}
+
+func funcIndex(v, x interface{}) interface{} {
+	switch x := x.(type) {
+	case string:
+		switch v := v.(type) {
+		case nil:
+			return nil
+		case map[string]interface{}:
+			return v[x]
+		default:
+			return &expectedObjectError{v}
+		}
+	default:
+		return &objectKeyNotStringError{x}
 	}
 }
 
