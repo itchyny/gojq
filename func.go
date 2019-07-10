@@ -217,7 +217,7 @@ func toFloat64(name string, v interface{}) (float64, error) {
 	}
 }
 
-func funcEmpty(_ interface{}) interface{} {
+func funcEmpty(interface{}) interface{} {
 	return struct{}{}
 }
 
@@ -494,7 +494,7 @@ func funcError(v interface{}, args []interface{}) interface{} {
 	}
 }
 
-func funcBuiltins(_ interface{}) interface{} {
+func funcBuiltins(interface{}) interface{} {
 	var xs []string
 	for name, fn := range internalFuncs {
 		if name[0] != '_' {
@@ -520,7 +520,7 @@ func funcBuiltins(_ interface{}) interface{} {
 	return ys
 }
 
-func funcEnv(_ interface{}) interface{} {
+func funcEnv(interface{}) interface{} {
 	env := make(map[string]interface{})
 	for _, kv := range os.Environ() {
 		xs := strings.SplitN(kv, "=", 2)
