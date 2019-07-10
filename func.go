@@ -408,28 +408,52 @@ func funcIndex(v, x interface{}) interface{} {
 		default:
 			return &expectedObjectError{v}
 		}
-	default:
-		if index, ok := toInt(x); ok {
-			switch v := v.(type) {
-			case nil:
-				return nil
+	case float64:
+		idx := int(x)
+		switch v := v.(type) {
+		case nil:
+			return nil
+		case []interface{}:
+			return applyArrayIndexInternal(nil, nil, &idx, v)
+		case string:
+			switch v := applyArrayIndexInternal(nil, nil, &idx, explode(v)).(type) {
 			case []interface{}:
-				return applyArrayIndexInternal(nil, nil, &index, v)
-			case string:
-				switch v := applyArrayIndexInternal(nil, nil, &index, explode(v)).(type) {
-				case []interface{}:
-					return implode(v)
-				case int:
-					return implode([]interface{}{v})
-				case nil:
-					return ""
-				default:
-					panic(v)
-				}
+				return implode(v)
+			case int:
+				return implode([]interface{}{v})
+			case nil:
+				return ""
 			default:
-				return &expectedObjectError{v}
+				panic(v)
 			}
+		default:
+			return &expectedArrayError{v}
 		}
+	case []interface{}:
+		switch v := v.(type) {
+		case nil:
+			return nil
+		case []interface{}:
+			var xs []interface{}
+			if len(x) == 0 {
+				return xs
+			}
+			for i := 0; i < len(v) && i < len(v)-len(x)+1; i++ {
+				var neq bool
+				for j, y := range x {
+					if neq = compare(v[i+j], y) != 0; neq {
+						break
+					}
+				}
+				if !neq {
+					xs = append(xs, i)
+				}
+			}
+			return xs
+		default:
+			return &expectedArrayError{v}
+		}
+	default:
 		return &objectKeyNotStringError{x}
 	}
 }
