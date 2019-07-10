@@ -54,6 +54,7 @@ func init() {
 		"tojson":         noArgFunc(funcToJSON),
 		"fromjson":       noArgFunc(funcFromJSON),
 		"_index":         argFunc1(funcIndex),
+		"_slice":         argFunc2(funcSlice),
 		"_add":           argFunc2(funcOpAdd),
 		"_subtract":      argFunc2(funcOpSub),
 		"_multiply":      argFunc2(funcOpMul),
@@ -408,7 +409,46 @@ func funcIndex(v, x interface{}) interface{} {
 			return &expectedObjectError{v}
 		}
 	default:
+		if index, ok := toInt(x); ok {
+			switch v := v.(type) {
+			case nil:
+				return nil
+			case []interface{}:
+				return applyArrayIndexInternal(nil, nil, &index, v)
+			default:
+				return &expectedObjectError{v}
+			}
+		}
 		return &objectKeyNotStringError{x}
+	}
+}
+
+func funcSlice(v, start, end interface{}) interface{} {
+	switch v := v.(type) {
+	case nil:
+		return nil
+	case []interface{}:
+		if start != nil {
+			if start, ok := toInt(start); ok {
+				if end != nil {
+					if end, ok := toInt(end); ok {
+						return applyArrayIndexInternal(&start, &end, nil, v)
+					}
+					return &arrayIndexNotNumberError{end}
+				}
+				return applyArrayIndexInternal(&start, nil, nil, v)
+			}
+			return &arrayIndexNotNumberError{start}
+		}
+		if end != nil {
+			if end, ok := toInt(end); ok {
+				return applyArrayIndexInternal(nil, &end, nil, v)
+			}
+			return &arrayIndexNotNumberError{end}
+		}
+		return v
+	default:
+		return &expectedArrayError{v}
 	}
 }
 
