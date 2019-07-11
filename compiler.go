@@ -386,13 +386,13 @@ func (c *compiler) compileIndex(e *Index) error {
 	if e.Start != nil {
 		if e.IsSlice {
 			if e.End != nil {
-				return c.compileCall("_slice", []*Pipe{e.Start, e.End})
+				return c.compileCall("_slice", []*Pipe{e.End, e.Start})
 			}
-			return c.compileCall("_slice", []*Pipe{e.Start, (&Term{Null: true}).toPipe()})
+			return c.compileCall("_slice", []*Pipe{(&Term{Null: true}).toPipe(), e.Start})
 		}
 		return c.compileCall("_index", []*Pipe{e.Start})
 	}
-	return c.compileCall("_slice", []*Pipe{(&Term{Null: true}).toPipe(), e.End})
+	return c.compileCall("_slice", []*Pipe{e.End, (&Term{Null: true}).toPipe()})
 }
 
 func (c *compiler) compileFunc(e *Func) error {

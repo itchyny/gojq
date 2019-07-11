@@ -460,7 +460,7 @@ func funcIndex(v, x interface{}) interface{} {
 	}
 }
 
-func funcSlice(v, start, end interface{}) (r interface{}) {
+func funcSlice(v, end, start interface{}) (r interface{}) {
 	if w, ok := v.(string); ok {
 		v = explode(w)
 		defer func() {
