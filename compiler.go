@@ -504,8 +504,14 @@ func (c *compiler) compileIter() error {
 }
 
 func (c *compiler) compileCall(fn interface{}, args []*Pipe) error {
+	var arg interface{}
+	if name, ok := fn.(string); ok {
+		arg = [3]interface{}{internalFuncs[name].callback, len(args), name}
+	} else {
+		arg = fn
+	}
 	if len(args) == 0 {
-		c.append(&code{op: opcall, v: [2]interface{}{fn, len(args)}})
+		c.append(&code{op: opcall, v: arg})
 		return nil
 	}
 	idx := c.newVariable()
@@ -527,7 +533,7 @@ func (c *compiler) compileCall(fn interface{}, args []*Pipe) error {
 		}
 	}
 	c.append(&code{op: opload, v: idx})
-	c.append(&code{op: opcall, v: [2]interface{}{fn, len(args)}})
+	c.append(&code{op: opcall, v: arg})
 	return nil
 }
 

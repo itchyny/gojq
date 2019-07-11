@@ -56,8 +56,7 @@ func (env *env) debugCodes() {
 	for i, c := range env.codes {
 		pc := i
 		if c.op == opcall {
-			xs := c.v.([2]interface{})
-			if x, ok := xs[0].(int); ok {
+			if x, ok := c.v.(int); ok {
 				pc = x + 1
 			}
 		}
@@ -69,7 +68,7 @@ func (env *env) debugCodes() {
 				s = "\t## " + name
 			}
 		}
-		fmt.Fprintf(debugOut, "\t%d\t%s\t%s%s\n", i, formatOp(c.op), debugJSON(c.v), s)
+		fmt.Fprintf(debugOut, "\t%d\t%s\t%s%s\n", i, formatOp(c.op), debugOperand(c), s)
 	}
 	fmt.Fprintln(debugOut, "\t"+strings.Repeat("-", 20))
 }
@@ -80,9 +79,7 @@ func (env *env) debugState(pc int) {
 	}
 	buf := new(bytes.Buffer)
 	c := env.codes[pc]
-	fmt.Fprintf(buf, "\t%d\t%s\t", pc, formatOp(c.op))
-	buf.WriteString(debugJSON(c.v))
-	buf.WriteString("\t|")
+	fmt.Fprintf(buf, "\t%d\t%s\t%s\t|", pc, formatOp(c.op), debugOperand(c))
 	var xs []int
 	for i := env.stack.index; i >= 0; i = env.stack.data[i].next {
 		xs = append(xs, i)
@@ -92,8 +89,7 @@ func (env *env) debugState(pc int) {
 		buf.WriteString(debugJSON(env.stack.data[xs[i]].value))
 	}
 	if c.op == opcall {
-		xs := c.v.([2]interface{})
-		if x, ok := xs[0].(int); ok {
+		if x, ok := c.v.(int); ok {
 			pc = x + 1
 		}
 	}
@@ -129,6 +125,21 @@ func (env *env) debugForks(pc int, op string) {
 		}
 	}
 	fmt.Fprintf(debugOut, "\t-\t%s            \t%d\t|\t%s\n", op, pc, buf.String())
+}
+
+func debugOperand(c *code) string {
+	if c.op == opcall {
+		switch v := c.v.(type) {
+		case int:
+			return debugJSON(v)
+		case [3]interface{}:
+			return fmt.Sprintf("%s/%d", v[2], v[1])
+		default:
+			panic(c)
+		}
+	} else {
+		return debugJSON(c.v)
+	}
 }
 
 func debugJSON(v interface{}) string {

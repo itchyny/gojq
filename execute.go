@@ -71,17 +71,16 @@ loop:
 				return env.pop(), true
 			}
 		case opcall:
-			xs := code.v.([2]interface{})
-			switch v := xs[0].(type) {
+			switch v := code.v.(type) {
 			case int:
 				pc, callpc = v, pc
-			case string:
-				argcnt := xs[1].(int)
+			case [3]interface{}:
+				argcnt := v[1].(int)
 				x, args := env.pop(), make([]interface{}, argcnt)
 				for i := 0; i < argcnt; i++ {
 					args[i] = env.pop()
 				}
-				env.push(internalFuncs[v].callback(x, args))
+				env.push(v[0].(func(interface{}, []interface{}) interface{})(x, args))
 			default:
 				panic(v)
 			}
