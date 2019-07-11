@@ -55,6 +55,8 @@ func init() {
 		"fromjson":       noArgFunc(funcFromJSON),
 		"_index":         argFunc1(funcIndex),
 		"_slice":         argFunc2(funcSlice),
+		"_plus":          noArgFunc(funcOpPlus),
+		"_negate":        noArgFunc(funcOpNegate),
 		"_add":           argFunc2(funcOpAdd),
 		"_subtract":      argFunc2(funcOpSub),
 		"_multiply":      argFunc2(funcOpMul),

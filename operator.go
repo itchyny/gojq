@@ -245,6 +245,28 @@ func binopTypeSwitch(
 	}
 }
 
+func funcOpPlus(v interface{}) interface{} {
+	switch v := v.(type) {
+	case int:
+		return v
+	case float64:
+		return v
+	default:
+		return &unaryTypeError{"plus", v}
+	}
+}
+
+func funcOpNegate(v interface{}) interface{} {
+	switch v := v.(type) {
+	case int:
+		return -v
+	case float64:
+		return -v
+	default:
+		return &unaryTypeError{"negate", v}
+	}
+}
+
 func funcOpAdd(_, l, r interface{}) interface{} {
 	if l == nil {
 		return r

@@ -341,41 +341,33 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 	}()
 	if e.Index != nil {
 		return c.compileIndex(e.Index)
-	}
-	if e.Identity {
+	} else if e.Identity {
 		return nil
-	}
-	if e.Func != nil {
+	} else if e.Func != nil {
 		return c.compileFunc(e.Func)
-	}
-	if e.Array != nil {
+	} else if e.Array != nil {
 		return c.compileArray(e.Array)
-	}
-	if e.Number != nil {
+	} else if e.Number != nil {
 		c.append(&code{op: opconst, v: *e.Number})
 		return nil
-	}
-	if e.Str != "" && !strings.Contains(e.Str, "\\(") {
+	} else if e.Unary != nil {
+		return c.compileUnary(e.Unary)
+	} else if e.Str != "" && !strings.Contains(e.Str, "\\(") {
 		c.append(&code{op: opconst, v: e.Str[1 : len(e.Str)-1]})
 		return nil
-	}
-	if e.RawStr != "" {
+	} else if e.RawStr != "" {
 		c.append(&code{op: opconst, v: e.RawStr})
 		return nil
-	}
-	if e.Null {
+	} else if e.Null {
 		c.append(&code{op: opconst, v: nil})
 		return nil
-	}
-	if e.True {
+	} else if e.True {
 		c.append(&code{op: opconst, v: true})
 		return nil
-	}
-	if e.False {
+	} else if e.False {
 		c.append(&code{op: opconst, v: false})
 		return nil
-	}
-	if e.Pipe != nil {
+	} else if e.Pipe != nil {
 		return c.compilePipe(e.Pipe)
 	}
 	return errors.New("compileTerm")
@@ -478,6 +470,20 @@ func (c *compiler) compileArray(e *Array) error {
 	c.append(&code{op: oppop})
 	c.append(&code{op: opload, v: arr})
 	return nil
+}
+
+func (c *compiler) compileUnary(e *Unary) error {
+	if err := c.compileTerm(e.Term); err != nil {
+		return err
+	}
+	switch e.Op {
+	case OpAdd:
+		return c.compileCall("_plus", nil)
+	case OpSub:
+		return c.compileCall("_negate", nil)
+	default:
+		return fmt.Errorf("unexpected operator in Unary: %s", e.Op)
+	}
 }
 
 func (c *compiler) compileSuffix(e *Suffix) error {
