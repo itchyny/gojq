@@ -493,15 +493,10 @@ func (c *compiler) compileTermSuffix(e *Term, s *Suffix) error {
 		if err := c.compileTerm(e); err != nil {
 			return err
 		}
-		return c.compileIter()
+		c.append(&code{op: opeach})
+		return nil
 	}
 	return errors.New("compileSuffix")
-}
-
-func (c *compiler) compileIter() error {
-	c.append(&code{op: opeach})
-	c.append(&code{op: opbacktrack})
-	return nil
 }
 
 func (c *compiler) compileCall(fn interface{}, args []*Pipe) error {

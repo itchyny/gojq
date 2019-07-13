@@ -108,31 +108,31 @@ loop:
 			backtrack = false
 			switch v := env.pop().(type) {
 			case []interface{}:
-				if len(v) > 0 {
-					if len(v) > 1 {
-						env.push(v[1:])
-						env.pushfork(code.op, pc)
-						env.pop()
-					}
-					env.push(v[0])
-					pc++
+				if len(v) == 0 {
+					break loop
 				}
+				if len(v) > 1 {
+					env.push(v[1:])
+					env.pushfork(code.op, pc)
+					env.pop()
+				}
+				env.push(v[0])
 			case map[string]interface{}:
+				if len(v) == 0 {
+					break loop
+				}
 				a := make([]interface{}, len(v))
 				var i int
 				for _, v := range v {
 					a[i] = v
 					i++
 				}
-				if len(a) > 0 {
-					if len(v) > 1 {
-						env.push(a[1:])
-						env.pushfork(code.op, pc)
-						env.pop()
-					}
-					env.push(a[0])
-					pc++
+				if len(v) > 1 {
+					env.push(a[1:])
+					env.pushfork(code.op, pc)
+					env.pop()
 				}
+				env.push(a[0])
 			default:
 				err = &iteratorError{v}
 				break loop
