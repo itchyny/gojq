@@ -9,7 +9,7 @@ func (env *env) execute(bc *bytecode, v interface{}) Iter {
 }
 
 func (env *env) Next() (interface{}, bool) {
-	pc, callpc := env.pc, 0
+	pc, callpc, err := env.pc, 0, error(nil)
 loop:
 	for ; 0 <= pc && pc < len(env.codes); pc++ {
 		env.debugState(pc)
@@ -80,7 +80,12 @@ loop:
 				for i := 0; i < argcnt; i++ {
 					args[i] = env.pop()
 				}
-				env.push(v[0].(func(interface{}, []interface{}) interface{})(x, args))
+				w := v[0].(func(interface{}, []interface{}) interface{})(x, args)
+				if e, ok := w.(error); ok {
+					err = e
+					goto on_err
+				}
+				env.push(w)
 			default:
 				panic(v)
 			}
@@ -120,7 +125,8 @@ loop:
 					pc++
 				}
 			default:
-				env.push(&iteratorError{v})
+				err = &iteratorError{v}
+				goto on_err
 			}
 		default:
 			panic(code.op)
@@ -133,6 +139,12 @@ loop:
 		goto loop
 	}
 	return nil, false
+on_err:
+	for !env.scopes.empty() {
+		pc = env.scopes.pop().(scope).pc
+	}
+	env.pc = pc
+	return err, true
 }
 
 func (env *env) push(v interface{}) {
