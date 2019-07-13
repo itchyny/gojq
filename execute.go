@@ -14,7 +14,7 @@ func (env *env) Next() (interface{}, bool) {
 	defer func() { env.pc, env.backtrack = pc, true }()
 loop:
 	for ; 0 <= pc && pc < len(env.codes); pc++ {
-		env.debugState(pc)
+		env.debugState(pc, backtrack)
 		code := env.codes[pc]
 		switch code.op {
 		case opnop:
