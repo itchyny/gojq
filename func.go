@@ -638,6 +638,6 @@ func funcEnv(interface{}) interface{} {
 	return env
 }
 
-func internalfuncTypeError(x, v interface{}) interface{} {
+func internalfuncTypeError(v, x interface{}) interface{} {
 	return &funcTypeError{x.(string), v}
 }
