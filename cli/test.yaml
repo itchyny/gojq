@@ -97,7 +97,7 @@
     - '.[.a + .b]'
   input: '{"a": 10, "b": 20}'
   error: |
-    expected a string for object key but got: number (30)
+    expected an array but got: object ({"a":10,"b":20})
 
 - name: expected object
   args:
@@ -231,7 +231,7 @@
     - '.["foo"]'
   input: '[]'
   error: |
-    expected a number for indexing an array but got: string ("foo")
+    expected an object but got: array ([])
 
 - name: array slice error
   args:
