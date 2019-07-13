@@ -331,16 +331,14 @@ func (c *compiler) compileFactor(e *Factor) error {
 }
 
 func (c *compiler) compileTerm(e *Term) (err error) {
-	defer func() {
-		for _, s := range e.SuffixList {
-			if err != nil {
-				break
-			}
-			err = c.compileSuffix(s)
-		}
-	}()
+	if len(e.SuffixList) > 0 {
+		s := e.SuffixList[len(e.SuffixList)-1]
+		t := *e // clone without changing e
+		(&t).SuffixList = t.SuffixList[:len(e.SuffixList)-1]
+		return c.compileTermSuffix(&t, s)
+	}
 	if e.Index != nil {
-		return c.compileIndex(e.Index)
+		return c.compileIndex(&Term{Identity: true}, e.Index)
 	} else if e.Identity {
 		return nil
 	} else if e.Func != nil {
@@ -373,26 +371,26 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 	return errors.New("compileTerm")
 }
 
-func (c *compiler) compileIndex(e *Index) error {
-	if e.Name != "" {
-		return c.compileCall("_index", []*Pipe{(&Term{RawStr: e.Name}).toPipe()})
+func (c *compiler) compileIndex(e *Term, x *Index) error {
+	if x.Name != "" {
+		return c.compileCall("_index", []*Pipe{e.toPipe(), (&Term{RawStr: x.Name}).toPipe()})
 	}
-	if e.Str != "" {
-		if strings.Contains(e.Str, "\\(") {
+	if x.Str != "" {
+		if strings.Contains(x.Str, "\\(") {
 			return errors.New("compileIndex")
 		}
-		return c.compileCall("_index", []*Pipe{(&Term{Str: e.Str}).toPipe()})
+		return c.compileCall("_index", []*Pipe{e.toPipe(), (&Term{Str: x.Str}).toPipe()})
 	}
-	if e.Start != nil {
-		if e.IsSlice {
-			if e.End != nil {
-				return c.compileCall("_slice", []*Pipe{e.End, e.Start})
+	if x.Start != nil {
+		if x.IsSlice {
+			if x.End != nil {
+				return c.compileCall("_slice", []*Pipe{e.toPipe(), x.End, x.Start})
 			}
-			return c.compileCall("_slice", []*Pipe{(&Term{Null: true}).toPipe(), e.Start})
+			return c.compileCall("_slice", []*Pipe{e.toPipe(), (&Term{Null: true}).toPipe(), x.Start})
 		}
-		return c.compileCall("_index", []*Pipe{e.Start})
+		return c.compileCall("_index", []*Pipe{e.toPipe(), x.Start})
 	}
-	return c.compileCall("_slice", []*Pipe{e.End, (&Term{Null: true}).toPipe()})
+	return c.compileCall("_slice", []*Pipe{e.toPipe(), x.End, (&Term{Null: true}).toPipe()})
 }
 
 func (c *compiler) compileFunc(e *Func) error {
@@ -486,12 +484,15 @@ func (c *compiler) compileUnary(e *Unary) error {
 	}
 }
 
-func (c *compiler) compileSuffix(e *Suffix) error {
-	if e.Index != nil {
-		return c.compileIndex(e.Index)
-	} else if x := e.SuffixIndex; x != nil {
-		return c.compileIndex(&Index{Start: x.Start, IsSlice: x.IsSlice, End: x.End})
-	} else if e.Iter {
+func (c *compiler) compileTermSuffix(e *Term, s *Suffix) error {
+	if s.Index != nil {
+		return c.compileIndex(e, s.Index)
+	} else if x := s.SuffixIndex; x != nil {
+		return c.compileIndex(e, &Index{Start: x.Start, IsSlice: x.IsSlice, End: x.End})
+	} else if s.Iter {
+		if err := c.compileTerm(e); err != nil {
+			return err
+		}
 		return c.compileIter()
 	}
 	return errors.New("compileSuffix")

@@ -53,8 +53,8 @@ func init() {
 		"implode":        noArgFunc(funcImplode),
 		"tojson":         noArgFunc(funcToJSON),
 		"fromjson":       noArgFunc(funcFromJSON),
-		"_index":         argFunc1(funcIndex),
-		"_slice":         argFunc2(funcSlice),
+		"_index":         argFunc2(funcIndex),
+		"_slice":         argFunc3(funcSlice),
 		"_plus":          noArgFunc(funcOpPlus),
 		"_negate":        noArgFunc(funcOpNegate),
 		"_add":           argFunc2(funcOpAdd),
@@ -399,7 +399,7 @@ func funcFromJSON(v interface{}) interface{} {
 	}
 }
 
-func funcIndex(v, x interface{}) interface{} {
+func funcIndex(_, v, x interface{}) interface{} {
 	switch x := x.(type) {
 	case string:
 		switch v := v.(type) {
@@ -460,7 +460,7 @@ func funcIndex(v, x interface{}) interface{} {
 	}
 }
 
-func funcSlice(v, end, start interface{}) (r interface{}) {
+func funcSlice(_, v, end, start interface{}) (r interface{}) {
 	if w, ok := v.(string); ok {
 		v = explode(w)
 		defer func() {
