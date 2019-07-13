@@ -9,7 +9,8 @@ func (env *env) execute(bc *bytecode, v interface{}) Iter {
 }
 
 func (env *env) Next() (interface{}, bool) {
-	pc, callpc, err := env.pc, 0, error(nil)
+	pc, callpc, err := env.pc, len(env.codes), error(nil)
+	defer func() { env.pc = pc }()
 loop:
 	for ; 0 <= pc && pc < len(env.codes); pc++ {
 		env.debugState(pc)
@@ -64,7 +65,6 @@ loop:
 		case opret:
 			pc = env.scopes.pop().(scope).pc
 			if env.scopes.empty() {
-				env.pc = len(env.codes)
 				if env.stack.empty() {
 					return nil, false
 				}
@@ -132,7 +132,6 @@ loop:
 			panic(code.op)
 		}
 	}
-	env.pc = pc
 	if len(env.forks) > 0 {
 		f := env.popfork()
 		pc = f.pc
@@ -143,7 +142,6 @@ on_err:
 	for !env.scopes.empty() {
 		pc = env.scopes.pop().(scope).pc
 	}
-	env.pc = pc
 	return err, true
 }
 
