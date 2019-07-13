@@ -12,6 +12,7 @@ type env struct {
 	codes     []*code
 	codeinfos []codeinfo
 	forks     []*fork
+	backtrack bool
 }
 
 type scope struct {

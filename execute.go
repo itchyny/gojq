@@ -9,8 +9,9 @@ func (env *env) execute(bc *bytecode, v interface{}) Iter {
 }
 
 func (env *env) Next() (interface{}, bool) {
-	pc, callpc, err := env.pc, len(env.codes), error(nil)
-	defer func() { env.pc = pc }()
+	var err error
+	pc, callpc, backtrack := env.pc, len(env.codes)-1, env.backtrack
+	defer func() { env.pc, env.backtrack = pc, true }()
 loop:
 	for ; 0 <= pc && pc < len(env.codes); pc++ {
 		env.debugState(pc)
@@ -47,13 +48,14 @@ loop:
 			i := env.index(code.v.([2]int))
 			env.value[i] = append(env.value[i].([]interface{}), env.pop())
 		case opfork:
-			env.pushfork(code.op, code.v.(int))
-		case opbacktrack:
-			if len(env.forks) > 0 {
-				pc++
-				break loop
+			if backtrack || err != nil {
+				pc, backtrack = code.v.(int), false
+				goto loop
+			} else {
+				env.pushfork(code.op, pc)
 			}
-			return nil, false
+		case opbacktrack:
+			break loop
 		case opjump:
 			pc = code.v.(int)
 		case opjumppop:
@@ -63,6 +65,9 @@ loop:
 				pc = code.v.(int)
 			}
 		case opret:
+			if backtrack || err != nil {
+				break loop
+			}
 			pc = env.scopes.pop().(scope).pc
 			if env.scopes.empty() {
 				if env.stack.empty() {
@@ -83,7 +88,7 @@ loop:
 				w := v[0].(func(interface{}, []interface{}) interface{})(x, args)
 				if e, ok := w.(error); ok {
 					err = e
-					goto on_err
+					break loop
 				}
 				env.push(w)
 			default:
@@ -97,6 +102,10 @@ loop:
 			}
 			env.scopes.push(scope{xs[0], offset + xs[1], callpc})
 		case opeach:
+			if err != nil {
+				break loop
+			}
+			backtrack = false
 			switch v := env.pop().(type) {
 			case []interface{}:
 				if len(v) > 0 {
@@ -126,23 +135,20 @@ loop:
 				}
 			default:
 				err = &iteratorError{v}
-				goto on_err
+				break loop
 			}
 		default:
 			panic(code.op)
 		}
 	}
 	if len(env.forks) > 0 {
-		f := env.popfork()
-		pc = f.pc
+		pc, backtrack = env.popfork().pc, true
 		goto loop
 	}
-	return nil, false
-on_err:
-	for !env.scopes.empty() {
-		pc = env.scopes.pop().(scope).pc
+	if err != nil {
+		return err, true
 	}
-	return err, true
+	return nil, false
 }
 
 func (env *env) push(v interface{}) {
