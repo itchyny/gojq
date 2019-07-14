@@ -26,9 +26,9 @@ type codeinfo struct {
 }
 
 type funcinfo struct {
-	name   string
-	argcnt int
-	pc     int
+	name string
+	pc   int
+	args []string
 }
 
 type scopeinfo struct {
@@ -97,7 +97,7 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	if builtin {
 		for i := len(c.funcs) - 1; i >= 0; i-- {
 			f := c.funcs[i]
-			if f.name == e.Name && f.argcnt == len(e.Args) {
+			if f.name == e.Name && len(f.args) == len(e.Args) {
 				return nil
 			}
 		}
@@ -108,7 +108,7 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	c.appendCodeInfo(e.Name)
 	defer c.appendCodeInfo(e.Name)
 	pc := c.pc()
-	c.funcs = append(c.funcs, funcinfo{e.Name, len(e.Args), pc})
+	c.funcs = append(c.funcs, funcinfo{e.Name, pc, e.Args})
 	cc := &compiler{offset: pc, scopecnt: c.scopecnt, funcs: c.funcs}
 	scope := cc.newScope()
 	cc.scopes = append(c.scopes, scope)
@@ -119,11 +119,6 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 		v := cc.newVariable()
 		cc.append(&code{op: opstore, v: v})
 		for _, name := range e.Args {
-			if name[0] == '$' {
-				cc.append(&code{op: opload, v: v})
-				cc.append(&code{op: opswap})
-				cc.append(&code{op: opjumppop})
-			}
 			cc.append(&code{op: opstore, v: cc.pushVariable(name)})
 		}
 		cc.append(&code{op: opload, v: v})
@@ -437,8 +432,8 @@ func (c *compiler) compileFunc(e *Func) error {
 	}
 	for i := len(c.funcs) - 1; i >= 0; i-- {
 		f := c.funcs[i]
-		if f.name == e.Name && f.argcnt == len(e.Args) {
-			if err := c.compileCall(f.pc, e.Args); err != nil {
+		if f.name == e.Name && len(f.args) == len(e.Args) {
+			if err := c.compileCallPc(f, e.Args); err != nil {
 				return err
 			}
 			return nil
@@ -454,8 +449,8 @@ func (c *compiler) compileFunc(e *Func) error {
 		}
 		for i := len(c.funcs) - 1; i >= 0; i-- {
 			f := c.funcs[i]
-			if f.name == e.Name && f.argcnt == len(e.Args) {
-				if err := c.compileCall(f.pc, e.Args); err != nil {
+			if f.name == e.Name && len(f.args) == len(e.Args) {
+				if err := c.compileCallPc(f, e.Args); err != nil {
 					return err
 				}
 				return nil
@@ -539,15 +534,30 @@ func (c *compiler) compileTermSuffix(e *Term, s *Suffix) error {
 	}
 }
 
-func (c *compiler) compileCall(fn interface{}, args []*Pipe) error {
-	var arg interface{}
-	if name, ok := fn.(string); ok {
-		arg = [3]interface{}{internalFuncs[name].callback, len(args), name}
-	} else {
-		arg = fn
-	}
+func (c *compiler) compileCall(name string, args []*Pipe) error {
+	return c.compileCallInternal(
+		[3]interface{}{internalFuncs[name].callback, len(args), name},
+		args,
+		nil,
+	)
+}
+
+func (c *compiler) compileCallPc(fn funcinfo, args []*Pipe) error {
 	if len(args) == 0 {
-		c.append(&code{op: opcall, v: arg})
+		return c.compileCallInternal(fn.pc, args, nil)
+	}
+	vars := make(map[int]bool, len(fn.args))
+	for i, arg := range fn.args {
+		if arg[0] == '$' {
+			vars[i] = true
+		}
+	}
+	return c.compileCallInternal(fn.pc, args, vars)
+}
+
+func (c *compiler) compileCallInternal(fn interface{}, args []*Pipe, vars map[int]bool) error {
+	if len(args) == 0 {
+		c.append(&code{op: opcall, v: fn})
 		return nil
 	}
 	idx := c.newVariable()
@@ -561,7 +571,7 @@ func (c *compiler) compileCall(fn interface{}, args []*Pipe) error {
 		}, false); err != nil {
 			return err
 		}
-		if _, ok := fn.(string); ok {
+		if vars == nil || vars[i] {
 			if pc == c.pc()-2 {
 				// optimize identity argument
 				j := len(c.codes) - 3
@@ -592,7 +602,7 @@ func (c *compiler) compileCall(fn interface{}, args []*Pipe) error {
 		}
 	}
 	c.append(&code{op: opload, v: idx})
-	c.append(&code{op: opcall, v: arg})
+	c.append(&code{op: opcall, v: fn})
 	return nil
 }
 
