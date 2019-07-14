@@ -554,16 +554,39 @@ func (c *compiler) compileCall(fn interface{}, args []*Pipe) error {
 	c.append(&code{op: opstore, v: idx})
 	for i := len(args) - 1; i >= 0; i-- {
 		pc := c.pc() + 1 // ref: compileFuncDef
+		name := fmt.Sprintf("lambda:%d", pc)
 		if err := c.compileFuncDef(&FuncDef{
-			Name: fmt.Sprintf("lambda:%d", pc),
+			Name: name,
 			Body: &Query{Pipe: args[i]},
 		}, false); err != nil {
 			return err
 		}
 		if _, ok := fn.(string); ok {
-			c.append(&code{op: opload, v: idx})
-			c.append(&code{op: oppush, v: pc})
-			c.append(&code{op: opjumppop})
+			if pc == c.pc()-2 {
+				// optimize identity argument
+				j := len(c.codes) - 3
+				c.codes[j] = &code{op: opload, v: idx}
+				c.codes = c.codes[:j+1]
+				c.funcs = c.funcs[:len(c.funcs)-1]
+				c.deleteCodeInfo(name)
+			} else if pc == c.pc()-3 {
+				// optimize one instruction argument
+				j := len(c.codes) - 4
+				if c.codes[j+2].op == opconst {
+					c.codes[j] = &code{op: oppush, v: c.codes[j+2].v}
+					c.codes = c.codes[:j+1]
+				} else {
+					c.codes[j] = &code{op: opload, v: idx}
+					c.codes[j+1] = c.codes[j+2]
+					c.codes = c.codes[:j+2]
+				}
+				c.funcs = c.funcs[:len(c.funcs)-1]
+				c.deleteCodeInfo(name)
+			} else {
+				c.append(&code{op: opload, v: idx})
+				c.append(&code{op: oppush, v: pc})
+				c.append(&code{op: opjumppop})
+			}
 		} else {
 			c.append(&code{op: oppush, v: pc})
 		}

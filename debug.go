@@ -40,6 +40,16 @@ func (c *compiler) appendCodeInfo(name string) {
 	c.codeinfos = append(c.codeinfos, codeinfo{prefix + name, c.pc() + diff})
 }
 
+func (c *compiler) deleteCodeInfo(name string) {
+	for i := 0; i < len(c.codeinfos); i++ {
+		if strings.HasSuffix(c.codeinfos[i].name, name) {
+			copy(c.codeinfos[i:], c.codeinfos[i+1:])
+			c.codeinfos = c.codeinfos[:len(c.codeinfos)-1]
+			i--
+		}
+	}
+}
+
 func (env *env) lookupFuncName(pc int) string {
 	for _, ci := range env.codeinfos {
 		if ci.pc == pc {
