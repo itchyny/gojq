@@ -621,7 +621,7 @@ func (c *compiler) optimizeJumps() {
 		if code.op != opjump {
 			continue
 		}
-		if code.v.(int)-1 == i {
+		if code.v.(int)-1 == i+c.offset {
 			c.codes[i].op = opnop
 			continue
 		}
