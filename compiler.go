@@ -216,6 +216,8 @@ func (c *compiler) compileExpr(e *Expr) (err error) {
 		return c.compileIf(e.If)
 	} else if e.Try != nil {
 		return c.compileTry(e.Try)
+	} else if e.Reduce != nil {
+		return c.compileReduce(e.Reduce)
 	} else {
 		return fmt.Errorf("invalid expr: %s", e)
 	}
@@ -290,6 +292,33 @@ func (c *compiler) compileTry(e *Try) error {
 	} else {
 		return errors.New("catch")
 	}
+}
+
+func (c *compiler) compileReduce(e *Reduce) error {
+	defer c.lazy(func() *code {
+		return &code{op: opfork, v: c.pc() - 2}
+	})()
+	c.append(&code{op: opdup})
+	v := c.newVariable()
+	if err := c.compilePipe(e.Start); err != nil {
+		return err
+	}
+	c.append(&code{op: opstore, v: v})
+	if err := c.compileTerm(e.Term); err != nil {
+		return err
+	}
+	if err := c.compilePattern(e.Pattern); err != nil {
+		return err
+	}
+	c.append(&code{op: opload, v: v})
+	if err := c.compilePipe(e.Update); err != nil {
+		return err
+	}
+	c.append(&code{op: opstore, v: v})
+	c.append(&code{op: opbacktrack})
+	c.append(&code{op: oppop})
+	c.append(&code{op: opload, v: v})
+	return nil
 }
 
 func (c *compiler) compileAndExpr(e *AndExpr) error {
