@@ -86,6 +86,7 @@ loop:
 			switch v := code.v.(type) {
 			case int:
 				pc, callpc = v, pc
+				goto loop
 			case [3]interface{}:
 				argcnt := v[1].(int)
 				x, args := env.pop(), make([]interface{}, argcnt)

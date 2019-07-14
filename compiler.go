@@ -108,7 +108,7 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	c.appendCodeInfo(e.Name)
 	defer c.appendCodeInfo(e.Name)
 	pc := c.pc()
-	c.funcs = append(c.funcs, funcinfo{e.Name, len(e.Args), pc - 1})
+	c.funcs = append(c.funcs, funcinfo{e.Name, len(e.Args), pc})
 	cc := &compiler{offset: pc, scopecnt: c.scopecnt, funcs: c.funcs}
 	scope := cc.newScope()
 	cc.scopes = append(c.scopes, scope)

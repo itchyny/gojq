@@ -57,7 +57,7 @@ func (env *env) debugCodes() {
 		pc := i
 		if c.op == opcall {
 			if x, ok := c.v.(int); ok {
-				pc = x + 1
+				pc = x
 			}
 		}
 		var s string
@@ -90,7 +90,7 @@ func (env *env) debugState(pc int, backtrack bool) {
 	}
 	if c.op == opcall {
 		if x, ok := c.v.(int); ok {
-			pc = x + 1
+			pc = x
 		}
 	}
 	if name := env.lookupFuncName(pc); name != "" {
