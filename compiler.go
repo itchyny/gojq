@@ -362,6 +362,8 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 		return c.compileIndex(&Term{Identity: true}, e.Index)
 	} else if e.Identity {
 		return nil
+	} else if e.Recurse {
+		return c.compileFunc(&Func{Name: "recurse"})
 	} else if e.Func != nil {
 		return c.compileFunc(e.Func)
 	} else if e.Array != nil {
@@ -388,8 +390,9 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 		return nil
 	} else if e.Pipe != nil {
 		return c.compilePipe(e.Pipe)
+	} else {
+		return fmt.Errorf("invalid term: %s", e)
 	}
-	return errors.New("compileTerm")
 }
 
 func (c *compiler) compileIndex(e *Term, x *Index) error {
