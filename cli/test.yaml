@@ -129,8 +129,22 @@
 
 - name: object optional
   args:
+    - '.foo?.bar?.baz?'
+  input: '{"foo": 128}'
+
+- name: object optional error
+  args:
     - '.foo.bar.baz?'
   input: '{"foo": 128}'
+  error: |
+    expected an object but got: number (128)
+
+- name: object optional after iterator error
+  args:
+    - '.[].foo?'
+  input: '128'
+  error: |
+    cannot iterate over: number (128)
 
 - name: array index
   args:
@@ -279,6 +293,18 @@
   args:
     - '.[]?'
   input: '10'
+
+- name: iterator error
+  args:
+    - '.[][]'
+  input: '[10]'
+  error: |
+    cannot iterate over: number (10)
+
+- name: deep iterator optional
+  args:
+    - '.[][]?'
+  input: '[10]'
 
 - name: object iterator
   args:
