@@ -55,14 +55,20 @@ func (env *env) debugCodes() {
 	}
 	for i, c := range env.codes {
 		pc := i
-		if c.op == opcall {
+		switch c.op {
+		case opcall:
 			if x, ok := c.v.(int); ok {
 				pc = x
+			}
+		case opjump:
+			x := c.v.(int)
+			if x > 0 && env.codes[x-1].op == opscope {
+				pc = x - 1
 			}
 		}
 		var s string
 		if name := env.lookupFuncName(pc); name != "" {
-			if c.op == opcall {
+			if c.op == opcall || c.op == opjump {
 				s = "\t## call " + name
 			} else {
 				s = "\t## " + name
@@ -88,13 +94,19 @@ func (env *env) debugState(pc int, backtrack bool) {
 		buf.WriteString("\t")
 		buf.WriteString(debugJSON(env.stack.data[xs[i]].value))
 	}
-	if c.op == opcall {
+	switch c.op {
+	case opcall:
 		if x, ok := c.v.(int); ok {
 			pc = x
 		}
+	case opjump:
+		x := c.v.(int)
+		if x > 0 && env.codes[x-1].op == opscope {
+			pc = x - 1
+		}
 	}
 	if name := env.lookupFuncName(pc); name != "" {
-		if c.op == opcall {
+		if c.op == opcall || c.op == opjump {
 			buf.WriteString("\t\t\t## call " + name)
 		} else {
 			buf.WriteString("\t\t\t## " + name)

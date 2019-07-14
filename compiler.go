@@ -133,6 +133,7 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 		return err
 	}
 	setscope()
+	cc.optimizeTailRec()
 	c.codes = append(c.codes, bs.codes...)
 	c.codeinfos = append(c.codeinfos, bs.codeinfos...)
 	c.scopecnt = cc.scopecnt
@@ -584,6 +585,34 @@ func (c *compiler) lazy(f func() *code) func() {
 	i := len(c.codes)
 	c.codes = append(c.codes, &code{op: opnop})
 	return func() { c.codes[i] = f() }
+}
+
+func (c *compiler) optimizeTailRec() {
+	var pcs []int
+	for i := 0; i < len(c.codes); i++ {
+		switch c.codes[i].op {
+		case opscope:
+			pcs = append(pcs, i+c.offset)
+		case opcall:
+			if j, ok := c.codes[i].v.(int); !ok || pcs[len(pcs)-1] != j {
+				break
+			}
+		loop:
+			for j := i + 1; j < len(c.codes); {
+				switch c.codes[j].op {
+				case opjump:
+					j = c.codes[j].v.(int) - c.offset
+				case opret:
+					c.codes[i] = &code{op: opjump, v: pcs[len(pcs)-1] + 1}
+					break loop
+				default:
+					break loop
+				}
+			}
+		case opret:
+			pcs = pcs[:len(pcs)-1]
+		}
+	}
 }
 
 func (c *compiler) optimizeJumps() {
