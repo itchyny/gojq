@@ -65,11 +65,14 @@ loop:
 			break loop
 		case opjump:
 			pc = code.v.(int)
+			goto loop
 		case opjumppop:
 			pc, callpc = env.pop().(int), pc
+			goto loop
 		case opjumpifnot:
 			if !valueToBool(env.pop()) {
 				pc = code.v.(int)
+				goto loop
 			}
 		case opret:
 			if backtrack || err != nil {

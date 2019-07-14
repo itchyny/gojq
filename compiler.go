@@ -103,7 +103,7 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 		}
 	}
 	defer c.lazy(func() *code {
-		return &code{op: opjump, v: c.pc() - 1}
+		return &code{op: opjump, v: c.pc()}
 	})()
 	c.appendCodeInfo(e.Name)
 	defer c.appendCodeInfo(e.Name)
@@ -160,7 +160,7 @@ func (c *compiler) compileComma(e *Comma) error {
 	}
 	setfork()
 	defer c.lazy(func() *code {
-		return &code{op: opjump, v: c.pc() - 1}
+		return &code{op: opjump, v: c.pc()}
 	})()
 	return c.compileAlt(e.Alts[len(e.Alts)-1])
 }
@@ -180,16 +180,16 @@ func (c *compiler) compileAlt(e *Alt) error {
 	}
 	setfork()
 	c.append(&code{op: opdup})
-	c.append(&code{op: opjumpifnot, v: c.pc() + 3}) // oppop
+	c.append(&code{op: opjumpifnot, v: c.pc() + 4}) // oppop
 	c.append(&code{op: oppush, v: true})            // found some value
 	c.append(&code{op: opstore, v: found})
 	defer c.lazy(func() *code {
-		return &code{op: opjump, v: c.pc() - 1} // ret
+		return &code{op: opjump, v: c.pc()} // ret
 	})()
 	c.append(&code{op: oppop})
 	c.append(&code{op: opbacktrack})
 	c.append(&code{op: opload, v: found})
-	c.append(&code{op: opjumpifnot, v: c.pc() + 2})
+	c.append(&code{op: opjumpifnot, v: c.pc() + 3})
 	c.append(&code{op: opbacktrack}) // if found, backtrack
 	c.append(&code{op: oppop})
 	return c.compileAlt(&Alt{e.Right[0].Right, e.Right[1:]})
@@ -259,14 +259,14 @@ func (c *compiler) compileIf(e *If) error {
 		return err
 	}
 	setjumpifnot := c.lazy(func() *code {
-		return &code{op: opjumpifnot, v: c.pc()} // if falsy, skip then clause
+		return &code{op: opjumpifnot, v: c.pc() + 1} // if falsy, skip then clause
 	})
 	if err := c.compilePipe(e.Then); err != nil {
 		return err
 	}
 	setjumpifnot()
 	defer c.lazy(func() *code {
-		return &code{op: opjump, v: c.pc() - 1} // jump to ret after else clause
+		return &code{op: opjump, v: c.pc()} // jump to ret after else clause
 	})()
 	if len(e.Elif) > 0 {
 		return c.compileIf(&If{e.Elif[0].Cond, e.Elif[0].Then, e.Elif[1:], e.Else})
@@ -285,7 +285,7 @@ func (c *compiler) compileTry(e *Try) error {
 		return err
 	}
 	defer c.lazy(func() *code {
-		return &code{op: opjump, v: c.pc() - 1}
+		return &code{op: opjump, v: c.pc()}
 	})()
 	setforkopt()
 	if e.Catch == nil {
@@ -552,9 +552,9 @@ func (c *compiler) compileCall(fn interface{}, args []*Pipe) error {
 	idx := c.newVariable()
 	c.append(&code{op: opstore, v: idx})
 	for i := len(args) - 1; i >= 0; i-- {
-		pc := c.pc() // ref: compileFuncDef
+		pc := c.pc() + 1 // ref: compileFuncDef
 		if err := c.compileFuncDef(&FuncDef{
-			Name: fmt.Sprintf("lambda:%d", pc+1),
+			Name: fmt.Sprintf("lambda:%d", pc),
 			Body: &Query{Pipe: args[i]},
 		}, false); err != nil {
 			return err
@@ -592,12 +592,12 @@ func (c *compiler) optimizeJumps() {
 		if code.op != opjump {
 			continue
 		}
-		if code.v.(int) == i {
+		if code.v.(int)-1 == i {
 			c.codes[i].op = opnop
 			continue
 		}
 		for {
-			d := c.codes[code.v.(int)+1-c.offset]
+			d := c.codes[code.v.(int)-c.offset]
 			if d.op != opjump {
 				break
 			}
