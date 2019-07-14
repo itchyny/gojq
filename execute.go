@@ -103,11 +103,8 @@ loop:
 			}
 		case opscope:
 			xs := code.v.([2]int)
-			offset := -1
-			if !env.scopes.empty() {
-				offset = env.scopes.top().(scope).offset
-			}
-			env.scopes.push(scope{xs[0], offset + xs[1], callpc})
+			env.scopes.push(scope{xs[0], env.offset, callpc})
+			env.offset += xs[1]
 		case opeach:
 			if err != nil {
 				break loop
@@ -190,5 +187,5 @@ func (env *env) scopeOffset(id int) int {
 }
 
 func (env *env) index(v [2]int) int {
-	return env.scopeOffset(v[0]) - v[1]
+	return env.scopeOffset(v[0]) + v[1]
 }

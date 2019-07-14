@@ -13,6 +13,7 @@ type env struct {
 	codeinfos []codeinfo
 	forks     []*fork
 	backtrack bool
+	offset    int
 }
 
 type scope struct {
