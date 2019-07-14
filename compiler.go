@@ -216,11 +216,13 @@ func (c *compiler) compileExpr(e *Expr) (err error) {
 	}
 	if e.Logic != nil {
 		return c.compileLogic(e.Logic)
-	}
-	if e.If != nil {
+	} else if e.If != nil {
 		return c.compileIf(e.If)
+	} else if e.Try != nil {
+		return c.compileTry(e.Try)
+	} else {
+		return fmt.Errorf("invalid expr: %s", e)
 	}
-	return errors.New("compileExpr")
 }
 
 func (c *compiler) compilePattern(p *Pattern) error {
@@ -273,6 +275,25 @@ func (c *compiler) compileIf(e *If) error {
 		return c.compilePipe(e.Else)
 	}
 	return nil
+}
+
+func (c *compiler) compileTry(e *Try) error {
+	setforkopt := c.lazy(func() *code {
+		return &code{op: opforkopt, v: c.pc()}
+	})
+	if err := c.compilePipe(e.Body); err != nil {
+		return err
+	}
+	defer c.lazy(func() *code {
+		return &code{op: opjump, v: c.pc() - 1}
+	})()
+	setforkopt()
+	if e.Catch == nil {
+		c.append(&code{op: opbacktrack})
+		return nil
+	} else {
+		return errors.New("catch")
+	}
 }
 
 func (c *compiler) compileAndExpr(e *AndExpr) error {
@@ -508,15 +529,7 @@ func (c *compiler) compileTermSuffix(e *Term, s *Suffix) error {
 				return c.compileTermSuffix(u, s)
 			}
 		}
-		defer c.lazy(func() *code {
-			return &code{op: opforkopt, v: c.pc() - 1}
-		})()
-		if err := c.compileTerm(e); err != nil {
-			return err
-		}
-		c.append(&code{op: opjump, v: c.pc() + 1})
-		c.append(&code{op: opbacktrack})
-		return nil
+		return c.compileTry(&Try{Body: e.toPipe()})
 	} else {
 		return fmt.Errorf("invalid suffix: %s", s)
 	}
