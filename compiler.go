@@ -421,8 +421,10 @@ func (c *compiler) compileFunc(e *Func) error {
 	}
 	if q, ok := builtinFuncs[e.Name]; ok {
 		for _, fd := range q.FuncDefs {
-			if err := c.compileFuncDef(fd, true); err != nil {
-				return err
+			if len(fd.Args) == len(e.Args) {
+				if err := c.compileFuncDef(fd, true); err != nil {
+					return err
+				}
 			}
 		}
 		for i := len(c.funcs) - 1; i >= 0; i-- {
