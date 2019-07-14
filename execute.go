@@ -54,6 +54,13 @@ loop:
 			} else {
 				env.pushfork(code.op, pc)
 			}
+		case opforkopt:
+			if backtrack || err != nil {
+				pc, backtrack, err = code.v.(int), false, nil
+				goto loop
+			} else {
+				env.pushfork(code.op, pc)
+			}
 		case opbacktrack:
 			break loop
 		case opjump:

@@ -487,16 +487,37 @@ func (c *compiler) compileUnary(e *Unary) error {
 func (c *compiler) compileTermSuffix(e *Term, s *Suffix) error {
 	if s.Index != nil {
 		return c.compileIndex(e, s.Index)
-	} else if x := s.SuffixIndex; x != nil {
-		return c.compileIndex(e, &Index{Start: x.Start, IsSlice: x.IsSlice, End: x.End})
+	} else if s.SuffixIndex != nil {
+		return c.compileIndex(e, s.SuffixIndex.toIndex())
 	} else if s.Iter {
 		if err := c.compileTerm(e); err != nil {
 			return err
 		}
 		c.append(&code{op: opeach})
 		return nil
+	} else if s.Optional {
+		if len(e.SuffixList) > 1 || len(e.SuffixList) == 1 && !e.SuffixList[0].Iter {
+			if u, ok := e.SuffixList[len(e.SuffixList)-1].toTerm(); ok {
+				t := *e // clone without changing e
+				(&t).SuffixList = t.SuffixList[:len(e.SuffixList)-1]
+				if err := c.compileTerm(&t); err != nil {
+					return err
+				}
+				return c.compileTermSuffix(u, s)
+			}
+		}
+		defer c.lazy(func() *code {
+			return &code{op: opforkopt, v: c.pc() - 1}
+		})()
+		if err := c.compileTerm(e); err != nil {
+			return err
+		}
+		c.append(&code{op: opjump, v: c.pc() + 1})
+		c.append(&code{op: opbacktrack})
+		return nil
+	} else {
+		return fmt.Errorf("invalid suffix: %s", s)
 	}
-	return errors.New("compileSuffix")
 }
 
 func (c *compiler) compileCall(fn interface{}, args []*Pipe) error {
