@@ -516,7 +516,11 @@ func (c *compiler) compileFunc(e *Func) error {
 			return nil
 		}
 	}
-	if q, ok := builtinFuncs[e.Name]; ok {
+	name := e.Name
+	if name[0] == '_' {
+		name = name[1:]
+	}
+	if q, ok := builtinFuncs[name]; ok {
 		for _, fd := range q.FuncDefs {
 			if len(fd.Args) == len(e.Args) {
 				if err := c.compileFuncDef(fd, true); err != nil {
