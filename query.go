@@ -31,10 +31,11 @@ func (q *Query) String() string {
 
 // Run query.
 func (q *Query) Run(v interface{}) Iter {
-	if code, err := compile(q); err == nil {
-		return newEnv(nil).execute(code, v)
+	code, err := compile(q)
+	if err != nil {
+		return unitIterator(err)
 	}
-	return mapIterator(newEnv(nil).applyQuery(q, unitIterator(v)), normalizeValues)
+	return newEnv().execute(code, v)
 }
 
 // FuncDef ...
@@ -535,9 +536,8 @@ func (e *Index) String() string {
 
 // Func ...
 type Func struct {
-	Name    string  `@Ident`
-	Args    []*Pipe `( "(" @@ (";" @@)* ")" )?`
-	funcDef *FuncDef
+	Name string  `@Ident`
+	Args []*Pipe `( "(" @@ (";" @@)* ")" )?`
 }
 
 func (e *Func) String() string {

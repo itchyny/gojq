@@ -417,9 +417,9 @@ func funcIndex(_, v, x interface{}) interface{} {
 		case nil:
 			return nil
 		case []interface{}:
-			return applyArrayIndexInternal(nil, nil, &idx, v)
+			return funcIndexSlice(nil, nil, &idx, v)
 		case string:
-			switch v := applyArrayIndexInternal(nil, nil, &idx, explode(v)).(type) {
+			switch v := funcIndexSlice(nil, nil, &idx, explode(v)).(type) {
 			case []interface{}:
 				return implode(v)
 			case int:
@@ -485,17 +485,17 @@ func funcSlice(_, v, end, start interface{}) (r interface{}) {
 			if start, ok := toInt(start); ok {
 				if end != nil {
 					if end, ok := toInt(end); ok {
-						return applyArrayIndexInternal(&start, &end, nil, v)
+						return funcIndexSlice(&start, &end, nil, v)
 					}
 					return &arrayIndexNotNumberError{end}
 				}
-				return applyArrayIndexInternal(&start, nil, nil, v)
+				return funcIndexSlice(&start, nil, nil, v)
 			}
 			return &arrayIndexNotNumberError{start}
 		}
 		if end != nil {
 			if end, ok := toInt(end); ok {
-				return applyArrayIndexInternal(nil, &end, nil, v)
+				return funcIndexSlice(nil, &end, nil, v)
 			}
 			return &arrayIndexNotNumberError{end}
 		}
@@ -503,6 +503,48 @@ func funcSlice(_, v, end, start interface{}) (r interface{}) {
 	default:
 		return &expectedArrayError{v}
 	}
+}
+
+func funcIndexSlice(start, end, index *int, a []interface{}) interface{} {
+	l := len(a)
+	toIndex := func(i int) int {
+		switch {
+		case i < -l:
+			return -2
+		case i < 0:
+			return l + i
+		case i < l:
+			return i
+		default:
+			return -1
+		}
+	}
+	if index != nil {
+		i := toIndex(*index)
+		if i < 0 {
+			return nil
+		}
+		return a[i]
+	}
+	if end != nil {
+		i := toIndex(*end)
+		if i == -1 {
+			i = len(a)
+		} else if i == -2 {
+			i = 0
+		}
+		a = a[:i]
+	}
+	if start != nil {
+		i := toIndex(*start)
+		if i == -1 || len(a) < i {
+			i = len(a)
+		} else if i == -2 {
+			i = 0
+		}
+		a = a[i:]
+	}
+	return a
 }
 
 func funcBreak(x interface{}) interface{} {
@@ -645,4 +687,15 @@ func funcEnv(interface{}) interface{} {
 
 func internalfuncTypeError(v, x interface{}) interface{} {
 	return &funcTypeError{x.(string), v}
+}
+
+func toInt(x interface{}) (int, bool) {
+	switch x := x.(type) {
+	case int:
+		return x, true
+	case float64:
+		return int(x), true
+	default:
+		return 0, false
+	}
 }
