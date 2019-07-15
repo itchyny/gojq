@@ -141,6 +141,10 @@ func (e *Expr) toPipe() *Pipe {
 	return (&Alt{Left: e}).toPipe()
 }
 
+func (e *Expr) toAlt() *Alt {
+	return &Alt{Left: e}
+}
+
 func (e *Expr) String() string {
 	var s strings.Builder
 	if e.Logic != nil {
@@ -191,6 +195,10 @@ func (e *Logic) toPipe() *Pipe {
 	return (&Expr{Logic: e}).toPipe()
 }
 
+func (e *Logic) toAlt() *Alt {
+	return (&Expr{Logic: e}).toAlt()
+}
+
 // LogicRight ...
 type LogicRight struct {
 	Op    Operator `@"or"`
@@ -220,6 +228,14 @@ func (e *AndExpr) toPipe() *Pipe {
 	return (&Logic{Left: e}).toPipe()
 }
 
+func (e *AndExpr) toAlt() *Alt {
+	return (&Logic{Left: e}).toAlt()
+}
+
+func (e *AndExpr) toLogic() *Logic {
+	return &Logic{Left: e}
+}
+
 // AndExprRight ...
 type AndExprRight struct {
 	Op    Operator `@"and"`
@@ -238,6 +254,14 @@ type Compare struct {
 
 func (e *Compare) toPipe() *Pipe {
 	return (&AndExpr{Left: e}).toPipe()
+}
+
+func (e *Compare) toAlt() *Alt {
+	return (&AndExpr{Left: e}).toAlt()
+}
+
+func (e *Compare) toLogic() *Logic {
+	return (&AndExpr{Left: e}).toLogic()
 }
 
 func (e *Compare) String() string {
@@ -278,6 +302,14 @@ func (e *Arith) toPipe() *Pipe {
 	return (&Compare{Left: e}).toPipe()
 }
 
+func (e *Arith) toAlt() *Alt {
+	return (&Compare{Left: e}).toAlt()
+}
+
+func (e *Arith) toLogic() *Logic {
+	return (&Compare{Left: e}).toLogic()
+}
+
 // ArithRight ...
 type ArithRight struct {
 	Op    Operator `@("+" | "-")`
@@ -305,6 +337,14 @@ func (e *Factor) String() string {
 
 func (e *Factor) toPipe() *Pipe {
 	return (&Arith{Left: e}).toPipe()
+}
+
+func (e *Factor) toAlt() *Alt {
+	return (&Arith{Left: e}).toAlt()
+}
+
+func (e *Factor) toLogic() *Logic {
+	return (&Arith{Left: e}).toLogic()
 }
 
 // FactorRight ...
@@ -378,6 +418,14 @@ func (e *Term) String() string {
 
 func (e *Term) toPipe() *Pipe {
 	return (&Factor{Left: e}).toPipe()
+}
+
+func (e *Term) toAlt() *Alt {
+	return (&Factor{Left: e}).toAlt()
+}
+
+func (e *Term) toLogic() *Logic {
+	return (&Factor{Left: e}).toLogic()
 }
 
 // Unary ...
