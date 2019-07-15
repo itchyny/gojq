@@ -2,6 +2,7 @@ package gojq
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -356,6 +357,8 @@ func (e *Term) String() string {
 		fmt.Fprint(&s, e.Unary)
 	} else if e.Str != "" {
 		fmt.Fprint(&s, e.Str)
+	} else if e.RawStr != "" {
+		fmt.Fprint(&s, strconv.Quote(e.RawStr))
 	} else if e.Null {
 		s.WriteString("null")
 	} else if e.True {
