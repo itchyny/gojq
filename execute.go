@@ -99,7 +99,7 @@ loop:
 			pc, callpc = env.pop().(int), pc
 			goto loop
 		case opjumpifnot:
-			if !valueToBool(env.pop()) {
+			if v := env.pop(); v == nil || v == false {
 				pc = code.v.(int)
 				goto loop
 			}
