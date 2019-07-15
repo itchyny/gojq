@@ -292,12 +292,11 @@ func (c *compiler) compileTry(e *Try) error {
 		return &code{op: opjump, v: c.pc()}
 	})()
 	setforkopt()
-	if e.Catch == nil {
-		c.append(&code{op: opbacktrack})
-		return nil
-	} else {
-		return errors.New("catch")
+	if e.Catch != nil {
+		return c.compilePipe(e.Catch)
 	}
+	c.append(&code{op: opbacktrack})
+	return nil
 }
 
 func (c *compiler) compileReduce(e *Reduce) error {

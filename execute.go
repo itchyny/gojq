@@ -75,6 +75,7 @@ loop:
 				if err == nil {
 					break loop
 				}
+				env.push(err.Error())
 				pc, backtrack, err = code.v.(int), false, nil
 				goto loop
 			} else {
