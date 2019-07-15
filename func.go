@@ -410,8 +410,8 @@ func funcIndex(_, v, x interface{}) interface{} {
 		default:
 			return &expectedObjectError{v}
 		}
-	case float64:
-		idx := int(x)
+	case int, float64:
+		idx, _ := toInt(x)
 		switch v := v.(type) {
 		case nil:
 			return nil
