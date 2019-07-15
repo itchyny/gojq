@@ -256,6 +256,7 @@ func (c *compiler) compileLogic(e *Logic) error {
 }
 
 func (c *compiler) compileIf(e *If) error {
+	c.appendCodeInfo(e)
 	c.append(&code{op: opdup}) // duplicate the value for then or else clause
 	if err := c.compilePipe(e.Cond); err != nil {
 		return err
@@ -280,6 +281,7 @@ func (c *compiler) compileIf(e *If) error {
 }
 
 func (c *compiler) compileTry(e *Try) error {
+	c.appendCodeInfo(e)
 	setforkopt := c.lazy(func() *code {
 		return &code{op: opforkopt, v: c.pc()}
 	})
@@ -299,6 +301,7 @@ func (c *compiler) compileTry(e *Try) error {
 }
 
 func (c *compiler) compileReduce(e *Reduce) error {
+	c.appendCodeInfo(e)
 	defer c.lazy(func() *code {
 		return &code{op: opfork, v: c.pc() - 2}
 	})()
@@ -326,6 +329,7 @@ func (c *compiler) compileReduce(e *Reduce) error {
 }
 
 func (c *compiler) compileForeach(e *Foreach) error {
+	c.appendCodeInfo(e)
 	c.append(&code{op: opdup})
 	v := c.newVariable()
 	if err := c.compilePipe(e.Start); err != nil {
@@ -449,6 +453,7 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 }
 
 func (c *compiler) compileIndex(e *Term, x *Index) error {
+	c.appendCodeInfo(e)
 	if x.Name != "" {
 		return c.compileCall("_index", []*Pipe{e.toPipe(), (&Term{RawStr: x.Name}).toPipe()})
 	}
@@ -530,6 +535,7 @@ func (c *compiler) compileFunc(e *Func) error {
 }
 
 func (c *compiler) compileArray(e *Array) error {
+	c.appendCodeInfo(e)
 	if e.Pipe == nil {
 		c.append(&code{op: opconst, v: []interface{}{}})
 		return nil
@@ -551,6 +557,7 @@ func (c *compiler) compileArray(e *Array) error {
 }
 
 func (c *compiler) compileUnary(e *Unary) error {
+	c.appendCodeInfo(e)
 	if err := c.compileTerm(e.Term); err != nil {
 		return err
 	}
@@ -651,6 +658,7 @@ func (c *compiler) stringToPipe(s string) (*Pipe, error) {
 	for _, e := range es {
 		e.Bind.Body, p = p, e.toPipe()
 	}
+	c.appendCodeInfo(p)
 	return p, nil
 }
 

@@ -2,7 +2,7 @@
 
 package gojq
 
-func (c *compiler) appendCodeInfo(string) {}
+func (c *compiler) appendCodeInfo(interface{}) {}
 
 func (c *compiler) deleteCodeInfo(string) {}
 

@@ -27,7 +27,14 @@ func init() {
 	}
 }
 
-func (c *compiler) appendCodeInfo(name string) {
+func (c *compiler) appendCodeInfo(x interface{}) {
+	var name string
+	switch x := x.(type) {
+	case string:
+		name = x
+	default:
+		name = fmt.Sprint(x)
+	}
 	if !debug {
 		return
 	}
