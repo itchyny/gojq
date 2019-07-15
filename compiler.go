@@ -209,9 +209,6 @@ func (c *compiler) compileExpr(e *Expr) (err error) {
 			return
 		}
 	}()
-	if e.Label != nil {
-		return errors.New("compileExpr")
-	}
 	if e.Logic != nil {
 		return c.compileLogic(e.Logic)
 	} else if e.If != nil {
@@ -222,6 +219,8 @@ func (c *compiler) compileExpr(e *Expr) (err error) {
 		return c.compileReduce(e.Reduce)
 	} else if e.Foreach != nil {
 		return c.compileForeach(e.Foreach)
+	} else if e.Label != nil {
+		return c.compileLabel(e.Label)
 	} else {
 		return fmt.Errorf("invalid expr: %s", e)
 	}
@@ -353,6 +352,17 @@ func (c *compiler) compileForeach(e *Foreach) error {
 	return nil
 }
 
+func (c *compiler) compileLabel(e *Label) error {
+	c.appendCodeInfo(e)
+	if e.Ident[0] != '$' {
+		return &labelNameError{e.Ident}
+	}
+	defer c.lazy(func() *code {
+		return &code{op: opforklabel, v: e.Ident}
+	})()
+	return c.compilePipe(e.Body)
+}
+
 func (c *compiler) compileAndExpr(e *AndExpr) error {
 	if len(e.Right) == 0 {
 		return c.compileCompare(e.Left)
@@ -446,6 +456,9 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 	} else if e.False {
 		c.append(&code{op: opconst, v: false})
 		return nil
+	} else if e.Break != "" {
+		c.append(&code{op: opconst, v: e.Break})
+		return c.compileCall("_break", nil)
 	} else if e.Pipe != nil {
 		return c.compilePipe(e.Pipe)
 	} else {

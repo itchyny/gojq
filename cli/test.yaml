@@ -1659,6 +1659,13 @@
     3
     6
 
+- name: invalid label name
+  args:
+    - 'label foo | .'
+  input: '1'
+  error: |
+    label should start with "$" but got: "foo"
+
 - name: label not defined error for break syntax
   args:
     - 'break $test'

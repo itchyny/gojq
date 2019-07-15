@@ -55,6 +55,7 @@ func init() {
 		"fromjson":       noArgFunc(funcFromJSON),
 		"_index":         argFunc2(funcIndex),
 		"_slice":         argFunc3(funcSlice),
+		"_break":         noArgFunc(funcBreak),
 		"_plus":          noArgFunc(funcOpPlus),
 		"_negate":        noArgFunc(funcOpNegate),
 		"_add":           argFunc2(funcOpAdd),
@@ -502,6 +503,10 @@ func funcSlice(_, v, end, start interface{}) (r interface{}) {
 	default:
 		return &expectedArrayError{v}
 	}
+}
+
+func funcBreak(x interface{}) interface{} {
+	return &breakError{x.(string)}
 }
 
 func funcFrexp(v interface{}) interface{} {

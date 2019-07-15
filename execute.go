@@ -81,6 +81,15 @@ loop:
 			} else {
 				env.pushfork(code.op, pc)
 			}
+		case opforklabel:
+			if backtrack {
+				if e, ok := err.(*breakError); ok && code.v.(string) == e.n {
+					err = nil
+				}
+				break loop
+			} else {
+				env.pushfork(code.op, pc)
+			}
 		case opbacktrack:
 			break loop
 		case opjump:
