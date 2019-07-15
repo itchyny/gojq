@@ -1736,6 +1736,20 @@
       "foo": 10
     }
 
+- name: defining variable
+  args:
+    - '.ys as $ys | .xs[] | {a, b: $ys[.b]}'
+  input: '{"xs": [{"a": "a0", "b": "b0"}, {"a": "a1", "b": "b1"}], "ys": {"b0": "bb0", "b1": "bb1"}}'
+  expected: |
+    {
+      "a": "a0",
+      "b": "bb0"
+    }
+    {
+      "a": "a1",
+      "b": "bb1"
+    }
+
 - name: variable name error
   args:
     - '.foo as foo | {$bar}'
