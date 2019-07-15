@@ -32,7 +32,7 @@ func (q *Query) String() string {
 // Run query.
 func (q *Query) Run(v interface{}) Iter {
 	if code, err := compile(q); err == nil {
-		return mapIterator(newEnv(nil).execute(code, v), normalizeValues)
+		return newEnv(nil).execute(code, v)
 	}
 	return mapIterator(newEnv(nil).applyQuery(q, unitIterator(v)), normalizeValues)
 }

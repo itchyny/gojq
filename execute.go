@@ -112,7 +112,7 @@ loop:
 				if env.stack.empty() {
 					return nil, false
 				}
-				return env.pop(), true
+				return normalizeValues(env.pop()), true
 			}
 		case opcall:
 			switch v := code.v.(type) {
