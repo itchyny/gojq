@@ -247,6 +247,44 @@ func (c *compiler) compilePattern(p *Pattern) error {
 			}
 		}
 		return nil
+	} else if len(p.Object) > 0 {
+		v := c.newVariable()
+		c.append(&code{op: opstore, v: v})
+		for _, kv := range p.Object {
+			var key, name string
+			if kv.KeyOnly != "" {
+				if kv.KeyOnly[0] != '$' {
+					return &bindVariableNameError{kv.KeyOnly}
+				}
+				key, name = kv.KeyOnly[1:], kv.KeyOnly
+			} else if kv.Key != "" {
+				key = kv.Key
+				if key != "" && key[0] == '$' {
+					key, name = key[1:], key
+				}
+			} else if kv.KeyString != "" {
+				key = kv.KeyString[1 : len(kv.KeyString)-1]
+			}
+			c.append(&code{op: oppush, v: key})
+			c.append(&code{op: opload, v: v})
+			c.append(&code{op: opload, v: v})
+			// ref: compileCall
+			c.append(&code{op: opcall, v: [3]interface{}{internalFuncs["_index"].callback, 2, "_index"}})
+			if name != "" {
+				if kv.Val != nil {
+					c.append(&code{op: opdup})
+				}
+				if err := c.compilePattern(&Pattern{Name: name}); err != nil {
+					return err
+				}
+			}
+			if kv.Val != nil {
+				if err := c.compilePattern(kv.Val); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
 	} else {
 		return fmt.Errorf("invalid pattern: %s", p)
 	}
