@@ -220,6 +220,8 @@ func (c *compiler) compileExpr(e *Expr) (err error) {
 		return c.compileTry(e.Try)
 	} else if e.Reduce != nil {
 		return c.compileReduce(e.Reduce)
+	} else if e.Foreach != nil {
+		return c.compileForeach(e.Foreach)
 	} else {
 		return fmt.Errorf("invalid expr: %s", e)
 	}
@@ -320,6 +322,31 @@ func (c *compiler) compileReduce(e *Reduce) error {
 	c.append(&code{op: opbacktrack})
 	c.append(&code{op: oppop})
 	c.append(&code{op: opload, v: v})
+	return nil
+}
+
+func (c *compiler) compileForeach(e *Foreach) error {
+	c.append(&code{op: opdup})
+	v := c.newVariable()
+	if err := c.compilePipe(e.Start); err != nil {
+		return err
+	}
+	c.append(&code{op: opstore, v: v})
+	if err := c.compileTerm(e.Term); err != nil {
+		return err
+	}
+	if err := c.compilePattern(e.Pattern); err != nil {
+		return err
+	}
+	c.append(&code{op: opload, v: v})
+	if err := c.compilePipe(e.Update); err != nil {
+		return err
+	}
+	c.append(&code{op: opdup})
+	c.append(&code{op: opstore, v: v})
+	if e.Extract != nil {
+		return c.compilePipe(e.Extract)
+	}
 	return nil
 }
 
