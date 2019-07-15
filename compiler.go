@@ -226,6 +226,7 @@ func (c *compiler) compileExpr(e *Expr) (err error) {
 }
 
 func (c *compiler) compilePattern(p *Pattern) error {
+	c.appendCodeInfo(p)
 	if p.Name != "" {
 		if p.Name[0] != '$' {
 			return &bindVariableNameError{p.Name}
