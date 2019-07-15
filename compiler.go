@@ -499,7 +499,7 @@ func (c *compiler) compileFunc(e *Func) error {
 		}
 		return nil
 	}
-	return errors.New("compileFunc")
+	return &funcNotFoundError{e}
 }
 
 func (c *compiler) compileArray(e *Array) error {
