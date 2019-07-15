@@ -520,7 +520,7 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 }
 
 func (c *compiler) compileIndex(e *Term, x *Index) error {
-	c.appendCodeInfo(e)
+	c.appendCodeInfo(x)
 	if x.Name != "" {
 		return c.compileCall("_index", []*Pipe{e.toPipe(), (&Term{RawStr: x.Name}).toPipe()})
 	}
