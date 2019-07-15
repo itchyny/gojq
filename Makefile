@@ -21,11 +21,11 @@ builtin_gen.go: builtin.go query.go operator.go
 	go generate
 
 .PHONY: install
-install:
+install: builtin_gen.go
 	go install -ldflags=$(BUILD_LDFLAGS) ./...
 
 .PHONY: install-debug
-install-debug:
+install-debug: builtin_gen.go
 	go install -tags debug -ldflags=$(BUILD_LDFLAGS) ./...
 
 .PHONY: show-version
