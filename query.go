@@ -449,6 +449,24 @@ func (e *Pattern) String() string {
 	var s strings.Builder
 	if e.Name != "" {
 		s.WriteString(e.Name)
+	} else if len(e.Array) > 0 {
+		s.WriteRune('[')
+		for i, e := range e.Array {
+			if i > 0 {
+				s.WriteString(", ")
+			}
+			fmt.Fprint(&s, e)
+		}
+		s.WriteRune(']')
+	} else if len(e.Object) > 0 {
+		s.WriteRune('{')
+		for i, e := range e.Object {
+			if i > 0 {
+				s.WriteString(", ")
+			}
+			fmt.Fprint(&s, &e)
+		}
+		s.WriteRune('}')
 	}
 	return s.String()
 }
