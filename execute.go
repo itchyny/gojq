@@ -61,14 +61,20 @@ loop:
 			i := env.index(code.v.([2]int))
 			env.value[i] = append(env.value[i].([]interface{}), env.pop())
 		case opfork:
-			if backtrack || err != nil {
+			if backtrack {
+				if err != nil {
+					break loop
+				}
 				pc, backtrack = code.v.(int), false
 				goto loop
 			} else {
 				env.pushfork(code.op, pc)
 			}
 		case opforkopt:
-			if backtrack || err != nil {
+			if backtrack {
+				if err == nil {
+					break loop
+				}
 				pc, backtrack, err = code.v.(int), false, nil
 				goto loop
 			} else {
