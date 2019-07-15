@@ -44,6 +44,19 @@ loop:
 				env.value = vs
 			}
 			env.value[i] = env.pop()
+		case opobject:
+			n := code.v.(int)
+			m := make(map[string]interface{}, n)
+			for i := 0; i < n; i++ {
+				v, k := env.pop(), env.pop()
+				s, ok := k.(string)
+				if !ok {
+					err = &objectKeyNotStringError{k}
+					break loop
+				}
+				m[s] = v
+			}
+			env.push(m)
 		case opappend:
 			i := env.index(code.v.([2]int))
 			env.value[i] = append(env.value[i].([]interface{}), env.pop())

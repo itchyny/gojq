@@ -424,6 +424,8 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 		return c.compileFunc(&Func{Name: "recurse"})
 	} else if e.Func != nil {
 		return c.compileFunc(e.Func)
+	} else if e.Object != nil {
+		return c.compileObject(e.Object)
 	} else if e.Array != nil {
 		return c.compileArray(e.Array)
 	} else if e.Number != nil {
@@ -532,6 +534,63 @@ func (c *compiler) compileFunc(e *Func) error {
 		return nil
 	}
 	return &funcNotFoundError{e}
+}
+
+func (c *compiler) compileObject(e *Object) error {
+	c.appendCodeInfo(e)
+	if len(e.KeyVals) == 0 {
+		c.append(&code{op: opconst, v: map[string]interface{}{}})
+		return nil
+	}
+	v := c.newVariable()
+	c.append(&code{op: opstore, v: v})
+	for _, kv := range e.KeyVals {
+		if kv.KeyOnly != nil {
+			if (*kv.KeyOnly)[0] == '$' {
+				c.append(&code{op: oppush, v: (*kv.KeyOnly)[1:]})
+				c.append(&code{op: opload, v: v})
+				if err := c.compileFunc(&Func{Name: *kv.KeyOnly}); err != nil {
+					return err
+				}
+			} else {
+				c.append(&code{op: oppush, v: *kv.KeyOnly})
+				c.append(&code{op: opload, v: v})
+				if err := c.compileIndex(&Term{Identity: true}, &Index{Name: *kv.KeyOnly}); err != nil {
+					return err
+				}
+			}
+		} else if kv.KeyOnlyString != "" {
+			c.append(&code{op: opload, v: v})
+			if err := c.compileString(kv.KeyOnlyString); err != nil {
+				return err
+			}
+			c.append(&code{op: opdup})
+			c.append(&code{op: opload, v: v})
+			c.append(&code{op: opload, v: v})
+			// ref: compileCall
+			c.append(&code{op: opcall, v: [3]interface{}{internalFuncs["_index"].callback, 2, "_index"}})
+		} else {
+			if kv.Pipe != nil {
+				c.append(&code{op: opload, v: v})
+				if err := c.compilePipe(kv.Pipe); err != nil {
+					return err
+				}
+			} else if kv.KeyString != "" {
+				c.append(&code{op: opload, v: v})
+				if err := c.compileString(kv.KeyString); err != nil {
+					return err
+				}
+			} else {
+				c.append(&code{op: oppush, v: kv.Key})
+			}
+			c.append(&code{op: opload, v: v})
+			if err := c.compileExpr(kv.Val); err != nil {
+				return err
+			}
+		}
+	}
+	c.append(&code{op: opobject, v: len(e.KeyVals)})
+	return nil
 }
 
 func (c *compiler) compileArray(e *Array) error {

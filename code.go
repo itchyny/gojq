@@ -16,6 +16,7 @@ const (
 	opconst
 	opload
 	opstore
+	opobject
 	opappend
 	opfork
 	opforkopt
@@ -47,6 +48,8 @@ func (op opcode) String() string {
 		return "load"
 	case opstore:
 		return "store"
+	case opobject:
+		return "object"
 	case opappend:
 		return "append"
 	case opfork:
