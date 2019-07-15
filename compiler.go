@@ -560,6 +560,9 @@ func (c *compiler) compileFunc(e *Func) error {
 			}
 		}
 	}
+	if e.Name[0] == '$' {
+		return &variableNotFoundError{e.Name}
+	}
 	for i := len(c.funcs) - 1; i >= 0; i-- {
 		f := c.funcs[i]
 		if f.name == e.Name && len(f.args) == len(e.Args) {
