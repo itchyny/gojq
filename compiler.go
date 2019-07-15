@@ -3,7 +3,9 @@ package gojq
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
+	"unicode/utf8"
 )
 
 type compiler struct {
@@ -398,9 +400,8 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 		return nil
 	} else if e.Unary != nil {
 		return c.compileUnary(e.Unary)
-	} else if e.Str != "" && !strings.Contains(e.Str, "\\(") {
-		c.append(&code{op: opconst, v: e.Str[1 : len(e.Str)-1]})
-		return nil
+	} else if e.Str != "" {
+		return c.compileString(e.Str)
 	} else if e.RawStr != "" {
 		c.append(&code{op: opconst, v: e.RawStr})
 		return nil
@@ -425,10 +426,11 @@ func (c *compiler) compileIndex(e *Term, x *Index) error {
 		return c.compileCall("_index", []*Pipe{e.toPipe(), (&Term{RawStr: x.Name}).toPipe()})
 	}
 	if x.Str != "" {
-		if strings.Contains(x.Str, "\\(") {
-			return errors.New("compileIndex")
+		p, err := c.stringToPipe(x.Str)
+		if err != nil {
+			return err
 		}
-		return c.compileCall("_index", []*Pipe{e.toPipe(), (&Term{Str: x.Str}).toPipe()})
+		return c.compileCall("_index", []*Pipe{e.toPipe(), p})
 	}
 	if x.Start != nil {
 		if x.IsSlice {
@@ -533,6 +535,96 @@ func (c *compiler) compileUnary(e *Unary) error {
 	default:
 		return fmt.Errorf("unexpected operator in Unary: %s", e.Op)
 	}
+}
+
+func (c *compiler) compileString(s string) error {
+	if !strings.Contains(s, "\\(") {
+		c.append(&code{op: opconst, v: s[1 : len(s)-1]})
+		return nil
+	}
+	p, err := c.stringToPipe(s)
+	if err != nil {
+		return err
+	}
+	return c.compilePipe(p)
+}
+
+func (c *compiler) stringToPipe(s string) (*Pipe, error) {
+	// ref: strconv.Unquote
+	x := s[1 : len(s)-1]
+	var runeTmp [utf8.UTFMax]byte
+	buf := make([]byte, 0, 3*len(x)/2)
+	var xs []*Alt
+	var es []*Expr
+	var cnt int
+	for len(x) > 0 {
+		r, multibyte, ss, err := strconv.UnquoteChar(x, '"')
+		if err != nil {
+			if !strings.HasPrefix(x, "\\(") {
+				return nil, err
+			}
+			x = x[2:]
+			i, d, b := 0, 1, true
+			for ; i < len(x) && b; i++ {
+				switch x[i] {
+				case '(':
+					d++
+				case ')':
+					d--
+					b = d != 0
+				}
+			}
+			if i == len(x) && b {
+				return nil, &stringLiteralError{s}
+			}
+			q, err := Parse(x[:i-1])
+			if err != nil {
+				return nil, err
+			}
+			x = x[i:]
+			if len(buf) > 0 {
+				xs = append(xs, (&Term{RawStr: string(buf)}).toAlt())
+				buf = buf[:0]
+			}
+			if p := q.Pipe; p != nil {
+				p.Commas = append(
+					p.Commas,
+					(&Term{Func: &Func{Name: "tostring"}}).toPipe().Commas...,
+				)
+				name := fmt.Sprintf("$%%%d", cnt)
+				es = append(es, &Expr{
+					Logic: (&Term{Pipe: p}).toLogic(),
+					Bind:  &ExprBind{Pattern: &Pattern{Name: name}},
+				})
+				xs = append(xs, (&Term{Func: &Func{Name: name}}).toAlt())
+				cnt++
+			}
+			continue
+		}
+		x = ss
+		if r < utf8.RuneSelf || !multibyte {
+			buf = append(buf, byte(r))
+		} else {
+			n := utf8.EncodeRune(runeTmp[:], r)
+			buf = append(buf, runeTmp[:n]...)
+		}
+	}
+	if len(xs) == 0 {
+		return (&Term{RawStr: string(buf)}).toPipe(), nil
+	}
+	if len(buf) > 0 {
+		xs = append(xs, (&Term{RawStr: string(buf)}).toAlt())
+	}
+	p := (&Term{Array: &Array{&Pipe{Commas: []*Comma{&Comma{Alts: xs}}}}}).toPipe()
+	p.Commas = append(p.Commas, (&Term{
+		Func: &Func{
+			Name: "join",
+			Args: []*Pipe{(&Term{Str: `""`}).toPipe()},
+		}}).toPipe().Commas...)
+	for _, e := range es {
+		e.Bind.Body, p = p, e.toPipe()
+	}
+	return p, nil
 }
 
 func (c *compiler) compileTermSuffix(e *Term, s *Suffix) error {
