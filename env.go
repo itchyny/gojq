@@ -3,8 +3,8 @@ package gojq
 type env struct {
 	pc        int
 	stack     *stack
-	value     []interface{}
 	scopes    *stack
+	values    []interface{}
 	codes     []*code
 	codeinfos []codeinfo
 	forks     []*fork

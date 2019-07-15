@@ -35,15 +35,15 @@ loop:
 			env.pop()
 			env.push(code.v)
 		case opload:
-			env.push(env.value[env.index(code.v.([2]int))])
+			env.push(env.values[env.index(code.v.([2]int))])
 		case opstore:
 			i := env.index(code.v.([2]int))
-			if i >= len(env.value) {
+			if i >= len(env.values) {
 				vs := make([]interface{}, (i+1)*2)
-				copy(vs, env.value)
-				env.value = vs
+				copy(vs, env.values)
+				env.values = vs
 			}
-			env.value[i] = env.pop()
+			env.values[i] = env.pop()
 		case opobject:
 			n := code.v.(int)
 			m := make(map[string]interface{}, n)
@@ -59,7 +59,7 @@ loop:
 			env.push(m)
 		case opappend:
 			i := env.index(code.v.([2]int))
-			env.value[i] = append(env.value[i].([]interface{}), env.pop())
+			env.values[i] = append(env.values[i].([]interface{}), env.pop())
 		case opfork:
 			if backtrack {
 				if err != nil {
