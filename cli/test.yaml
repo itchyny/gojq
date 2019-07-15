@@ -1113,18 +1113,18 @@
   expected: |
     "@ABC XYZ[] `ABC XYZ{} ☆"
 
-- name: walk function
-  args:
-    - -c
-    - 'walk(if type == "boolean" then not else . + . end) | .[]'
-  input: '[1, ["a", {"b": []}], {"c": [null, false, true]}]'
-  expected: |
-    2
-    ["aa",{"b":[]},"aa",{"b":[]}]
-    {"c":[null,true,false,null,true,false]}
-    2
-    ["aa",{"b":[]},"aa",{"b":[]}]
-    {"c":[null,true,false,null,true,false]}
+# - name: walk function
+#   args:
+#     - -c
+#     - 'walk(if type == "boolean" then not else . + . end) | .[]'
+#   input: '[1, ["a", {"b": []}], {"c": [null, false, true]}]'
+#   expected: |
+#     2
+#     ["aa",{"b":[]},"aa",{"b":[]}]
+#     {"c":[null,true,false,null,true,false]}
+#     2
+#     ["aa",{"b":[]},"aa",{"b":[]}]
+#     {"c":[null,true,false,null,true,false]}
 
 - name: transpose function
   args:
