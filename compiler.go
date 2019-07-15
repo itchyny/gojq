@@ -1,7 +1,6 @@
 package gojq
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -233,8 +232,23 @@ func (c *compiler) compilePattern(p *Pattern) error {
 		}
 		c.append(&code{op: opstore, v: c.pushVariable(p.Name)})
 		return nil
+	} else if len(p.Array) > 0 {
+		v := c.newVariable()
+		c.append(&code{op: opstore, v: v})
+		for i, p := range p.Array {
+			c.append(&code{op: oppush, v: i})
+			c.append(&code{op: opload, v: v})
+			c.append(&code{op: opload, v: v})
+			// ref: compileCall
+			c.append(&code{op: opcall, v: [3]interface{}{internalFuncs["_index"].callback, 2, "_index"}})
+			if err := c.compilePattern(p); err != nil {
+				return err
+			}
+		}
+		return nil
+	} else {
+		return fmt.Errorf("invalid pattern: %s", p)
 	}
-	return errors.New("compilePattern")
 }
 
 func (c *compiler) compileLogic(e *Logic) error {
