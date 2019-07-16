@@ -6,7 +6,7 @@ require (
 	github.com/alecthomas/participle v0.3.0
 	github.com/fatih/color v1.7.0
 	github.com/hokaccha/go-prettyjson v0.0.0-20180920040306-f579f869bbfe
-	github.com/itchyny/astgen-go v0.0.0-20190623123749-11f6ca3e2b1f // indirect
+	github.com/itchyny/astgen-go v0.0.0-20190623123749-11f6ca3e2b1f
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mattn/go-runewidth v0.0.4
