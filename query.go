@@ -436,7 +436,7 @@ type Unary struct {
 }
 
 func (e *Unary) String() string {
-	return fmt.Sprintf("%s %s", e.Op, e.Term)
+	return fmt.Sprintf("%s%s", e.Op, e.Term)
 }
 
 // Pattern ...
