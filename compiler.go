@@ -170,12 +170,11 @@ func (c *compiler) compileAlt(e *Alt) error {
 	found := c.newVariable()
 	c.append(&code{op: opstore, v: found})
 	setfork := c.lazy(func() *code {
-		return &code{op: opfork, v: c.pc() + 7} // opload found
+		return &code{op: opfork, v: c.pc()} // opload found
 	})
 	if err := c.compileExpr(e.Left); err != nil {
 		return err
 	}
-	setfork()
 	c.append(&code{op: opdup})
 	c.append(&code{op: opjumpifnot, v: c.pc() + 4}) // oppop
 	c.append(&code{op: oppush, v: true})            // found some value
@@ -185,6 +184,7 @@ func (c *compiler) compileAlt(e *Alt) error {
 	})()
 	c.append(&code{op: oppop})
 	c.append(&code{op: opbacktrack})
+	setfork()
 	c.append(&code{op: opload, v: found})
 	c.append(&code{op: opjumpifnot, v: c.pc() + 3})
 	c.append(&code{op: opbacktrack}) // if found, backtrack
