@@ -3,6 +3,7 @@ VERSION := $$(make -s show-version)
 VERSION_PATH := cli
 CURRENT_REVISION := $(shell git rev-parse --short HEAD)
 BUILD_LDFLAGS := "-s -w -X github.com/itchyny/$(BIN)/cli.revision=$(CURRENT_REVISION)"
+GOBIN ?= $(shell go env GOPATH)/bin
 export GO111MODULE=on
 
 .PHONY: all
@@ -29,16 +30,17 @@ install-debug: builtin_gen.go
 	go install -tags debug -ldflags=$(BUILD_LDFLAGS) ./...
 
 .PHONY: show-version
-show-version:
-	@GO111MODULE=off go get github.com/motemen/gobump/cmd/gobump
+show-version: $(GOBIN)/gobump
 	@gobump show -r $(VERSION_PATH)
 
+$(GOBIN)/gobump:
+	@GO111MODULE=off go get github.com/motemen/gobump/cmd/gobump
+
 .PHONY: cross
-cross: crossdeps
+cross: $(GOBIN)/goxz
 	goxz -n $(BIN) -pv=v$(VERSION) -build-ldflags=$(BUILD_LDFLAGS) ./cmd/$(BIN)
 
-.PHONY: crossdeps
-crossdeps:
+$(GOBIN)/goxz:
 	GO111MODULE=off go get github.com/Songmu/goxz/cmd/goxz
 
 .PHONY: test
@@ -46,11 +48,10 @@ test: build
 	go test -v ./...
 
 .PHONY: lint
-lint: lintdeps
+lint: $(GOBIN)/golint
 	golint -set_exit_status ./...
 
-.PHONY: lintdeps
-lintdeps:
+$(GOBIN)/golint:
 	GO111MODULE=off go get golang.org/x/lint/golint
 
 .PHONY: clean
@@ -59,7 +60,7 @@ clean:
 	go clean
 
 .PHONY: bump
-bump:
+bump: $(GOBIN)/gobump
 	@git status --porcelain | grep "^" && echo "git workspace is dirty" >/dev/stderr && exit 1 || :
 	gobump set $(shell sh -c 'read -p "input next version (current: $(VERSION)): " v && echo $$v') -w $(VERSION_PATH)
 	git commit -am "bump up version to $(VERSION)"
@@ -72,9 +73,11 @@ crossdocker:
 	docker run --rm -v `pwd`:"/$${PWD##*/}" -w "/$${PWD##*/}" golang make cross
 
 .PHONY: upload
-upload:
-	GO111MODULE=off go get github.com/tcnksm/ghr
+upload: $(GOBIN)/ghr
 	ghr "v$(VERSION)" goxz
+
+$(GOBIN)/ghr:
+	GO111MODULE=off go get github.com/tcnksm/ghr
 
 .PHONY: release
 release: test lint clean bump crossdocker upload
