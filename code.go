@@ -23,10 +23,11 @@ const (
 	opforklabel
 	opbacktrack
 	opjump
-	opjumppop
 	opjumpifnot
 	opret
 	opcall
+	oppushpc
+	opcallpc
 	opscope
 	opeach
 )
@@ -63,14 +64,16 @@ func (op opcode) String() string {
 		return "backtrack"
 	case opjump:
 		return "jump"
-	case opjumppop:
-		return "jumppop"
 	case opjumpifnot:
 		return "jumpifnot"
 	case opret:
 		return "ret"
 	case opcall:
 		return "call"
+	case oppushpc:
+		return "pushpc"
+	case opcallpc:
+		return "callpc"
 	case opscope:
 		return "scope"
 	case opeach:

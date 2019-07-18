@@ -10,7 +10,7 @@ func (env *env) execute(bc *bytecode, v interface{}) Iter {
 
 func (env *env) Next() (interface{}, bool) {
 	var err error
-	pc, callpc, backtrack := env.pc, len(env.codes)-1, env.backtrack
+	pc, callpc, index, backtrack := env.pc, len(env.codes)-1, -1, env.backtrack
 	defer func() { env.pc, env.backtrack = pc, true }()
 loop:
 	for ; 0 <= pc && pc < len(env.codes); pc++ {
@@ -95,9 +95,6 @@ loop:
 		case opjump:
 			pc = code.v.(int)
 			goto loop
-		case opjumppop:
-			pc, callpc = env.pop().(int), pc
-			goto loop
 		case opjumpifnot:
 			if v := env.pop(); v == nil || v == false {
 				pc = code.v.(int)
@@ -107,7 +104,8 @@ loop:
 			if backtrack || err != nil {
 				break loop
 			}
-			pc = env.scopes.pop().(scope).pc
+			s := env.scopes.pop().(scope)
+			pc, env.scopes.index = s.pc, s.saveindex
 			if env.scopes.empty() {
 				if env.stack.empty() {
 					return nil, false
@@ -117,7 +115,7 @@ loop:
 		case opcall:
 			switch v := code.v.(type) {
 			case int:
-				pc, callpc = v, pc
+				pc, callpc, index = v, pc, env.scopes.index
 				goto loop
 			case [3]interface{}:
 				argcnt := v[1].(int)
@@ -134,9 +132,22 @@ loop:
 			default:
 				panic(v)
 			}
+		case oppushpc:
+			env.push([2]int{code.v.(int), env.scopes.index})
+		case opcallpc:
+			xs := env.pop().([2]int)
+			pc, callpc, index = xs[0], pc, xs[1]
+			goto loop
 		case opscope:
 			xs := code.v.([2]int)
-			env.scopes.push(scope{xs[0], env.offset, callpc})
+			var i, l int
+			if index == env.scopes.index {
+				i = index
+			} else {
+				env.scopes.save(&i, &l)
+				env.scopes.index = index
+			}
+			env.scopes.push(scope{xs[0], env.offset, callpc, i})
 			env.offset += xs[1]
 		case opeach:
 			if err != nil {

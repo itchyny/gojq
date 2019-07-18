@@ -13,9 +13,10 @@ type env struct {
 }
 
 type scope struct {
-	id     int
-	offset int
-	pc     int
+	id        int
+	offset    int
+	pc        int
+	saveindex int
 }
 
 type fork struct {

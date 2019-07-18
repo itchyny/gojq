@@ -1113,18 +1113,18 @@
   expected: |
     "@ABC XYZ[] `ABC XYZ{} ☆"
 
-# - name: walk function
-#   args:
-#     - -c
-#     - 'walk(if type == "boolean" then not else . + . end) | .[]'
-#   input: '[1, ["a", {"b": []}], {"c": [null, false, true]}]'
-#   expected: |
-#     2
-#     ["aa",{"b":[]},"aa",{"b":[]}]
-#     {"c":[null,true,false,null,true,false]}
-#     2
-#     ["aa",{"b":[]},"aa",{"b":[]}]
-#     {"c":[null,true,false,null,true,false]}
+- name: walk function
+  args:
+    - -c
+    - 'walk(if type == "boolean" then not else . + . end) | .[]'
+  input: '[1, ["a", {"b": []}], {"c": [null, false, true]}]'
+  expected: |
+    2
+    ["aa",{"b":[]},"aa",{"b":[]}]
+    {"c":[null,true,false,null,true,false]}
+    2
+    ["aa",{"b":[]},"aa",{"b":[]}]
+    {"c":[null,true,false,null,true,false]}
 
 - name: transpose function
   args:
@@ -1188,19 +1188,19 @@
     [0,1]
     [[0,1],[0,1],[0,1],[0,1]]
 
-# - name: function declaration and recursive call
-#   args:
-#     - 'def f(g): if type == "array" then map(f(g * 2)) else g end; f(.)'
-#   input: '[[[1,2]]]'
-#   expected: |
-#     [
-#       [
-#         [
-#           8,
-#           16
-#         ]
-#       ]
-#     ]
+- name: function declaration and recursive call
+  args:
+    - 'def f(g): if type == "array" then map(f(g * 2)) else g end; f(.)'
+  input: '[[[1,2]]]'
+  expected: |
+    [
+      [
+        [
+          8,
+          16
+        ]
+      ]
+    ]
 
 - name: function declaration with duplicate argument name
   args:

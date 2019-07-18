@@ -554,7 +554,7 @@ func (c *compiler) compileFunc(e *Func) error {
 					c.append(&code{op: opload, v: v.index})
 				} else {
 					c.append(&code{op: opload, v: v.index})
-					c.append(&code{op: opjumppop})
+					c.append(&code{op: opcallpc})
 				}
 				return nil
 			}
@@ -881,11 +881,11 @@ func (c *compiler) compileCallInternal(fn interface{}, args []*Pipe, vars map[in
 				c.deleteCodeInfo(name)
 			} else {
 				c.append(&code{op: opload, v: idx})
-				c.append(&code{op: oppush, v: pc})
-				c.append(&code{op: opjumppop})
+				c.append(&code{op: oppushpc, v: pc})
+				c.append(&code{op: opcallpc})
 			}
 		} else {
-			c.append(&code{op: oppush, v: pc})
+			c.append(&code{op: oppushpc, v: pc})
 		}
 	}
 	c.append(&code{op: opload, v: idx})
