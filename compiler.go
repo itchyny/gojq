@@ -545,12 +545,8 @@ func (c *compiler) compileIndex(e *Term, x *Index) error {
 
 func (c *compiler) compileFunc(e *Func) error {
 	for i := len(c.funcs) - 1; i >= 0; i-- {
-		f := c.funcs[i]
-		if f.name == e.Name && len(f.args) == len(e.Args) {
-			if err := c.compileCallPc(f, e.Args); err != nil {
-				return err
-			}
-			return nil
+		if f := c.funcs[i]; f.name == e.Name && len(f.args) == len(e.Args) {
+			return c.compileCallPc(f, e.Args)
 		}
 	}
 	for i := len(c.scopes) - 1; i >= 0; i-- {
@@ -585,12 +581,8 @@ func (c *compiler) compileFunc(e *Func) error {
 			}
 		}
 		for i := len(c.funcs) - 1; i >= 0; i-- {
-			f := c.funcs[i]
-			if f.name == e.Name && len(f.args) == len(e.Args) {
-				if err := c.compileCallPc(f, e.Args); err != nil {
-					return err
-				}
-				return nil
+			if f := c.funcs[i]; f.name == e.Name && len(f.args) == len(e.Args) {
+				return c.compileCallPc(f, e.Args)
 			}
 		}
 	}
@@ -600,10 +592,7 @@ func (c *compiler) compileFunc(e *Func) error {
 			c.append(&code{op: opbacktrack})
 			return nil
 		}
-		if err := c.compileCall(e.Name, e.Args); err != nil {
-			return err
-		}
-		return nil
+		return c.compileCall(e.Name, e.Args)
 	}
 	return &funcNotFoundError{e}
 }
