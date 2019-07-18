@@ -37,13 +37,7 @@ loop:
 		case opload:
 			env.push(env.values[env.index(code.v.([2]int))])
 		case opstore:
-			i := env.index(code.v.([2]int))
-			if i >= len(env.values) {
-				vs := make([]interface{}, (i+1)*2)
-				copy(vs, env.values)
-				env.values = vs
-			}
-			env.values[i] = env.pop()
+			env.values[env.index(code.v.([2]int))] = env.pop()
 		case opobject:
 			n := code.v.(int)
 			m := make(map[string]interface{}, n)
@@ -137,6 +131,11 @@ loop:
 			}
 			env.scopes.push(scope{xs[0], env.offset, callpc, i})
 			env.offset += xs[1]
+			if env.offset > len(env.values) {
+				vs := make([]interface{}, env.offset*2)
+				copy(vs, env.values)
+				env.values = vs
+			}
 		case opret:
 			if backtrack || err != nil {
 				break loop
