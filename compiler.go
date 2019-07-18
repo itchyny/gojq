@@ -588,7 +588,6 @@ func (c *compiler) compileFunc(e *Func) error {
 	}
 	if fn, ok := internalFuncs[e.Name]; ok && fn.accept(len(e.Args)) {
 		if e.Name == "empty" {
-			c.append(&code{op: oppop})
 			c.append(&code{op: opbacktrack})
 			return nil
 		}
