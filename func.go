@@ -41,7 +41,7 @@ var internalFuncs map[string]function
 
 func init() {
 	internalFuncs = map[string]function{
-		"empty":          noArgFunc(funcEmpty),
+		"empty":          noArgFunc(nil),
 		"length":         noArgFunc(funcLength),
 		"utf8bytelength": noArgFunc(funcUtf8ByteLength),
 		"keys":           noArgFunc(funcKeys),
@@ -220,10 +220,6 @@ func toFloat64(name string, v interface{}) (float64, error) {
 	default:
 		return 0, &funcTypeError{name, v}
 	}
-}
-
-func funcEmpty(interface{}) interface{} {
-	return struct{}{}
 }
 
 func funcLength(v interface{}) interface{} {
