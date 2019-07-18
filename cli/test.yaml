@@ -1202,6 +1202,17 @@
       ]
     ]
 
+- name: function declaration and recursive call
+  args:
+    - 'def f(g): if . < 1000 then .,(g|f(g|g)) else g end; f(.*2)'
+  input: '1'
+  expected: |
+    1
+    2
+    8
+    128
+    2147483648
+
 - name: function declaration with duplicate function names
   args:
     - 'def f(g): def f: def g: 3; g * 2; g * f; def f: . * 5; f(f)'
