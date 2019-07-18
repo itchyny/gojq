@@ -24,11 +24,11 @@ const (
 	opbacktrack
 	opjump
 	opjumpifnot
-	opret
 	opcall
 	oppushpc
 	opcallpc
 	opscope
+	opret
 	opeach
 )
 
@@ -66,8 +66,6 @@ func (op opcode) String() string {
 		return "jump"
 	case opjumpifnot:
 		return "jumpifnot"
-	case opret:
-		return "ret"
 	case opcall:
 		return "call"
 	case oppushpc:
@@ -76,6 +74,8 @@ func (op opcode) String() string {
 		return "callpc"
 	case opscope:
 		return "scope"
+	case opret:
+		return "ret"
 	case opeach:
 		return "each"
 	default:

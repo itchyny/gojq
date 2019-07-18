@@ -100,18 +100,6 @@ loop:
 				pc = code.v.(int)
 				goto loop
 			}
-		case opret:
-			if backtrack || err != nil {
-				break loop
-			}
-			s := env.scopes.pop().(scope)
-			pc, env.scopes.index = s.pc, s.saveindex
-			if env.scopes.empty() {
-				if env.stack.empty() {
-					return nil, false
-				}
-				return normalizeValues(env.pop()), true
-			}
 		case opcall:
 			switch v := code.v.(type) {
 			case int:
@@ -149,6 +137,18 @@ loop:
 			}
 			env.scopes.push(scope{xs[0], env.offset, callpc, i})
 			env.offset += xs[1]
+		case opret:
+			if backtrack || err != nil {
+				break loop
+			}
+			s := env.scopes.pop().(scope)
+			pc, env.scopes.index = s.pc, s.saveindex
+			if env.scopes.empty() {
+				if env.stack.empty() {
+					return nil, false
+				}
+				return normalizeValues(env.pop()), true
+			}
 		case opeach:
 			if err != nil {
 				break loop
