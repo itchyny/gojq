@@ -143,9 +143,6 @@ loop:
 			s := env.scopes.pop().(scope)
 			pc, env.scopes.index = s.pc, s.saveindex
 			if env.scopes.empty() {
-				if env.stack.empty() {
-					return nil, false
-				}
 				return normalizeValues(env.pop()), true
 			}
 		case opeach:
