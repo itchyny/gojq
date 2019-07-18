@@ -1202,6 +1202,13 @@
       ]
     ]
 
+- name: function declaration with duplicate function names
+  args:
+    - 'def f(g): def f: def g: 3; g * 2; g * f; def f: . * 5; f(f)'
+  input: '1'
+  expected: |
+    30
+
 - name: function declaration with duplicate argument name
   args:
     - 'def f(g;g): g; f(1;2)'

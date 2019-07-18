@@ -544,6 +544,15 @@ func (c *compiler) compileIndex(e *Term, x *Index) error {
 }
 
 func (c *compiler) compileFunc(e *Func) error {
+	for i := len(c.funcs) - 1; i >= 0; i-- {
+		f := c.funcs[i]
+		if f.name == e.Name && len(f.args) == len(e.Args) {
+			if err := c.compileCallPc(f, e.Args); err != nil {
+				return err
+			}
+			return nil
+		}
+	}
 	for i := len(c.scopes) - 1; i >= 0; i-- {
 		s := c.scopes[i]
 		for j := len(s.variables) - 1; j >= 0; j-- {
@@ -562,15 +571,6 @@ func (c *compiler) compileFunc(e *Func) error {
 	}
 	if e.Name[0] == '$' {
 		return &variableNotFoundError{e.Name}
-	}
-	for i := len(c.funcs) - 1; i >= 0; i-- {
-		f := c.funcs[i]
-		if f.name == e.Name && len(f.args) == len(e.Args) {
-			if err := c.compileCallPc(f, e.Args); err != nil {
-				return err
-			}
-			return nil
-		}
 	}
 	name := e.Name
 	if name[0] == '_' {
