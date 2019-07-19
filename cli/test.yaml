@@ -1220,9 +1220,16 @@
   expected: |
     30
 
-- name: function declaration with duplicate argument name
+- name: function declaration with duplicate argument names
   args:
     - 'def f(g;g): g; f(1;2)'
+  input: 'null'
+  expected: |
+    2
+
+- name: function declaration with duplicate variable names
+  args:
+    - 'def f($g;$g): $g; f(1;2)'
   input: 'null'
   expected: |
     2

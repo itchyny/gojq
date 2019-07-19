@@ -121,8 +121,21 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	if len(e.Args) > 0 {
 		v := cc.newVariable()
 		cc.append(&code{op: opstore, v: v})
+		skip := make([]bool, len(e.Args))
+		for i, name := range e.Args {
+			for j := 0; j < i; j++ {
+				if name == e.Args[j] {
+					skip[j] = true
+					break
+				}
+			}
+		}
 		for _, i := range argsorder {
-			cc.append(&code{op: opstore, v: cc.pushVariable(e.Args[i])})
+			if skip[i] {
+				cc.append(&code{op: oppop})
+			} else {
+				cc.append(&code{op: opstore, v: cc.pushVariable(e.Args[i])})
+			}
 		}
 		cc.append(&code{op: opload, v: v})
 	}
