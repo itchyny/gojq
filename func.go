@@ -41,23 +41,23 @@ var internalFuncs map[string]function
 
 func init() {
 	internalFuncs = map[string]function{
-		"empty":          noArgFunc(nil),
-		"length":         noArgFunc(funcLength),
-		"utf8bytelength": noArgFunc(funcUtf8ByteLength),
-		"keys":           noArgFunc(funcKeys),
+		"empty":          argFunc0(nil),
+		"length":         argFunc0(funcLength),
+		"utf8bytelength": argFunc0(funcUtf8ByteLength),
+		"keys":           argFunc0(funcKeys),
 		"has":            argFunc1(funcHas),
-		"tonumber":       noArgFunc(funcToNumber),
-		"tostring":       noArgFunc(funcToString),
-		"type":           noArgFunc(funcType),
-		"explode":        noArgFunc(funcExplode),
-		"implode":        noArgFunc(funcImplode),
-		"tojson":         noArgFunc(funcToJSON),
-		"fromjson":       noArgFunc(funcFromJSON),
+		"tonumber":       argFunc0(funcToNumber),
+		"tostring":       argFunc0(funcToString),
+		"type":           argFunc0(funcType),
+		"explode":        argFunc0(funcExplode),
+		"implode":        argFunc0(funcImplode),
+		"tojson":         argFunc0(funcToJSON),
+		"fromjson":       argFunc0(funcFromJSON),
 		"_index":         argFunc2(funcIndex),
 		"_slice":         argFunc3(funcSlice),
-		"_break":         noArgFunc(funcBreak),
-		"_plus":          noArgFunc(funcOpPlus),
-		"_negate":        noArgFunc(funcOpNegate),
+		"_break":         argFunc0(funcBreak),
+		"_plus":          argFunc0(funcOpPlus),
+		"_negate":        argFunc0(funcOpNegate),
 		"_add":           argFunc2(funcOpAdd),
 		"_subtract":      argFunc2(funcOpSub),
 		"_multiply":      argFunc2(funcOpMul),
@@ -93,8 +93,8 @@ func init() {
 		"exp10":          mathFunc("exp10", func(v float64) float64 { return math.Pow(10, v) }),
 		"exp2":           mathFunc("exp2", math.Exp2),
 		"expm1":          mathFunc("expm1", math.Expm1),
-		"frexp":          noArgFunc(funcFrexp),
-		"modf":           noArgFunc(funcModf),
+		"frexp":          argFunc0(funcFrexp),
+		"modf":           argFunc0(funcModf),
 		"log":            mathFunc("log", math.Log),
 		"log10":          mathFunc("log10", math.Log10),
 		"log1p":          mathFunc("log1p", math.Log1p),
@@ -135,13 +135,13 @@ func init() {
 		"fma":         mathFunc3("fma", func(x, y, z float64) float64 { return x*y + z }),
 		"setpath":     argFunc2(funcSetpath),
 		"error":       function{argcount0 | argcount1, funcError},
-		"builtins":    noArgFunc(funcBuiltins),
-		"env":         noArgFunc(funcEnv),
+		"builtins":    argFunc0(funcBuiltins),
+		"env":         argFunc0(funcEnv),
 		"_type_error": argFunc1(internalfuncTypeError),
 	}
 }
 
-func noArgFunc(fn func(interface{}) interface{}) function {
+func argFunc0(fn func(interface{}) interface{}) function {
 	return function{argcount0, func(v interface{}, _ []interface{}) interface{} {
 		return fn(v)
 	},
@@ -170,7 +170,7 @@ func argFunc3(fn func(interface{}, interface{}, interface{}, interface{}) interf
 }
 
 func mathFunc(name string, f func(x float64) float64) function {
-	return noArgFunc(func(v interface{}) interface{} {
+	return argFunc0(func(v interface{}) interface{} {
 		x, err := toFloat64(name, v)
 		if err != nil {
 			return err
