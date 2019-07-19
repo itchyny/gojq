@@ -9,12 +9,12 @@ import (
 )
 
 type compiler struct {
-	codes     []*code
-	codeinfos []codeinfo
-	offset    int
-	scopes    []*scopeinfo
-	scopecnt  int
-	funcs     []*funcinfo
+	codes      []*code
+	codeinfos  []codeinfo
+	codeoffset int
+	scopes     []*scopeinfo
+	scopecnt   int
+	funcs      []*funcinfo
 }
 
 type bytecode struct {
@@ -112,7 +112,7 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	defer c.appendCodeInfo(e.Name)
 	pc, argsorder := c.pc(), getArgsOrder(e.Args)
 	c.funcs = append(c.funcs, &funcinfo{e.Name, pc, e.Args, argsorder})
-	cc := &compiler{offset: pc, scopecnt: c.scopecnt, funcs: c.funcs}
+	cc := &compiler{codeoffset: pc, scopecnt: c.scopecnt, funcs: c.funcs}
 	scope := cc.newScope()
 	cc.scopes = append(c.scopes, scope)
 	setscope := cc.lazy(func() *code {
@@ -919,7 +919,7 @@ func (c *compiler) append(code *code) {
 }
 
 func (c *compiler) pc() int {
-	return c.offset + len(c.codes)
+	return c.codeoffset + len(c.codes)
 }
 
 func (c *compiler) lazy(f func() *code) func() {
@@ -934,7 +934,7 @@ func (c *compiler) optimizeTailRec() {
 	for i := 0; i < len(c.codes); i++ {
 		switch c.codes[i].op {
 		case opscope:
-			pc := i + c.offset
+			pc := i + c.codeoffset
 			pcs = append(pcs, pc)
 			xs := c.codes[i].v.([2]int)
 			if xs[1] == 0 {
@@ -948,7 +948,7 @@ func (c *compiler) optimizeTailRec() {
 			for j := i + 1; j < len(c.codes); {
 				switch c.codes[j].op {
 				case opjump:
-					j = c.codes[j].v.(int) - c.offset
+					j = c.codes[j].v.(int) - c.codeoffset
 				case opret:
 					c.codes[i] = &code{op: opjump, v: pcs[len(pcs)-1] + 1}
 					break loop
@@ -968,12 +968,12 @@ func (c *compiler) optimizeJumps() {
 		if code.op != opjump {
 			continue
 		}
-		if code.v.(int)-1 == i+c.offset {
+		if code.v.(int)-1 == i+c.codeoffset {
 			c.codes[i].op = opnop
 			continue
 		}
 		for {
-			d := c.codes[code.v.(int)-c.offset]
+			d := c.codes[code.v.(int)-c.codeoffset]
 			if d.op != opjump {
 				break
 			}
