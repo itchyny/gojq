@@ -2,6 +2,7 @@ package gojq
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -13,7 +14,7 @@ type compiler struct {
 	offset    int
 	scopes    []*scopeinfo
 	scopecnt  int
-	funcs     []funcinfo
+	funcs     []*funcinfo
 }
 
 type bytecode struct {
@@ -26,12 +27,6 @@ type codeinfo struct {
 	pc   int
 }
 
-type funcinfo struct {
-	name string
-	pc   int
-	args []string
-}
-
 type scopeinfo struct {
 	id        int
 	offset    int
@@ -41,6 +36,13 @@ type scopeinfo struct {
 type varinfo struct {
 	name  string
 	index [2]int
+}
+
+type funcinfo struct {
+	name      string
+	pc        int
+	args      []string
+	argsorder []int
 }
 
 func compile(q *Query) (*bytecode, error) {
@@ -108,8 +110,8 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	})()
 	c.appendCodeInfo(e.Name)
 	defer c.appendCodeInfo(e.Name)
-	pc := c.pc()
-	c.funcs = append(c.funcs, funcinfo{e.Name, pc, e.Args})
+	pc, argsorder := c.pc(), getArgsOrder(e.Args)
+	c.funcs = append(c.funcs, &funcinfo{e.Name, pc, e.Args, argsorder})
 	cc := &compiler{offset: pc, scopecnt: c.scopecnt, funcs: c.funcs}
 	scope := cc.newScope()
 	cc.scopes = append(c.scopes, scope)
@@ -119,8 +121,8 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	if len(e.Args) > 0 {
 		v := cc.newVariable()
 		cc.append(&code{op: opstore, v: v})
-		for _, name := range e.Args {
-			cc.append(&code{op: opstore, v: cc.pushVariable(name)})
+		for _, i := range argsorder {
+			cc.append(&code{op: opstore, v: cc.pushVariable(e.Args[i])})
 		}
 		cc.append(&code{op: opload, v: v})
 	}
@@ -134,6 +136,23 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	c.codeinfos = append(c.codeinfos, bs.codeinfos...)
 	c.scopecnt = cc.scopecnt
 	return nil
+}
+
+func getArgsOrder(args []string) []int {
+	xs := make([]int, len(args))
+	if len(xs) > 0 {
+		for i := range xs {
+			xs[i] = i
+		}
+		sort.Slice(xs, func(i, j int) bool {
+			xi, xj := xs[i], xs[j]
+			if args[xi][0] == '$' {
+				return args[xj][0] == '$' && xi > xj // reverse the order of variables
+			}
+			return args[xj][0] == '$' || xi < xj
+		})
+	}
+	return xs
 }
 
 func (c *compiler) compilePipe(e *Pipe) error {
@@ -817,17 +836,18 @@ func (c *compiler) compileCall(name string, args []*Pipe) error {
 	)
 }
 
-func (c *compiler) compileCallPc(fn funcinfo, args []*Pipe) error {
+func (c *compiler) compileCallPc(fn *funcinfo, args []*Pipe) error {
 	if len(args) == 0 {
 		return c.compileCallInternal(fn.pc, args, nil)
 	}
-	vars := make(map[int]bool, len(fn.args))
-	for i, arg := range fn.args {
-		if arg[0] == '$' {
+	xs, vars := make([]*Pipe, len(args)), make(map[int]bool, len(fn.args))
+	for i, j := range fn.argsorder {
+		xs[i] = args[j]
+		if fn.args[j][0] == '$' {
 			vars[i] = true
 		}
 	}
-	return c.compileCallInternal(fn.pc, args, vars)
+	return c.compileCallInternal(fn.pc, xs, vars)
 }
 
 func (c *compiler) compileCallInternal(fn interface{}, args []*Pipe, vars map[int]bool) error {
