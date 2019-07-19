@@ -54,6 +54,10 @@ lint: $(GOBIN)/golint
 $(GOBIN)/golint:
 	GO111MODULE=off go get golang.org/x/lint/golint
 
+.PHONY: check-tools
+check-tools:
+	ls _tools/* | xargs -L1 -I% sh -c 'go run % >/dev/null 2>&1 || go run %'
+
 .PHONY: clean
 clean:
 	rm -rf build goxz
