@@ -1,4 +1,15 @@
 # Changelog
+## [v0.4.0](https://github.com/itchyny/gojq/compare/v0.3.0..v0.4.0) (2019-07-20)
+* improve performance significantly
+* rewrite from recursive interpreter to stack machine based interpreter
+* allow debugging with `make install-debug` and `export GOJQ_DEBUG=1`
+* parse built-in functions and generate syntax trees before compilation
+* optimize tail recursion
+* fix behavior of optional operator
+* fix scopes of arguments of recursive function call
+* fix duplicate function argument names
+* implement `setpath` function
+
 ## [v0.3.0](https://github.com/itchyny/gojq/compare/v0.2.0..v0.3.0) (2019-06-05)
 
 * implement `reduce`, `foreach`, `label`, `break` syntax
