@@ -157,41 +157,6 @@ func (op Operator) getFunc() string {
 	panic(op)
 }
 
-// Eval the expression.
-func (op Operator) Eval(l, r interface{}) interface{} {
-	switch op {
-	case OpAdd:
-		return funcOpAdd(nil, l, r)
-	case OpSub:
-		return funcOpSub(nil, l, r)
-	case OpMul:
-		return funcOpMul(nil, l, r)
-	case OpDiv:
-		return funcOpDiv(nil, l, r)
-	case OpMod:
-		return funcOpMod(nil, l, r)
-	case OpEq:
-		return funcOpEq(nil, l, r)
-	case OpNe:
-		return funcOpNe(nil, l, r)
-	case OpGt:
-		return funcOpGt(nil, l, r)
-	case OpLt:
-		return funcOpLt(nil, l, r)
-	case OpGe:
-		return funcOpGe(nil, l, r)
-	case OpLe:
-		return funcOpLe(nil, l, r)
-	case OpAnd:
-		panic("unreachable")
-	case OpOr:
-		panic("unreachable")
-	case OpAlt:
-		panic("unreachable")
-	}
-	panic("unsupported operator")
-}
-
 func binopTypeSwitch(
 	l, r interface{},
 	callbackInts func(int, int) interface{},
