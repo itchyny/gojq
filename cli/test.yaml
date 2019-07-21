@@ -828,6 +828,17 @@
     [true,false,0,1,"","foo",[],[2,[]],{},{"foo":[]}]
     [null,true,false,0,1,"","foo"]
 
+- name: leaf_paths function
+  args:
+    - -c
+    - 'leaf_paths'
+  input: '[null,[],{},{"a":[1,[],{},true]},[3,[],1]]'
+  expected: |
+    [3,"a",0]
+    [3,"a",3]
+    [4,0]
+    [4,2]
+
 - name: recurse/0 function
   args:
     - -c

@@ -60,16 +60,17 @@ var BuiltinFuncDefinitions = map[string]string{
 			if $step > 0 then $start|while(. < $end; . + $step)
 			elif $step < 0 then $start|while(. > $end; . + $step)
 			else empty end;`,
-	"arrays":    `def arrays: select(type == "array");`,
-	"objects":   `def objects: select(type == "object");`,
-	"iterables": `def iterables: select(type |. == "array" or . == "object");`,
-	"booleans":  `def booleans: select(type == "boolean");`,
-	"numbers":   `def numbers: select(type == "number");`,
-	"strings":   `def strings: select(type == "string");`,
-	"nulls":     `def nulls: select(. == null);`,
-	"values":    `def values: select(. != null);`,
-	"scalars":   `def scalars: select(type |. != "array" and . != "object");`,
-	"reverse":   `def reverse: [.[length - 1 - range(0;length)]];`,
+	"arrays":     `def arrays: select(type == "array");`,
+	"objects":    `def objects: select(type == "object");`,
+	"iterables":  `def iterables: select(type |. == "array" or . == "object");`,
+	"booleans":   `def booleans: select(type == "boolean");`,
+	"numbers":    `def numbers: select(type == "number");`,
+	"strings":    `def strings: select(type == "string");`,
+	"nulls":      `def nulls: select(. == null);`,
+	"values":     `def values: select(. != null);`,
+	"scalars":    `def scalars: select(type |. != "array" and . != "object");`,
+	"leaf_paths": `def leaf_paths: paths(scalars);`,
+	"reverse":    `def reverse: [.[length - 1 - range(0;length)]];`,
 	"indices": `
 		def indices($x):
 			if type == "array" and ($x|type) == "array" then .[$x]
