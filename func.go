@@ -135,6 +135,7 @@ func init() {
 		"pow":         mathFunc2("pow", math.Pow),
 		"fma":         mathFunc3("fma", func(x, y, z float64) float64 { return x*y + z }),
 		"setpath":     argFunc2(funcSetpath),
+		"delpaths":    argFunc1(funcDelpaths),
 		"getpath":     argFunc1(funcGetpath),
 		"error":       function{argcount0 | argcount1, funcError},
 		"builtins":    argFunc0(funcBuiltins),
@@ -568,56 +569,91 @@ func funcModf(v interface{}) interface{} {
 }
 
 func funcSetpath(v, p, w interface{}) interface{} {
+	return updatePaths("setpath", clone(v), p, func(interface{}) interface{} {
+		return w
+	})
+}
+
+func funcDelpaths(v, p interface{}) interface{} {
+	paths, ok := p.([]interface{})
+	if !ok {
+		return &funcTypeError{"delpaths", p}
+	}
+	for _, path := range paths {
+		v = updatePaths("delpaths", clone(v), path, func(interface{}) interface{} {
+			return struct{}{}
+		})
+		if _, ok := v.(error); ok {
+			return v
+		}
+	}
+	return deleteEmpty(v)
+}
+
+func updatePaths(name string, v, p interface{}, f func(interface{}) interface{}) interface{} {
 	keys, ok := p.([]interface{})
 	if !ok {
-		return &funcTypeError{"setpath", p}
+		return &funcTypeError{name, p}
 	}
 	if len(keys) == 0 {
-		return w
+		return f(v)
 	}
 	u := v
-	f := func(w interface{}) interface{} { v = w; return w }
+	g := func(w interface{}) interface{} { v = w; return w }
+loop:
 	for i, x := range keys {
 		switch x := x.(type) {
 		case string:
 			if u == nil {
-				u = f(make(map[string]interface{}))
+				if name == "delpaths" {
+					break loop
+				}
+				u = g(make(map[string]interface{}))
 			}
 			switch uu := u.(type) {
 			case map[string]interface{}:
+				if _, ok := uu[x]; !ok && name == "delpaths" {
+					break loop
+				}
 				if i < len(keys)-1 {
 					u = uu[x]
-					f = func(w interface{}) interface{} { uu[x] = w; return w }
+					g = func(w interface{}) interface{} { uu[x] = w; return w }
 				} else {
-					uu[x] = w
+					uu[x] = f(uu[x])
 				}
 			default:
 				return &expectedObjectError{u}
 			}
 		case int, float64:
 			if u == nil {
-				u = f([]interface{}{})
+				u = g([]interface{}{})
 			}
 			y, _ := toInt(x)
 			switch uu := u.(type) {
 			case []interface{}:
 				l := len(uu)
-				if y >= len(uu) {
+				if y >= len(uu) && name == "setpath" {
 					l = y + 1
 				} else if y < -len(uu) {
-					return &funcTypeError{"setpath", y}
+					if name == "delpaths" {
+						break loop
+					}
+					return &funcTypeError{name, y}
 				} else if y < 0 {
 					y = len(uu) + y
 				}
 				ys := make([]interface{}, l)
 				copy(ys, uu)
 				uu = ys
-				f(uu)
+				g(uu)
+				if y >= len(uu) {
+					break loop
+				}
 				if i < len(keys)-1 {
 					u = uu[y]
-					f = func(w interface{}) interface{} { uu[y] = w; return w }
+					g = func(w interface{}) interface{} { uu[y] = w; return w }
 				} else {
-					uu[y] = w
+					uu[y] = f(uu[y])
 				}
 			default:
 				return &expectedArrayError{u}

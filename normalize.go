@@ -31,3 +31,30 @@ func normalizeValues(v interface{}) interface{} {
 		return v
 	}
 }
+
+func deleteEmpty(v interface{}) interface{} {
+	switch v := v.(type) {
+	case struct{}:
+		return nil
+	case map[string]interface{}:
+		u := make(map[string]interface{}, len(v))
+		for k, v := range v {
+			if v == struct{}{} {
+				continue
+			}
+			u[k] = deleteEmpty(v)
+		}
+		return u
+	case []interface{}:
+		u := make([]interface{}, 0, len(v))
+		for _, v := range v {
+			if v == struct{}{} {
+				continue
+			}
+			u = append(u, deleteEmpty(v))
+		}
+		return u
+	default:
+		return v
+	}
+}
