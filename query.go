@@ -479,7 +479,8 @@ func (e *Pattern) String() string {
 // PatternObject ...
 type PatternObject struct {
 	Key       string   `( ( @Ident | @Keyword )`
-	KeyString string   `| @String ) ":"`
+	KeyString string   `  | @String`
+	Pipe      *Pipe    `  | "(" @@ ")" ) ":"`
 	Val       *Pattern `@@`
 	KeyOnly   string   `| @Ident`
 }
@@ -488,13 +489,13 @@ func (e *PatternObject) String() string {
 	var s strings.Builder
 	if e.Key != "" {
 		s.WriteString(e.Key)
-		s.WriteString(": ")
-	}
-	if e.KeyString != "" {
+	} else if e.KeyString != "" {
 		s.WriteString(e.KeyString)
-		s.WriteString(": ")
+	} else if e.Pipe != nil {
+		fmt.Fprintf(&s, "(%s)", e.Pipe)
 	}
 	if e.Val != nil {
+		s.WriteString(": ")
 		fmt.Fprint(&s, e.Val)
 	}
 	if e.KeyOnly != "" {

@@ -1913,6 +1913,17 @@
       "qux": 30
     }
 
+- name: binding an object with expression
+  args:
+    - '. as {as: $foo, ("e"+"x"+"p"): $bar, (.foo): $baz} | [$foo, $bar, $baz]'
+  input: '{"as": 1, "exp": 2, "foo": "bar", "bar": 3}'
+  expected: |
+    [
+      1,
+      2,
+      3
+    ]
+
 - name: binding an object error
   args:
     - '. as {$i} | [$i]'

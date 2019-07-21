@@ -321,15 +321,22 @@ func (c *compiler) compilePattern(p *Pattern) error {
 					return &bindVariableNameError{kv.KeyOnly}
 				}
 				key, name = kv.KeyOnly[1:], kv.KeyOnly
+				c.append(&code{op: oppush, v: key})
 			} else if kv.Key != "" {
 				key = kv.Key
 				if key != "" && key[0] == '$' {
 					key, name = key[1:], key
 				}
+				c.append(&code{op: oppush, v: key})
 			} else if kv.KeyString != "" {
 				key = kv.KeyString[1 : len(kv.KeyString)-1]
+				c.append(&code{op: oppush, v: key})
+			} else if kv.Pipe != nil {
+				c.append(&code{op: opload, v: v})
+				if err := c.compilePipe(kv.Pipe); err != nil {
+					return err
+				}
 			}
-			c.append(&code{op: oppush, v: key})
 			c.append(&code{op: opload, v: v})
 			c.append(&code{op: opload, v: v})
 			// ref: compileCall
