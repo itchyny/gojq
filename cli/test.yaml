@@ -2514,6 +2514,15 @@
     [1,1]
     [1,1,"a"]
 
+- name: bsearch function
+  args:
+    - 'bsearch(0,2,4)'
+  input: '[1,2,3]'
+  expected: |
+    -1
+    1
+    -4
+
 - name: builtins function
   args:
     - 'builtins|length > 100'
