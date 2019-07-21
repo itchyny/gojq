@@ -2233,6 +2233,59 @@
   error: |
     error cannot be applied to: object ({})
 
+- name: path function identity
+  args:
+    - 'path(.)'
+  input: '{}'
+  expected: |
+    []
+
+- name: path function deep
+  args:
+    - -c
+    - 'path(.a|.[1,2:3,4].b[5,6])'
+  input: '{}'
+  expected: |
+    ["a",{"end":3,"start":1},"b",5]
+    ["a",{"end":4,"start":1},"b",5]
+    ["a",{"end":3,"start":2},"b",5]
+    ["a",{"end":4,"start":2},"b",5]
+    ["a",{"end":3,"start":1},"b",6]
+    ["a",{"end":4,"start":1},"b",6]
+    ["a",{"end":3,"start":2},"b",6]
+    ["a",{"end":4,"start":2},"b",6]
+
+- name: path function select
+  args:
+    - -c
+    - '[path(.[] | select(. > 3))]'
+  input: '[1,3,5,7,3,8,9,1]'
+  expected: |
+    [[2],[3],[5],[6]]
+
+- name: path function recurse
+  args:
+    - -c
+    - '[path(..)]'
+  input: '{"a":{"b":[0,1,2]},"c":[3,4]}'
+  expected: |
+    [[],["a"],["a","b"],["a","b",0],["a","b",1],["a","b",2],["c"],["c",0],["c",1]]
+
+- name: path function result
+  args:
+    - -c
+    - '.a[path(.b)[0]]'
+  input: '{"a":{"b":0}}'
+  expected: |
+    0
+
+- name: path function error
+  args:
+    - 'path(. + 1)'
+  input: '0'
+  error: |
+    invalid path against: number (1)
+
 - name: builtins function
   args:
     - 'builtins|length > 100'

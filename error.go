@@ -145,6 +145,14 @@ func (err *stringLiteralError) Error() string {
 	return fmt.Sprintf("expected a string but got: %s", err.s)
 }
 
+type invalidPathError struct {
+	v interface{}
+}
+
+func (err *invalidPathError) Error() string {
+	return fmt.Sprintf("invalid path against: %s", typeErrorPreview(err.v))
+}
+
 func typeErrorPreview(v interface{}) string {
 	return typeof(v) + preview(v)
 }

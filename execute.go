@@ -1,5 +1,10 @@
 package gojq
 
+import (
+	"reflect"
+	"sort"
+)
+
 func (env *env) execute(bc *bytecode, v interface{}) Iter {
 	env.codes = bc.codes
 	env.codeinfos = bc.codeinfos
@@ -111,6 +116,16 @@ loop:
 					break loop
 				}
 				env.push(w)
+				if !env.paths.empty() {
+					var p interface{}
+					p, err = env.pathEntry(v[2].(string), x, args)
+					if err != nil {
+						break loop
+					}
+					if p != nil {
+						env.paths.push([2]interface{}{p, w})
+					}
+				}
 			default:
 				panic(v)
 			}
@@ -150,35 +165,53 @@ loop:
 				break loop
 			}
 			backtrack = false
+			var xs [][2]interface{}
 			switch v := env.pop().(type) {
+			case [][2]interface{}:
+				xs = v
 			case []interface{}:
 				if len(v) == 0 {
 					break loop
 				}
-				if len(v) > 1 {
-					env.push(v[1:])
-					env.pushfork(code.op, pc)
-					env.pop()
+				xs = make([][2]interface{}, len(v))
+				for i, v := range v {
+					xs[i] = [2]interface{}{i, v}
 				}
-				env.push(v[0])
 			case map[string]interface{}:
 				if len(v) == 0 {
 					break loop
 				}
-				a := make([]interface{}, len(v))
+				xs = make([][2]interface{}, len(v))
 				var i int
-				for _, v := range v {
-					a[i] = v
+				for k, v := range v {
+					xs[i] = [2]interface{}{k, v}
 					i++
 				}
-				if len(v) > 1 {
-					env.push(a[1:])
-					env.pushfork(code.op, pc)
-					env.pop()
-				}
-				env.push(a[0])
+				sort.Slice(xs, func(i, j int) bool {
+					return xs[i][0].(string) < xs[j][0].(string)
+				})
 			default:
 				err = &iteratorError{v}
+				break loop
+			}
+			if len(xs) > 1 {
+				env.push(xs[1:])
+				env.pushfork(code.op, pc)
+				env.pop()
+			}
+			env.push(xs[0][1])
+			if !env.paths.empty() {
+				env.paths.push(xs[0])
+			}
+		case oppathbegin:
+			env.paths.push([2]interface{}{nil, env.stack.top()})
+		case oppathend:
+			env.pop()
+			x := env.pop()
+			if reflect.DeepEqual(x, env.paths.top().([2]interface{})[1]) {
+				env.push(env.paths.collect())
+			} else {
+				err = &invalidPathError{x}
 				break loop
 			}
 		default:
@@ -207,6 +240,7 @@ func (env *env) pushfork(op opcode, pc int) {
 	f := &fork{op: op, pc: pc}
 	env.stack.save(&f.stackindex, &f.stacklimit)
 	env.scopes.save(&f.scopeindex, &f.scopelimit)
+	env.paths.save(&f.pathindex, &f.pathlimit)
 	env.forks = append(env.forks, f)
 	env.debugForks(pc, ">>>")
 }
@@ -217,6 +251,7 @@ func (env *env) popfork() *fork {
 	env.forks = env.forks[:len(env.forks)-1]
 	env.stack.restore(f.stackindex, f.stacklimit)
 	env.scopes.restore(f.scopeindex, f.scopelimit)
+	env.paths.restore(f.pathindex, f.pathlimit)
 	return f
 }
 
@@ -228,4 +263,21 @@ func (env *env) scopeOffset(id int) int {
 
 func (env *env) index(v [2]int) int {
 	return env.scopeOffset(v[0]) + v[1]
+}
+
+func (env *env) pathEntry(name string, x interface{}, args []interface{}) (interface{}, error) {
+	switch name {
+	case "_index":
+		if !reflect.DeepEqual(args[0], env.paths.top().([2]interface{})[1]) {
+			return nil, &invalidPathError{x}
+		}
+		return args[1], nil
+	case "_slice":
+		if !reflect.DeepEqual(args[0], env.paths.top().([2]interface{})[1]) {
+			return nil, &invalidPathError{x}
+		}
+		return map[string]interface{}{"start": args[2], "end": args[1]}, nil
+	default:
+		return nil, nil
+	}
 }

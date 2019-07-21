@@ -619,11 +619,20 @@ func (c *compiler) compileFunc(e *Func) error {
 		}
 	}
 	if fn, ok := internalFuncs[e.Name]; ok && fn.accept(len(e.Args)) {
-		if e.Name == "empty" {
+		switch e.Name {
+		case "empty":
 			c.append(&code{op: opbacktrack})
 			return nil
+		case "path":
+			c.append(&code{op: oppathbegin})
+			if err := c.compileCall(e.Name, e.Args); err != nil {
+				return err
+			}
+			c.codes[len(c.codes)-1] = &code{op: oppathend}
+			return nil
+		default:
+			return c.compileCall(e.Name, e.Args)
 		}
-		return c.compileCall(e.Name, e.Args)
 	}
 	return &funcNotFoundError{e}
 }

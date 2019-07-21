@@ -30,6 +30,8 @@ const (
 	opscope
 	opret
 	opeach
+	oppathbegin
+	oppathend
 )
 
 func (op opcode) String() string {
@@ -78,6 +80,10 @@ func (op opcode) String() string {
 		return "ret"
 	case opeach:
 		return "each"
+	case oppathbegin:
+		return "pathbegin"
+	case oppathend:
+		return "pathend"
 	default:
 		panic(op)
 	}
