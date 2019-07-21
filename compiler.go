@@ -240,6 +240,12 @@ func (c *compiler) compileExpr(e *Expr) (err error) {
 				},
 			)
 		default:
+			name := "$%0"
+			c.append(&code{op: opdup})
+			if err := c.compileAlt(e.Update); err != nil {
+				return err
+			}
+			c.append(&code{op: opstore, v: c.pushVariable(name)})
 			return c.compileFunc(
 				&Func{
 					Name: "_modify",
@@ -249,7 +255,7 @@ func (c *compiler) compileExpr(e *Expr) (err error) {
 							Name: e.UpdateOp.getFunc(),
 							Args: []*Pipe{
 								(&Term{Identity: true}).toPipe(),
-								e.Update.toPipe(),
+								(&Term{Func: &Func{Name: name}}).toPipe(),
 							},
 						}}).toPipe(),
 					},

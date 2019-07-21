@@ -2430,6 +2430,17 @@
     [0.5,1,1.5]
     [1,0,1]
 
+- name: update operator with query in right hand side
+  args:
+    - -c
+    - '.foo += .foo, .bar //= .foo, .[] /= .foo, .[] = .foo'
+  input: '{"foo":2}'
+  expected: |
+    {"foo":4}
+    {"bar":2,"foo":2}
+    {"foo":1}
+    {"foo":2}
+
 - name: error/0 function
   args:
     - '.foo[] | error'
