@@ -129,14 +129,15 @@ func (e AltRight) String() string {
 
 // Expr ...
 type Expr struct {
-	Logic   *Logic    `( @@`
-	If      *If       `| @@`
-	Try     *Try      `| @@`
-	Reduce  *Reduce   `| @@`
-	Foreach *Foreach  `| @@ )`
-	Assign  *Alt      `( "=" @@`
-	Bind    *ExprBind `| @@ )?`
-	Label   *Label    `| @@`
+	Logic    *Logic    `( @@`
+	If       *If       `| @@`
+	Try      *Try      `| @@`
+	Reduce   *Reduce   `| @@`
+	Foreach  *Foreach  `| @@ )`
+	UpdateOp Operator  `( @UpdateOp`
+	Update   *Alt      `  @@`
+	Bind     *ExprBind `| @@ )?`
+	Label    *Label    `| @@`
 }
 
 func (e *Expr) toPipe() *Pipe {
@@ -160,7 +161,9 @@ func (e *Expr) String() string {
 	} else if e.Foreach != nil {
 		fmt.Fprint(&s, e.Foreach)
 	}
-	if e.Bind != nil {
+	if e.Update != nil {
+		fmt.Fprintf(&s, " %s %s", e.UpdateOp, e.Update)
+	} else if e.Bind != nil {
 		fmt.Fprint(&s, e.Bind)
 	} else if e.Label != nil {
 		fmt.Fprint(&s, e.Label)
