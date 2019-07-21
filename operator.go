@@ -25,6 +25,7 @@ const (
 	OpOr
 	OpAlt
 	OpAssign
+	OpModify
 )
 
 var operatorMap = map[string]Operator{
@@ -43,6 +44,7 @@ var operatorMap = map[string]Operator{
 	"or":  OpOr,
 	"//":  OpAlt,
 	"=":   OpAssign,
+	"|=":  OpModify,
 }
 
 // Capture implements  participle.Capture.
@@ -88,6 +90,8 @@ func (op Operator) String() string {
 		return "//"
 	case OpAssign:
 		return "="
+	case OpModify:
+		return "|="
 	}
 	panic(op)
 }
@@ -125,6 +129,8 @@ func (op Operator) GoString() string {
 		return "OpAlt"
 	case OpAssign:
 		return "OpAssign"
+	case OpModify:
+		return "OpModify"
 	}
 	panic(op)
 }
@@ -161,6 +167,8 @@ func (op Operator) getFunc() string {
 		panic("unreachable")
 	case OpAssign:
 		return "_assign"
+	case OpModify:
+		return "_modify"
 	}
 	panic(op)
 }

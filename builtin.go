@@ -185,4 +185,8 @@ var BuiltinFuncDefinitions = map[string]string{
 	"assign": `
 		def _assign(ps; $v):
 			reduce path(ps) as $p (.; setpath($p; $v));`,
+	"modify": `
+		def _modify(ps; f):
+			reduce path(ps) as $p
+				(.; label $out | (setpath($p; getpath($p) | f) | ., break $out), delpaths([$p]));`,
 }

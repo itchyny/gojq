@@ -2337,6 +2337,30 @@
   expected: |
     {"bar":42,"foo":42}
 
+- name: modify operator
+  args:
+    - -c
+    - '.foo |= .+1'
+  input: '{"foo": 1}'
+  expected: |
+    {"foo":2}
+
+- name: modify operator deeply
+  args:
+    - -c
+    - '.[0].a |= {"old":., "new":(.+1)}'
+  input: '[{"a":1,"b":2}]'
+  expected: |
+    [{"a":{"new":2,"old":1},"b":2}]
+
+- name: modify operator in function
+  args:
+    - -c
+    - 'def inc(x): x |= .+1; inc(.[].a)'
+  input: '[{"a":1,"b":2},{"a":2,"b":4},{"a":7,"b":8}]'
+  expected: |
+    [{"a":2,"b":2},{"a":3,"b":4},{"a":8,"b":8}]
+
 - name: error/0 function
   args:
     - '.foo[] | error'
