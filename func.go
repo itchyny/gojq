@@ -135,6 +135,7 @@ func init() {
 		"pow":         mathFunc2("pow", math.Pow),
 		"fma":         mathFunc3("fma", func(x, y, z float64) float64 { return x*y + z }),
 		"setpath":     argFunc2(funcSetpath),
+		"getpath":     argFunc1(funcGetpath),
 		"error":       function{argcount0 | argcount1, funcError},
 		"builtins":    argFunc0(funcBuiltins),
 		"env":         argFunc0(funcEnv),
@@ -628,6 +629,28 @@ func funcSetpath(v, p, w interface{}) interface{} {
 			default:
 				return &objectKeyNotStringError{x}
 			}
+		}
+	}
+	return v
+}
+
+func funcGetpath(v, p interface{}) interface{} {
+	keys, ok := p.([]interface{})
+	if !ok {
+		return &funcTypeError{"getpath", p}
+	}
+	u := v
+	for _, x := range keys {
+		switch v.(type) {
+		case map[string]interface{}:
+		case []interface{}:
+		case nil:
+		default:
+			return &getpathError{u, p}
+		}
+		v = funcIndex(nil, v, x)
+		if _, ok := v.(error); ok {
+			return &getpathError{u, p}
 		}
 	}
 	return v

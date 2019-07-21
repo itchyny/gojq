@@ -2218,6 +2218,30 @@
   error: |
     expected a string for object key but got: object ({})
 
+- name: getpath function
+  args:
+    - -c
+    - 'getpath(["a",1,"b",2])'
+  input: '{"a":[{},{"b":[1,2,3]}]}'
+  expected: |
+    3
+
+- name: getpath function empty path
+  args:
+    - -c
+    - 'getpath([])'
+  input: '{"a":[{},{"b":[1,2,3]}]}'
+  expected: |
+    {"a":[{},{"b":[1,2,3]}]}
+
+- name: getpath function error
+  args:
+    - -c
+    - 'getpath(["a",1,"b","c"])'
+  input: '{"a":[{},{"b":[1,2,3]}]}'
+  error: |
+    cannot getpath with ["a",1,"b","c"] against: object ({"a":[{},{"b":[1,2,3]}]})
+
 - name: assignment operator against object
   args:
     - -c

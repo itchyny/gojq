@@ -153,8 +153,20 @@ func (err *invalidPathError) Error() string {
 	return fmt.Sprintf("invalid path against: %s", typeErrorPreview(err.v))
 }
 
+type getpathError struct {
+	v, path interface{}
+}
+
+func (err *getpathError) Error() string {
+	return fmt.Sprintf("cannot getpath with %s against: %s", preview(err.path), typeErrorPreview(err.v))
+}
+
 func typeErrorPreview(v interface{}) string {
-	return typeof(v) + preview(v)
+	p := preview(v)
+	if p != "" {
+		p = " (" + p + ")"
+	}
+	return typeof(v) + p
 }
 
 func typeof(v interface{}) (s string) {
@@ -188,5 +200,5 @@ func preview(v interface{}) string {
 	if len(s) > l {
 		s = s[:l-3] + " ..."
 	}
-	return " (" + s + ")"
+	return s
 }
