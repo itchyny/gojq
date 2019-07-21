@@ -10,7 +10,11 @@ var BuiltinFuncDefinitions = map[string]string{
 	"map":        `def map(f): [.[] | f];`,
 	"add":        `def add: reduce .[] as $x (null; . + $x);`,
 	"to_entries": `def to_entries: [keys[] as $k | {key: $k, value: .[$k]}];`,
-	"select":     `def select(f): if f then . else empty end;`,
+	"from_entries": `
+		def from_entries:
+			map({(.key // .Key // .name // .Name): (if has("value") then .value else .Value end)})
+				| add | . //= {};`,
+	"select": `def select(f): if f then . else empty end;`,
 	"recurse": `
 		def recurse: recurse(.[]?);
 		def recurse(f): def r: ., (f | r); r;

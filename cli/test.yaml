@@ -754,6 +754,14 @@
     [{"key":0,"value":10},{"key":1,"value":20}]
     [{"key":"a","value":10},{"key":"b","value":[]}]
 
+- name: from_entries function
+  args:
+    - -c
+    - 'from_entries'
+  input: '[{"key":"a", "value":1}, {"Key":"b", "Value":2}, {"name":"c", "value":3}, {"Name":"d", "Value":4}]'
+  expected: |
+    {"a":1,"b":2,"c":3,"d":4}
+
 - name: add function
   args:
     - -c
