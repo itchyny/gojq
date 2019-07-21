@@ -2297,6 +2297,17 @@
   expected: |
     [2,4,6]
 
+- name: del function
+  args:
+    - -c
+    - 'del(.), del(empty), del((.foo,.bar,.baz) | .[2,3,0]), del(.foo[0], .bar[0], .foo, .baz.bar[0].x)'
+  input: '{"foo": [0,1,2,3,4], "bar": [0,1]}'
+  expected: |
+    null
+    {"bar":[0,1],"foo":[0,1,2,3,4]}
+    {"bar":[1],"foo":[1,4]}
+    {"bar":[1]}
+
 - name: assignment operator against object
   args:
     - -c
