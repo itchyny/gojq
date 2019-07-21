@@ -2473,6 +2473,36 @@
   error: |
     invalid path against: number (1)
 
+- name: paths/0 function
+  args:
+    - -c
+    - 'paths'
+  input: '[1,[[1,{"a":2},3],{"a":[2]}]]'
+  expected: |
+    [0]
+    [1]
+    [1,0]
+    [1,0,0]
+    [1,0,1]
+    [1,0,1,"a"]
+    [1,0,2]
+    [1,1]
+    [1,1,"a"]
+    [1,1,"a",0]
+
+- name: paths/1 function
+  args:
+    - -c
+    - 'paths(. > 2)'
+  input: '[1,[[1,{"a":2},3],{"a":[2]}]]'
+  expected: |
+    [1]
+    [1,0]
+    [1,0,1]
+    [1,0,2]
+    [1,1]
+    [1,1,"a"]
+
 - name: builtins function
   args:
     - 'builtins|length > 100'

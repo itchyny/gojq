@@ -191,4 +191,10 @@ var BuiltinFuncDefinitions = map[string]string{
 				(.; label $out | (setpath($p; getpath($p) | f) | ., break $out), delpaths([$p]));`,
 	"map_values": `def map_values(f): .[] |= f;`,
 	"del":        `def del(f): delpaths([path(f)]);`,
+	"paths": `
+		def paths:
+			path(recurse(if (type | . == "array" or . == "object") then .[] else empty end))
+				| select(length > 0);
+		def paths(f):
+			. as $x | paths | select(. as $p | $x | getpath($p) | f);`,
 }
