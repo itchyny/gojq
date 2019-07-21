@@ -182,4 +182,7 @@ var BuiltinFuncDefinitions = map[string]string{
 					| foreach g as $item
 						($n; .-1; . < 0 or empty|$item, break $out)
 			end;`,
+	"assign": `
+		def _assign(ps; $v):
+			reduce path(ps) as $p (.; setpath($p; $v));`,
 }

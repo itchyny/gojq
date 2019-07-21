@@ -225,6 +225,19 @@ func (c *compiler) compileAlt(e *Alt) error {
 }
 
 func (c *compiler) compileExpr(e *Expr) (err error) {
+	if e.Assign != nil {
+		t := *e // clone without changing e
+		(&t).Assign = nil
+		return c.compileFunc(
+			&Func{
+				Name: "_assign",
+				Args: []*Pipe{
+					t.toPipe(),
+					e.Assign.toPipe(),
+				},
+			},
+		)
+	}
 	if e.Bind != nil {
 		c.append(&code{op: opdup})
 	}

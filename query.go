@@ -134,7 +134,8 @@ type Expr struct {
 	Try     *Try      `| @@`
 	Reduce  *Reduce   `| @@`
 	Foreach *Foreach  `| @@ )`
-	Bind    *ExprBind `@@?`
+	Assign  *Alt      `( "=" @@`
+	Bind    *ExprBind `| @@ )?`
 	Label   *Label    `| @@`
 }
 

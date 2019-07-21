@@ -2218,6 +2218,54 @@
   error: |
     expected a string for object key but got: object ({})
 
+- name: assignment operator against object
+  args:
+    - -c
+    - '.foo.bar = 1'
+  input: 'null'
+  expected: |
+    {"foo":{"bar":1}}
+
+- name: assignment operator against array
+  args:
+    - -c
+    - '.[-1,0] = 3'
+  input: '[0,1,2]'
+  expected: |
+    [3,1,3]
+
+- name: assignment operator deeply
+  args:
+    - -c
+    - '.foo.[0].bar.[1] = 1'
+  input: 'null'
+  expected: |
+    {"foo":[{"bar":[null,1]}]}
+
+- name: assignment operator deeply
+  args:
+    - -c
+    - '.[2][2] = 1'
+  input: '[1]'
+  expected: |
+    [1,null,[null,null,1]]
+
+- name: assignment operator deeply
+  args:
+    - -c
+    - '.foo[2].bar = 2'
+  input: '{"foo":[1], "bar":3}'
+  expected: |
+    {"bar":3,"foo":[1,null,{"bar":2}]}
+
+- name: assignment operator query
+  args:
+    - -c
+    - '.foo = .bar'
+  input: '{"bar":42}'
+  expected: |
+    {"bar":42,"foo":42}
+
 - name: error/0 function
   args:
     - '.foo[] | error'
