@@ -600,12 +600,18 @@ func funcSetpath(v, p, w interface{}) interface{} {
 			y, _ := toInt(x)
 			switch uu := u.(type) {
 			case []interface{}:
+				l := len(uu)
 				if y >= len(uu) {
-					ys := make([]interface{}, y+1)
-					copy(ys, uu)
-					uu = ys
-					f(uu)
+					l = y + 1
+				} else if y < -len(uu) {
+					return &funcTypeError{"setpath", y}
+				} else if y < 0 {
+					y = len(uu) + y
 				}
+				ys := make([]interface{}, l)
+				copy(ys, uu)
+				uu = ys
+				f(uu)
 				if i < len(keys)-1 {
 					u = uu[y]
 					f = func(w interface{}) interface{} { uu[y] = w; return w }
