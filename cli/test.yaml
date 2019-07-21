@@ -762,6 +762,14 @@
   expected: |
     {"a":1,"b":2,"c":3,"d":4}
 
+- name: with_entries function
+  args:
+    - -c
+    - 'with_entries(.key |= "x" + . | .value += 1)'
+  input: '{"a": 1, "b": 2}'
+  expected: |
+    {"xa":2,"xb":3}
+
 - name: add function
   args:
     - -c

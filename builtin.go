@@ -14,7 +14,8 @@ var BuiltinFuncDefinitions = map[string]string{
 		def from_entries:
 			map({(.key // .Key // .name // .Name): (if has("value") then .value else .Value end)})
 				| add | . //= {};`,
-	"select": `def select(f): if f then . else empty end;`,
+	"with_entries": `def with_entries(f): to_entries | map(f) | from_entries;`,
+	"select":       `def select(f): if f then . else empty end;`,
 	"recurse": `
 		def recurse: recurse(.[]?);
 		def recurse(f): def r: ., (f | r); r;
