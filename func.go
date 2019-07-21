@@ -64,6 +64,7 @@ func init() {
 		"_multiply":      argFunc2(funcOpMul),
 		"_divide":        argFunc2(funcOpDiv),
 		"_modulo":        argFunc2(funcOpMod),
+		"_alternative":   argFunc2(funcOpAlt),
 		"_equal":         argFunc2(funcOpEq),
 		"_notequal":      argFunc2(funcOpNe),
 		"_greater":       argFunc2(funcOpGt),

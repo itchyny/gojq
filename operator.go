@@ -31,6 +31,7 @@ const (
 	OpUpdateMul
 	OpUpdateDiv
 	OpUpdateMod
+	OpUpdateAlt
 )
 
 var operatorMap = map[string]Operator{
@@ -55,6 +56,7 @@ var operatorMap = map[string]Operator{
 	"*=":  OpUpdateMul,
 	"/=":  OpUpdateDiv,
 	"%=":  OpUpdateMod,
+	"//=": OpUpdateAlt,
 }
 
 // Capture implements  participle.Capture.
@@ -112,6 +114,8 @@ func (op Operator) String() string {
 		return "/="
 	case OpUpdateMod:
 		return "%="
+	case OpUpdateAlt:
+		return "//="
 	}
 	panic(op)
 }
@@ -161,6 +165,8 @@ func (op Operator) GoString() string {
 		return "OpUpdateDiv"
 	case OpUpdateMod:
 		return "OpUpdateMod"
+	case OpUpdateAlt:
+		return "OpUpdateAlt"
 	}
 	panic(op)
 }
@@ -209,6 +215,8 @@ func (op Operator) getFunc() string {
 		return "_divide"
 	case OpUpdateMod:
 		return "_modulo"
+	case OpUpdateAlt:
+		return "_alternative"
 	}
 	panic(op)
 }
@@ -445,6 +453,13 @@ func funcOpMod(_, l, r interface{}) interface{} {
 		func(l, r map[string]interface{}) interface{} { return &binopTypeError{"modulo", l, r} },
 		func(l, r interface{}) interface{} { return &binopTypeError{"modulo", l, r} },
 	)
+}
+
+func funcOpAlt(_, l, r interface{}) interface{} {
+	if l == nil || l == false {
+		return r
+	}
+	return l
 }
 
 func funcOpEq(_, l, r interface{}) interface{} {
