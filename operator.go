@@ -26,6 +26,11 @@ const (
 	OpAlt
 	OpAssign
 	OpModify
+	OpUpdateAdd
+	OpUpdateSub
+	OpUpdateMul
+	OpUpdateDiv
+	OpUpdateMod
 )
 
 var operatorMap = map[string]Operator{
@@ -45,6 +50,11 @@ var operatorMap = map[string]Operator{
 	"//":  OpAlt,
 	"=":   OpAssign,
 	"|=":  OpModify,
+	"+=":  OpUpdateAdd,
+	"-=":  OpUpdateSub,
+	"*=":  OpUpdateMul,
+	"/=":  OpUpdateDiv,
+	"%=":  OpUpdateMod,
 }
 
 // Capture implements  participle.Capture.
@@ -92,6 +102,16 @@ func (op Operator) String() string {
 		return "="
 	case OpModify:
 		return "|="
+	case OpUpdateAdd:
+		return "+="
+	case OpUpdateSub:
+		return "-="
+	case OpUpdateMul:
+		return "*="
+	case OpUpdateDiv:
+		return "/="
+	case OpUpdateMod:
+		return "%="
 	}
 	panic(op)
 }
@@ -131,6 +151,16 @@ func (op Operator) GoString() string {
 		return "OpAssign"
 	case OpModify:
 		return "OpModify"
+	case OpUpdateAdd:
+		return "OpUpdateAdd"
+	case OpUpdateSub:
+		return "OpUpdateSub"
+	case OpUpdateMul:
+		return "OpUpdateMul"
+	case OpUpdateDiv:
+		return "OpUpdateDiv"
+	case OpUpdateMod:
+		return "OpUpdateMod"
 	}
 	panic(op)
 }
@@ -169,6 +199,16 @@ func (op Operator) getFunc() string {
 		return "_assign"
 	case OpModify:
 		return "_modify"
+	case OpUpdateAdd:
+		return "_add"
+	case OpUpdateSub:
+		return "_subtract"
+	case OpUpdateMul:
+		return "_multiply"
+	case OpUpdateDiv:
+		return "_divide"
+	case OpUpdateMod:
+		return "_modulo"
 	}
 	panic(op)
 }

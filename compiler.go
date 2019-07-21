@@ -228,15 +228,34 @@ func (c *compiler) compileExpr(e *Expr) (err error) {
 	if e.Update != nil {
 		t := *e // clone without changing e
 		(&t).Update = nil
-		return c.compileFunc(
-			&Func{
-				Name: e.UpdateOp.getFunc(),
-				Args: []*Pipe{
-					t.toPipe(),
-					e.Update.toPipe(),
+		switch e.UpdateOp {
+		case OpAssign, OpModify:
+			return c.compileFunc(
+				&Func{
+					Name: e.UpdateOp.getFunc(),
+					Args: []*Pipe{
+						t.toPipe(),
+						e.Update.toPipe(),
+					},
 				},
-			},
-		)
+			)
+		default:
+			return c.compileFunc(
+				&Func{
+					Name: "_modify",
+					Args: []*Pipe{
+						t.toPipe(),
+						(&Term{Func: &Func{
+							Name: e.UpdateOp.getFunc(),
+							Args: []*Pipe{
+								(&Term{Identity: true}).toPipe(),
+								e.Update.toPipe(),
+							},
+						}}).toPipe(),
+					},
+				},
+			)
+		}
 	}
 	if e.Bind != nil {
 		c.append(&code{op: opdup})

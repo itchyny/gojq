@@ -2380,6 +2380,18 @@
   expected: |
     [{"a":2,"b":2},{"a":3,"b":4},{"a":8,"b":8}]
 
+- name: update operators
+  args:
+    - -c
+    - '.[] += 2, .[] -= 2, .[] *= 2, .[] /= 2, .[] %=2'
+  input: '[1,2,3]'
+  expected: |
+    [3,4,5]
+    [-1,0,1]
+    [2,4,6]
+    [0.5,1,1.5]
+    [1,0,1]
+
 - name: error/0 function
   args:
     - '.foo[] | error'
