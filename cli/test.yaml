@@ -2289,6 +2289,14 @@
     {"bar":false}
     {"bar":false}
 
+- name: map_values function
+  args:
+    - -c
+    - 'map_values(.*2)'
+  input: '[1,2,3]'
+  expected: |
+    [2,4,6]
+
 - name: assignment operator against object
   args:
     - -c
