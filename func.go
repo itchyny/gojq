@@ -50,6 +50,7 @@ func init() {
 		"tonumber":       argFunc0(funcToNumber),
 		"tostring":       argFunc0(funcToString),
 		"type":           argFunc0(funcType),
+		"contains":       argFunc1(funcContains),
 		"explode":        argFunc0(funcExplode),
 		"implode":        argFunc0(funcImplode),
 		"tojson":         argFunc0(funcToJSON),
@@ -331,6 +332,59 @@ func funcToString(v interface{}) interface{} {
 
 func funcType(v interface{}) interface{} {
 	return typeof(v)
+}
+
+func funcContains(v, x interface{}) interface{} {
+	switch v := v.(type) {
+	case nil:
+		if x == nil {
+			return true
+		}
+	case bool:
+		switch x := x.(type) {
+		case bool:
+			if v == x {
+				return true
+			}
+		}
+	}
+	return binopTypeSwitch(v, x,
+		func(l, r int) interface{} { return l == r },
+		func(l, r float64) interface{} { return l == r },
+		func(l, r string) interface{} { return strings.Contains(l, r) },
+		func(l, r []interface{}) interface{} {
+			for _, x := range r {
+				var found bool
+				for _, y := range l {
+					if funcContains(y, x) == true {
+						found = true
+						break
+					}
+				}
+				if !found {
+					return false
+				}
+			}
+			return true
+		},
+		func(l, r map[string]interface{}) interface{} {
+			for k, rk := range r {
+				lk, ok := l[k]
+				if !ok {
+					return false
+				}
+				c := funcContains(lk, rk)
+				if _, ok := c.(error); ok {
+					return false
+				}
+				if c == false {
+					return false
+				}
+			}
+			return true
+		},
+		func(l, r interface{}) interface{} { return &funcContainsError{l, r} },
+	)
 }
 
 func funcExplode(v interface{}) interface{} {

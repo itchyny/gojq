@@ -63,6 +63,14 @@ func (err *funcTypeError) Error() string {
 	return fmt.Sprintf("%s cannot be applied to: %s", err.name, typeErrorPreview(err.v))
 }
 
+type funcContainsError struct {
+	l, r interface{}
+}
+
+func (err *funcContainsError) Error() string {
+	return fmt.Sprintf("cannot check contains(%s): %s", previewValue(err.r), typeErrorPreview(err.l))
+}
+
 type hasKeyTypeError struct {
 	l, r interface{}
 }
@@ -158,7 +166,7 @@ type getpathError struct {
 }
 
 func (err *getpathError) Error() string {
-	return fmt.Sprintf("cannot getpath with %s against: %s", preview(err.path), typeErrorPreview(err.v))
+	return fmt.Sprintf("cannot getpath with %s against: %s", previewValue(err.path), typeErrorPreview(err.v))
 }
 
 func typeErrorPreview(v interface{}) string {
@@ -201,4 +209,11 @@ func preview(v interface{}) string {
 		s = s[:l-3] + " ..."
 	}
 	return s
+}
+
+func previewValue(v interface{}) string {
+	if v == nil {
+		return "null"
+	}
+	return preview(v)
 }
