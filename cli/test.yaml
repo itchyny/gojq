@@ -1005,6 +1005,19 @@
     [{"a":3,"b":[4,5,6]},{"a":1},false]
     [{"a":3,"b":[4,5,6]},{"b":[5]},true]
 
+- name: contains function against unicode strings
+  args:
+    - -c
+    - '. as $x | ("@", "\u0000@", "\u0000dc", "b\u0000c", "b\u0000cd", "b\u0000cd") as $y | $x | [$x,$y,contains($y)]'
+  input: '"ab\u0000cd"'
+  expected: |
+    ["ab\u0000cd","@",false]
+    ["ab\u0000cd","\u0000@",false]
+    ["ab\u0000cd","\u0000dc",false]
+    ["ab\u0000cd","b\u0000c",true]
+    ["ab\u0000cd","b\u0000cd",true]
+    ["ab\u0000cd","b\u0000cd",true]
+
 - name: indices function for array
   args:
     - 'indices(1), indices([]), indices([1,2]), indices([3,4,5])'

@@ -773,8 +773,11 @@ func (c *compiler) compileUnary(e *Unary) error {
 
 func (c *compiler) compileString(s string) error {
 	if !strings.Contains(s, "\\(") {
-		c.append(&code{op: opconst, v: s[1 : len(s)-1]})
-		return nil
+		s, err := strconv.Unquote(s)
+		if err == nil {
+			c.append(&code{op: opconst, v: s})
+			return nil
+		}
 	}
 	q, err := c.stringToQuery(s)
 	if err != nil {
