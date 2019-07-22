@@ -1615,6 +1615,18 @@
   expected: |
     ["","foo bar","あいうえお","\n\t"]
 
+- name: split function
+  args:
+    - 'map(split(", ","") | join("/"))'
+  input: '["a,b, c, d, e,f",", a,b, c, d, e,f, "]'
+  expected: |
+    [
+      "a,b/c/d/e,f",
+      "a/,/b/,/ /c/,/ /d/,/ /e/,/f",
+      "/a,b/c/d/e,f/",
+      ",/ /a/,/b/,/ /c/,/ /d/,/ /e/,/f/,/ "
+    ]
+
 - name: condition
   args:
     - '.[] | if . then . else empty end'

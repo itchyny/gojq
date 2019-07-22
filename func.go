@@ -53,6 +53,7 @@ func init() {
 		"contains":       argFunc1(funcContains),
 		"explode":        argFunc0(funcExplode),
 		"implode":        argFunc0(funcImplode),
+		"split":          argFunc1(funcSplit),
 		"tojson":         argFunc0(funcToJSON),
 		"fromjson":       argFunc0(funcFromJSON),
 		"_index":         argFunc2(funcIndex),
@@ -412,6 +413,21 @@ func funcImplode(v interface{}) interface{} {
 	default:
 		return &funcTypeError{"implode", v}
 	}
+}
+
+func funcSplit(v, x interface{}) interface{} {
+	if v, ok := v.(string); ok {
+		if x, ok := x.(string); ok {
+			ss := strings.Split(v, x)
+			xs := make([]interface{}, len(ss))
+			for i, s := range ss {
+				xs[i] = s
+			}
+			return xs
+		}
+		return &funcTypeError{"split", x}
+	}
+	return &funcTypeError{"split", v}
 }
 
 func implode(v []interface{}) interface{} {
