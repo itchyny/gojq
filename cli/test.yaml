@@ -1069,6 +1069,18 @@
       13
     ]
 
+- name: inside function
+  args:
+    - -c
+    - '.[] as $x | (false,"abc",[],["foobaz","foobar"],{},{"a":10,"b":20,"c":30}) as $y | $x | [$x,$y,inside($y)]?'
+  input: '["a",["bar","baz"],{"a":10,"b":20}]'
+  expected: |
+    ["a","abc",true]
+    [["bar","baz"],[],false]
+    [["bar","baz"],["foobaz","foobar"],true]
+    [{"a":10,"b":20},{},false]
+    [{"a":10,"b":20},{"a":10,"b":20,"c":30},true]
+
 - name: startswith function
   args:
     - 'map(startswith("foo"))'

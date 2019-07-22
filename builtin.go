@@ -84,6 +84,7 @@ var BuiltinFuncDefinitions = map[string]string{
 			else .[$x] end;`,
 	"index":  `def index($x): indices($x) | .[0];`,
 	"rindex": `def rindex($x): indices($x) | .[-1:][0];`,
+	"inside": `def inside(xs): . as $x | xs | contains($x);`,
 	"startswith": `
 		def startswith($x):
 			if type == "string" then
