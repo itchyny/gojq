@@ -203,6 +203,11 @@ var BuiltinFuncDefinitions = map[string]string{
 							then setpath(["e"]; $i[0] | length==0) | setpath(["x"] + $i[0]; $i[1])
 							else setpath(["e"]; $i[0] | length==1) end;
 						if .e then .x else empty end);`,
+	"tostream": `
+		def tostream:
+			path(def r: (.[]? | r), .; r) as $p
+				| getpath($p)
+				| reduce path(.[]?) as $q ([$p, .]; [$p + $q]);`,
 	"assign": `
 		def _assign(ps; $v):
 			reduce path(ps) as $p (.; setpath($p; $v));`,

@@ -2266,6 +2266,21 @@
     [1,[2]]
     [2]
 
+- name: stream function
+  args:
+    - -c
+    - 'tostream'
+  input: '[0,[1,{"a":1},{"b":2}]]'
+  expected: |
+    [[0],0]
+    [[1,0],1]
+    [[1,1,"a"],1]
+    [[1,1,"a"]]
+    [[1,2,"b"],2]
+    [[1,2,"b"]]
+    [[1,2]]
+    [[1]]
+
 - name: setpath function
   args:
     - -c
