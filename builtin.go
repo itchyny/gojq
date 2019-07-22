@@ -1,7 +1,7 @@
 package gojq
 
 //go:generate go run _tools/gen_builtin.go -o builtin_gen.go
-var builtinFuncs map[string]*Query
+var builtinFuncDefs map[string][]*FuncDef
 
 // BuiltinFuncDefinitions defines the builtin functions.
 var BuiltinFuncDefinitions = map[string]string{

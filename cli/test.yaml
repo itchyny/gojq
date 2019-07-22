@@ -1276,6 +1276,14 @@
     [111,121,112,122,211,221,212,222]
     [111,112,121,122,211,212,221,222]
 
+- name: function declaration inside query
+  args:
+    - -c
+    - '[0, def f: 1, def g: 2; g, 3 as $x | def h: $x + 1; h * g; f, f + 1, 5]'
+  input: 'null'
+  expected: |
+    [0,1,2,8,2,3,9,5]
+
 - name: argument count error for custom function
   args:
     - 'def f(g): g | g; f'
@@ -2701,7 +2709,7 @@
   error: |
     invalid query: >abc
         >abc
-        ^  invalid syntax
+        ^  unexpected ">"
 
 - name: invalid query
   args:

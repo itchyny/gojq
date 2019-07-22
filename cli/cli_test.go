@@ -42,7 +42,7 @@ func TestCliRun(t *testing.T) {
 			} else {
 				assert.Equal(t, exitCodeErr, code)
 				assert.Equal(t, tc.Expected, outStream.String())
-				assert.Contains(t, errStream.String(), tc.Error)
+				assert.Contains(t, errStream.String(), strings.TrimSpace(tc.Error))
 			}
 		})
 	}

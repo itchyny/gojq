@@ -6,38 +6,6 @@ import (
 	"strings"
 )
 
-// Query ...
-type Query struct {
-	FuncDefs []*FuncDef `@@*`
-	Pipe     *Pipe      `@@?`
-}
-
-func (q *Query) String() string {
-	var s strings.Builder
-	for i, fd := range q.FuncDefs {
-		if i > 0 {
-			s.WriteByte(' ')
-		}
-		fmt.Fprint(&s, fd)
-	}
-	if q.Pipe != nil {
-		if len(q.FuncDefs) > 0 {
-			s.WriteByte(' ')
-		}
-		fmt.Fprint(&s, q.Pipe)
-	}
-	return s.String()
-}
-
-// Run query.
-func (q *Query) Run(v interface{}) Iter {
-	code, err := compile(q)
-	if err != nil {
-		return unitIterator(err)
-	}
-	return newEnv().execute(code, v)
-}
-
 // FuncDef ...
 type FuncDef struct {
 	Name string   `"def" @Ident`
@@ -62,12 +30,12 @@ func (e *FuncDef) String() string {
 	return s.String()
 }
 
-// Pipe ...
-type Pipe struct {
+// Query ...
+type Query struct {
 	Commas []*Comma `@@ ("|" @@)*`
 }
 
-func (e *Pipe) String() string {
+func (e *Query) String() string {
 	var s strings.Builder
 	for i, e := range e.Commas {
 		if i > 0 {
@@ -78,14 +46,23 @@ func (e *Pipe) String() string {
 	return s.String()
 }
 
+// Run query.
+func (e *Query) Run(v interface{}) Iter {
+	code, err := compile(e)
+	if err != nil {
+		return unitIterator(err)
+	}
+	return newEnv().execute(code, v)
+}
+
 // Comma ...
 type Comma struct {
-	Alts []*Alt `@@ ("," @@)*`
+	Filters []*Filter `@@ ("," @@)*`
 }
 
 func (e *Comma) String() string {
 	var s strings.Builder
-	for i, e := range e.Alts {
+	for i, e := range e.Filters {
 		if i > 0 {
 			s.WriteString(", ")
 		}
@@ -94,8 +71,35 @@ func (e *Comma) String() string {
 	return s.String()
 }
 
-func (e *Comma) toPipe() *Pipe {
-	return &Pipe{[]*Comma{e}}
+func (e *Comma) toQuery() *Query {
+	return &Query{[]*Comma{e}}
+}
+
+// Filter ...
+type Filter struct {
+	FuncDefs []*FuncDef `@@*`
+	Alt      *Alt       `@@`
+}
+
+func (e *Filter) String() string {
+	var s strings.Builder
+	for i, fd := range e.FuncDefs {
+		if i > 0 {
+			s.WriteByte(' ')
+		}
+		fmt.Fprint(&s, fd)
+	}
+	if e.Alt != nil {
+		if len(e.FuncDefs) > 0 {
+			s.WriteByte(' ')
+		}
+		fmt.Fprint(&s, e.Alt)
+	}
+	return s.String()
+}
+
+func (e *Filter) toQuery() *Query {
+	return (&Comma{[]*Filter{e}}).toQuery()
 }
 
 // Alt ...
@@ -113,8 +117,12 @@ func (e *Alt) String() string {
 	return s.String()
 }
 
-func (e *Alt) toPipe() *Pipe {
-	return (&Comma{[]*Alt{e}}).toPipe()
+func (e *Alt) toQuery() *Query {
+	return (&Filter{Alt: e}).toQuery()
+}
+
+func (e *Alt) toFilter() *Filter {
+	return &Filter{Alt: e}
 }
 
 // AltRight ...
@@ -140,12 +148,12 @@ type Expr struct {
 	Label    *Label    `| @@`
 }
 
-func (e *Expr) toPipe() *Pipe {
-	return (&Alt{Left: e}).toPipe()
+func (e *Expr) toQuery() *Query {
+	return (&Alt{Left: e}).toQuery()
 }
 
-func (e *Expr) toAlt() *Alt {
-	return &Alt{Left: e}
+func (e *Expr) toFilter() *Filter {
+	return (&Alt{Left: e}).toFilter()
 }
 
 func (e *Expr) String() string {
@@ -174,7 +182,7 @@ func (e *Expr) String() string {
 // ExprBind ...
 type ExprBind struct {
 	Pattern *Pattern `"as" @@`
-	Body    *Pipe    `"|" @@`
+	Body    *Query   `"|" @@`
 }
 
 func (e *ExprBind) String() string {
@@ -196,12 +204,12 @@ func (e *Logic) String() string {
 	return s.String()
 }
 
-func (e *Logic) toPipe() *Pipe {
-	return (&Expr{Logic: e}).toPipe()
+func (e *Logic) toQuery() *Query {
+	return (&Expr{Logic: e}).toQuery()
 }
 
-func (e *Logic) toAlt() *Alt {
-	return (&Expr{Logic: e}).toAlt()
+func (e *Logic) toFilter() *Filter {
+	return (&Expr{Logic: e}).toFilter()
 }
 
 // LogicRight ...
@@ -229,12 +237,12 @@ func (e *AndExpr) String() string {
 	return s.String()
 }
 
-func (e *AndExpr) toPipe() *Pipe {
-	return (&Logic{Left: e}).toPipe()
+func (e *AndExpr) toQuery() *Query {
+	return (&Logic{Left: e}).toQuery()
 }
 
-func (e *AndExpr) toAlt() *Alt {
-	return (&Logic{Left: e}).toAlt()
+func (e *AndExpr) toFilter() *Filter {
+	return (&Logic{Left: e}).toFilter()
 }
 
 func (e *AndExpr) toLogic() *Logic {
@@ -257,12 +265,12 @@ type Compare struct {
 	Right *CompareRight `@@?`
 }
 
-func (e *Compare) toPipe() *Pipe {
-	return (&AndExpr{Left: e}).toPipe()
+func (e *Compare) toQuery() *Query {
+	return (&AndExpr{Left: e}).toQuery()
 }
 
-func (e *Compare) toAlt() *Alt {
-	return (&AndExpr{Left: e}).toAlt()
+func (e *Compare) toFilter() *Filter {
+	return (&AndExpr{Left: e}).toFilter()
 }
 
 func (e *Compare) toLogic() *Logic {
@@ -303,12 +311,12 @@ func (e *Arith) String() string {
 	return s.String()
 }
 
-func (e *Arith) toPipe() *Pipe {
-	return (&Compare{Left: e}).toPipe()
+func (e *Arith) toQuery() *Query {
+	return (&Compare{Left: e}).toQuery()
 }
 
-func (e *Arith) toAlt() *Alt {
-	return (&Compare{Left: e}).toAlt()
+func (e *Arith) toFilter() *Filter {
+	return (&Compare{Left: e}).toFilter()
 }
 
 func (e *Arith) toLogic() *Logic {
@@ -340,12 +348,12 @@ func (e *Factor) String() string {
 	return s.String()
 }
 
-func (e *Factor) toPipe() *Pipe {
-	return (&Arith{Left: e}).toPipe()
+func (e *Factor) toQuery() *Query {
+	return (&Arith{Left: e}).toQuery()
 }
 
-func (e *Factor) toAlt() *Alt {
-	return (&Arith{Left: e}).toAlt()
+func (e *Factor) toFilter() *Filter {
+	return (&Arith{Left: e}).toFilter()
 }
 
 func (e *Factor) toLogic() *Logic {
@@ -378,7 +386,7 @@ type Term struct {
 	True       bool      `| @"true"`
 	False      bool      `| @"false"`
 	Break      string    `| "break" @Ident`
-	Pipe       *Pipe     `| "(" @@ ")" )`
+	Query      *Query    `| "(" @@ ")" )`
 	SuffixList []*Suffix `@@*`
 }
 
@@ -412,8 +420,8 @@ func (e *Term) String() string {
 		s.WriteString("false")
 	} else if e.Break != "" {
 		fmt.Fprintf(&s, "break %s", e.Break)
-	} else if e.Pipe != nil {
-		fmt.Fprintf(&s, "(%s)", e.Pipe)
+	} else if e.Query != nil {
+		fmt.Fprintf(&s, "(%s)", e.Query)
 	}
 	for _, e := range e.SuffixList {
 		fmt.Fprint(&s, e)
@@ -421,12 +429,12 @@ func (e *Term) String() string {
 	return s.String()
 }
 
-func (e *Term) toPipe() *Pipe {
-	return (&Factor{Left: e}).toPipe()
+func (e *Term) toQuery() *Query {
+	return (&Factor{Left: e}).toQuery()
 }
 
-func (e *Term) toAlt() *Alt {
-	return (&Factor{Left: e}).toAlt()
+func (e *Term) toFilter() *Filter {
+	return (&Factor{Left: e}).toFilter()
 }
 
 func (e *Term) toLogic() *Logic {
@@ -480,7 +488,7 @@ func (e *Pattern) String() string {
 type PatternObject struct {
 	Key       string   `( ( @Ident | @Keyword )`
 	KeyString string   `  | @String`
-	Pipe      *Pipe    `  | "(" @@ ")" ) ":"`
+	Query     *Query   `  | "(" @@ ")" ) ":"`
 	Val       *Pattern `@@`
 	KeyOnly   string   `| @Ident`
 }
@@ -491,8 +499,8 @@ func (e *PatternObject) String() string {
 		s.WriteString(e.Key)
 	} else if e.KeyString != "" {
 		s.WriteString(e.KeyString)
-	} else if e.Pipe != nil {
-		fmt.Fprintf(&s, "(%s)", e.Pipe)
+	} else if e.Query != nil {
+		fmt.Fprintf(&s, "(%s)", e.Query)
 	}
 	if e.Val != nil {
 		s.WriteString(": ")
@@ -508,9 +516,9 @@ func (e *PatternObject) String() string {
 type Index struct {
 	Name    string `"." ( @Ident`
 	Str     string `| @String`
-	Start   *Pipe  `| "[" ( @@`
+	Start   *Query `| "[" ( @@`
 	IsSlice bool   `( @":"`
-	End     *Pipe  `@@? )? | ":" @@ ) "]" )`
+	End     *Query `@@? )? | ":" @@ ) "]" )`
 }
 
 func (e *Index) String() string {
@@ -541,8 +549,8 @@ func (e *Index) String() string {
 
 // Func ...
 type Func struct {
-	Name string  `@Ident`
-	Args []*Pipe `( "(" @@ (";" @@)* ")" )?`
+	Name string   `@Ident`
+	Args []*Query `( "(" @@ (";" @@)* ")" )?`
 }
 
 func (e *Func) String() string {
@@ -586,7 +594,7 @@ func (e *Object) String() string {
 type ObjectKeyVal struct {
 	Key           string  `( ( ( @Ident | @Keyword )`
 	KeyString     string  `  | @String )`
-	Pipe          *Pipe   `| "(" @@ ")" ) ":"`
+	Query         *Query  `| "(" @@ ")" ) ":"`
 	Val           *Expr   `@@`
 	KeyOnly       *string `| @Ident`
 	KeyOnlyString string  `| @String`
@@ -598,8 +606,8 @@ func (e *ObjectKeyVal) String() string {
 		s.WriteString(e.Key)
 	} else if e.KeyString != "" {
 		s.WriteString(e.KeyString)
-	} else if e.Pipe != nil {
-		fmt.Fprintf(&s, "(%s)", e.Pipe)
+	} else if e.Query != nil {
+		fmt.Fprintf(&s, "(%s)", e.Query)
 	}
 	if e.Val != nil {
 		fmt.Fprintf(&s, ": %s", e.Val)
@@ -615,14 +623,14 @@ func (e *ObjectKeyVal) String() string {
 
 // Array ...
 type Array struct {
-	Pipe *Pipe `"[" @@? "]"`
+	Query *Query `"[" @@? "]"`
 }
 
 func (e *Array) String() string {
-	if e.Pipe == nil {
+	if e.Query == nil {
 		return "[]"
 	}
-	return fmt.Sprintf("[%s]", e.Pipe)
+	return fmt.Sprintf("[%s]", e.Query)
 }
 
 // Suffix ...
@@ -661,9 +669,9 @@ func (e *Suffix) toTerm() (*Term, bool) {
 
 // SuffixIndex ...
 type SuffixIndex struct {
-	Start   *Pipe `"[" ( @@`
-	IsSlice bool  `( @":"`
-	End     *Pipe `@@? )? | ":" @@ ) "]"`
+	Start   *Query `"[" ( @@`
+	IsSlice bool   `( @":"`
+	End     *Query `@@? )? | ":" @@ ) "]"`
 }
 
 func (e *SuffixIndex) String() string {
@@ -680,10 +688,10 @@ func (e *SuffixIndex) toIndex() *Index {
 
 // If ...
 type If struct {
-	Cond *Pipe    `"if" @@`
-	Then *Pipe    `"then" @@`
+	Cond *Query   `"if" @@`
+	Then *Query   `"then" @@`
 	Elif []IfElif `@@*`
-	Else *Pipe    `("else" @@)? "end"`
+	Else *Query   `("else" @@)? "end"`
 }
 
 func (e *If) String() string {
@@ -701,8 +709,8 @@ func (e *If) String() string {
 
 // IfElif ...
 type IfElif struct {
-	Cond *Pipe `"elif" @@`
-	Then *Pipe `"then" @@`
+	Cond *Query `"elif" @@`
+	Then *Query `"then" @@`
 }
 
 func (e *IfElif) String() string {
@@ -711,8 +719,8 @@ func (e *IfElif) String() string {
 
 // Try ...
 type Try struct {
-	Body  *Pipe `"try" @@`
-	Catch *Pipe `("catch" @@)?`
+	Body  *Query `"try" @@`
+	Catch *Query `("catch" @@)?`
 }
 
 func (e *Try) String() string {
@@ -728,8 +736,8 @@ func (e *Try) String() string {
 type Reduce struct {
 	Term    *Term    `"reduce" @@`
 	Pattern *Pattern `"as" @@`
-	Start   *Pipe    `"(" @@`
-	Update  *Pipe    `";" @@ ")"`
+	Start   *Query   `"(" @@`
+	Update  *Query   `";" @@ ")"`
 }
 
 func (e *Reduce) String() string {
@@ -740,9 +748,9 @@ func (e *Reduce) String() string {
 type Foreach struct {
 	Term    *Term    `"foreach" @@`
 	Pattern *Pattern `"as" @@`
-	Start   *Pipe    `"(" @@`
-	Update  *Pipe    `";" @@`
-	Extract *Pipe    `(";" @@)? ")"`
+	Start   *Query   `"(" @@`
+	Update  *Query   `";" @@`
+	Extract *Query   `(";" @@)? ")"`
 }
 
 func (e *Foreach) String() string {
@@ -758,7 +766,7 @@ func (e *Foreach) String() string {
 // Label ...
 type Label struct {
 	Ident string `"label" @Ident`
-	Body  *Pipe  `"|" @@`
+	Body  *Query `"|" @@`
 }
 
 func (e *Label) String() string {

@@ -18,7 +18,7 @@ func main() {
 	}
 	sort.Strings(names)
 	for _, n := range names {
-		q, err := gojq.Parse(gojq.BuiltinFuncDefinitions[n])
+		q, err := gojq.Parse(gojq.BuiltinFuncDefinitions[n] + ".")
 		if err != nil {
 			panic(err)
 		}

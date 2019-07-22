@@ -59,6 +59,8 @@ func (c *compiler) compile(q *Query) (*bytecode, error) {
 	if err := c.compileQuery(q); err != nil {
 		return nil, err
 	}
+	c.append(&code{op: opret})
+	c.optimizeJumps()
 	return &bytecode{c.codes, c.codeinfos}, nil
 }
 
@@ -78,22 +80,6 @@ func (c *compiler) newScope() *scopeinfo {
 	i := c.scopecnt // do not use len(c.scopes) because it pops
 	c.scopecnt++
 	return &scopeinfo{i, 0, nil}
-}
-
-func (c *compiler) compileQuery(q *Query) error {
-	for _, fd := range q.FuncDefs {
-		if err := c.compileFuncDef(fd, false); err != nil {
-			return err
-		}
-	}
-	if q.Pipe != nil {
-		if err := c.compilePipe(q.Pipe); err != nil {
-			return err
-		}
-	}
-	c.append(&code{op: opret})
-	c.optimizeJumps()
-	return nil
 }
 
 func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
@@ -168,7 +154,7 @@ func getArgsOrder(args []string) []int {
 	return xs
 }
 
-func (c *compiler) compilePipe(e *Pipe) error {
+func (c *compiler) compileQuery(e *Query) error {
 	for _, e := range e.Commas {
 		if err := c.compileComma(e); err != nil {
 			return err
@@ -178,20 +164,29 @@ func (c *compiler) compilePipe(e *Pipe) error {
 }
 
 func (c *compiler) compileComma(e *Comma) error {
-	if len(e.Alts) == 1 {
-		return c.compileAlt(e.Alts[0])
+	if len(e.Filters) == 1 {
+		return c.compileFilter(e.Filters[0])
 	}
 	setfork := c.lazy(func() *code {
 		return &code{op: opfork, v: c.pc() + 1}
 	})
-	if err := c.compileComma(&Comma{e.Alts[:len(e.Alts)-1]}); err != nil {
+	if err := c.compileComma(&Comma{Filters: e.Filters[:len(e.Filters)-1]}); err != nil {
 		return err
 	}
 	setfork()
 	defer c.lazy(func() *code {
 		return &code{op: opjump, v: c.pc()}
 	})()
-	return c.compileAlt(e.Alts[len(e.Alts)-1])
+	return c.compileFilter(e.Filters[len(e.Filters)-1])
+}
+
+func (c *compiler) compileFilter(e *Filter) error {
+	for _, fd := range e.FuncDefs {
+		if err := c.compileFuncDef(fd, false); err != nil {
+			return err
+		}
+	}
+	return c.compileAlt(e.Alt)
 }
 
 func (c *compiler) compileAlt(e *Alt) error {
@@ -233,9 +228,9 @@ func (c *compiler) compileExpr(e *Expr) (err error) {
 			return c.compileFunc(
 				&Func{
 					Name: e.UpdateOp.getFunc(),
-					Args: []*Pipe{
-						t.toPipe(),
-						e.Update.toPipe(),
+					Args: []*Query{
+						t.toQuery(),
+						e.Update.toQuery(),
 					},
 				},
 			)
@@ -249,15 +244,15 @@ func (c *compiler) compileExpr(e *Expr) (err error) {
 			return c.compileFunc(
 				&Func{
 					Name: "_modify",
-					Args: []*Pipe{
-						t.toPipe(),
+					Args: []*Query{
+						t.toQuery(),
 						(&Term{Func: &Func{
 							Name: e.UpdateOp.getFunc(),
-							Args: []*Pipe{
-								(&Term{Identity: true}).toPipe(),
-								(&Term{Func: &Func{Name: name}}).toPipe(),
+							Args: []*Query{
+								(&Term{Identity: true}).toQuery(),
+								(&Term{Func: &Func{Name: name}}).toQuery(),
 							},
-						}}).toPipe(),
+						}}).toQuery(),
 					},
 				},
 			)
@@ -274,7 +269,7 @@ func (c *compiler) compileExpr(e *Expr) (err error) {
 			if err = c.compilePattern(b.Pattern); err != nil {
 				return
 			}
-			err = c.compilePipe(b.Body)
+			err = c.compileQuery(b.Body)
 			return
 		}
 	}()
@@ -337,9 +332,9 @@ func (c *compiler) compilePattern(p *Pattern) error {
 			} else if kv.KeyString != "" {
 				key = kv.KeyString[1 : len(kv.KeyString)-1]
 				c.append(&code{op: oppush, v: key})
-			} else if kv.Pipe != nil {
+			} else if kv.Query != nil {
 				c.append(&code{op: opload, v: v})
-				if err := c.compilePipe(kv.Pipe); err != nil {
+				if err := c.compileQuery(kv.Query); err != nil {
 					return err
 				}
 			}
@@ -373,13 +368,13 @@ func (c *compiler) compileLogic(e *Logic) error {
 	}
 	return c.compileIf(
 		&If{
-			Cond: (&Logic{e.Left, e.Right[:len(e.Right)-1]}).toPipe(),
-			Then: (&Term{True: true}).toPipe(),
+			Cond: (&Logic{e.Left, e.Right[:len(e.Right)-1]}).toQuery(),
+			Then: (&Term{True: true}).toQuery(),
 			Else: (&Expr{If: &If{
-				Cond: e.Right[len(e.Right)-1].Right.toPipe(),
-				Then: (&Term{True: true}).toPipe(),
-				Else: (&Term{False: true}).toPipe(),
-			}}).toPipe(),
+				Cond: e.Right[len(e.Right)-1].Right.toQuery(),
+				Then: (&Term{True: true}).toQuery(),
+				Else: (&Term{False: true}).toQuery(),
+			}}).toQuery(),
 		},
 	)
 }
@@ -387,13 +382,13 @@ func (c *compiler) compileLogic(e *Logic) error {
 func (c *compiler) compileIf(e *If) error {
 	c.appendCodeInfo(e)
 	c.append(&code{op: opdup}) // duplicate the value for then or else clause
-	if err := c.compilePipe(e.Cond); err != nil {
+	if err := c.compileQuery(e.Cond); err != nil {
 		return err
 	}
 	setjumpifnot := c.lazy(func() *code {
 		return &code{op: opjumpifnot, v: c.pc() + 1} // if falsy, skip then clause
 	})
-	if err := c.compilePipe(e.Then); err != nil {
+	if err := c.compileQuery(e.Then); err != nil {
 		return err
 	}
 	setjumpifnot()
@@ -404,7 +399,7 @@ func (c *compiler) compileIf(e *If) error {
 		return c.compileIf(&If{e.Elif[0].Cond, e.Elif[0].Then, e.Elif[1:], e.Else})
 	}
 	if e.Else != nil {
-		return c.compilePipe(e.Else)
+		return c.compileQuery(e.Else)
 	}
 	return nil
 }
@@ -414,7 +409,7 @@ func (c *compiler) compileTry(e *Try) error {
 	setforkopt := c.lazy(func() *code {
 		return &code{op: opforkopt, v: c.pc()}
 	})
-	if err := c.compilePipe(e.Body); err != nil {
+	if err := c.compileQuery(e.Body); err != nil {
 		return err
 	}
 	defer c.lazy(func() *code {
@@ -422,7 +417,7 @@ func (c *compiler) compileTry(e *Try) error {
 	})()
 	setforkopt()
 	if e.Catch != nil {
-		return c.compilePipe(e.Catch)
+		return c.compileQuery(e.Catch)
 	}
 	c.append(&code{op: opbacktrack})
 	return nil
@@ -435,7 +430,7 @@ func (c *compiler) compileReduce(e *Reduce) error {
 	})()
 	c.append(&code{op: opdup})
 	v := c.newVariable()
-	if err := c.compilePipe(e.Start); err != nil {
+	if err := c.compileQuery(e.Start); err != nil {
 		return err
 	}
 	c.append(&code{op: opstore, v: v})
@@ -446,7 +441,7 @@ func (c *compiler) compileReduce(e *Reduce) error {
 		return err
 	}
 	c.append(&code{op: opload, v: v})
-	if err := c.compilePipe(e.Update); err != nil {
+	if err := c.compileQuery(e.Update); err != nil {
 		return err
 	}
 	c.append(&code{op: opstore, v: v})
@@ -460,7 +455,7 @@ func (c *compiler) compileForeach(e *Foreach) error {
 	c.appendCodeInfo(e)
 	c.append(&code{op: opdup})
 	v := c.newVariable()
-	if err := c.compilePipe(e.Start); err != nil {
+	if err := c.compileQuery(e.Start); err != nil {
 		return err
 	}
 	c.append(&code{op: opstore, v: v})
@@ -471,13 +466,13 @@ func (c *compiler) compileForeach(e *Foreach) error {
 		return err
 	}
 	c.append(&code{op: opload, v: v})
-	if err := c.compilePipe(e.Update); err != nil {
+	if err := c.compileQuery(e.Update); err != nil {
 		return err
 	}
 	c.append(&code{op: opdup})
 	c.append(&code{op: opstore, v: v})
 	if e.Extract != nil {
-		return c.compilePipe(e.Extract)
+		return c.compileQuery(e.Extract)
 	}
 	return nil
 }
@@ -490,7 +485,7 @@ func (c *compiler) compileLabel(e *Label) error {
 	defer c.lazy(func() *code {
 		return &code{op: opforklabel, v: e.Ident}
 	})()
-	return c.compilePipe(e.Body)
+	return c.compileQuery(e.Body)
 }
 
 func (c *compiler) compileAndExpr(e *AndExpr) error {
@@ -499,13 +494,13 @@ func (c *compiler) compileAndExpr(e *AndExpr) error {
 	}
 	return c.compileIf(
 		&If{
-			Cond: (&AndExpr{e.Left, e.Right[:len(e.Right)-1]}).toPipe(),
+			Cond: (&AndExpr{e.Left, e.Right[:len(e.Right)-1]}).toQuery(),
 			Then: (&Expr{If: &If{
-				Cond: e.Right[len(e.Right)-1].Right.toPipe(),
-				Then: (&Term{True: true}).toPipe(),
-				Else: (&Term{False: true}).toPipe(),
-			}}).toPipe(),
-			Else: (&Term{False: true}).toPipe(),
+				Cond: e.Right[len(e.Right)-1].Right.toQuery(),
+				Then: (&Term{True: true}).toQuery(),
+				Else: (&Term{False: true}).toQuery(),
+			}}).toQuery(),
+			Else: (&Term{False: true}).toQuery(),
 		},
 	)
 }
@@ -516,7 +511,7 @@ func (c *compiler) compileCompare(e *Compare) error {
 	}
 	return c.compileCall(
 		e.Right.Op.getFunc(),
-		[]*Pipe{e.Left.toPipe(), e.Right.Right.toPipe()},
+		[]*Query{e.Left.toQuery(), e.Right.Right.toQuery()},
 	)
 }
 
@@ -527,9 +522,9 @@ func (c *compiler) compileArith(e *Arith) error {
 	r := e.Right[len(e.Right)-1]
 	return c.compileCall(
 		r.Op.getFunc(),
-		[]*Pipe{
-			(&Arith{e.Left, e.Right[:len(e.Right)-1]}).toPipe(),
-			r.Right.toPipe(),
+		[]*Query{
+			(&Arith{e.Left, e.Right[:len(e.Right)-1]}).toQuery(),
+			r.Right.toQuery(),
 		},
 	)
 }
@@ -541,9 +536,9 @@ func (c *compiler) compileFactor(e *Factor) error {
 	r := e.Right[len(e.Right)-1]
 	return c.compileCall(
 		r.Op.getFunc(),
-		[]*Pipe{
-			(&Factor{e.Left, e.Right[:len(e.Right)-1]}).toPipe(),
-			r.Right.toPipe(),
+		[]*Query{
+			(&Factor{e.Left, e.Right[:len(e.Right)-1]}).toQuery(),
+			r.Right.toQuery(),
 		},
 	)
 }
@@ -589,8 +584,8 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 	} else if e.Break != "" {
 		c.append(&code{op: opconst, v: e.Break})
 		return c.compileCall("_break", nil)
-	} else if e.Pipe != nil {
-		return c.compilePipe(e.Pipe)
+	} else if e.Query != nil {
+		return c.compileQuery(e.Query)
 	} else {
 		return fmt.Errorf("invalid term: %s", e)
 	}
@@ -599,25 +594,25 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 func (c *compiler) compileIndex(e *Term, x *Index) error {
 	c.appendCodeInfo(x)
 	if x.Name != "" {
-		return c.compileCall("_index", []*Pipe{e.toPipe(), (&Term{RawStr: x.Name}).toPipe()})
+		return c.compileCall("_index", []*Query{e.toQuery(), (&Term{RawStr: x.Name}).toQuery()})
 	}
 	if x.Str != "" {
-		p, err := c.stringToPipe(x.Str)
+		q, err := c.stringToQuery(x.Str)
 		if err != nil {
 			return err
 		}
-		return c.compileCall("_index", []*Pipe{e.toPipe(), p})
+		return c.compileCall("_index", []*Query{e.toQuery(), q})
 	}
 	if x.Start != nil {
 		if x.IsSlice {
 			if x.End != nil {
-				return c.compileCall("_slice", []*Pipe{e.toPipe(), x.End, x.Start})
+				return c.compileCall("_slice", []*Query{e.toQuery(), x.End, x.Start})
 			}
-			return c.compileCall("_slice", []*Pipe{e.toPipe(), (&Term{Null: true}).toPipe(), x.Start})
+			return c.compileCall("_slice", []*Query{e.toQuery(), (&Term{Null: true}).toQuery(), x.Start})
 		}
-		return c.compileCall("_index", []*Pipe{e.toPipe(), x.Start})
+		return c.compileCall("_index", []*Query{e.toQuery(), x.Start})
 	}
-	return c.compileCall("_slice", []*Pipe{e.toPipe(), x.End, (&Term{Null: true}).toPipe()})
+	return c.compileCall("_slice", []*Query{e.toQuery(), x.End, (&Term{Null: true}).toQuery()})
 }
 
 func (c *compiler) compileFunc(e *Func) error {
@@ -649,8 +644,8 @@ func (c *compiler) compileFunc(e *Func) error {
 	if name[0] == '_' {
 		name = name[1:]
 	}
-	if q, ok := builtinFuncs[name]; ok {
-		for _, fd := range q.FuncDefs {
+	if fds, ok := builtinFuncDefs[name]; ok {
+		for _, fd := range fds {
 			if len(fd.Args) == len(e.Args) {
 				if err := c.compileFuncDef(fd, true); err != nil {
 					return err
@@ -716,9 +711,9 @@ func (c *compiler) compileObject(e *Object) error {
 			// ref: compileCall
 			c.append(&code{op: opcall, v: [3]interface{}{internalFuncs["_index"].callback, 2, "_index"}})
 		} else {
-			if kv.Pipe != nil {
+			if kv.Query != nil {
 				c.append(&code{op: opload, v: v})
-				if err := c.compilePipe(kv.Pipe); err != nil {
+				if err := c.compileQuery(kv.Query); err != nil {
 					return err
 				}
 			} else if kv.KeyString != "" {
@@ -741,7 +736,7 @@ func (c *compiler) compileObject(e *Object) error {
 
 func (c *compiler) compileArray(e *Array) error {
 	c.appendCodeInfo(e)
-	if e.Pipe == nil {
+	if e.Query == nil {
 		c.append(&code{op: opconst, v: []interface{}{}})
 		return nil
 	}
@@ -751,7 +746,7 @@ func (c *compiler) compileArray(e *Array) error {
 	defer c.lazy(func() *code {
 		return &code{op: opfork, v: c.pc() - 2}
 	})()
-	if err := c.compilePipe(e.Pipe); err != nil {
+	if err := c.compileQuery(e.Query); err != nil {
 		return err
 	}
 	c.append(&code{op: opappend, v: arr})
@@ -781,19 +776,19 @@ func (c *compiler) compileString(s string) error {
 		c.append(&code{op: opconst, v: s[1 : len(s)-1]})
 		return nil
 	}
-	p, err := c.stringToPipe(s)
+	q, err := c.stringToQuery(s)
 	if err != nil {
 		return err
 	}
-	return c.compilePipe(p)
+	return c.compileQuery(q)
 }
 
-func (c *compiler) stringToPipe(s string) (*Pipe, error) {
+func (c *compiler) stringToQuery(s string) (*Query, error) {
 	// ref: strconv.Unquote
 	x := s[1 : len(s)-1]
 	var runeTmp [utf8.UTFMax]byte
 	buf := make([]byte, 0, 3*len(x)/2)
-	var xs []*Alt
+	var xs []*Filter
 	var es []*Expr
 	var cnt int
 	for len(x) > 0 {
@@ -822,22 +817,20 @@ func (c *compiler) stringToPipe(s string) (*Pipe, error) {
 			}
 			x = x[i:]
 			if len(buf) > 0 {
-				xs = append(xs, (&Term{RawStr: string(buf)}).toAlt())
+				xs = append(xs, (&Term{RawStr: string(buf)}).toFilter())
 				buf = buf[:0]
 			}
-			if p := q.Pipe; p != nil {
-				p.Commas = append(
-					p.Commas,
-					(&Term{Func: &Func{Name: "tostring"}}).toPipe().Commas...,
-				)
-				name := fmt.Sprintf("$%%%d", cnt)
-				es = append(es, &Expr{
-					Logic: (&Term{Pipe: p}).toLogic(),
-					Bind:  &ExprBind{Pattern: &Pattern{Name: name}},
-				})
-				xs = append(xs, (&Term{Func: &Func{Name: name}}).toAlt())
-				cnt++
-			}
+			q.Commas = append(
+				q.Commas,
+				(&Term{Func: &Func{Name: "tostring"}}).toQuery().Commas...,
+			)
+			name := fmt.Sprintf("$%%%d", cnt)
+			es = append(es, &Expr{
+				Logic: (&Term{Query: q}).toLogic(),
+				Bind:  &ExprBind{Pattern: &Pattern{Name: name}},
+			})
+			xs = append(xs, (&Term{Func: &Func{Name: name}}).toFilter())
+			cnt++
 			continue
 		}
 		x = ss
@@ -849,22 +842,22 @@ func (c *compiler) stringToPipe(s string) (*Pipe, error) {
 		}
 	}
 	if len(xs) == 0 {
-		return (&Term{RawStr: string(buf)}).toPipe(), nil
+		return (&Term{RawStr: string(buf)}).toQuery(), nil
 	}
 	if len(buf) > 0 {
-		xs = append(xs, (&Term{RawStr: string(buf)}).toAlt())
+		xs = append(xs, (&Term{RawStr: string(buf)}).toFilter())
 	}
-	p := (&Term{Array: &Array{&Pipe{Commas: []*Comma{&Comma{Alts: xs}}}}}).toPipe()
-	p.Commas = append(p.Commas, (&Term{
+	q := (&Term{Array: &Array{&Query{[]*Comma{&Comma{xs}}}}}).toQuery()
+	q.Commas = append(q.Commas, (&Term{
 		Func: &Func{
 			Name: "join",
-			Args: []*Pipe{(&Term{Str: `""`}).toPipe()},
-		}}).toPipe().Commas...)
+			Args: []*Query{(&Term{Str: `""`}).toQuery()},
+		}}).toQuery().Commas...)
 	for _, e := range es {
-		e.Bind.Body, p = p, e.toPipe()
+		e.Bind.Body, q = q, e.toQuery()
 	}
-	c.appendCodeInfo(p)
-	return p, nil
+	c.appendCodeInfo(q)
+	return q, nil
 }
 
 func (c *compiler) compileTermSuffix(e *Term, s *Suffix) error {
@@ -889,13 +882,13 @@ func (c *compiler) compileTermSuffix(e *Term, s *Suffix) error {
 				return c.compileTermSuffix(u, s)
 			}
 		}
-		return c.compileTry(&Try{Body: e.toPipe()})
+		return c.compileTry(&Try{Body: e.toQuery()})
 	} else {
 		return fmt.Errorf("invalid suffix: %s", s)
 	}
 }
 
-func (c *compiler) compileCall(name string, args []*Pipe) error {
+func (c *compiler) compileCall(name string, args []*Query) error {
 	return c.compileCallInternal(
 		[3]interface{}{internalFuncs[name].callback, len(args), name},
 		args,
@@ -903,11 +896,11 @@ func (c *compiler) compileCall(name string, args []*Pipe) error {
 	)
 }
 
-func (c *compiler) compileCallPc(fn *funcinfo, args []*Pipe) error {
+func (c *compiler) compileCallPc(fn *funcinfo, args []*Query) error {
 	if len(args) == 0 {
 		return c.compileCallInternal(fn.pc, args, nil)
 	}
-	xs, vars := make([]*Pipe, len(args)), make(map[int]bool, len(fn.args))
+	xs, vars := make([]*Query, len(args)), make(map[int]bool, len(fn.args))
 	for i, j := range fn.argsorder {
 		xs[i] = args[j]
 		if fn.args[j][0] == '$' {
@@ -917,7 +910,7 @@ func (c *compiler) compileCallPc(fn *funcinfo, args []*Pipe) error {
 	return c.compileCallInternal(fn.pc, xs, vars)
 }
 
-func (c *compiler) compileCallInternal(fn interface{}, args []*Pipe, vars map[int]bool) error {
+func (c *compiler) compileCallInternal(fn interface{}, args []*Query, vars map[int]bool) error {
 	if len(args) == 0 {
 		c.append(&code{op: opcall, v: fn})
 		return nil
@@ -927,10 +920,7 @@ func (c *compiler) compileCallInternal(fn interface{}, args []*Pipe, vars map[in
 	for i := len(args) - 1; i >= 0; i-- {
 		pc := c.pc() + 1 // ref: compileFuncDef
 		name := fmt.Sprintf("lambda:%d", pc)
-		if err := c.compileFuncDef(&FuncDef{
-			Name: name,
-			Body: &Query{Pipe: args[i]},
-		}, false); err != nil {
+		if err := c.compileFuncDef(&FuncDef{Name: name, Body: args[i]}, false); err != nil {
 			return err
 		}
 		if vars == nil || vars[i] {

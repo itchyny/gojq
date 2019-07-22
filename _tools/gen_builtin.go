@@ -33,13 +33,13 @@ func main() {
 }
 
 func run(output string) error {
-	qs := make(map[string]*gojq.Query)
+	qs := make(map[string][]*gojq.FuncDef)
 	for n, src := range gojq.BuiltinFuncDefinitions {
-		q, err := gojq.Parse(src)
+		q, err := gojq.Parse(src + ".")
 		if err != nil {
 			return err
 		}
-		qs[n] = q
+		qs[n] = q.Commas[0].Filters[0].FuncDefs
 	}
 	t, err := astgen.Build(qs)
 	if err != nil {
@@ -53,7 +53,7 @@ func run(output string) error {
 	if err := printAssignStmtsFromFuncArgs(&buf, f); err != nil {
 		return err
 	}
-	buf.Write([]byte("\n\tbuiltinFuncs = "))
+	buf.Write([]byte("\n\tbuiltinFuncDefs = "))
 	m, err := getReturnStmtCompositeLit(f)
 	if err != nil {
 		return err

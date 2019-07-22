@@ -724,8 +724,8 @@ func funcBuiltins(interface{}) interface{} {
 			}
 		}
 	}
-	for _, q := range builtinFuncs {
-		for _, fd := range q.FuncDefs {
+	for _, fds := range builtinFuncDefs {
+		for _, fd := range fds {
 			if fd.Name[0] != '_' {
 				xs = append(xs, fd.Name+"/"+fmt.Sprint(len(fd.Args)))
 			}
