@@ -193,6 +193,16 @@ var BuiltinFuncDefinitions = map[string]string{
 		def truncate_stream(f):
 			. as $n | null | f | . as $input
 				| if (.[0] | length) > $n then setpath([0]; $input[0][$n:]) else empty end;`,
+	"fromstream": `
+		def fromstream(f):
+			{ x: null, e: false } as $init
+				| foreach f as $i
+					( $init;
+						if .e then $init else . end
+						| if $i | length == 2
+							then setpath(["e"]; $i[0] | length==0) | setpath(["x"] + $i[0]; $i[1])
+							else setpath(["e"]; $i[0] | length==1) end;
+						if .e then .x else empty end);`,
 	"assign": `
 		def _assign(ps; $v):
 			reduce path(ps) as $p (.; setpath($p; $v));`,

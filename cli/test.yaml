@@ -2257,6 +2257,15 @@
     [[[0],2],[[0]]]
     []
 
+- name: fromstream function
+  args:
+    - -c
+    - 'fromstream(0,1,2|truncate_stream([[0],1],[[1,0],2],[[1,0]],[[1]]))'
+  input: 'null'
+  expected: |
+    [1,[2]]
+    [2]
+
 - name: setpath function
   args:
     - -c
