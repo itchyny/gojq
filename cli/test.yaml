@@ -2698,6 +2698,16 @@
     {"a":3}
     4
 
+- name: destructuring alternative operator with multiple variables
+  args:
+    - -c
+    - '.[] | . as {$a, b: [$c, {$d}]} ?// [$a, {$b}, $e] ?// $f | [$a, $b, $c, $d, $e, $f]'
+  input: '[{"a":1,"b":[2,{"d":3}]},[4,{"b":5,"c":6},7,8,9],"foo"]'
+  expected: |
+    [1,null,2,3,null,null]
+    [4,5,null,null,7,null]
+    [null,null,null,null,null,"foo"]
+
 - name: compact output option
   args:
     - -c

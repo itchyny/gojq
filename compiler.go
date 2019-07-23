@@ -292,14 +292,23 @@ func (c *compiler) compileExpr(e *Expr) (err error) {
 
 func (c *compiler) compileExprBind(b *ExprBind) error {
 	var pc int
+	var vs [][2]int
 	for i, p := range b.Patterns {
 		var pcc int
+		var err error
 		if i < len(b.Patterns)-1 {
 			defer c.lazy(func() *code {
 				return &code{op: opforkalt, v: pcc}
 			})()
 		}
-		if err := c.compilePattern(p); err != nil {
+		if 0 < i {
+			for _, v := range vs {
+				c.append(&code{op: oppush, v: nil})
+				c.append(&code{op: opstore, v: v})
+			}
+		}
+		vs, err = c.compilePattern(p)
+		if err != nil {
 			return err
 		}
 		if i < len(b.Patterns)-1 {
@@ -315,15 +324,17 @@ func (c *compiler) compileExprBind(b *ExprBind) error {
 	return c.compileQuery(b.Body)
 }
 
-func (c *compiler) compilePattern(p *Pattern) error {
+func (c *compiler) compilePattern(p *Pattern) ([][2]int, error) {
 	c.appendCodeInfo(p)
 	if p.Name != "" {
 		if p.Name[0] != '$' {
-			return &bindVariableNameError{p.Name}
+			return nil, &bindVariableNameError{p.Name}
 		}
-		c.append(&code{op: opstore, v: c.pushVariable(p.Name)})
-		return nil
+		v := c.pushVariable(p.Name)
+		c.append(&code{op: opstore, v: v})
+		return [][2]int{v}, nil
 	} else if len(p.Array) > 0 {
+		var vs [][2]int
 		v := c.newVariable()
 		c.append(&code{op: opstore, v: v})
 		for i, p := range p.Array {
@@ -332,19 +343,22 @@ func (c *compiler) compilePattern(p *Pattern) error {
 			c.append(&code{op: opload, v: v})
 			// ref: compileCall
 			c.append(&code{op: opcall, v: [3]interface{}{internalFuncs["_index"].callback, 2, "_index"}})
-			if err := c.compilePattern(p); err != nil {
-				return err
+			ns, err := c.compilePattern(p)
+			if err != nil {
+				return nil, err
 			}
+			vs = append(vs, ns...)
 		}
-		return nil
+		return vs, nil
 	} else if len(p.Object) > 0 {
+		var vs [][2]int
 		v := c.newVariable()
 		c.append(&code{op: opstore, v: v})
 		for _, kv := range p.Object {
 			var key, name string
 			if kv.KeyOnly != "" {
 				if kv.KeyOnly[0] != '$' {
-					return &bindVariableNameError{kv.KeyOnly}
+					return nil, &bindVariableNameError{kv.KeyOnly}
 				}
 				key, name = kv.KeyOnly[1:], kv.KeyOnly
 				c.append(&code{op: oppush, v: key})
@@ -360,7 +374,7 @@ func (c *compiler) compilePattern(p *Pattern) error {
 			} else if kv.Query != nil {
 				c.append(&code{op: opload, v: v})
 				if err := c.compileQuery(kv.Query); err != nil {
-					return err
+					return nil, err
 				}
 			}
 			c.append(&code{op: opload, v: v})
@@ -371,19 +385,23 @@ func (c *compiler) compilePattern(p *Pattern) error {
 				if kv.Val != nil {
 					c.append(&code{op: opdup})
 				}
-				if err := c.compilePattern(&Pattern{Name: name}); err != nil {
-					return err
+				ns, err := c.compilePattern(&Pattern{Name: name})
+				if err != nil {
+					return nil, err
 				}
+				vs = append(vs, ns...)
 			}
 			if kv.Val != nil {
-				if err := c.compilePattern(kv.Val); err != nil {
-					return err
+				ns, err := c.compilePattern(kv.Val)
+				if err != nil {
+					return nil, err
 				}
+				vs = append(vs, ns...)
 			}
 		}
-		return nil
+		return vs, nil
 	} else {
-		return fmt.Errorf("invalid pattern: %s", p)
+		return nil, fmt.Errorf("invalid pattern: %s", p)
 	}
 }
 
@@ -462,7 +480,7 @@ func (c *compiler) compileReduce(e *Reduce) error {
 	if err := c.compileTerm(e.Term); err != nil {
 		return err
 	}
-	if err := c.compilePattern(e.Pattern); err != nil {
+	if _, err := c.compilePattern(e.Pattern); err != nil {
 		return err
 	}
 	c.append(&code{op: opload, v: v})
@@ -487,7 +505,7 @@ func (c *compiler) compileForeach(e *Foreach) error {
 	if err := c.compileTerm(e.Term); err != nil {
 		return err
 	}
-	if err := c.compilePattern(e.Pattern); err != nil {
+	if _, err := c.compilePattern(e.Pattern); err != nil {
 		return err
 	}
 	c.append(&code{op: opload, v: v})
