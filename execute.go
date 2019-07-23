@@ -32,10 +32,6 @@ loop:
 			x := env.pop()
 			env.push(x)
 			env.push(x)
-		case opswap:
-			x, y := env.pop(), env.pop()
-			env.push(x)
-			env.push(y)
 		case opconst:
 			env.pop()
 			env.push(code.v)
