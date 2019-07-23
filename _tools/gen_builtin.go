@@ -133,9 +133,9 @@ func printCompositeLit(out io.Writer, t *ast.CompositeLit) error {
 			return err
 		}
 		str := kvBuf.String()
-		for op := gojq.OpAdd; op <= gojq.OpAlt; op++ {
-			r := regexp.MustCompile(fmt.Sprintf(`\bOp: %d\b`, op))
-			str = r.ReplaceAllString(str, fmt.Sprintf("Op: %#v", op))
+		for op := gojq.OpAdd; op <= gojq.OpUpdateAlt; op++ {
+			r := regexp.MustCompile(fmt.Sprintf(`\b((?:Update)?Op): %d\b`, op))
+			str = r.ReplaceAllString(str, fmt.Sprintf("$1: %#v", op))
 		}
 		out.Write([]byte(str))
 		out.Write([]byte(","))
