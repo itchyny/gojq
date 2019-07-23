@@ -18,7 +18,7 @@ func (env *env) Next() (interface{}, bool) {
 	pc, callpc, index, backtrack := env.pc, len(env.codes)-1, -1, env.backtrack
 	defer func() { env.pc, env.backtrack = pc, true }()
 loop:
-	for ; 0 <= pc && pc < len(env.codes); pc++ {
+	for ; pc < len(env.codes); pc++ {
 		env.debugState(pc, backtrack)
 		code := env.codes[pc]
 		switch code.op {
