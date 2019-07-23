@@ -228,44 +228,8 @@ func (c *compiler) compileAlt(e *Alt) error {
 
 func (c *compiler) compileExpr(e *Expr) (err error) {
 	if e.Update != nil {
-		t := *e // clone without changing e
-		(&t).Update = nil
-		switch e.UpdateOp {
-		case OpAssign, OpModify:
-			return c.compileFunc(
-				&Func{
-					Name: e.UpdateOp.getFunc(),
-					Args: []*Query{
-						t.toQuery(),
-						e.Update.toQuery(),
-					},
-				},
-			)
-		default:
-			name := "$%0"
-			c.append(&code{op: opdup})
-			if err := c.compileAlt(e.Update); err != nil {
-				return err
-			}
-			c.append(&code{op: opstore, v: c.pushVariable(name)})
-			return c.compileFunc(
-				&Func{
-					Name: "_modify",
-					Args: []*Query{
-						t.toQuery(),
-						(&Term{Func: &Func{
-							Name: e.UpdateOp.getFunc(),
-							Args: []*Query{
-								(&Term{Identity: true}).toQuery(),
-								(&Term{Func: &Func{Name: name}}).toQuery(),
-							},
-						}}).toQuery(),
-					},
-				},
-			)
-		}
-	}
-	if e.Bind != nil {
+		return c.compileExprUpdate(e)
+	} else if e.Bind != nil {
 		c.append(&code{op: opdup})
 		defer func() {
 			if err == nil {
@@ -287,6 +251,45 @@ func (c *compiler) compileExpr(e *Expr) (err error) {
 		return c.compileLabel(e.Label)
 	} else {
 		return fmt.Errorf("invalid expr: %s", e)
+	}
+}
+
+func (c *compiler) compileExprUpdate(e *Expr) (err error) {
+	t := *e // clone without changing e
+	(&t).Update = nil
+	switch e.UpdateOp {
+	case OpAssign, OpModify:
+		return c.compileFunc(
+			&Func{
+				Name: e.UpdateOp.getFunc(),
+				Args: []*Query{
+					t.toQuery(),
+					e.Update.toQuery(),
+				},
+			},
+		)
+	default:
+		name := "$%0"
+		c.append(&code{op: opdup})
+		if err := c.compileAlt(e.Update); err != nil {
+			return err
+		}
+		c.append(&code{op: opstore, v: c.pushVariable(name)})
+		return c.compileFunc(
+			&Func{
+				Name: "_modify",
+				Args: []*Query{
+					t.toQuery(),
+					(&Term{Func: &Func{
+						Name: e.UpdateOp.getFunc(),
+						Args: []*Query{
+							(&Term{Identity: true}).toQuery(),
+							(&Term{Func: &Func{Name: name}}).toQuery(),
+						},
+					}}).toQuery(),
+				},
+			},
+		)
 	}
 }
 
