@@ -181,12 +181,21 @@ func (e *Expr) String() string {
 
 // ExprBind ...
 type ExprBind struct {
-	Pattern *Pattern `"as" @@`
-	Body    *Query   `"|" @@`
+	Patterns []*Pattern `"as" @@ ("?//" @@)*`
+	Body     *Query     `"|" @@`
 }
 
 func (e *ExprBind) String() string {
-	return fmt.Sprintf(" as %s | %s", e.Pattern, e.Body)
+	var s strings.Builder
+	for i, p := range e.Patterns {
+		if i == 0 {
+			fmt.Fprintf(&s, " as %s ", p)
+		} else {
+			fmt.Fprintf(&s, "?// %s ", p)
+		}
+	}
+	fmt.Fprintf(&s, "| %s ", e.Body)
+	return s.String()
 }
 
 // Logic ...

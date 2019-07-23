@@ -70,6 +70,13 @@ func (c *compiler) newVariable() [2]int {
 
 func (c *compiler) pushVariable(name string) [2]int {
 	s := c.scopes[len(c.scopes)-1]
+	if name != "" {
+		for _, v := range s.variables {
+			if v.name == name {
+				return v.index
+			}
+		}
+	}
 	i := len(s.variables)
 	v := [2]int{s.id, i}
 	s.variables = append(s.variables, varinfo{name, v})
@@ -260,19 +267,12 @@ func (c *compiler) compileExpr(e *Expr) (err error) {
 	}
 	if e.Bind != nil {
 		c.append(&code{op: opdup})
-	}
-	defer func() {
-		if err != nil {
-			return
-		}
-		if b := e.Bind; b != nil {
-			if err = c.compilePattern(b.Pattern); err != nil {
-				return
+		defer func() {
+			if err == nil {
+				err = c.compileExprBind(e.Bind)
 			}
-			err = c.compileQuery(b.Body)
-			return
-		}
-	}()
+		}()
+	}
 	if e.Logic != nil {
 		return c.compileLogic(e.Logic)
 	} else if e.If != nil {
@@ -288,6 +288,31 @@ func (c *compiler) compileExpr(e *Expr) (err error) {
 	} else {
 		return fmt.Errorf("invalid expr: %s", e)
 	}
+}
+
+func (c *compiler) compileExprBind(b *ExprBind) error {
+	var pc int
+	for i, p := range b.Patterns {
+		var pcc int
+		if i < len(b.Patterns)-1 {
+			defer c.lazy(func() *code {
+				return &code{op: opforkalt, v: pcc}
+			})()
+		}
+		if err := c.compilePattern(p); err != nil {
+			return err
+		}
+		if i < len(b.Patterns)-1 {
+			defer c.lazy(func() *code {
+				return &code{op: opjump, v: pc}
+			})()
+			pcc = c.pc()
+		}
+	}
+	if len(b.Patterns) > 1 {
+		pc = c.pc()
+	}
+	return c.compileQuery(b.Body)
 }
 
 func (c *compiler) compilePattern(p *Pattern) error {
@@ -830,7 +855,7 @@ func (c *compiler) stringToQuery(s string) (*Query, error) {
 			name := fmt.Sprintf("$%%%d", cnt)
 			es = append(es, &Expr{
 				Logic: (&Term{Query: q}).toLogic(),
-				Bind:  &ExprBind{Pattern: &Pattern{Name: name}},
+				Bind:  &ExprBind{Patterns: []*Pattern{&Pattern{Name: name}}},
 			})
 			xs = append(xs, (&Term{Func: &Func{Name: name}}).toFilter())
 			cnt++

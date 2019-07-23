@@ -70,11 +70,16 @@ loop:
 				env.pushfork(code.op, pc)
 			}
 		case opforkopt:
+			fallthrough
+		case opforkalt:
 			if backtrack {
 				if err == nil {
 					break loop
 				}
-				env.push(err.Error())
+				if code.op == opforkopt {
+					env.pop()
+					env.push(err.Error())
+				}
 				pc, backtrack, err = code.v.(int), false, nil
 				goto loop
 			} else {

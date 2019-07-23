@@ -20,6 +20,7 @@ const (
 	opappend
 	opfork
 	opforkopt
+	opforkalt
 	opforklabel
 	opbacktrack
 	opjump
@@ -60,6 +61,8 @@ func (op opcode) String() string {
 		return "fork"
 	case opforkopt:
 		return "forkopt"
+	case opforkalt:
+		return "forkalt"
 	case opforklabel:
 		return "forklabel"
 	case opbacktrack:

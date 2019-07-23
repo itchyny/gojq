@@ -11,7 +11,7 @@ var parser = participle.MustBuild(
 		`|(?P<Keyword>(null|true|false|if|then|elif|else|end|or|and|as|try|catch|reduce|foreach|label|break)\b)`+
 		`|(?P<Ident>\$?[a-zA-Z_][a-zA-Z0-9_]*)`+
 		`|(?P<UpdateAltOp>(//=))`+
-		`|(?P<Op>(\.\.|//))`+
+		`|(?P<Op>(\.\.|\??//))`+
 		`|(?P<CompareOp>([=!]=|[<>]=?))`+
 		`|(?P<UpdateOp>(=|[-|+*/%]=))`+
 		`|(?P<Number>((\d*\.)?\d+([eE]([-+]?\d+))?))`+

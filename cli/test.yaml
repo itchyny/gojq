@@ -2677,6 +2677,27 @@
   expected: |
     true
 
+- name: destructuring alternative operator
+  args:
+    - '.[] | . as {a:$a} ?// [$a] ?// $a | $a'
+  input: '[[1],[2],{"a":3},4]'
+  expected: |
+    1
+    2
+    3
+    4
+
+- name: destructuring alternative operator with error backtrack
+  args:
+    - -c
+    - '.[] | . as {a:$a} ?// [$a] ?// $a | if 1 < $a and $a < 4 then $a|error else $a end'
+  input: '[[1],[2],{"a":3},4]'
+  expected: |
+    1
+    [2]
+    {"a":3}
+    4
+
 - name: compact output option
   args:
     - -c
