@@ -94,7 +94,7 @@ func init() {
 		"sqrt":           mathFunc("sqrt", math.Sqrt),
 		"cbrt":           mathFunc("cbrt", math.Cbrt),
 		"exp":            mathFunc("exp", math.Exp),
-		"exp10":          mathFunc("exp10", func(v float64) float64 { return math.Pow(10, v) }),
+		"exp10":          mathFunc("exp10", funcExp10),
 		"exp2":           mathFunc("exp2", math.Exp2),
 		"expm1":          mathFunc("expm1", math.Expm1),
 		"frexp":          argFunc0(funcFrexp),
@@ -106,7 +106,7 @@ func init() {
 		"logb":           mathFunc("logb", math.Logb),
 		"gamma":          mathFunc("gamma", math.Gamma),
 		"tgamma":         mathFunc("tgamma", math.Gamma),
-		"lgamma":         mathFunc("lgamma", func(v float64) float64 { v, _ = math.Lgamma(v); return v }),
+		"lgamma":         mathFunc("lgamma", funcLgamma),
 		"erf":            mathFunc("erf", math.Erf),
 		"erfc":           mathFunc("erfc", math.Erfc),
 		"j0":             mathFunc("j0", math.J0),
@@ -115,35 +115,29 @@ func init() {
 		"y1":             mathFunc("y1", math.Y1),
 		"atan2":          mathFunc2("atan2", math.Atan2),
 		"copysign":       mathFunc2("copysign", math.Copysign),
-		"drem": mathFunc2("drem", func(l, r float64) float64 {
-			x := math.Remainder(l, r)
-			if x == 0.0 {
-				return math.Copysign(x, l)
-			}
-			return x
-		}),
-		"fdim":        mathFunc2("fdim", math.Dim),
-		"fmax":        mathFunc2("fmax", math.Max),
-		"fmin":        mathFunc2("fmin", math.Min),
-		"fmod":        mathFunc2("fmod", math.Mod),
-		"hypot":       mathFunc2("hypot", math.Hypot),
-		"jn":          mathFunc2("jn", func(l, r float64) float64 { return math.Jn(int(l), r) }),
-		"ldexp":       mathFunc2("ldexp", func(l, r float64) float64 { return math.Ldexp(l, int(r)) }),
-		"nextafter":   mathFunc2("nextafter", math.Nextafter),
-		"nexttoward":  mathFunc2("nexttoward", math.Nextafter),
-		"remainder":   mathFunc2("remainder", math.Remainder),
-		"scalb":       mathFunc2("scalb", func(l, r float64) float64 { return l * math.Pow(2, r) }),
-		"scalbln":     mathFunc2("scalbln", func(l, r float64) float64 { return l * math.Pow(2, r) }),
-		"yn":          mathFunc2("yn", func(l, r float64) float64 { return math.Yn(int(l), r) }),
-		"pow":         mathFunc2("pow", math.Pow),
-		"fma":         mathFunc3("fma", func(x, y, z float64) float64 { return x*y + z }),
-		"setpath":     argFunc2(funcSetpath),
-		"delpaths":    argFunc1(funcDelpaths),
-		"getpath":     argFunc1(funcGetpath),
-		"error":       function{argcount0 | argcount1, funcError},
-		"builtins":    argFunc0(funcBuiltins),
-		"env":         argFunc0(funcEnv),
-		"_type_error": argFunc1(internalfuncTypeError),
+		"drem":           mathFunc2("drem", funcDrem),
+		"fdim":           mathFunc2("fdim", math.Dim),
+		"fmax":           mathFunc2("fmax", math.Max),
+		"fmin":           mathFunc2("fmin", math.Min),
+		"fmod":           mathFunc2("fmod", math.Mod),
+		"hypot":          mathFunc2("hypot", math.Hypot),
+		"jn":             mathFunc2("jn", funcJn),
+		"ldexp":          mathFunc2("ldexp", funcLdexp),
+		"nextafter":      mathFunc2("nextafter", math.Nextafter),
+		"nexttoward":     mathFunc2("nexttoward", math.Nextafter),
+		"remainder":      mathFunc2("remainder", math.Remainder),
+		"scalb":          mathFunc2("scalb", funcScalb),
+		"scalbln":        mathFunc2("scalbln", funcScalbln),
+		"yn":             mathFunc2("yn", funcYn),
+		"pow":            mathFunc2("pow", math.Pow),
+		"fma":            mathFunc3("fma", funcFma),
+		"setpath":        argFunc2(funcSetpath),
+		"delpaths":       argFunc1(funcDelpaths),
+		"getpath":        argFunc1(funcGetpath),
+		"error":          function{argcount0 | argcount1, funcError},
+		"builtins":       argFunc0(funcBuiltins),
+		"env":            argFunc0(funcEnv),
+		"_type_error":    argFunc1(internalfuncTypeError),
 	}
 }
 
@@ -621,6 +615,15 @@ func funcBreak(x interface{}) interface{} {
 	return &breakError{x.(string)}
 }
 
+func funcExp10(v float64) float64 {
+	return math.Pow(10, v)
+}
+
+func funcLgamma(v float64) float64 {
+	v, _ = math.Lgamma(v)
+	return v
+}
+
 func funcFrexp(v interface{}) interface{} {
 	x, err := toFloat64("frexp", v)
 	if err != nil {
@@ -637,6 +640,38 @@ func funcModf(v interface{}) interface{} {
 	}
 	i, f := math.Modf(x)
 	return []interface{}{f, i}
+}
+
+func funcDrem(l, r float64) float64 {
+	x := math.Remainder(l, r)
+	if x == 0.0 {
+		return math.Copysign(x, l)
+	}
+	return x
+}
+
+func funcJn(l, r float64) float64 {
+	return math.Jn(int(l), r)
+}
+
+func funcLdexp(l, r float64) float64 {
+	return math.Ldexp(l, int(r))
+}
+
+func funcScalb(l, r float64) float64 {
+	return l * math.Pow(2, r)
+}
+
+func funcScalbln(l, r float64) float64 {
+	return l * math.Pow(2, r)
+}
+
+func funcYn(l, r float64) float64 {
+	return math.Yn(int(l), r)
+}
+
+func funcFma(x, y, z float64) float64 {
+	return x*y + z
 }
 
 func funcSetpath(v, p, w interface{}) interface{} {
