@@ -2860,6 +2860,19 @@
         [ .[] | { .id } ]
               ^  unexpected "|" (expected "]")
 
+- name: invalid multiple line query
+  args:
+    - |
+       [
+         .[]
+         | { id } }
+       ]
+  input: '{}'
+  error: |
+    invalid query: <arg>:3
+        3 |   | { id } }
+                       ^  unexpected "}" (expected "]")
+
 - name: invalid json eof
   input: '{'
   error: |

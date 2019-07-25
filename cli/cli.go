@@ -84,8 +84,7 @@ Options:
 	}
 	query, err := gojq.Parse(arg)
 	if err != nil {
-		fmt.Fprintf(cli.errStream, "%s: invalid query: %s\n", name, arg)
-		cli.printParseError(arg, err)
+		cli.printParseError("<arg>", arg, err)
 		return exitCodeErr
 	}
 	if cli.inputNull {
@@ -103,15 +102,25 @@ Options:
 	return exitCodeOK
 }
 
-func (cli *cli) printParseError(query string, err error) {
+func (cli *cli) printParseError(fname, query string, err error) {
 	if err, ok := err.(*lexer.Error); ok {
 		lines := strings.Split(query, "\n")
 		if 0 < err.Pos.Line && err.Pos.Line <= len(lines) {
+			var prefix string
+			if len(lines) <= 1 {
+				fname = query
+			} else {
+				fname += fmt.Sprintf(":%d", err.Pos.Line)
+				prefix = fmt.Sprintf("%d | ", err.Pos.Line)
+			}
+			fmt.Fprintf(cli.errStream, "%s: invalid query: %s\n", name, fname)
 			fmt.Fprintf(
-				cli.errStream, "    %s\n%s  %s\n", lines[err.Pos.Line-1],
-				strings.Repeat(" ", 3+err.Pos.Column)+"^", err.Message)
+				cli.errStream, "    %s%s\n%s  %s\n", prefix, lines[err.Pos.Line-1],
+				strings.Repeat(" ", 3+err.Pos.Column+len(prefix))+"^", err.Message)
+			return
 		}
 	}
+	fmt.Fprintf(cli.errStream, "%s: invalid query: %s\n", name, query)
 }
 
 func (cli *cli) processFile(fname string, query *gojq.Query) int {
