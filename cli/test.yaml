@@ -2833,6 +2833,14 @@
   expected: |
     null
 
+- name: source query from file
+  args:
+    - -n
+    - -f
+    - testdata/1.jq
+  expected: |
+    null
+
 - name: invalid query
   args:
     - '>abc'
@@ -2872,6 +2880,22 @@
     invalid query: <arg>:3
         3 |   | { id } }
                        ^  unexpected "}" (expected "]")
+
+- name: invalid query in file
+  args:
+    - -f
+    - testdata/2.jq
+  error: |
+    invalid query: testdata/2.jq:3
+        3 |   bar, []
+                 ^  unexpected "," (expected "}")
+
+- name: query file not found
+  args:
+    - -f
+    - testdata/3.jq
+  error: |
+    open testdata/3.jq: no such file or directory
 
 - name: invalid json eof
   input: '{'

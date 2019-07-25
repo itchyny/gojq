@@ -57,12 +57,14 @@ Options:
 `, name, version, revision, runtime.Version())
 		fs.PrintDefaults()
 	}
+	var sourceFile string
 	var showVersion bool
 	fs.BoolVar(&cli.outputCompact, "c", false, "compact output")
 	fs.BoolVar(&cli.outputRaw, "r", false, "output raw string")
 	fs.BoolVar(&cli.inputNull, "n", false, "use null as input value")
 	fs.BoolVar(&cli.inputRaw, "R", false, "read input as raw strings")
 	fs.BoolVar(&cli.inputSlurp, "s", false, "read all inputs into an array")
+	fs.StringVar(&sourceFile, "f", "", "load query from file")
 	fs.BoolVar(&showVersion, "v", false, "print version")
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
@@ -75,16 +77,23 @@ Options:
 		return exitCodeOK
 	}
 	args = fs.Args()
-	var arg string
-	if len(args) == 0 {
+	var arg, fname string
+	if sourceFile != "" {
+		src, err := ioutil.ReadFile(sourceFile)
+		if err != nil {
+			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+			return exitCodeErr
+		}
+		arg, fname = string(src), sourceFile
+	} else if len(args) == 0 {
 		arg = "."
 	} else {
-		arg = strings.TrimSpace(args[0])
+		arg, fname = strings.TrimSpace(args[0]), "<arg>"
 		args = args[1:]
 	}
 	query, err := gojq.Parse(arg)
 	if err != nil {
-		cli.printParseError("<arg>", arg, err)
+		cli.printParseError(fname, arg, err)
 		return exitCodeErr
 	}
 	if cli.inputNull {
@@ -107,7 +116,7 @@ func (cli *cli) printParseError(fname, query string, err error) {
 		lines := strings.Split(query, "\n")
 		if 0 < err.Pos.Line && err.Pos.Line <= len(lines) {
 			var prefix string
-			if len(lines) <= 1 {
+			if len(lines) <= 1 && fname == "<arg>" {
 				fname = query
 			} else {
 				fname += fmt.Sprintf(":%d", err.Pos.Line)
