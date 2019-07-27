@@ -251,12 +251,15 @@ func (cli *cli) printValue(v gojq.Iter) error {
 		case error:
 			return v
 		case [2]interface{}:
-			if s, ok := v[0].(string); ok && s == "DEBUG:" {
+			if s, ok := v[0].(string); ok {
 				outStream = cli.errStream
 				compact := cli.outputCompact
 				cli.outputCompact = true
 				m = cli.createMarshaler()
 				cli.outputCompact = compact
+				if s == "STDERR:" {
+					x = v[1]
+				}
 			}
 		}
 		xs, err := m.Marshal(x)

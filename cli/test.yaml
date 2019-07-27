@@ -2829,6 +2829,36 @@
     ["DEBUG:",{"a":2}]
     ["DEBUG:",2]
 
+- name: stderr function
+  args:
+    - 'recurse(stderr|.[]?)'
+  input: '[{}] [1,{"a":2}] "DEBUG:"'
+  expected: |
+    [
+      {}
+    ]
+    {}
+    [
+      1,
+      {
+        "a": 2
+      }
+    ]
+    1
+    {
+      "a": 2
+    }
+    2
+    "DEBUG:"
+  error: |
+    [{}]
+    {}
+    [1,{"a":2}]
+    1
+    {"a":2}
+    2
+    "DEBUG:"
+
 - name: builtins function
   args:
     - 'builtins|length > 100'

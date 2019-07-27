@@ -238,7 +238,7 @@ loop:
 			}
 		case opdebug:
 			if !backtrack {
-				return [2]interface{}{"DEBUG:", normalizeValues(env.stack.top())}, true
+				return [2]interface{}{code.v, normalizeValues(env.stack.top())}, true
 			}
 			backtrack = false
 		default:
