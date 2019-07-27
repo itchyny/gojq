@@ -137,6 +137,7 @@ func init() {
 		"getpath":        argFunc1(funcGetpath),
 		"gmtime":         argFunc0(funcGmtime),
 		"localtime":      argFunc0(funcLocaltime),
+		"now":            argFunc0(funcNow),
 		"error":          function{argcount0 | argcount1, funcError},
 		"builtins":       argFunc0(funcBuiltins),
 		"env":            argFunc0(funcEnv),
@@ -886,6 +887,11 @@ func epochToArray(v float64, loc *time.Location) []interface{} {
 		int(t.Weekday()),
 		t.YearDay() - 1,
 	}
+}
+
+func funcNow(interface{}) interface{} {
+	t := time.Now()
+	return float64(t.Unix()) + float64(t.Nanosecond())/1e9
 }
 
 func funcError(v interface{}, args []interface{}) interface{} {

@@ -2742,6 +2742,14 @@
     [2020,8,13,12,26,40.111000061,0,256]
     [2020,8,13,5,26,40.111000061,0,256]
 
+- name: now function
+  args:
+    - -c
+    - 'now | type'
+  input: 'null'
+  expected: |
+    "number"
+
 - name: builtins function
   args:
     - 'builtins|length > 100'
