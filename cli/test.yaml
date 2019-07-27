@@ -2469,6 +2469,14 @@
     {"bar":[1],"foo":[1,4]}
     {"bar":[1]}
 
+- name: del function with slice
+  args:
+    - -c
+    - 'del(.[1], .[-6], .[2], .[-3:9])'
+  input: '[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]'
+  expected: |
+    [0,3,5,6,9]
+
 - name: assignment operator against object
   args:
     - -c
@@ -2484,6 +2492,20 @@
   input: '[0,1,2]'
   expected: |
     [3,1,3]
+
+- name: assignment operator against array with slice
+  args:
+    - -c
+    - '.[2:4] = ([], [0], [4,3,2]), .[1:-1] = [3,2], .[2:0] = [.[]], .[10:] = [1], .[-20:-10] = [1]'
+  input: '[1,2,3,4,5]'
+  expected: |
+    [1,2,5]
+    [1,2,0,5]
+    [1,2,4,3,2,5]
+    [1,3,2,5]
+    [1,2,1,2,3,4,5,3,4,5]
+    [1,2,3,4,5,1]
+    [1,1,2,3,4,5]
 
 - name: assignment operator deeply
   args:

@@ -570,28 +570,16 @@ func funcSlice(_, v, end, start interface{}) (r interface{}) {
 }
 
 func funcIndexSlice(start, end, index *int, a []interface{}) interface{} {
-	l := len(a)
-	toIndex := func(i int) int {
-		switch {
-		case i < -l:
-			return -2
-		case i < 0:
-			return l + i
-		case i < l:
-			return i
-		default:
-			return -1
-		}
-	}
+	aa := a
 	if index != nil {
-		i := toIndex(*index)
+		i := toIndex(aa, *index)
 		if i < 0 {
 			return nil
 		}
 		return a[i]
 	}
 	if end != nil {
-		i := toIndex(*end)
+		i := toIndex(aa, *end)
 		if i == -1 {
 			i = len(a)
 		} else if i == -2 {
@@ -600,7 +588,7 @@ func funcIndexSlice(start, end, index *int, a []interface{}) interface{} {
 		a = a[:i]
 	}
 	if start != nil {
-		i := toIndex(*start)
+		i := toIndex(aa, *start)
 		if i == -1 || len(a) < i {
 			i = len(a)
 		} else if i == -2 {
@@ -609,6 +597,20 @@ func funcIndexSlice(start, end, index *int, a []interface{}) interface{} {
 		a = a[i:]
 	}
 	return a
+}
+
+func toIndex(a []interface{}, i int) int {
+	l := len(a)
+	switch {
+	case i < -l:
+		return -2
+	case i < 0:
+		return l + i
+	case i < l:
+		return i
+	default:
+		return -1
+	}
 }
 
 func funcBreak(x interface{}) interface{} {
@@ -760,6 +762,63 @@ loop:
 					g = func(w interface{}) interface{} { uu[y] = w; return w }
 				} else {
 					uu[y] = f(uu[y])
+				}
+			default:
+				return &expectedArrayError{u}
+			}
+		case map[string]interface{}:
+			if len(x) == 0 {
+				switch u.(type) {
+				case []interface{}:
+					return &arrayIndexNotNumberError{x}
+				default:
+					return &objectKeyNotStringError{x}
+				}
+			}
+			if u == nil {
+				u = g([]interface{}{})
+			}
+			switch uu := u.(type) {
+			case []interface{}:
+				var start, end int
+				if x, ok := toInt(x["start"]); ok {
+					x := toIndex(uu, x)
+					if x > len(uu) || x == -1 {
+						start = len(uu)
+					} else if x == -2 {
+						start = 0
+					} else {
+						start = x
+					}
+				}
+				if x, ok := toInt(x["end"]); ok {
+					x := toIndex(uu, x)
+					if x < start {
+						end = start
+					} else {
+						end = x
+					}
+				} else {
+					end = len(uu)
+				}
+				if i < len(keys)-1 {
+					u = uu[start]
+					g = func(w interface{}) interface{} { uu[start] = w; return w }
+				} else if name == "delpaths" {
+					for y := start; y < end; y++ {
+						uu[y] = f(nil)
+					}
+				} else {
+					switch v := f(nil).(type) {
+					case []interface{}:
+						vv := make([]interface{}, start+len(v)+len(uu)-end)
+						copy(vv, uu[:start])
+						copy(vv[start:], v)
+						copy(vv[start+len(v):], uu[end:])
+						g(vv)
+					default:
+						return &expectedArrayError{v}
+					}
 				}
 			default:
 				return &expectedArrayError{u}
