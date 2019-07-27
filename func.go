@@ -141,6 +141,7 @@ func init() {
 		"localtime":      argFunc0(funcLocaltime),
 		"mktime":         argFunc0(funcMktime),
 		"strftime":       argFunc1(funcStrftime),
+		"strptime":       argFunc1(funcStrptime),
 		"now":            argFunc0(funcNow),
 		"error":          function{argcount0 | argcount1, funcError},
 		"builtins":       argFunc0(funcBuiltins),
@@ -920,6 +921,24 @@ func funcStrftime(v, x interface{}) interface{} {
 		return &funcTypeError{"strftime", x}
 	}
 	return &funcTypeError{"strftime", v}
+}
+
+func funcStrptime(v, x interface{}) interface{} {
+	if v, ok := v.(string); ok {
+		if format, ok := x.(string); ok {
+			t, err := strtime.Strptime(v, format)
+			if err != nil {
+				return err
+			}
+			var s time.Time
+			if t == s {
+				return &funcTypeError{"strptime", v}
+			}
+			return epochToArray(float64(t.Unix())+float64(t.Nanosecond())/1e9, time.UTC)
+		}
+		return &funcTypeError{"strptime", x}
+	}
+	return &funcTypeError{"strptime", v}
 }
 
 func arrayToTime(name string, a []interface{}, loc *time.Location) (time.Time, error) {
