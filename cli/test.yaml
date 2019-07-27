@@ -2435,6 +2435,21 @@
     {"bar":false}
     {"bar":false}
 
+- name: setpath to getpath
+  args:
+    - -c
+    - '.[] | try (getpath(["a",0,"b"]) |= 5) catch .'
+  input: '[null,{"b":0},{"a":0},{"a":null},{"a":[0,1]},{"a":{"b":1}},{"a":[{}]},{"a":[{"c":3}]}]'
+  expected: |
+    {"a":[{"b":5}]}
+    {"a":[{"b":5}],"b":0}
+    "cannot getpath with [\"a\",0,\"b\"] against: object ({\"a\":0})"
+    {"a":[{"b":5}]}
+    "cannot getpath with [\"a\",0,\"b\"] against: object ({\"a\":[0,1]})"
+    "cannot getpath with [\"a\",0,\"b\"] against: object ({\"a\":{\"b\":1}})"
+    {"a":[{"b":5}]}
+    {"a":[{"b":5,"c":3}]}
+
 - name: map_values function
   args:
     - -c

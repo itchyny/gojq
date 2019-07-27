@@ -119,12 +119,12 @@ loop:
 				}
 				env.push(w)
 				if !env.paths.empty() {
-					var p interface{}
-					p, err = env.pathEntry(v[2].(string), x, args)
+					var ps []interface{}
+					ps, err = env.pathEntries(v[2].(string), x, args)
 					if err != nil {
 						break loop
 					}
-					if p != nil {
+					for _, p := range ps {
 						env.paths.push([2]interface{}{p, w})
 					}
 				}
@@ -287,7 +287,7 @@ func (env *env) index(v [2]int) int {
 	return env.scopeOffset(v[0]) + v[1]
 }
 
-func (env *env) pathEntry(name string, x interface{}, args []interface{}) (interface{}, error) {
+func (env *env) pathEntries(name string, x interface{}, args []interface{}) ([]interface{}, error) {
 	switch name {
 	case "_index":
 		if env.expdepth > 0 {
@@ -295,14 +295,21 @@ func (env *env) pathEntry(name string, x interface{}, args []interface{}) (inter
 		} else if !reflect.DeepEqual(args[0], env.paths.top().([2]interface{})[1]) {
 			return nil, &invalidPathError{x}
 		}
-		return args[1], nil
+		return []interface{}{args[1]}, nil
 	case "_slice":
 		if env.expdepth > 0 {
 			return nil, nil
 		} else if !reflect.DeepEqual(args[0], env.paths.top().([2]interface{})[1]) {
 			return nil, &invalidPathError{x}
 		}
-		return map[string]interface{}{"start": args[2], "end": args[1]}, nil
+		return []interface{}{map[string]interface{}{"start": args[2], "end": args[1]}}, nil
+	case "getpath":
+		if env.expdepth > 0 {
+			return nil, nil
+		} else if !reflect.DeepEqual(x, env.paths.top().([2]interface{})[1]) {
+			return nil, &invalidPathError{x}
+		}
+		return args[0].([]interface{}), nil
 	default:
 		return nil, nil
 	}
