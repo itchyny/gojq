@@ -5,16 +5,24 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 )
 
+func setLocation(loc *time.Location) func() {
+	orig := time.Local
+	time.Local = loc
+	return func() { time.Local = orig }
+}
+
 func TestCliRun(t *testing.T) {
 	f, err := os.Open("test.yaml")
 	require.NoError(t, err)
 	defer f.Close()
+	defer setLocation(time.FixedZone("UTC-7", -7*60*60))()
 
 	var testCases []struct {
 		Name     string

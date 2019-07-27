@@ -8,6 +8,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 )
 
 const (
@@ -134,6 +135,8 @@ func init() {
 		"setpath":        argFunc2(funcSetpath),
 		"delpaths":       argFunc1(funcDelpaths),
 		"getpath":        argFunc1(funcGetpath),
+		"gmtime":         argFunc0(funcGmtime),
+		"localtime":      argFunc0(funcLocaltime),
 		"error":          function{argcount0 | argcount1, funcError},
 		"builtins":       argFunc0(funcBuiltins),
 		"env":            argFunc0(funcEnv),
@@ -857,6 +860,34 @@ func funcGetpath(v, p interface{}) interface{} {
 	return v
 }
 
+func funcGmtime(v interface{}) interface{} {
+	if v, ok := toFloat(v); ok {
+		return epochToArray(v, time.UTC)
+	}
+	return &funcTypeError{"gmtime", v}
+}
+
+func funcLocaltime(v interface{}) interface{} {
+	if v, ok := toFloat(v); ok {
+		return epochToArray(v, time.Local)
+	}
+	return &funcTypeError{"localtime", v}
+}
+
+func epochToArray(v float64, loc *time.Location) []interface{} {
+	t := time.Unix(int64(v), int64((v-math.Floor(v))*1e9)).In(loc)
+	return []interface{}{
+		t.Year(),
+		int(t.Month()) - 1,
+		t.Day(),
+		t.Hour(),
+		t.Minute(),
+		float64(t.Second()) + float64(t.Nanosecond())/1e9,
+		int(t.Weekday()),
+		t.YearDay() - 1,
+	}
+}
+
 func funcError(v interface{}, args []interface{}) interface{} {
 	if len(args) == 0 {
 		switch v := v.(type) {
@@ -924,5 +955,16 @@ func toInt(x interface{}) (int, bool) {
 		return int(x), true
 	default:
 		return 0, false
+	}
+}
+
+func toFloat(x interface{}) (float64, bool) {
+	switch x := x.(type) {
+	case int:
+		return float64(x), true
+	case float64:
+		return x, true
+	default:
+		return 0.0, false
 	}
 }
