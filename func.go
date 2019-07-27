@@ -907,6 +907,9 @@ func funcMktime(v interface{}) interface{} {
 }
 
 func funcStrftime(v, x interface{}) interface{} {
+	if w, ok := toFloat(v); ok {
+		v = epochToArray(w, time.UTC)
+	}
 	if a, ok := v.([]interface{}); ok {
 		if format, ok := x.(string); ok {
 			t, err := arrayToTime("strftime", a, time.UTC)
@@ -925,6 +928,9 @@ func funcStrftime(v, x interface{}) interface{} {
 }
 
 func funcStrflocaltime(v, x interface{}) interface{} {
+	if w, ok := toFloat(v); ok {
+		v = epochToArray(w, time.Local)
+	}
 	if a, ok := v.([]interface{}); ok {
 		if format, ok := x.(string); ok {
 			t, err := arrayToTime("strflocaltime", a, time.Local)
