@@ -137,6 +137,7 @@ func init() {
 		"getpath":        argFunc1(funcGetpath),
 		"gmtime":         argFunc0(funcGmtime),
 		"localtime":      argFunc0(funcLocaltime),
+		"mktime":         argFunc0(funcMktime),
 		"now":            argFunc0(funcNow),
 		"error":          function{argcount0 | argcount1, funcError},
 		"builtins":       argFunc0(funcBuiltins),
@@ -887,6 +888,57 @@ func epochToArray(v float64, loc *time.Location) []interface{} {
 		int(t.Weekday()),
 		t.YearDay() - 1,
 	}
+}
+
+func funcMktime(v interface{}) interface{} {
+	if a, ok := v.([]interface{}); ok {
+		t, err := arrayToTime("mktime", a, time.UTC)
+		if err != nil {
+			return err
+		}
+		return float64(t.Unix()) + float64(t.Nanosecond())/1e9
+	}
+	return &funcTypeError{"mktime", v}
+}
+
+func arrayToTime(name string, a []interface{}, loc *time.Location) (time.Time, error) {
+	var t time.Time
+	if len(a) != 8 {
+		return t, &funcTypeError{name, a}
+	}
+	var y, m, d, h, min, sec, nsec int
+	if x, ok := toInt(a[0]); ok {
+		y = x
+	} else {
+		return t, &funcTypeError{name, a}
+	}
+	if x, ok := toInt(a[1]); ok {
+		m = x + 1
+	} else {
+		return t, &funcTypeError{name, a}
+	}
+	if x, ok := toInt(a[2]); ok {
+		d = x
+	} else {
+		return t, &funcTypeError{name, a}
+	}
+	if x, ok := toInt(a[3]); ok {
+		h = x
+	} else {
+		return t, &funcTypeError{name, a}
+	}
+	if x, ok := toInt(a[4]); ok {
+		min = x
+	} else {
+		return t, &funcTypeError{name, a}
+	}
+	if x, ok := toFloat(a[5]); ok {
+		sec = int(x)
+		nsec = int((x - math.Floor(x)) * 1e9)
+	} else {
+		return t, &funcTypeError{name, a}
+	}
+	return time.Date(y, time.Month(m), d, h, min, sec, nsec, loc), nil
 }
 
 func funcNow(interface{}) interface{} {
