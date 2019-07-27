@@ -251,4 +251,8 @@ var BuiltinFuncDefinitions = map[string]string{
 					else .[2]
 					end
 			end;`,
+	"fromdateiso8601": `def fromdateiso8601: strptime("%Y-%m-%dT%H:%M:%SZ") | mktime;`,
+	"todateiso8601":   `def todateiso8601: strftime("%Y-%m-%dT%H:%M:%SZ");`,
+	"fromdate":        `def fromdate: fromdateiso8601;`,
+	"todate":          `def todate: todateiso8601;`,
 }

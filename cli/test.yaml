@@ -2742,10 +2742,10 @@
     [2020,8,13,12,26,40.111000061,0,256]
     [2020,8,13,5,26,40.111000061,0,256]
 
-- name: mktime, strftime, strflocaltime functions
+- name: mktime, strftime, strflocaltime, todate functions
   args:
     - -c
-    - 'mktime, strftime("%Y-%m-%dT%H:%M:%SZ"), strflocaltime("%Y-%m-%dT%H:%M:%S%z")'
+    - 'mktime, strftime("%Y-%m-%dT%H:%M:%SZ"), strflocaltime("%Y-%m-%dT%H:%M:%S%z"), todate'
   input: |
     [2017,6,14,2,40,0,5,194]
     [2019,8,7,21,2,3.4560000889999998,6,249]
@@ -2754,25 +2754,31 @@
     1500000000
     "2017-07-14T02:40:00Z"
     "2017-07-14T02:40:00-0700"
+    "2017-07-14T02:40:00Z"
     1567890123.456
     "2019-09-07T21:02:03Z"
     "2019-09-07T21:02:03-0700"
+    "2019-09-07T21:02:03Z"
     1600000000.111
     "2020-09-13T12:26:40Z"
     "2020-09-13T12:26:40-0700"
+    "2020-09-13T12:26:40Z"
 
-- name: strptime function
+- name: strptime, fromdate functions
   args:
     - -c
-    - 'strptime("%Y-%m-%dT%H:%M:%SZ")'
+    - 'strptime("%Y-%m-%dT%H:%M:%SZ"), fromdate'
   input: |
     "2017-07-14T02:40:00Z"
     "2019-09-07T21:02:03Z"
     "2020-09-13T12:26:40Z"
   expected: |
     [2017,6,14,2,40,0,5,194]
+    1500000000
     [2019,8,7,21,2,3,6,249]
+    1567890123
     [2020,8,13,12,26,40,0,256]
+    1600000000
 
 - name: now function
   args:
