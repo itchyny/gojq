@@ -161,6 +161,14 @@ func (err *invalidPathError) Error() string {
 	return fmt.Sprintf("invalid path against: %s", typeErrorPreview(err.v))
 }
 
+type invalidPathIterError struct {
+	v interface{}
+}
+
+func (err *invalidPathIterError) Error() string {
+	return fmt.Sprintf("invalid path on iterating against: %s", typeErrorPreview(err.v))
+}
+
 type getpathError struct {
 	v, path interface{}
 }

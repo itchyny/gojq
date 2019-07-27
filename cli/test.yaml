@@ -2646,6 +2646,13 @@
   error: |
     invalid path against: number (1)
 
+- name: path function iterate error
+  args:
+    - 'try ((map(select(.a == 0))[].b) = 10) catch .'
+  input: '[{"a":0},{"a":1}]'
+  expected: |
+    "invalid path on iterating against: array ([{\"a\":0}])"
+
 - name: paths/0 function
   args:
     - -c

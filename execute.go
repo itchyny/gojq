@@ -172,6 +172,10 @@ loop:
 			case [][2]interface{}:
 				xs = v
 			case []interface{}:
+				if !env.paths.empty() && (env.expdepth == 0 && !reflect.DeepEqual(v, env.paths.top().([2]interface{})[1])) {
+					err = &invalidPathIterError{v}
+					break loop
+				}
 				if len(v) == 0 {
 					break loop
 				}
@@ -180,6 +184,10 @@ loop:
 					xs[i] = [2]interface{}{i, v}
 				}
 			case map[string]interface{}:
+				if !env.paths.empty() && (env.expdepth == 0 && !reflect.DeepEqual(v, env.paths.top().([2]interface{})[1])) {
+					err = &invalidPathIterError{v}
+					break loop
+				}
 				if len(v) == 0 {
 					break loop
 				}
@@ -203,7 +211,9 @@ loop:
 			}
 			env.push(xs[0][1])
 			if !env.paths.empty() {
-				env.paths.push(xs[0])
+				if env.expdepth == 0 {
+					env.paths.push(xs[0])
+				}
 			}
 		case opexpbegin:
 			env.expdepth++
