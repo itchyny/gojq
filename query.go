@@ -137,15 +137,15 @@ func (e AltRight) String() string {
 
 // Expr ...
 type Expr struct {
-	Logic    *Logic    `( @@`
-	If       *If       `| @@`
-	Try      *Try      `| @@`
-	Reduce   *Reduce   `| @@`
-	Foreach  *Foreach  `| @@ )`
-	UpdateOp Operator  `( ( @UpdateOp | @UpdateAltOp )`
-	Update   *Alt      `  @@`
-	Bind     *ExprBind `| @@ )?`
-	Label    *Label    `| @@`
+	Logic    *Logic   `( @@`
+	If       *If      `| @@`
+	Try      *Try     `| @@`
+	Reduce   *Reduce  `| @@`
+	Foreach  *Foreach `| @@ )`
+	UpdateOp Operator `( ( @UpdateOp | @UpdateAltOp )`
+	Update   *Alt     `  @@`
+	Bind     *Bind    `| @@ )?`
+	Label    *Label   `| @@`
 }
 
 func (e *Expr) toQuery() *Query {
@@ -179,13 +179,13 @@ func (e *Expr) String() string {
 	return s.String()
 }
 
-// ExprBind ...
-type ExprBind struct {
+// Bind ...
+type Bind struct {
 	Patterns []*Pattern `"as" @@ ("?//" @@)*`
 	Body     *Query     `"|" @@`
 }
 
-func (e *ExprBind) String() string {
+func (e *Bind) String() string {
 	var s strings.Builder
 	for i, p := range e.Patterns {
 		if i == 0 {

@@ -234,7 +234,7 @@ func (c *compiler) compileExpr(e *Expr) (err error) {
 		c.append(&code{op: opexpbegin})
 		defer func() {
 			if err == nil {
-				err = c.compileExprBind(e.Bind)
+				err = c.compileBind(e.Bind)
 			}
 		}()
 	}
@@ -294,7 +294,7 @@ func (c *compiler) compileExprUpdate(e *Expr) (err error) {
 	}
 }
 
-func (c *compiler) compileExprBind(b *ExprBind) error {
+func (c *compiler) compileBind(b *Bind) error {
 	var pc int
 	var vs [][2]int
 	for i, p := range b.Patterns {
@@ -883,7 +883,7 @@ func (c *compiler) stringToQuery(s string) (*Query, error) {
 			name := fmt.Sprintf("$%%%d", cnt)
 			es = append(es, &Expr{
 				Logic: (&Term{Query: q}).toLogic(),
-				Bind:  &ExprBind{Patterns: []*Pattern{&Pattern{Name: name}}},
+				Bind:  &Bind{Patterns: []*Pattern{&Pattern{Name: name}}},
 			})
 			xs = append(xs, (&Term{Func: &Func{Name: name}}).toFilter())
 			cnt++
