@@ -9,6 +9,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/knz/strtime"
 )
 
 const (
@@ -138,6 +140,7 @@ func init() {
 		"gmtime":         argFunc0(funcGmtime),
 		"localtime":      argFunc0(funcLocaltime),
 		"mktime":         argFunc0(funcMktime),
+		"strftime":       argFunc1(funcStrftime),
 		"now":            argFunc0(funcNow),
 		"error":          function{argcount0 | argcount1, funcError},
 		"builtins":       argFunc0(funcBuiltins),
@@ -899,6 +902,24 @@ func funcMktime(v interface{}) interface{} {
 		return float64(t.Unix()) + float64(t.Nanosecond())/1e9
 	}
 	return &funcTypeError{"mktime", v}
+}
+
+func funcStrftime(v, x interface{}) interface{} {
+	if a, ok := v.([]interface{}); ok {
+		if format, ok := x.(string); ok {
+			t, err := arrayToTime("strftime", a, time.UTC)
+			if err != nil {
+				return err
+			}
+			got, err := strtime.Strftime(t, format)
+			if err != nil {
+				return err
+			}
+			return got
+		}
+		return &funcTypeError{"strftime", x}
+	}
+	return &funcTypeError{"strftime", v}
 }
 
 func arrayToTime(name string, a []interface{}, loc *time.Location) (time.Time, error) {

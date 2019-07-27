@@ -7,9 +7,11 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/hokaccha/go-prettyjson v0.0.0-20180920040306-f579f869bbfe
 	github.com/itchyny/astgen-go v0.0.0-20190623123749-11f6ca3e2b1f
+	github.com/knz/strtime v0.0.0-20181018220328-af2256ee352c
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mattn/go-runewidth v0.0.4
+	github.com/pkg/errors v0.8.1 // indirect
 	github.com/stretchr/testify v1.3.0
 	golang.org/x/sys v0.0.0-20190712062909-fae7ac547cb7 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
