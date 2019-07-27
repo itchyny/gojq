@@ -723,6 +723,9 @@ func (c *compiler) compileFunc(e *Func) error {
 			}
 			c.codes[len(c.codes)-1] = &code{op: oppathend}
 			return nil
+		case "debug":
+			c.append(&code{op: opdebug})
+			return nil
 		default:
 			return c.compileCall(e.Name, e.Args)
 		}

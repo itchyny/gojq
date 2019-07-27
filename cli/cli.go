@@ -242,19 +242,29 @@ func (cli *cli) printJSONError(fname, input string, err error) {
 func (cli *cli) printValue(v gojq.Iter) error {
 	m := cli.createMarshaler()
 	for {
+		m, outStream := m, cli.outStream
 		x, ok := v.Next()
 		if !ok {
 			break
 		}
-		if err, ok := x.(error); ok {
-			return err
+		switch v := x.(type) {
+		case error:
+			return v
+		case [2]interface{}:
+			if s, ok := v[0].(string); ok && s == "DEBUG:" {
+				outStream = cli.errStream
+				compact := cli.outputCompact
+				cli.outputCompact = true
+				m = cli.createMarshaler()
+				cli.outputCompact = compact
+			}
 		}
 		xs, err := m.Marshal(x)
 		if err != nil {
 			return err
 		}
-		cli.outStream.Write(xs)
-		cli.outStream.Write([]byte{'\n'})
+		outStream.Write(xs)
+		outStream.Write([]byte{'\n'})
 	}
 	return nil
 }

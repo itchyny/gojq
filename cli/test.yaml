@@ -2794,6 +2794,34 @@
   expected: |
     "number"
 
+- name: debug function
+  args:
+    - 'recurse(debug|.[]?)'
+  input: '[{}] [1,{"a":2}]'
+  expected: |
+    [
+      {}
+    ]
+    {}
+    [
+      1,
+      {
+        "a": 2
+      }
+    ]
+    1
+    {
+      "a": 2
+    }
+    2
+  error: |
+    ["DEBUG:",[{}]]
+    ["DEBUG:",{}]
+    ["DEBUG:",[1,{"a":2}]]
+    ["DEBUG:",1]
+    ["DEBUG:",{"a":2}]
+    ["DEBUG:",2]
+
 - name: builtins function
   args:
     - 'builtins|length > 100'
