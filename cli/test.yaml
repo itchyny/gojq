@@ -381,6 +381,13 @@
     [-1,-2,-3]
     [1,2,3]
 
+- name: unary operators against string
+  args:
+    - '(-.)'
+  input: '"abcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcde"'
+  error: |
+    gojq: cannot negate: string ("abcdeabcdeabcdeabcdea ...)
+
 - name: object construction
   args:
     - -c
