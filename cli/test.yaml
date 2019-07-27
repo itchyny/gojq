@@ -2615,6 +2615,22 @@
   expected: |
     [[],["a"],["a","b"],["a","b",0],["a","b",1],["a","b",2],["c"],["c",0],["c",1]]
 
+- name: path function nested
+  args:
+    - -c
+    - 'path(.a[path(.b)[0]][path(.b.c)[1]])'
+  input: '{"a":{"b":{"c":0}}}'
+  expected: |
+    ["a","b","c"]
+
+- name: path function and pattern
+  args:
+    - -c
+    - '(.a as $x | (.b,.c)) = "b"'
+  input: '{"a":null,"b":null}'
+  expected: |
+    {"a":null,"b":"b","c":"b"}
+
 - name: path function result
   args:
     - -c

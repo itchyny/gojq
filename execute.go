@@ -1,6 +1,7 @@
 package gojq
 
 import (
+	"fmt"
 	"reflect"
 	"sort"
 )
@@ -204,13 +205,23 @@ loop:
 			if !env.paths.empty() {
 				env.paths.push(xs[0])
 			}
+		case opexpbegin:
+			env.expdepth++
+		case opexpend:
+			env.expdepth--
 		case oppathbegin:
+			env.paths.push(env.expdepth)
 			env.paths.push([2]interface{}{nil, env.stack.top()})
+			env.expdepth = 0
 		case oppathend:
+			if env.expdepth > 0 {
+				panic(fmt.Sprintf("unexpected expdepth: %d", env.expdepth))
+			}
 			env.pop()
 			x := env.pop()
 			if reflect.DeepEqual(x, env.paths.top().([2]interface{})[1]) {
 				env.push(env.paths.collect())
+				env.expdepth = env.paths.pop().(int)
 			} else {
 				err = &invalidPathError{x}
 				break loop
@@ -238,7 +249,7 @@ func (env *env) pop() interface{} {
 }
 
 func (env *env) pushfork(op opcode, pc int) {
-	f := &fork{op: op, pc: pc}
+	f := &fork{op: op, pc: pc, expdepth: env.expdepth}
 	env.stack.save(&f.stackindex, &f.stacklimit)
 	env.scopes.save(&f.scopeindex, &f.scopelimit)
 	env.paths.save(&f.pathindex, &f.pathlimit)
@@ -249,7 +260,7 @@ func (env *env) pushfork(op opcode, pc int) {
 func (env *env) popfork() *fork {
 	f := env.forks[len(env.forks)-1]
 	env.debugForks(f.pc, "<<<")
-	env.forks = env.forks[:len(env.forks)-1]
+	env.forks, env.expdepth = env.forks[:len(env.forks)-1], f.expdepth
 	env.stack.restore(f.stackindex, f.stacklimit)
 	env.scopes.restore(f.scopeindex, f.scopelimit)
 	env.paths.restore(f.pathindex, f.pathlimit)
@@ -269,12 +280,16 @@ func (env *env) index(v [2]int) int {
 func (env *env) pathEntry(name string, x interface{}, args []interface{}) (interface{}, error) {
 	switch name {
 	case "_index":
-		if !reflect.DeepEqual(args[0], env.paths.top().([2]interface{})[1]) {
+		if env.expdepth > 0 {
+			return nil, nil
+		} else if !reflect.DeepEqual(args[0], env.paths.top().([2]interface{})[1]) {
 			return nil, &invalidPathError{x}
 		}
 		return args[1], nil
 	case "_slice":
-		if !reflect.DeepEqual(args[0], env.paths.top().([2]interface{})[1]) {
+		if env.expdepth > 0 {
+			return nil, nil
+		} else if !reflect.DeepEqual(args[0], env.paths.top().([2]interface{})[1]) {
 			return nil, &invalidPathError{x}
 		}
 		return map[string]interface{}{"start": args[2], "end": args[1]}, nil

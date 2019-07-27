@@ -231,6 +231,7 @@ func (c *compiler) compileExpr(e *Expr) (err error) {
 		return c.compileExprUpdate(e)
 	} else if e.Bind != nil {
 		c.append(&code{op: opdup})
+		c.append(&code{op: opexpbegin})
 		defer func() {
 			if err == nil {
 				err = c.compileExprBind(e.Bind)
@@ -323,6 +324,12 @@ func (c *compiler) compileExprBind(b *ExprBind) error {
 	}
 	if len(b.Patterns) > 1 {
 		pc = c.pc()
+	}
+	if c.codes[len(c.codes)-2].op == opexpbegin {
+		c.codes[len(c.codes)-2] = c.codes[len(c.codes)-1]
+		c.codes = c.codes[:len(c.codes)-1]
+	} else {
+		c.append(&code{op: opexpend}) // ref: compileExpr
 	}
 	return c.compileQuery(b.Body)
 }
@@ -942,12 +949,13 @@ func (c *compiler) compileCall(name string, args []*Query) error {
 		[3]interface{}{internalFuncs[name].callback, len(args), name},
 		args,
 		nil,
+		name == "_index" || name == "_slice",
 	)
 }
 
 func (c *compiler) compileCallPc(fn *funcinfo, args []*Query) error {
 	if len(args) == 0 {
-		return c.compileCallInternal(fn.pc, args, nil)
+		return c.compileCallInternal(fn.pc, args, nil, false)
 	}
 	xs, vars := make([]*Query, len(args)), make(map[int]bool, len(fn.args))
 	for i, j := range fn.argsorder {
@@ -956,16 +964,19 @@ func (c *compiler) compileCallPc(fn *funcinfo, args []*Query) error {
 			vars[i] = true
 		}
 	}
-	return c.compileCallInternal(fn.pc, xs, vars)
+	return c.compileCallInternal(fn.pc, xs, vars, false)
 }
 
-func (c *compiler) compileCallInternal(fn interface{}, args []*Query, vars map[int]bool) error {
+func (c *compiler) compileCallInternal(fn interface{}, args []*Query, vars map[int]bool, indexing bool) error {
 	if len(args) == 0 {
 		c.append(&code{op: opcall, v: fn})
 		return nil
 	}
 	idx := c.newVariable()
 	c.append(&code{op: opstore, v: idx})
+	if indexing {
+		c.append(&code{op: opexpbegin})
+	}
 	for i := len(args) - 1; i >= 0; i-- {
 		pc := c.pc() + 1 // ref: compileFuncDef
 		name := fmt.Sprintf("lambda:%d", pc)
@@ -1000,6 +1011,14 @@ func (c *compiler) compileCallInternal(fn interface{}, args []*Query, vars map[i
 			}
 		} else {
 			c.append(&code{op: oppushpc, v: pc})
+		}
+		if indexing && i == 1 {
+			if c.codes[len(c.codes)-2].op == opexpbegin {
+				c.codes[len(c.codes)-2] = c.codes[len(c.codes)-1]
+				c.codes = c.codes[:len(c.codes)-1]
+			} else {
+				c.append(&code{op: opexpend})
+			}
 		}
 	}
 	c.append(&code{op: opload, v: idx})

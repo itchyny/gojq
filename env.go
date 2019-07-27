@@ -11,6 +11,7 @@ type env struct {
 	forks     []*fork
 	backtrack bool
 	offset    int
+	expdepth  int
 }
 
 func newEnv() *env {
@@ -33,6 +34,7 @@ type fork struct {
 	scopelimit int
 	pathindex  int
 	pathlimit  int
+	expdepth   int
 }
 
 type paths struct{ *stack }
