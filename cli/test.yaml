@@ -2906,6 +2906,17 @@
     ["","b","c","A","d"]
     ["","b","c","d"]
 
+- name: splits function
+  args:
+    - -c
+    - '[splits("a")], [splits("a+")], [splits("a+"; "")], [splits("a+"; "i")]'
+  input: '"abaacaAad"'
+  expected: |
+    ["","b","","c","A","d"]
+    ["","b","c","A","d"]
+    ["","b","c","A","d"]
+    ["","b","c","d"]
+
 - name: destructuring alternative operator
   args:
     - '.[] | . as {a:$a} ?// [$a] ?// $a | $a'

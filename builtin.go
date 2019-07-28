@@ -261,4 +261,7 @@ var BuiltinFuncDefinitions = map[string]string{
 	"test": `
 		def test(re): test(re; null);
 		def test(re; flags): _match_impl(re; flags; true);`,
+	"splits": `
+		def splits(re): splits(re; null);
+		def splits(re; flags): split(re; flags) | .[];`,
 }
