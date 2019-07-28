@@ -1408,17 +1408,17 @@
 
 - name: multiply strings
   args:
-    - '(.[] * .[] * .[])?'
-  input: '[2.5, 3.7, "abc"]'
+    - '[-1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.7, 10][] * "abc"'
+  input: 'null'
   expected: |
-    15.625
-    23.125
-    "abcabcabcabc"
-    23.125
-    34.225
-    "abcabcabcabcabcabc"
-    "abcabcabcabc"
-    "abcabcabcabcabcabc"
+    null
+    null
+    null
+    "abc"
+    "abc"
+    "abc"
+    "abcabcabc"
+    "abcabcabcabcabcabcabcabcabcabc"
 
 - name: multiply objects
   args:
