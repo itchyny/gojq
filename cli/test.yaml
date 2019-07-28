@@ -2897,6 +2897,16 @@
   expected: |
     [false,true,false,true,true]
 
+- name: capture function
+  args:
+    - -c
+    - 'capture("bcd"), capture("b(?<foo>c.?(?<bar>d..))"), [capture("(?<a>b(?<foo>c).?(?<bar>d..))"; "gmi")]'
+  input: '"abcdeABCDEabcde"'
+  expected: |
+    {}
+    {"bar":"deA","foo":"cdeA"}
+    [{"a":"bcdeA","bar":"deA","foo":"c"},{"a":"BCDEa","bar":"DEa","foo":"C"}]
+
 - name: split/2 function
   args:
     - -c
