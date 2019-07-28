@@ -1057,9 +1057,9 @@ func funcMatchImpl(v, re, fs, testing interface{}) interface{} {
 	}
 	var xs [][]int
 	if strings.ContainsRune(flags, 'g') && testing != true {
-		xs = r.FindAllStringIndex(s, -1)
+		xs = r.FindAllStringSubmatchIndex(s, -1)
 	} else {
-		got := r.FindStringIndex(s)
+		got := r.FindStringSubmatchIndex(s)
 		if testing == true {
 			return got != nil
 		}
@@ -1067,19 +1067,33 @@ func funcMatchImpl(v, re, fs, testing interface{}) interface{} {
 			xs = [][]int{got}
 		}
 	}
-	res := make([]interface{}, len(xs))
+	res, names := make([]interface{}, len(xs)), r.SubexpNames()
 	for i, x := range xs {
+		captures := make([]interface{}, (len(x)-2)/2)
+		for j := 1; j < len(x)/2; j++ {
+			var name interface{}
+			if n := names[j]; n != "" {
+				name = n
+			}
+			captures[j-1] = map[string]interface{}{
+				"name":   name,
+				"offset": len([]rune(s[:x[j*2]])),
+				"length": len([]rune(s[:x[j*2+1]])) - len([]rune(s[:x[j*2]])),
+				"string": s[x[j*2]:x[j*2+1]],
+			}
+		}
 		res[i] = map[string]interface{}{
 			"offset":   len([]rune(s[:x[0]])),
 			"length":   len([]rune(s[:x[1]])) - len([]rune(s[:x[0]])),
 			"string":   s[x[0]:x[1]],
-			"captures": []interface{}{},
+			"captures": captures,
 		}
 	}
 	return res
 }
 
 func compileRegexp(re, flags string) (*regexp.Regexp, error) {
+	re = strings.ReplaceAll(re, "(?<", "(?P<")
 	if strings.ContainsRune(flags, 'i') {
 		re = "(?i)" + re
 	}
