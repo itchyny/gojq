@@ -230,7 +230,7 @@ loop:
 			env.pop()
 			x := env.pop()
 			if reflect.DeepEqual(x, env.paths.top().([2]interface{})[1]) {
-				env.push(env.paths.collect())
+				env.push(env.poppaths())
 				env.expdepth = env.paths.pop().(int)
 			} else {
 				err = &invalidPathError{x}
@@ -318,4 +318,20 @@ func (env *env) pathEntries(name string, x interface{}, args []interface{}) ([]i
 	default:
 		return nil, nil
 	}
+}
+
+func (env *env) poppaths() []interface{} {
+	var xs []interface{}
+	for {
+		p := env.paths.pop().([2]interface{})
+		if p[0] == nil {
+			break
+		}
+		xs = append(xs, p[0])
+	}
+	for i := 0; i < len(xs)/2; i++ { // reverse
+		j := len(xs) - 1 - i
+		xs[i], xs[j] = xs[j], xs[i]
+	}
+	return xs
 }
