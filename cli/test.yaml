@@ -2907,6 +2907,18 @@
     {"bar":"deA","foo":"cdeA"}
     [{"a":"bcdeA","bar":"deA","foo":"c"},{"a":"BCDEa","bar":"DEa","foo":"C"}]
 
+- name: scan function
+  args:
+    - -c
+    - 'scan("(b(c*)(d*))"), scan("(b(c*)(d*))"; "i")'
+  input: '"abcdeABCCDDEabcce"'
+  expected: |
+    ["bcd","c","d"]
+    ["bcc","cc",""]
+    ["bcd","c","d"]
+    ["BCCDD","CC","DD"]
+    ["bcc","cc",""]
+
 - name: split/2 function
   args:
     - -c

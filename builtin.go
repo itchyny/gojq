@@ -267,6 +267,11 @@ var BuiltinFuncDefinitions = map[string]string{
 			match(re; flags)
 				| [.captures | .[] | select(.name != null) | { (.name): .string }]
 				| add // {};`,
+	"scan": `
+		def scan(re): scan(re; null);
+		def scan(re; flags):
+			match(re; "g" + flags)
+			| if (.captures|length > 0) then [ .captures | .[] | .string ] else .string end;`,
 	"splits": `
 		def splits(re): splits(re; null);
 		def splits(re; flags): split(re; flags) | .[];`,
