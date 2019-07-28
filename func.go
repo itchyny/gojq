@@ -59,7 +59,7 @@ func init() {
 		"contains":       argFunc1(funcContains),
 		"explode":        argFunc0(funcExplode),
 		"implode":        argFunc0(funcImplode),
-		"split":          argFunc1(funcSplit),
+		"split":          function{argcount1 | argcount2, funcSplit},
 		"tojson":         argFunc0(funcToJSON),
 		"fromjson":       argFunc0(funcFromJSON),
 		"_index":         argFunc2(funcIndex),
@@ -423,19 +423,38 @@ func funcImplode(v interface{}) interface{} {
 	}
 }
 
-func funcSplit(v, x interface{}) interface{} {
-	if v, ok := v.(string); ok {
-		if x, ok := x.(string); ok {
-			ss := strings.Split(v, x)
-			xs := make([]interface{}, len(ss))
-			for i, s := range ss {
-				xs[i] = s
-			}
-			return xs
-		}
+func funcSplit(v interface{}, args []interface{}) interface{} {
+	s, ok := v.(string)
+	if !ok {
+		return &funcTypeError{"split", v}
+	}
+	x, ok := args[0].(string)
+	if !ok {
 		return &funcTypeError{"split", x}
 	}
-	return &funcTypeError{"split", v}
+	var ss []string
+	if len(args) == 1 {
+		ss = strings.Split(s, x)
+	} else {
+		var flags string
+		if args[1] != nil {
+			v, ok := args[1].(string)
+			if !ok {
+				return &funcTypeError{"split", args[1]}
+			}
+			flags = v
+		}
+		r, err := compileRegexp(x, flags)
+		if err != nil {
+			return err
+		}
+		ss = r.Split(s, -1)
+	}
+	xs := make([]interface{}, len(ss))
+	for i, s := range ss {
+		xs[i] = s
+	}
+	return xs
 }
 
 func implode(v []interface{}) interface{} {
@@ -1030,17 +1049,11 @@ func funcMatchImpl(v, re, fs, testing interface{}) interface{} {
 	}
 	restr, ok := re.(string)
 	if !ok {
-		return &funcTypeError{"match", re}
+		return &funcTypeError{"match", v}
 	}
-	if strings.ContainsRune(flags, 'i') {
-		restr = "(?i)" + restr
-	}
-	if strings.ContainsRune(flags, 'm') {
-		restr = "(?s)" + restr
-	}
-	r, err := regexp.Compile(restr)
+	r, err := compileRegexp(restr, flags)
 	if err != nil {
-		return fmt.Errorf("invalid regular expression %q: %v", restr, err)
+		return err
 	}
 	var xs [][]int
 	if strings.ContainsRune(flags, 'g') && testing != true {
@@ -1064,6 +1077,20 @@ func funcMatchImpl(v, re, fs, testing interface{}) interface{} {
 		}
 	}
 	return res
+}
+
+func compileRegexp(re, flags string) (*regexp.Regexp, error) {
+	if strings.ContainsRune(flags, 'i') {
+		re = "(?i)" + re
+	}
+	if strings.ContainsRune(flags, 'm') {
+		re = "(?s)" + re
+	}
+	r, err := regexp.Compile(re)
+	if err != nil {
+		return nil, fmt.Errorf("invalid regular expression %q: %v", re, err)
+	}
+	return r, nil
 }
 
 func funcError(v interface{}, args []interface{}) interface{} {

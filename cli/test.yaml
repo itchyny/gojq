@@ -1622,7 +1622,7 @@
   expected: |
     ["","foo bar","あいうえお","\n\t"]
 
-- name: split function
+- name: split/1 function
   args:
     - 'map(split(", ","") | join("/"))'
   input: '["a,b, c, d, e,f",", a,b, c, d, e,f, "]'
@@ -2894,6 +2894,17 @@
   input: '"abcde☆★abcde☆★ABCDEFG"'
   expected: |
     [false,true,false,true,true]
+
+- name: split/2 function
+  args:
+    - -c
+    - 'split("a"), split("a+"), split("a+"; ""), split("a+"; "i")'
+  input: '"abaacaAad"'
+  expected: |
+    ["","b","","c","A","d"]
+    ["abaacaAad"]
+    ["","b","c","A","d"]
+    ["","b","c","d"]
 
 - name: destructuring alternative operator
   args:
