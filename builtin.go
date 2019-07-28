@@ -255,4 +255,10 @@ var BuiltinFuncDefinitions = map[string]string{
 	"todateiso8601":   `def todateiso8601: strftime("%Y-%m-%dT%H:%M:%SZ");`,
 	"fromdate":        `def fromdate: fromdateiso8601;`,
 	"todate":          `def todate: todateiso8601;`,
+	"match": `
+		def match(re): match(re; null);
+		def match(re; flags): _match_impl(re; flags; false) | .[];`,
+	"test": `
+		def test(re): test(re; null);
+		def test(re; flags): _match_impl(re; flags; true);`,
 }

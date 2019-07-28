@@ -2873,6 +2873,28 @@
   expected: |
     true
 
+- name: match function
+  args:
+    - -c
+    - '[match("bcd")], [match("☆★"; "g")], (("","g","i","ig") as $flag | [match("bcd"; $flag)]), [match("ABC.?D.?E"; "mg")]'
+  input: '"abcde☆★abcde☆★ABCDE☆ABC\nD\nE"'
+  expected: |
+    [{"captures":[],"length":3,"offset":1,"string":"bcd"}]
+    [{"captures":[],"length":2,"offset":5,"string":"☆★"},{"captures":[],"length":2,"offset":12,"string":"☆★"}]
+    [{"captures":[],"length":3,"offset":1,"string":"bcd"}]
+    [{"captures":[],"length":3,"offset":1,"string":"bcd"},{"captures":[],"length":3,"offset":8,"string":"bcd"}]
+    [{"captures":[],"length":3,"offset":1,"string":"bcd"}]
+    [{"captures":[],"length":3,"offset":1,"string":"bcd"},{"captures":[],"length":3,"offset":8,"string":"bcd"},{"captures":[],"length":3,"offset":15,"string":"BCD"}]
+    [{"captures":[],"length":5,"offset":14,"string":"ABCDE"},{"captures":[],"length":7,"offset":20,"string":"ABC\nD\nE"}]
+
+- name: test function
+  args:
+    - -c
+    - '[test("xyz"), test("bcd"), test("efg"), test("efg"; "i"), test("☆★")]'
+  input: '"abcde☆★abcde☆★ABCDEFG"'
+  expected: |
+    [false,true,false,true,true]
+
 - name: destructuring alternative operator
   args:
     - '.[] | . as {a:$a} ?// [$a] ?// $a | $a'

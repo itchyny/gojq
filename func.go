@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -146,6 +147,7 @@ func init() {
 		"strflocaltime":  argFunc1(funcStrflocaltime),
 		"strptime":       argFunc1(funcStrptime),
 		"now":            argFunc0(funcNow),
+		"_match_impl":    argFunc3(funcMatchImpl),
 		"error":          function{argcount0 | argcount1, funcError},
 		"builtins":       argFunc0(funcBuiltins),
 		"env":            argFunc0(funcEnv),
@@ -1011,6 +1013,57 @@ func arrayToTime(name string, a []interface{}, loc *time.Location) (time.Time, e
 func funcNow(interface{}) interface{} {
 	t := time.Now()
 	return float64(t.Unix()) + float64(t.Nanosecond())/1e9
+}
+
+func funcMatchImpl(v, re, fs, testing interface{}) interface{} {
+	var flags string
+	if fs != nil {
+		v, ok := fs.(string)
+		if !ok {
+			return &funcTypeError{"match", fs}
+		}
+		flags = v
+	}
+	s, ok := v.(string)
+	if !ok {
+		return &funcTypeError{"match", v}
+	}
+	restr, ok := re.(string)
+	if !ok {
+		return &funcTypeError{"match", re}
+	}
+	if strings.ContainsRune(flags, 'i') {
+		restr = "(?i)" + restr
+	}
+	if strings.ContainsRune(flags, 'm') {
+		restr = "(?s)" + restr
+	}
+	r, err := regexp.Compile(restr)
+	if err != nil {
+		return fmt.Errorf("invalid regular expression %q: %v", restr, err)
+	}
+	var xs [][]int
+	if strings.ContainsRune(flags, 'g') && testing != true {
+		xs = r.FindAllStringIndex(s, -1)
+	} else {
+		got := r.FindStringIndex(s)
+		if testing == true {
+			return got != nil
+		}
+		if got != nil {
+			xs = [][]int{got}
+		}
+	}
+	res := make([]interface{}, len(xs))
+	for i, x := range xs {
+		res[i] = map[string]interface{}{
+			"offset":   len([]rune(s[:x[0]])),
+			"length":   len([]rune(s[:x[1]])) - len([]rune(s[:x[0]])),
+			"string":   s[x[0]:x[1]],
+			"captures": []interface{}{},
+		}
+	}
+	return res
 }
 
 func funcError(v interface{}, args []interface{}) interface{} {
