@@ -11,6 +11,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/alecthomas/participle/lexer"
 	"github.com/mattn/go-runewidth"
@@ -211,12 +212,12 @@ func (cli *cli) processJSON(fname string, in io.Reader, query *gojq.Query) int {
 func (cli *cli) printJSONError(fname, input string, err error) {
 	if err.Error() == "unexpected EOF" {
 		lines := strings.Split(strings.TrimRight(input, "\n"), "\n")
-		line := strings.TrimRight(lines[len(lines)-1], "\r")
+		line := toValidUTF8(strings.TrimRight(lines[len(lines)-1], "\r"))
 		fmt.Fprintf(cli.errStream, "    %s\n%s  %s\n", line, strings.Repeat(" ", 4+runewidth.StringWidth(line))+"^", err)
 	} else if err, ok := err.(*json.SyntaxError); ok {
 		var s strings.Builder
 		var i, j int
-		for _, r := range input {
+		for _, r := range toValidUTF8(input) {
 			i += len([]byte(string(r)))
 			if i <= int(err.Offset) {
 				j += runewidth.RuneWidth(r)
@@ -237,6 +238,13 @@ func (cli *cli) printJSONError(fname, input string, err error) {
 		}
 		fmt.Fprintf(cli.errStream, "    %s\n%s  %s\n", s.String(), strings.Repeat(" ", 3+j)+"^", err)
 	}
+}
+
+func toValidUTF8(s string) string {
+	for !utf8.ValidString(s) {
+		s = s[:len(s)-1]
+	}
+	return s
 }
 
 func (cli *cli) printValue(v gojq.Iter) error {

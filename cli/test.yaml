@@ -3228,14 +3228,23 @@
           bar
           ^  invalid character 'b' looking for beginning of value
 
+- name: json file error json with multibyte character in the error line
+  args:
+    - '.'
+    - 'testdata/5.json'
+  error: |
+    invalid json: testdata/5.json
+          "abcde": :★★★★★★★★★★★★
+                   ^  invalid character ':' looking for beginning of value
+
 - name: json file not found
   args:
     - '.'
     - 'testdata/1.json'
-    - 'testdata/5.json'
+    - 'testdata/6.json'
     - 'testdata/2.json'
   expected: |
     {
       "foo": 10
     }
-  error: 'open testdata/5.json:'
+  error: 'open testdata/6.json:'

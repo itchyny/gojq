@@ -1,0 +1,3 @@
+{
+  "a": "This is a test for multibyte character in the error line of JSON. Since the first buffer size of JSON decoder is 512 (see encoding/json/stream.go) and the decoder stops reading bytes on encountering an error, the error line can be an invalid UTF-8 string even if the complete input is a valid UTF-8 string. Note that the error happens before 512 bytes and the corresponding line continues beyond 512 bytes with a multibyte character at the boundary.",
+  "abcde": :★★★★★★★★★★★★★★★
