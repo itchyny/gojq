@@ -1075,6 +1075,15 @@ func funcMatchImpl(v, re, fs, testing interface{}) interface{} {
 			if n := names[j]; n != "" {
 				name = n
 			}
+			if x[j*2] < 0 {
+				captures[j-1] = map[string]interface{}{
+					"name":   name,
+					"offset": -1,
+					"length": 0,
+					"string": nil,
+				}
+				continue
+			}
 			captures[j-1] = map[string]interface{}{
 				"name":   name,
 				"offset": len([]rune(s[:x[j*2]])),
