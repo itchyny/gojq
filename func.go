@@ -185,9 +185,9 @@ func argFunc3(fn func(interface{}, interface{}, interface{}, interface{}) interf
 
 func mathFunc(name string, f func(x float64) float64) function {
 	return argFunc0(func(v interface{}) interface{} {
-		x, err := toFloat64(name, v)
-		if err != nil {
-			return err
+		x, ok := toFloat(v)
+		if !ok {
+			return &funcTypeError{name, v}
 		}
 		return f(x)
 	})
@@ -195,13 +195,13 @@ func mathFunc(name string, f func(x float64) float64) function {
 
 func mathFunc2(name string, g func(x, y float64) float64) function {
 	return argFunc2(func(_, x, y interface{}) interface{} {
-		l, err := toFloat64(name, x)
-		if err != nil {
-			return err
+		l, ok := toFloat(x)
+		if !ok {
+			return &funcTypeError{name, x}
 		}
-		r, err := toFloat64(name, y)
-		if err != nil {
-			return err
+		r, ok := toFloat(y)
+		if !ok {
+			return &funcTypeError{name, y}
 		}
 		return g(l, r)
 	})
@@ -209,31 +209,20 @@ func mathFunc2(name string, g func(x, y float64) float64) function {
 
 func mathFunc3(name string, g func(x, y, z float64) float64) function {
 	return argFunc3(func(_, a, b, c interface{}) interface{} {
-		x, err := toFloat64(name, a)
-		if err != nil {
-			return err
+		x, ok := toFloat(a)
+		if !ok {
+			return &funcTypeError{name, a}
 		}
-		y, err := toFloat64(name, b)
-		if err != nil {
-			return err
+		y, ok := toFloat(b)
+		if !ok {
+			return &funcTypeError{name, b}
 		}
-		z, err := toFloat64(name, c)
-		if err != nil {
-			return err
+		z, ok := toFloat(c)
+		if !ok {
+			return &funcTypeError{name, c}
 		}
 		return g(x, y, z)
 	})
-}
-
-func toFloat64(name string, v interface{}) (float64, error) {
-	switch v := v.(type) {
-	case int:
-		return float64(v), nil
-	case float64:
-		return v, nil
-	default:
-		return 0, &funcTypeError{name, v}
-	}
 }
 
 func funcLength(v interface{}) interface{} {
@@ -660,18 +649,18 @@ func funcLgamma(v float64) float64 {
 }
 
 func funcFrexp(v interface{}) interface{} {
-	x, err := toFloat64("frexp", v)
-	if err != nil {
-		return err
+	x, ok := toFloat(v)
+	if !ok {
+		return &funcTypeError{"frexp", v}
 	}
 	f, e := math.Frexp(x)
 	return []interface{}{f, e}
 }
 
 func funcModf(v interface{}) interface{} {
-	x, err := toFloat64("modf", v)
-	if err != nil {
-		return err
+	x, ok := toFloat(v)
+	if !ok {
+		return &funcTypeError{"modf", v}
 	}
 	i, f := math.Modf(x)
 	return []interface{}{f, i}
