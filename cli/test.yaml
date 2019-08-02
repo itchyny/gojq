@@ -2942,6 +2942,26 @@
     ["","b","c","A","d"]
     ["","b","c","d"]
 
+- name: sub function
+  args:
+    - 'sub("a"; "b"), sub("aaa"; "b"), sub("a(?<a>.)"; "\(.a)b\(.a)"; "ig"), sub("(?<foo>★)"; "\(.foo)☆\(.foo)")'
+  input: '"abc☆★☆ABC"'
+  expected: |
+    "bbc☆★☆ABC"
+    "abc☆★☆ABC"
+    "bbbc☆★☆BbBC"
+    "abc☆★☆★☆ABC"
+
+- name: gsub function
+  args:
+    - 'gsub("a"; "b"), gsub("a.c"; "b"), gsub("a(?<a>..)"; "\(.a+.a)"; "i"), gsub("(?<foo>★)"; "\(.foo)☆\(.foo)")'
+  input: '"abcABC☆★☆ABCabc"'
+  expected: |
+    "bbcABC☆★☆ABCbbc"
+    "bABC☆★☆ABCb"
+    "bcbcBCBC☆★☆BCBCbcbc"
+    "abcABC☆★☆★☆ABCabc"
+
 - name: destructuring alternative operator
   args:
     - '.[] | . as {a:$a} ?// [$a] ?// $a | $a'

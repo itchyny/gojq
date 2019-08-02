@@ -275,4 +275,18 @@ var BuiltinFuncDefinitions = map[string]string{
 	"splits": `
 		def splits($re): splits($re; null);
 		def splits($re; $flags): split($re; $flags) | .[];`,
+	"sub": `
+		def sub($re; str): sub($re; str; null);
+		def sub($re; str; $flags):
+			. as $in
+				| reduce match($re; $flags) as $r
+					( ["", 0];
+						. as $x
+							| [$r | .captures | .[] | select(.name != null) | { (.name) : .string }]
+							| add // {}
+							| [$x[0] + $in[$x[1]:$r.offset] + str, $r.offset+$r.length] )
+				| .[0] + $in[.[1]:];`,
+	"gsub": `
+		def gsub($re; str): sub($re; str; "g");
+		def gsub($re; str; $flags): sub($re; str; $flags + "g");`,
 }
