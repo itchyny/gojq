@@ -1,4 +1,19 @@
 # Changelog
+## [v0.5.0](https://github.com/itchyny/gojq/compare/v0.4.0..v0.5.0) (2019-08-03)
+* implement various functions (`with_entries`, `from_entries`, `leaf_paths`,
+  `contains`, `inside`, `split`, `stream`, `fromstream`, `truncate_stream`,
+  `bsearch`, `path`, `paths`, `map_values`, `del`, `delpaths`, `getpath`,
+  `gmtime`, `localtime`, `mktime`, `strftime`, `strflocaltime`, `strptime`,
+  `todate`, `fromdate`, `now`, `match`, `test`, `capture`, `scan`, `splits`,
+  `sub`, `gsub`, `debug`, `stderr`)
+* implement assignment operator (`=`)
+* implement modify operator (`|=`)
+* implement update operators (`+=`, `-=`, `*=`, `/=`, `%=`, `//=`)
+* implement destructuring alternative operator (`?//`)
+* allow function declaration inside query
+* implement `-f` flag for loading query from file
+* improve error message for parsing multiple line query
+
 ## [v0.4.0](https://github.com/itchyny/gojq/compare/v0.3.0..v0.4.0) (2019-07-20)
 * improve performance significantly
 * rewrite from recursive interpreter to stack machine based interpreter
