@@ -256,23 +256,23 @@ var BuiltinFuncDefinitions = map[string]string{
 	"fromdate":        `def fromdate: fromdateiso8601;`,
 	"todate":          `def todate: todateiso8601;`,
 	"match": `
-		def match(re): match(re; null);
-		def match(re; flags): _match_impl(re; flags; false) | .[];`,
+		def match($re): match($re; null);
+		def match($re; $flags): _match_impl($re; $flags; false) | .[];`,
 	"test": `
-		def test(re): test(re; null);
-		def test(re; flags): _match_impl(re; flags; true);`,
+		def test($re): test($re; null);
+		def test($re; $flags): _match_impl($re; $flags; true);`,
 	"capture": `
-		def capture(re): capture(re; null);
-		def capture(re; flags):
-			match(re; flags)
+		def capture($re): capture($re; null);
+		def capture($re; $flags):
+			match($re; $flags)
 				| [.captures | .[] | select(.name != null) | { (.name): .string }]
 				| add // {};`,
 	"scan": `
-		def scan(re): scan(re; null);
-		def scan(re; flags):
-			match(re; "g" + flags)
+		def scan($re): scan($re; null);
+		def scan($re; $flags):
+			match($re; "g" + $flags)
 			| if (.captures|length > 0) then [ .captures | .[] | .string ] else .string end;`,
 	"splits": `
-		def splits(re): splits(re; null);
-		def splits(re; flags): split(re; flags) | .[];`,
+		def splits($re): splits($re; null);
+		def splits($re; $flags): split($re; $flags) | .[];`,
 }
