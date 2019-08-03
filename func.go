@@ -11,7 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/knz/strtime"
+	"github.com/lestrrat-go/strftime"
+	"github.com/pbnjay/strptime"
 )
 
 const (
@@ -928,7 +929,7 @@ func funcStrftime(v, x interface{}) interface{} {
 			if err != nil {
 				return err
 			}
-			got, err := strtime.Strftime(t, format)
+			got, err := strftime.Format(format, t)
 			if err != nil {
 				return err
 			}
@@ -949,7 +950,7 @@ func funcStrflocaltime(v, x interface{}) interface{} {
 			if err != nil {
 				return err
 			}
-			got, err := strtime.Strftime(t, format)
+			got, err := strftime.Format(format, t)
 			if err != nil {
 				return err
 			}
@@ -963,7 +964,7 @@ func funcStrflocaltime(v, x interface{}) interface{} {
 func funcStrptime(v, x interface{}) interface{} {
 	if v, ok := v.(string); ok {
 		if format, ok := x.(string); ok {
-			t, err := strtime.Strptime(v, format)
+			t, err := strptime.Parse(v, format)
 			if err != nil {
 				return err
 			}
