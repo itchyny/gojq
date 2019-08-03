@@ -11,11 +11,11 @@ all: clean build
 
 .PHONY: build
 build: builtin_gen.go
-	go build -ldflags=$(BUILD_LDFLAGS) -o build/$(BIN) ./cmd/$(BIN)
+	go build -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
 
 .PHONY: build-debug
 build-debug: builtin_gen.go
-	go build -tags debug -ldflags=$(BUILD_LDFLAGS) -o build/$(BIN) ./cmd/$(BIN)
+	go build -tags debug -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
 
 builtin_gen.go: builtin.go query.go operator.go
 	rm -f $@
@@ -60,7 +60,7 @@ check-tools:
 
 .PHONY: clean
 clean:
-	rm -rf build goxz
+	rm -rf $(BIN) goxz
 	go clean
 
 .PHONY: bump
