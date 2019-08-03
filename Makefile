@@ -19,7 +19,7 @@ build-debug: builtin_gen.go
 
 builtin_gen.go: builtin.go query.go operator.go
 	rm -f $@
-	go generate
+	GOOS= GOARCH= go generate
 
 .PHONY: install
 install: builtin_gen.go
