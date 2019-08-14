@@ -3025,9 +3025,28 @@
   expected: |
     {"foo":["hello","world"]}
 
+- name: compact output long option
+  args:
+    - --compact-output
+    - '.'
+  input: '{ "foo": ["hello", "world"] }'
+  expected: |
+    {"foo":["hello","world"]}
+
 - name: raw string output option
   args:
     - -r
+    - '.foo[]'
+  input: '{ "foo": ["hello", "world", "multiple\nline"] }'
+  expected: |
+    hello
+    world
+    multiple
+    line
+
+- name: raw string output long option
+  args:
+    - --raw-output
     - '.foo[]'
   input: '{ "foo": ["hello", "world", "multiple\nline"] }'
   expected: |
@@ -3059,6 +3078,19 @@
     "  \"foo\": \"bar\""
     "}"
 
+- name: raw strings input long option
+  args:
+    - --raw-input
+    - '.'
+  input: |
+    {
+      "foo": "bar"
+    }
+  expected: |
+    "{"
+    "  \"foo\": \"bar\""
+    "}"
+
 - name: raw strings input option error
   args:
     - -R
@@ -3073,6 +3105,15 @@
 - name: null input value option
   args:
     - -n
+    - '[.]'
+  expected: |
+    [
+      null
+    ]
+
+- name: null input value long option
+  args:
+    - --null-input
     - '[.]'
   expected: |
     [
@@ -3115,6 +3156,17 @@
       }
     ]
 
+- name: slurp long option
+  args:
+    - --slurp
+    - --compact-output
+    - '.'
+  input: |
+    null
+    false
+  expected: |
+    [null,false]
+
 - name: slurp option with raw strings input option
   args:
     - -s
@@ -3140,6 +3192,14 @@
   args:
     - -n
     - -f
+    - testdata/1.jq
+  expected: |
+    null
+
+- name: source query from file long option
+  args:
+    - --null-input
+    - --from-file
     - testdata/1.jq
   expected: |
     null

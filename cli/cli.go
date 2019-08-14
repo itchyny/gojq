@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -14,6 +13,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/alecthomas/participle/lexer"
+	"github.com/jessevdk/go-flags"
 	"github.com/mattn/go-runewidth"
 
 	"github.com/itchyny/gojq"
@@ -37,55 +37,56 @@ type cli struct {
 
 	outputCompact bool
 	outputRaw     bool
-	inputNull     bool
 	inputRaw      bool
 	inputSlurp    bool
 }
 
+type flagopts struct {
+	OutputCompact bool   `short:"c" long:"compact-output" description:"compact output"`
+	OutputRaw     bool   `short:"r" long:"raw-output" description:"output raw strings"`
+	InputNull     bool   `short:"n" long:"null-input" description:"use null as input value"`
+	InputRaw      bool   `short:"R" long:"raw-input" description:"read input as raw strings"`
+	InputSlurp    bool   `short:"s" long:"slurp" description:"read all inputs into an array"`
+	FromFile      string `short:"f" long:"from-file" description:"load query from file"`
+	Version       bool   `short:"v" long:"version" description:"print version"`
+}
+
 func (cli *cli) run(args []string) int {
-	fs := flag.NewFlagSet(name, flag.ContinueOnError)
-	fs.SetOutput(cli.errStream)
-	fs.Usage = func() {
-		fs.SetOutput(cli.outStream)
-		fmt.Fprintf(cli.outStream, `%[1]s - Go implementation of jq
+	var opts flagopts
+	args, err := flags.NewParser(
+		&opts, flags.HelpFlag|flags.PassDoubleDash,
+	).ParseArgs(args)
+	if err != nil {
+		if err, ok := err.(*flags.Error); ok && err.Type == flags.ErrHelp {
+			fmt.Fprintf(cli.outStream, `%[1]s - Go implementation of jq
 
 Version: %s (rev: %s/%s)
 
 Synopsis:
     %% echo '{"foo": 128}' | %[1]s '.foo'
 
-Options:
-`, name, version, revision, runtime.Version())
-		fs.PrintDefaults()
-	}
-	var sourceFile string
-	var showVersion bool
-	fs.BoolVar(&cli.outputCompact, "c", false, "compact output")
-	fs.BoolVar(&cli.outputRaw, "r", false, "output raw string")
-	fs.BoolVar(&cli.inputNull, "n", false, "use null as input value")
-	fs.BoolVar(&cli.inputRaw, "R", false, "read input as raw strings")
-	fs.BoolVar(&cli.inputSlurp, "s", false, "read all inputs into an array")
-	fs.StringVar(&sourceFile, "f", "", "load query from file")
-	fs.BoolVar(&showVersion, "v", false, "print version")
-	if err := fs.Parse(args); err != nil {
-		if err == flag.ErrHelp {
+`,
+				name, version, revision, runtime.Version())
+			fmt.Fprintln(cli.outStream, err.Error())
 			return exitCodeOK
 		}
+		fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 		return exitCodeErr
 	}
-	if showVersion {
+	if opts.Version {
 		fmt.Fprintf(cli.outStream, "%s %s (rev: %s/%s)\n", name, version, revision, runtime.Version())
 		return exitCodeOK
 	}
-	args = fs.Args()
+	cli.outputCompact, cli.outputRaw = opts.OutputCompact, opts.OutputRaw
+	cli.inputRaw, cli.inputSlurp = opts.InputRaw, opts.InputSlurp
 	var arg, fname string
-	if sourceFile != "" {
-		src, err := ioutil.ReadFile(sourceFile)
+	if opts.FromFile != "" {
+		src, err := ioutil.ReadFile(opts.FromFile)
 		if err != nil {
 			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 			return exitCodeErr
 		}
-		arg, fname = string(src), sourceFile
+		arg, fname = string(src), opts.FromFile
 	} else if len(args) == 0 {
 		arg = "."
 	} else {
@@ -97,7 +98,7 @@ Options:
 		cli.printParseError(fname, arg, err)
 		return exitCodeErr
 	}
-	if cli.inputNull {
+	if opts.InputNull {
 		cli.inputRaw, cli.inputSlurp = false, false
 		return cli.process("<null>", bytes.NewReader([]byte("null")), query)
 	}
