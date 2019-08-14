@@ -2962,6 +2962,30 @@
     "bcbcBCBC☆★☆BCBCbcbc"
     "abcABC☆★☆★☆ABCabc"
 
+- name: INDEX function
+  args:
+    - -c
+    - 'INDEX(range(5); .*2)'
+  input: 'null'
+  expected: |
+    {"0":0,"2":1,"4":2,"6":3,"8":4}
+
+- name: JOIN function
+  args:
+    - -c
+    - '[range(5)] | JOIN(map(.*3); .*2)'
+  input: 'null'
+  expected: |
+    [[0,0],[1,6],[2,12],[3,null],[4,null]]
+
+- name: IN function
+  args:
+    - -c
+    - '[range(5; 13)|IN(range(0; 10; 3))]'
+  input: 'null'
+  expected: |
+    [false,true,false,false,true,false,false,false]
+
 - name: destructuring alternative operator
   args:
     - '.[] | . as {a:$a} ?// [$a] ?// $a | $a'

@@ -289,4 +289,18 @@ var BuiltinFuncDefinitions = map[string]string{
 	"gsub": `
 		def gsub($re; str): sub($re; str; "g");
 		def gsub($re; str; $flags): sub($re; str; $flags + "g");`,
+	"INDEX": `
+		def INDEX(stream; idx_expr):
+			reduce stream as $row ({}; .[$row|idx_expr|tostring] = $row);
+		def INDEX(idx_expr): INDEX(.[]; idx_expr);`,
+	"JOIN": `
+		def JOIN($idx; idx_expr):
+			[.[] | [., $idx[idx_expr]]];
+		def JOIN($idx; stream; idx_expr):
+			stream | [., $idx[idx_expr]];
+		def JOIN($idx; stream; idx_expr; join_expr):
+			stream | [., $idx[idx_expr]] | join_expr;`,
+	"IN": `
+		def IN(s): any(s == .; .);
+		def IN(src; s): any(src == s; .);`,
 }
