@@ -3079,6 +3079,22 @@
   input: '["foo",[{},{}],1,[2,3]]'
   expected: "foo[\n  {},\n  {}\n]1[\n  2,\n  3\n]"
 
+- name: color output option
+  args:
+    - -C
+    - '.'
+  input: |
+    { "foo": "bar" }
+  expected: "{\n  \e[34;1m\"foo\"\e[0m: \e[32m\"bar\"\e[0m\n}\n"
+
+- name: color output long option
+  args:
+    - --color-output
+    - '.'
+  input: |
+    { "foo": 42 }
+  expected: "{\n  \e[34;1m\"foo\"\e[0m: \e[36m42\e[0m\n}\n"
+
 - name: raw strings input option
   args:
     - -R
