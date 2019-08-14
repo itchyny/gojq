@@ -37,6 +37,7 @@ type cli struct {
 
 	outputCompact bool
 	outputRaw     bool
+	outputJoin    bool
 	inputRaw      bool
 	inputSlurp    bool
 }
@@ -44,6 +45,7 @@ type cli struct {
 type flagopts struct {
 	OutputCompact bool   `short:"c" long:"compact-output" description:"compact output"`
 	OutputRaw     bool   `short:"r" long:"raw-output" description:"output raw strings"`
+	OutputJoin    bool   `short:"j" long:"join-output" description:"stop printing a newline after each output"`
 	InputNull     bool   `short:"n" long:"null-input" description:"use null as input value"`
 	InputRaw      bool   `short:"R" long:"raw-input" description:"read input as raw strings"`
 	InputSlurp    bool   `short:"s" long:"slurp" description:"read all inputs into an array"`
@@ -77,7 +79,7 @@ Synopsis:
 		fmt.Fprintf(cli.outStream, "%s %s (rev: %s/%s)\n", name, version, revision, runtime.Version())
 		return exitCodeOK
 	}
-	cli.outputCompact, cli.outputRaw = opts.OutputCompact, opts.OutputRaw
+	cli.outputCompact, cli.outputRaw, cli.outputJoin = opts.OutputCompact, opts.OutputRaw, opts.OutputJoin
 	cli.inputRaw, cli.inputSlurp = opts.InputRaw, opts.InputSlurp
 	var arg, fname string
 	if opts.FromFile != "" {
@@ -276,7 +278,9 @@ func (cli *cli) printValue(v gojq.Iter) error {
 			return err
 		}
 		outStream.Write(xs)
-		outStream.Write([]byte{'\n'})
+		if !cli.outputJoin {
+			outStream.Write([]byte{'\n'})
+		}
 	}
 	return nil
 }
@@ -287,7 +291,7 @@ func (cli *cli) createMarshaler() marshaler {
 		f.Indent = 0
 		f.Newline = ""
 	}
-	if cli.outputRaw {
+	if cli.outputRaw || cli.outputJoin {
 		return &rawMarshaler{f}
 	}
 	return f

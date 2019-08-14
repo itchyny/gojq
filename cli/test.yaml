@@ -3065,6 +3065,20 @@
       "foo": "multiple\nline"
     }
 
+- name: join output option
+  args:
+    - -j
+    - '.[]'
+  input: '["foo",1,2,3]'
+  expected: "foo123"
+
+- name: join output long option
+  args:
+    - --join-output
+    - '.[]'
+  input: '["foo",[{},{}],1,[2,3]]'
+  expected: "foo[\n  {},\n  {}\n]1[\n  2,\n  3\n]"
+
 - name: raw strings input option
   args:
     - -R
