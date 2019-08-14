@@ -3095,6 +3095,30 @@
     { "foo": 42 }
   expected: "{\n  \e[34;1m\"foo\"\e[0m: \e[36m42\e[0m\n}\n"
 
+- name: monochrome output option
+  args:
+    - -C
+    - -M
+    - '.'
+  input: |
+    { "foo": "bar" }
+  expected: |
+    {
+      "foo": "bar"
+    }
+
+- name: monochrome output long option
+  args:
+    - -C
+    - --monochrome-output
+    - '.'
+  input: |
+    { "foo": 42 }
+  expected: |
+    {
+      "foo": 42
+    }
+
 - name: raw strings input option
   args:
     - -R

@@ -48,6 +48,7 @@ type flagopts struct {
 	OutputRaw     bool   `short:"r" long:"raw-output" description:"output raw strings"`
 	OutputJoin    bool   `short:"j" long:"join-output" description:"stop printing a newline after each output"`
 	OutputColor   bool   `short:"C" long:"color-output" description:"colorize output even if piped"`
+	OutputMono    bool   `short:"M" long:"monochrome-output" description:"stop colorizing output"`
 	InputNull     bool   `short:"n" long:"null-input" description:"use null as input value"`
 	InputRaw      bool   `short:"R" long:"raw-input" description:"read input as raw strings"`
 	InputSlurp    bool   `short:"s" long:"slurp" description:"read all inputs into an array"`
@@ -82,9 +83,9 @@ Synopsis:
 		return exitCodeOK
 	}
 	cli.outputCompact, cli.outputRaw, cli.outputJoin = opts.OutputCompact, opts.OutputRaw, opts.OutputJoin
-	if opts.OutputColor {
+	if opts.OutputColor || opts.OutputMono {
 		defer func(x bool) { color.NoColor = x }(color.NoColor)
-		color.NoColor = false
+		color.NoColor = opts.OutputMono
 	}
 	cli.inputRaw, cli.inputSlurp = opts.InputRaw, opts.InputSlurp
 	var arg, fname string
