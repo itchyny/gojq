@@ -17,7 +17,7 @@ build: builtin_gen.go
 build-debug: builtin_gen.go
 	go build -tags debug -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
 
-builtin_gen.go: builtin.go query.go operator.go
+builtin_gen.go: builtin.jq query.go operator.go
 	rm -f $@
 	GOOS= GOARCH= go generate
 
@@ -56,7 +56,7 @@ $(GOBIN)/golint:
 
 .PHONY: check-tools
 check-tools:
-	ls _tools/* | xargs -L1 -I% sh -c 'go run % >/dev/null 2>&1 || go run %'
+	go run _tools/print_builtin.go
 
 .PHONY: clean
 clean:

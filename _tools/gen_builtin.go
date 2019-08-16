@@ -8,6 +8,7 @@ import (
 	"go/printer"
 	"go/token"
 	"io"
+	"io/ioutil"
 	"os"
 	"regexp"
 
@@ -23,23 +24,32 @@ func init() {%s}
 `
 
 func main() {
-	var output string
+	var input, output string
+	flag.StringVar(&input, "i", "", "input file")
 	flag.StringVar(&output, "o", "", "output file")
 	flag.Parse()
-	if err := run(output); err != nil {
+	if err := run(input, output); err != nil {
 		fmt.Fprint(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func run(output string) error {
+func run(input, output string) error {
+	cnt, err := ioutil.ReadFile(input)
+	if err != nil {
+		return err
+	}
 	qs := make(map[string][]*gojq.FuncDef)
-	for n, src := range gojq.BuiltinFuncDefinitions {
-		q, err := gojq.Parse(src + ".")
-		if err != nil {
-			return err
+	q, err := gojq.Parse(string(cnt) + ".")
+	if err != nil {
+		return err
+	}
+	for _, fd := range q.Commas[0].Filters[0].FuncDefs {
+		name := fd.Name
+		if name[0] == '_' {
+			name = name[1:]
 		}
-		qs[n] = q.Commas[0].Filters[0].FuncDefs
+		qs[name] = append(qs[fd.Name], fd)
 	}
 	t, err := astgen.Build(qs)
 	if err != nil {
