@@ -10,23 +10,23 @@ export GO111MODULE=on
 all: clean build
 
 .PHONY: build
-build: builtin_gen.go
+build: builtin.go
 	go build -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
 
 .PHONY: build-debug
-build-debug: builtin_gen.go
+build-debug: builtin.go
 	go build -tags debug -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
 
-builtin_gen.go: builtin.jq query.go operator.go
+builtin.go: builtin.jq query.go operator.go
 	rm -f $@
 	GOOS= GOARCH= go generate
 
 .PHONY: install
-install: builtin_gen.go
+install: builtin.go
 	go install -ldflags=$(BUILD_LDFLAGS) ./...
 
 .PHONY: install-debug
-install-debug: builtin_gen.go
+install-debug: builtin.go
 	go install -tags debug -ldflags=$(BUILD_LDFLAGS) ./...
 
 .PHONY: show-version

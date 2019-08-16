@@ -15,6 +15,9 @@ import (
 	"github.com/pbnjay/strptime"
 )
 
+//go:generate go run _tools/gen_builtin.go -i builtin.jq -o builtin.go
+var builtinFuncDefs map[string][]*FuncDef
+
 const (
 	argcount0 = 1 << iota
 	argcount1
