@@ -143,6 +143,8 @@ func init() {
 		"pow":            mathFunc2("pow", math.Pow),
 		"pow10":          mathFunc("pow10", funcExp10),
 		"fma":            mathFunc3("fma", funcFma),
+		"nan":            argFunc0(funcNan),
+		"isnan":          argFunc0(funcIsnan),
 		"setpath":        argFunc2(funcSetpath),
 		"delpaths":       argFunc1(funcDelpaths),
 		"getpath":        argFunc1(funcGetpath),
@@ -698,6 +700,18 @@ func funcYn(l, r float64) float64 {
 
 func funcFma(x, y, z float64) float64 {
 	return x*y + z
+}
+
+func funcNan(interface{}) interface{} {
+	return math.NaN()
+}
+
+func funcIsnan(v interface{}) interface{} {
+	x, ok := toFloat(v)
+	if !ok {
+		return &funcTypeError{"isnan", v}
+	}
+	return math.IsNaN(x)
 }
 
 func funcSetpath(v, p, w interface{}) interface{} {

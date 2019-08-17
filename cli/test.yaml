@@ -2401,6 +2401,15 @@
   expected: |
     [0,0,0,0,0.82682,-0.68816,0,-0.68816,0.57275,0.90929,0.90929,0.90929,0.90929,1.73611,0.22113,0.90929,0.22113,1.48204,-0.75681,-0.75681,-0.75681,-0.75681,0.07001,-1.44497,-0.75681,-1.44497,-0.18406]
 
+- name: nan and isnan functions
+  args:
+    - 'nan | ., .+1, isnan'
+  input: 'null'
+  expected: |
+    null
+    null
+    true
+
 - name: stringify nan and inf
   args:
     - '(2|asin),(1|atanh),(-1|atanh) | tojson,([]|join(",")),.'
