@@ -1,7 +1,9 @@
 language: go
 go:
   - 1.12.x
-env: PATH=/home/travis/gopath/bin:$PATH
+env:
+  - GOARCH=amd64
+  - GOARCH=386
 script:
   - make test
   - make lint
