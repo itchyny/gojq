@@ -235,8 +235,8 @@ func binopTypeSwitch(
 	case int:
 		switch r := r.(type) {
 		case int:
-			if math.MinInt32 <= l && l <= math.MaxInt32 &&
-				math.MinInt32 <= r && r <= math.MaxInt32 {
+			if minHalfInt <= l && l <= maxHalfInt &&
+				minHalfInt <= r && r <= maxHalfInt {
 				return callbackInts(l, r)
 			}
 			return callbackBigInts(big.NewInt(int64(l)), big.NewInt(int64(r)))

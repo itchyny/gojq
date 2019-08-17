@@ -1176,9 +1176,9 @@ func toInt(x interface{}) (int, bool) {
 			return int(x.Int64()), true
 		}
 		if x.Sign() > 0 {
-			return math.MaxInt64, true
+			return maxInt, true
 		}
-		return math.MinInt64, true
+		return minInt, true
 	default:
 		return 0, false
 	}
