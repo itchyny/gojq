@@ -18,6 +18,9 @@ def while(cond; update):
 def until(cond; next):
   def _until: if cond then . else (next | _until) end;
   _until;
+def repeat(f):
+  def _repeat: f, _repeat;
+  _repeat;
 def range($x): range(0; $x);
 def range($start; $end):
   $start | while(. < $end; . + 1);

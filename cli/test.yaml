@@ -929,6 +929,14 @@
   expected: |
     2432902008176640000
 
+- name: repeat function
+  args:
+    - -c
+    - '[limit(.; repeat(1,2,3))]'
+  input: '10'
+  expected: |
+    [1,2,3,1,2,3,1,2,3,1]
+
 - name: range function
   args:
     - -c
