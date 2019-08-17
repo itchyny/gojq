@@ -191,6 +191,7 @@ func (cli *cli) processRaw(fname string, in io.Reader, query *gojq.Query) int {
 func (cli *cli) processJSON(fname string, in io.Reader, query *gojq.Query) int {
 	var buf bytes.Buffer
 	dec := json.NewDecoder(io.TeeReader(in, &buf))
+	dec.UseNumber()
 	var vs []interface{}
 	for {
 		var v interface{}

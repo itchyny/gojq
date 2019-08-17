@@ -55,20 +55,9 @@ func run(input, output string) error {
 	if err != nil {
 		return err
 	}
-	f, ok := t.(*ast.CallExpr)
-	if !ok {
-		return &unexpectedAstError{t}
-	}
 	var buf bytes.Buffer
-	if err := printAssignStmtsFromFuncArgs(&buf, f); err != nil {
-		return err
-	}
 	buf.Write([]byte("\n\tbuiltinFuncDefs = "))
-	m, err := getReturnStmtCompositeLit(f)
-	if err != nil {
-		return err
-	}
-	if err := printCompositeLit(&buf, m); err != nil {
+	if err := printCompositeLit(&buf, t.(*ast.CompositeLit)); err != nil {
 		return err
 	}
 	out := os.Stdout
@@ -82,51 +71,6 @@ func run(input, output string) error {
 	}
 	_, err = fmt.Fprintf(out, fileFormat, buf.String())
 	return err
-}
-
-func printAssignStmtsFromFuncArgs(out io.Writer, f *ast.CallExpr) error {
-	fn, ok := f.Fun.(*ast.ParenExpr).X.(*ast.FuncLit)
-	if !ok {
-		return &unexpectedAstError{f}
-	}
-	lhs := []ast.Expr{}
-	rhs := []ast.Expr{}
-	var i int
-	for _, param := range fn.Type.Params.List {
-		for _, name := range param.Names {
-			lhs = append(lhs, name)
-			rhs = append(rhs, f.Args[i])
-			i++
-		}
-	}
-	stmt := &ast.AssignStmt{Tok: token.DEFINE, Lhs: lhs, Rhs: rhs}
-	out.Write([]byte("\n\t"))
-	if err := printer.Fprint(out, token.NewFileSet(), stmt); err != nil {
-		return err
-	}
-	return nil
-}
-
-func getReturnStmtCompositeLit(f *ast.CallExpr) (*ast.CompositeLit, error) {
-	fn, ok := f.Fun.(*ast.ParenExpr).X.(*ast.FuncLit)
-	if !ok {
-		return nil, &unexpectedAstError{f}
-	}
-	if len(fn.Body.List) != 1 {
-		return nil, &unexpectedAstError{fn.Body}
-	}
-	r, ok := fn.Body.List[0].(*ast.ReturnStmt)
-	if !ok {
-		return nil, &unexpectedAstError{fn.Body.List[0]}
-	}
-	if len(r.Results) != 1 {
-		return nil, &unexpectedAstError{r}
-	}
-	m, ok := r.Results[0].(*ast.CompositeLit)
-	if !ok {
-		return nil, &unexpectedAstError{r.Results[0]}
-	}
-	return m, nil
 }
 
 func printCompositeLit(out io.Writer, t *ast.CompositeLit) error {
@@ -152,10 +96,4 @@ func printCompositeLit(out io.Writer, t *ast.CompositeLit) error {
 	}
 	out.Write([]byte("\n\t}\n"))
 	return nil
-}
-
-type unexpectedAstError struct{ X ast.Node }
-
-func (err *unexpectedAstError) Error() string {
-	return fmt.Sprintf("unexpected ast: %#v", err.X)
 }

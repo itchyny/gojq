@@ -1,5 +1,7 @@
 package gojq
 
+import "math/big"
+
 func compare(l, r interface{}) int {
 	return binopTypeSwitch(l, r,
 		func(l, r int) interface{} {
@@ -21,6 +23,9 @@ func compare(l, r interface{}) int {
 			default:
 				return 1
 			}
+		},
+		func(l, r *big.Int) interface{} {
+			return l.Cmp(r)
 		},
 		func(l, r string) interface{} {
 			switch {
@@ -83,7 +88,7 @@ func getTypeOrdNum(v interface{}) int {
 			return 2
 		}
 		return 1
-	case int, float64:
+	case int, float64, *big.Int:
 		return 3
 	case string:
 		return 4

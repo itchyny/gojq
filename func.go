@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/big"
 	"os"
 	"regexp"
 	"sort"
@@ -244,6 +245,8 @@ func funcLength(v interface{}) interface{} {
 		return -v
 	case float64:
 		return math.Abs(v)
+	case *big.Int:
+		return new(big.Int).Abs(v)
 	case nil:
 		return 0
 	default:
@@ -289,14 +292,10 @@ func funcKeys(v interface{}) interface{} {
 func funcHas(v, x interface{}) interface{} {
 	switch v := v.(type) {
 	case []interface{}:
-		switch x := x.(type) {
-		case int:
+		if x, ok := toInt(x); ok {
 			return 0 <= x && x < len(v)
-		case float64:
-			return 0 <= int(x) && int(x) < len(v)
-		default:
-			return &hasKeyTypeError{v, x}
 		}
+		return &hasKeyTypeError{v, x}
 	case map[string]interface{}:
 		switch x := x.(type) {
 		case string:
@@ -312,7 +311,7 @@ func funcHas(v, x interface{}) interface{} {
 
 func funcToNumber(v interface{}) interface{} {
 	switch v := v.(type) {
-	case int, uint, float64:
+	case int, float64, *big.Int:
 		return v
 	case string:
 		var x float64
@@ -353,6 +352,7 @@ func funcContains(v, x interface{}) interface{} {
 	return binopTypeSwitch(v, x,
 		func(l, r int) interface{} { return l == r },
 		func(l, r float64) interface{} { return l == r },
+		func(l, r *big.Int) interface{} { return l.Cmp(r) == 0 },
 		func(l, r string) interface{} { return strings.Contains(l, r) },
 		func(l, r []interface{}) interface{} {
 			for _, x := range r {
@@ -453,14 +453,11 @@ func funcSplit(v interface{}, args []interface{}) interface{} {
 func implode(v []interface{}) interface{} {
 	var rs []rune
 	for _, r := range v {
-		switch r := r.(type) {
-		case int:
+		if r, ok := toInt(r); ok {
 			rs = append(rs, rune(r))
-		case float64:
-			rs = append(rs, rune(r))
-		default:
-			return &funcTypeError{"implode", v}
+			continue
 		}
+		return &funcTypeError{"implode", v}
 	}
 	return string(rs)
 }
@@ -501,7 +498,7 @@ func funcIndex(_, v, x interface{}) interface{} {
 		default:
 			return &expectedObjectError{v}
 		}
-	case int, float64:
+	case int, float64, *big.Int:
 		idx, _ := toInt(x)
 		switch v := v.(type) {
 		case nil:
@@ -758,7 +755,7 @@ loop:
 			default:
 				return &expectedObjectError{u}
 			}
-		case int, float64:
+		case int, float64, *big.Int:
 			if u == nil {
 				u = g([]interface{}{})
 			}
@@ -1174,6 +1171,14 @@ func toInt(x interface{}) (int, bool) {
 		return x, true
 	case float64:
 		return int(x), true
+	case *big.Int:
+		if x.IsInt64() {
+			return int(x.Int64()), true
+		}
+		if x.Sign() > 0 {
+			return math.MaxInt64, true
+		}
+		return math.MinInt64, true
 	default:
 		return 0, false
 	}
@@ -1185,7 +1190,20 @@ func toFloat(x interface{}) (float64, bool) {
 		return float64(x), true
 	case float64:
 		return x, true
+	case *big.Int:
+		return bigToFloat(x), true
 	default:
 		return 0.0, false
 	}
+}
+
+func bigToFloat(x *big.Int) float64 {
+	if x.IsInt64() {
+		return float64(x.Int64())
+	}
+	bs, _ := json.Marshal(x)
+	if f, err := json.Number(string(bs)).Float64(); err == nil {
+		return f
+	}
+	return float64(x.Sign()) * math.MaxFloat64
 }

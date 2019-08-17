@@ -52,7 +52,7 @@ func (e *Query) Run(v interface{}) Iter {
 	if err != nil {
 		return unitIterator(err)
 	}
-	return newEnv().execute(code, v)
+	return newEnv().execute(code, normalizeNumbers(v))
 }
 
 // Comma ...
@@ -387,7 +387,7 @@ type Term struct {
 	Func       *Func     `| @@`
 	Object     *Object   `| @@`
 	Array      *Array    `| @@`
-	Number     *float64  `| @Number`
+	Number     string    `| @Number`
 	Unary      *Unary    `| @@`
 	Str        string    `| @String`
 	RawStr     string    `| @" "` // never matches, used in compiler
@@ -413,8 +413,8 @@ func (e *Term) String() string {
 		fmt.Fprint(&s, e.Object)
 	} else if e.Array != nil {
 		fmt.Fprint(&s, e.Array)
-	} else if e.Number != nil {
-		fmt.Fprint(&s, *e.Number)
+	} else if e.Number != "" {
+		fmt.Fprint(&s, e.Number)
 	} else if e.Unary != nil {
 		fmt.Fprint(&s, e.Unary)
 	} else if e.Str != "" {

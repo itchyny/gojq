@@ -1,6 +1,7 @@
 package gojq
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strconv"
@@ -615,8 +616,12 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 		return c.compileObject(e.Object)
 	} else if e.Array != nil {
 		return c.compileArray(e.Array)
-	} else if e.Number != nil {
-		c.append(&code{op: opconst, v: *e.Number})
+	} else if e.Number != "" {
+		v := normalizeNumbers(json.Number(e.Number))
+		if err, ok := v.(error); ok {
+			return err
+		}
+		c.append(&code{op: opconst, v: v})
 		return nil
 	} else if e.Unary != nil {
 		return c.compileUnary(e.Unary)

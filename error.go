@@ -3,6 +3,7 @@ package gojq
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"reflect"
 )
 
@@ -199,6 +200,13 @@ func typeof(v interface{}) (s string) {
 		return "boolean"
 	case reflect.Int, reflect.Uint, reflect.Float64:
 		return "number"
+	case reflect.String:
+		return "string"
+	case reflect.Ptr:
+		if _, ok := v.(*big.Int); ok {
+			return "number"
+		}
+		return "ptr"
 	default:
 		return k.String()
 	}
