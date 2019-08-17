@@ -2233,41 +2233,42 @@
 - name: trigonometric functions
   args:
     - -c
-    - 'map(sin),map(cos),map(tan)'
+    - 'map(sin),map(cos),map(tan) | map(. * 1000000000 | floor / 1000000000)'
   input: '[0, 1, 2]'
   expected: |
-    [0,0.8414709848078965,0.9092974268256816]
-    [1,0.5403023058681398,-0.4161468365471424]
-    [0,1.557407724654902,-2.185039863261519]
+    [0,0.841470984,0.909297426]
+    [1,0.540302305,-0.416146837]
+    [0,1.557407724,-2.185039864]
 
 - name: inverse trigonometric functions
   args:
     - -c
-    - 'map(asin),map(acos),map(atan)'
+    - 'map(asin),map(acos),map(atan) | map(. * 1000000000 | floor / 1000000000)'
   input: '[0, 1, 2]'
   expected: |
-    [0,1.5707963267948966,null]
-    [1.5707963267948966,0,null]
-    [0,0.7853981633974483,1.1071487177940904]
+    [0,1.570796326,null]
+    [1.570796326,0,null]
+    [0,0.785398163,1.107148717]
 
 - name: hyperbolic functions
   args:
     - -c
-    - 'map(sinh),map(cosh),map(tanh)'
+    - 'map(sinh),map(cosh),map(tanh) | map(. * 1000000000 | floor / 1000000000)'
   input: '[0, 1, 2]'
   expected: |
-    [0,1.1752011936438014,3.626860407847019]
-    [1,1.5430806348152437,3.7621956910836314]
-    [0,0.7615941559557649,0.9640275800758169]
+    [0,1.175201193,3.626860407]
+    [1,1.543080634,3.762195691]
+    [0,0.761594155,0.96402758]
 
 - name: inverse hyperbolic functions
   args:
-    - 'map(asinh),map(acosh),map(atanh) | join(",")'
+    - -c
+    - 'map(asinh),map(acosh),map(atanh) | map(. * 1000000000 | floor / 1000000000)'
   input: '[0, 1, 2]'
   expected: |
-    "0,0.881373587019543,1.4436354751788103"
-    "null,0,1.3169578969248166"
-    "0,1.7976931348623157e+308,null"
+    [0,0.881373587,1.443635475]
+    [null,0,1.316957896]
+    [0,1.7976931348623157e+308,null]
 
 - name: floor, round, rint, ceil, trunc, fabs, sqrt and cbrt functions
   args:
