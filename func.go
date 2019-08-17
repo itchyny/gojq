@@ -141,6 +141,7 @@ func init() {
 		"scalbln":        mathFunc2("scalbln", funcScalbln),
 		"yn":             mathFunc2("yn", funcYn),
 		"pow":            mathFunc2("pow", math.Pow),
+		"pow10":          mathFunc("pow10", funcExp10),
 		"fma":            mathFunc3("fma", funcFma),
 		"setpath":        argFunc2(funcSetpath),
 		"delpaths":       argFunc1(funcDelpaths),
