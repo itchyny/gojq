@@ -98,6 +98,7 @@ func init() {
 		"atanh":          mathFunc("atanh", math.Atanh),
 		"floor":          mathFunc("floor", math.Floor),
 		"round":          mathFunc("round", math.Round),
+		"nearbyint":      mathFunc("nearbyint", math.Round),
 		"rint":           mathFunc("rint", math.Round),
 		"ceil":           mathFunc("ceil", math.Ceil),
 		"trunc":          mathFunc("trunc", math.Trunc),
