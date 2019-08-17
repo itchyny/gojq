@@ -3012,6 +3012,15 @@
     2
     "DEBUG:"
 
+- name: halt function
+  args:
+    - 'def f($n): if $n > 0 then $n, f($n - 1) else halt end; f(.), .'
+  input: '3'
+  expected: |
+    3
+    2
+    1
+
 - name: builtins function
   args:
     - 'builtins|length > 100'

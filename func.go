@@ -54,6 +54,7 @@ func init() {
 		"path":           argFunc1(nil),
 		"debug":          argFunc0(nil),
 		"stderr":         argFunc0(nil),
+		"halt":           argFunc0(nil),
 		"length":         argFunc0(funcLength),
 		"utf8bytelength": argFunc0(funcUtf8ByteLength),
 		"keys":           argFunc0(funcKeys),

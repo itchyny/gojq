@@ -271,6 +271,9 @@ func (cli *cli) printValue(v gojq.Iter) error {
 			return v
 		case [2]interface{}:
 			if s, ok := v[0].(string); ok {
+				if s == "HALT:" {
+					return nil
+				}
 				outStream = cli.errStream
 				compact := cli.outputCompact
 				cli.outputCompact = true
