@@ -15,6 +15,15 @@ Yet another Go implementation of [jq](https://github.com/stedolan/jq).
 1
 2
 3
+ $ echo '{"a":1,"b":2}' | gojq '.a += 1 | .b *= 2'
+{
+  "a": 2,
+  "b": 4
+}
+ $ echo '{"a":1} [2] 3' | gojq '. as {$a} ?// [$a] ?// $a | $a'
+1
+2
+3
 ```
 
 Nice error messages.
