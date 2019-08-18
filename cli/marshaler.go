@@ -2,7 +2,7 @@ package cli
 
 import (
 	"github.com/fatih/color"
-	"github.com/itchyny/go-prettyjson"
+	"github.com/hokaccha/go-prettyjson"
 )
 
 type marshaler interface {
