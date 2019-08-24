@@ -3447,6 +3447,15 @@
         [ .[] | { .id } ]
               ^  unexpected "|" (expected "]")
 
+- name: invalid query
+  args:
+    - 'if 0then. else. end'
+  input: '{}'
+  error: |
+    invalid query: if 0then. else. end
+        if 0then. else. end
+           ^  invalid token '0'
+
 - name: invalid multiple line query
   args:
     - |
