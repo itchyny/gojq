@@ -24,6 +24,10 @@ Pure Go implementation of [jq](https://github.com/stedolan/jq).
 1
 2
 3
+ $ echo '{"foo": 4722366482869645213696}' | gojq .foo
+4722366482869645213696  # keeps the precision of number while jq does not
+ $ gojq -n 'def fact($n): if $n < 1 then 1 else $n * fact($n - 1) end; fact(50)'
+30414093201713378043612608166064768844377641568960512000000000000 # arbitrary-precision integer calculation
 ```
 
 Nice error messages.
