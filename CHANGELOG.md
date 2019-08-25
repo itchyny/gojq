@@ -1,4 +1,14 @@
 # Changelog
+## [v0.6.0](https://github.com/itchyny/gojq/compare/v0.5.0..v0.6.0) (2019-08-26)
+* implement arbitrary-precision integer calculation
+* implement various functions (`repeat`, `pow10`, `nan`, `isnan`, `nearbyint`,
+  `halt`, `INDEX`, `JOIN`, `IN`)
+* implement long options (`--compact-output`, `--raw-output`, etc.)
+* implement join output options (`-j`, `--join-output`)
+* implement color/monochrome output options (`-C`, `--color-output`,
+  `-M`, `--monochrome-output`)
+* refactor builtin functions
+
 ## [v0.5.0](https://github.com/itchyny/gojq/compare/v0.4.0..v0.5.0) (2019-08-03)
 * implement various functions (`with_entries`, `from_entries`, `leaf_paths`,
   `contains`, `inside`, `split`, `stream`, `fromstream`, `truncate_stream`,
