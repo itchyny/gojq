@@ -46,6 +46,18 @@ func (e *Query) String() string {
 	return s.String()
 }
 
+func (e *Query) toIndices() []interface{} {
+	var xs []interface{}
+	for _, e := range e.Commas {
+		x := e.toIndices()
+		if x == nil {
+			return nil
+		}
+		xs = append(xs, x...)
+	}
+	return xs
+}
+
 // Run query.
 func (e *Query) Run(v interface{}) Iter {
 	code, err := compile(e)
@@ -75,6 +87,13 @@ func (e *Comma) toQuery() *Query {
 	return &Query{[]*Comma{e}}
 }
 
+func (e *Comma) toIndices() []interface{} {
+	if len(e.Filters) != 1 {
+		return nil
+	}
+	return e.Filters[0].toIndices()
+}
+
 // Filter ...
 type Filter struct {
 	FuncDefs []*FuncDef `@@*`
@@ -102,6 +121,13 @@ func (e *Filter) toQuery() *Query {
 	return (&Comma{[]*Filter{e}}).toQuery()
 }
 
+func (e *Filter) toIndices() []interface{} {
+	if len(e.FuncDefs) != 0 {
+		return nil
+	}
+	return e.Alt.toIndices()
+}
+
 // Alt ...
 type Alt struct {
 	Left  *Expr      `@@`
@@ -123,6 +149,13 @@ func (e *Alt) toQuery() *Query {
 
 func (e *Alt) toFilter() *Filter {
 	return &Filter{Alt: e}
+}
+
+func (e *Alt) toIndices() []interface{} {
+	if len(e.Right) != 0 {
+		return nil
+	}
+	return e.Left.toIndices()
 }
 
 // AltRight ...
@@ -179,6 +212,13 @@ func (e *Expr) String() string {
 	return s.String()
 }
 
+func (e *Expr) toIndices() []interface{} {
+	if e.Update != nil || e.Bind != nil || e.Logic == nil {
+		return nil
+	}
+	return e.Logic.toIndices()
+}
+
 // Bind ...
 type Bind struct {
 	Patterns []*Pattern `"as" @@ ("?//" @@)*`
@@ -221,6 +261,13 @@ func (e *Logic) toFilter() *Filter {
 	return (&Expr{Logic: e}).toFilter()
 }
 
+func (e *Logic) toIndices() []interface{} {
+	if len(e.Right) != 0 {
+		return nil
+	}
+	return e.Left.toIndices()
+}
+
 // LogicRight ...
 type LogicRight struct {
 	Op    Operator `@"or"`
@@ -256,6 +303,13 @@ func (e *AndExpr) toFilter() *Filter {
 
 func (e *AndExpr) toLogic() *Logic {
 	return &Logic{Left: e}
+}
+
+func (e *AndExpr) toIndices() []interface{} {
+	if len(e.Right) != 0 {
+		return nil
+	}
+	return e.Left.toIndices()
 }
 
 // AndExprRight ...
@@ -295,6 +349,13 @@ func (e *Compare) String() string {
 	return s.String()
 }
 
+func (e *Compare) toIndices() []interface{} {
+	if e.Right != nil {
+		return nil
+	}
+	return e.Left.toIndices()
+}
+
 // CompareRight ...
 type CompareRight struct {
 	Op    Operator `@CompareOp`
@@ -332,6 +393,13 @@ func (e *Arith) toLogic() *Logic {
 	return (&Compare{Left: e}).toLogic()
 }
 
+func (e *Arith) toIndices() []interface{} {
+	if len(e.Right) != 0 {
+		return nil
+	}
+	return e.Left.toIndices()
+}
+
 // ArithRight ...
 type ArithRight struct {
 	Op    Operator `@("+" | "-")`
@@ -367,6 +435,13 @@ func (e *Factor) toFilter() *Filter {
 
 func (e *Factor) toLogic() *Logic {
 	return (&Arith{Left: e}).toLogic()
+}
+
+func (e *Factor) toIndices() []interface{} {
+	if len(e.Right) != 0 {
+		return nil
+	}
+	return e.Left.toIndices()
 }
 
 // FactorRight ...
@@ -448,6 +523,27 @@ func (e *Term) toFilter() *Filter {
 
 func (e *Term) toLogic() *Logic {
 	return (&Factor{Left: e}).toLogic()
+}
+
+func (e *Term) toIndices() []interface{} {
+	if e.Index != nil {
+		xs := e.Index.toIndices()
+		if xs == nil {
+			return nil
+		}
+		for _, s := range e.SuffixList {
+			x := s.toIndices()
+			if x == nil {
+				return nil
+			}
+			xs = append(xs, x...)
+		}
+		return xs
+	} else if e.Query != nil && len(e.SuffixList) == 0 {
+		return e.Query.toIndices()
+	} else {
+		return nil
+	}
 }
 
 // Unary ...
@@ -554,6 +650,13 @@ func (e *Index) String() string {
 		s.WriteByte(']')
 	}
 	return s.String()
+}
+
+func (e *Index) toIndices() []interface{} {
+	if e.Name == "" {
+		return nil
+	}
+	return []interface{}{e.Name}
 }
 
 // Func ...
@@ -674,6 +777,13 @@ func (e *Suffix) toTerm() (*Term, bool) {
 	} else {
 		return nil, false
 	}
+}
+
+func (e *Suffix) toIndices() []interface{} {
+	if e.Index == nil {
+		return nil
+	}
+	return e.Index.toIndices()
 }
 
 // SuffixIndex ...

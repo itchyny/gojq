@@ -260,7 +260,23 @@ func (c *compiler) compileExprUpdate(e *Expr) (err error) {
 	t := *e // clone without changing e
 	(&t).Update = nil
 	switch e.UpdateOp {
-	case OpAssign, OpModify:
+	case OpAssign:
+		// .foo.bar = f => setpath(["foo", "bar"]; f)
+		if xs := t.toIndices(); xs != nil {
+			// ref: compileCall
+			v := c.newVariable()
+			c.append(&code{op: opstore, v: v})
+			c.append(&code{op: opload, v: v})
+			if err := c.compileAlt(e.Update); err != nil {
+				return err
+			}
+			c.append(&code{op: oppush, v: xs})
+			c.append(&code{op: opload, v: v})
+			c.append(&code{op: opcall, v: [3]interface{}{internalFuncs["setpath"].callback, 2, "setpath"}})
+			return nil
+		}
+		fallthrough
+	case OpModify:
 		return c.compileFunc(
 			&Func{
 				Name: e.UpdateOp.getFunc(),
