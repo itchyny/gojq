@@ -1,4 +1,4 @@
-# gojq [![Travis Build Status](https://travis-ci.org/itchyny/gojq.svg?branch=master)](https://travis-ci.org/itchyny/gojq)
+# gojq [![CI Status](https://github.com/itchyny/gojq/workflows/CI/badge.svg)](https://github.com/itchyny/gojq/actions)
 Pure Go implementation of [jq](https://github.com/stedolan/jq).
 
 ## Usage

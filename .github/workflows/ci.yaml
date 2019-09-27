@@ -1,0 +1,22 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Setup Go
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.x
+    - name: Test
+      run: make test
+    - name: Lint
+      run: |
+        export PATH=$PATH:$(go env GOPATH)/bin # will be removed
+        make lint
+    - name: Check tools
+      run: make check-tools
