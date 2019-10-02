@@ -40,9 +40,12 @@ type cli struct {
 	outputCompact bool
 	outputRaw     bool
 	outputJoin    bool
+	outputYAML    bool
 	inputRaw      bool
 	inputSlurp    bool
 	inputYAML     bool
+
+	outputYAMLSeparator bool
 }
 
 type flagopts struct {
@@ -51,6 +54,7 @@ type flagopts struct {
 	OutputJoin    bool   `short:"j" long:"join-output" description:"stop printing a newline after each output"`
 	OutputColor   bool   `short:"C" long:"color-output" description:"colorize output even if piped"`
 	OutputMono    bool   `short:"M" long:"monochrome-output" description:"stop colorizing output"`
+	OutputYAML    bool   `long:"yaml-output" description:"output by YAML"`
 	InputNull     bool   `short:"n" long:"null-input" description:"use null as input value"`
 	InputRaw      bool   `short:"R" long:"raw-input" description:"read input as raw strings"`
 	InputSlurp    bool   `short:"s" long:"slurp" description:"read all inputs into an array"`
@@ -85,7 +89,8 @@ Synopsis:
 		fmt.Fprintf(cli.outStream, "%s %s (rev: %s/%s)\n", name, version, revision, runtime.Version())
 		return exitCodeOK
 	}
-	cli.outputCompact, cli.outputRaw, cli.outputJoin = opts.OutputCompact, opts.OutputRaw, opts.OutputJoin
+	cli.outputCompact, cli.outputRaw, cli.outputJoin, cli.outputYAML =
+		opts.OutputCompact, opts.OutputRaw, opts.OutputJoin, opts.OutputYAML
 	if opts.OutputColor || opts.OutputMono {
 		defer func(x bool) { color.NoColor = x }(color.NoColor)
 		color.NoColor = opts.OutputMono
@@ -355,8 +360,12 @@ func (cli *cli) printValue(v gojq.Iter) error {
 		if err != nil {
 			return err
 		}
+		if cli.outputYAMLSeparator {
+			outStream.Write([]byte("---\n"))
+		}
 		outStream.Write(xs)
-		if !cli.outputJoin {
+		cli.outputYAMLSeparator = cli.outputYAML
+		if !cli.outputJoin && !cli.outputYAML {
 			outStream.Write([]byte{'\n'})
 		}
 	}
@@ -364,6 +373,9 @@ func (cli *cli) printValue(v gojq.Iter) error {
 }
 
 func (cli *cli) createMarshaler() marshaler {
+	if cli.outputYAML {
+		return yamlFormatter()
+	}
 	f := jsonFormatter()
 	if cli.outputCompact {
 		f.Indent = 0

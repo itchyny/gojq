@@ -3476,6 +3476,75 @@
         bar:
         ^  could not find expected ':'
 
+- name: yaml output option
+  args:
+    - --yaml-output
+    - '.'
+  input: '{"foo": 128, "bar": {"baz": [1,"qux", []]}}'
+  expected: |
+    bar:
+      baz:
+      - 1
+      - qux
+      - []
+    foo: 128
+
+- name: yaml output option with multiple values
+  args:
+    - --yaml-output
+    - '..'
+  input: '{"foo": 128, "bar": [1,2,"foo"]}'
+  expected: |
+    bar:
+    - 1
+    - 2
+    - foo
+    foo: 128
+    ---
+    - 1
+    - 2
+    - foo
+    ---
+    1
+    ---
+    2
+    ---
+    foo
+    ---
+    128
+
+- name: yaml input and output option
+  args:
+    - --yaml-input
+    - --yaml-output
+    - '.'
+  input: |
+    foo: 42
+    ---
+    foo:
+      bar: 42
+      baz: |
+        a
+        b
+    qux: 100
+    ---
+    foo: 1
+    ---
+    bar
+  expected: |
+    foo: 42
+    ---
+    foo:
+      bar: 42
+      baz: |
+        a
+        b
+    qux: 100
+    ---
+    foo: 1
+    ---
+    bar
+
 - name: source query from file
   args:
     - -n
