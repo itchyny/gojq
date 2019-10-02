@@ -3404,6 +3404,78 @@
   expected: |
     null
 
+- name: yaml input option
+  args:
+    - --yaml-input
+    - '.'
+  input: |
+    foo:
+      bar: 42
+      baz: |
+        a
+        b
+    qux: 100
+    ---
+    foo: 1
+    ---
+    bar
+  expected: |
+    {
+      "foo": {
+        "bar": 42,
+        "baz": "a\nb\n"
+      },
+      "qux": 100
+    }
+    {
+      "foo": 1
+    }
+    "bar"
+
+- name: yaml input option with slurp option
+  args:
+    - --yaml-input
+    - --slurp
+    - '.'
+  input: |
+    foo:
+      bar: 42
+      baz: |
+        a
+        b
+    qux: 100
+    ---
+    foo: 1
+    ---
+    bar
+  expected: |
+    [
+      {
+        "foo": {
+          "bar": 42,
+          "baz": "a\nb\n"
+        },
+        "qux": 100
+      },
+      {
+        "foo": 1
+      },
+      "bar"
+    ]
+
+- name: yaml input option error
+  args:
+    - --yaml-input
+    - '.'
+  input: |
+    foo: 10
+    10
+    bar:
+  error: |
+    invalid yaml: <stdin>
+        bar:
+        ^  could not find expected ':'
+
 - name: source query from file
   args:
     - -n

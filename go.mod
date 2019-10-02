@@ -16,5 +16,5 @@ require (
 	github.com/pbnjay/strptime v0.0.0-20140226051138-5c05b0d668c9
 	github.com/stretchr/testify v1.3.0
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
-	gopkg.in/yaml.v2 v2.2.2
+	gopkg.in/yaml.v3 v3.0.0-20190924164351-c8b7dadae555
 )

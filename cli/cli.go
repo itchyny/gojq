@@ -16,6 +16,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/jessevdk/go-flags"
 	"github.com/mattn/go-runewidth"
+	"gopkg.in/yaml.v3"
 
 	"github.com/itchyny/gojq"
 )
@@ -41,6 +42,7 @@ type cli struct {
 	outputJoin    bool
 	inputRaw      bool
 	inputSlurp    bool
+	inputYAML     bool
 }
 
 type flagopts struct {
@@ -52,6 +54,7 @@ type flagopts struct {
 	InputNull     bool   `short:"n" long:"null-input" description:"use null as input value"`
 	InputRaw      bool   `short:"R" long:"raw-input" description:"read input as raw strings"`
 	InputSlurp    bool   `short:"s" long:"slurp" description:"read all inputs into an array"`
+	InputYAML     bool   `long:"yaml-input" description:"read input as YAML"`
 	FromFile      string `short:"f" long:"from-file" description:"load query from file"`
 	Version       bool   `short:"v" long:"version" description:"print version"`
 }
@@ -87,7 +90,7 @@ Synopsis:
 		defer func(x bool) { color.NoColor = x }(color.NoColor)
 		color.NoColor = opts.OutputMono
 	}
-	cli.inputRaw, cli.inputSlurp = opts.InputRaw, opts.InputSlurp
+	cli.inputRaw, cli.inputSlurp, cli.inputYAML = opts.InputRaw, opts.InputSlurp, opts.InputYAML
 	var arg, fname string
 	if opts.FromFile != "" {
 		src, err := ioutil.ReadFile(opts.FromFile)
@@ -156,6 +159,9 @@ func (cli *cli) processFile(fname string, query *gojq.Query) int {
 func (cli *cli) process(fname string, in io.Reader, query *gojq.Query) int {
 	if cli.inputRaw {
 		return cli.processRaw(fname, in, query)
+	}
+	if cli.inputYAML {
+		return cli.processYAML(fname, in, query)
 	}
 	return cli.processJSON(fname, in, query)
 }
@@ -249,6 +255,67 @@ func (cli *cli) printJSONError(fname, input string, err error) {
 		}
 		fmt.Fprintf(cli.errStream, "    %s\n%s  %s\n", s.String(), strings.Repeat(" ", 3+j)+"^", err)
 	}
+}
+
+func (cli *cli) processYAML(fname string, in io.Reader, query *gojq.Query) int {
+	var buf bytes.Buffer
+	dec := yaml.NewDecoder(io.TeeReader(in, &buf))
+	var vs []interface{}
+	for {
+		var v interface{}
+		if err := dec.Decode(&v); err != nil {
+			if err == io.EOF {
+				if cli.inputSlurp {
+					if err := cli.printValue(query.Run(vs)); err != nil {
+						fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+						return exitCodeErr
+					}
+				}
+				return exitCodeOK
+			}
+			fmt.Fprintf(cli.errStream, "%s: invalid yaml: %s\n", name, fname)
+			cli.printYAMLError(fname, buf.String(), err)
+			return exitCodeErr
+		}
+		v = fixMapKeyToString(v) // Workaround for https://github.com/go-yaml/yaml/issues/139
+		if cli.inputSlurp {
+			vs = append(vs, v)
+			continue
+		}
+		if err := cli.printValue(query.Run(v)); err != nil {
+			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+			return exitCodeErr
+		}
+	}
+}
+
+func (cli *cli) printYAMLError(fname, input string, err error) {
+	var line int
+	fmt.Fscanf(strings.NewReader(err.Error()), "yaml: line %d:", &line)
+	if line == 0 {
+		return
+	}
+	msg := err.Error()[7+strings.IndexRune(err.Error()[5:], ':'):]
+	var s strings.Builder
+	var i, j int
+	var cr bool
+	for _, r := range toValidUTF8(input) {
+		i += len([]byte(string(r)))
+		if r == '\n' || r == '\r' {
+			if !cr || r != '\n' {
+				j++
+			}
+			cr = r == '\r'
+			if j == line {
+				break
+			}
+			s.Reset()
+		} else {
+			cr = false
+			s.WriteRune(r)
+		}
+	}
+	fmt.Fprintf(cli.errStream, "    %s\n    ^  %s\n", s.String(), msg)
 }
 
 func toValidUTF8(s string) string {
