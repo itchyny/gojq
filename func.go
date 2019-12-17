@@ -1098,7 +1098,7 @@ func funcMatchImpl(v, re, fs, testing interface{}) interface{} {
 }
 
 func compileRegexp(re, flags string) (*regexp.Regexp, error) {
-	re = strings.ReplaceAll(re, "(?<", "(?P<")
+	re = strings.Replace(re, "(?<", "(?P<", -1)
 	if strings.ContainsRune(flags, 'i') {
 		re = "(?i)" + re
 	}
