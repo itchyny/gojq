@@ -75,7 +75,7 @@ func (cli *cli) run(args []string) int {
 Version: %s (rev: %s/%s)
 
 Synopsis:
-    %% echo '{"foo": 128}' | %[1]s '.foo'
+  %% echo '{"foo": 128}' | %[1]s '.foo'
 
 `,
 				name, version, revision, runtime.Version())
