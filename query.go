@@ -704,12 +704,12 @@ func (e *Object) String() string {
 
 // ObjectKeyVal ...
 type ObjectKeyVal struct {
-	Key           string  `( ( ( @Ident | @Keyword )`
-	KeyString     string  `  | @String )`
-	Query         *Query  `| "(" @@ ")" ) ":"`
-	Val           *Expr   `@@`
-	KeyOnly       *string `| @Ident`
-	KeyOnlyString string  `| @String`
+	Key           string     `( ( ( @Ident | @Keyword )`
+	KeyString     string     `  | @String )`
+	Query         *Query     `| "(" @@ ")" ) ":"`
+	Val           *ObjectVal `@@`
+	KeyOnly       *string    `| @Ident`
+	KeyOnlyString string     `| @String`
 }
 
 func (e *ObjectKeyVal) String() string {
@@ -731,6 +731,34 @@ func (e *ObjectKeyVal) String() string {
 		s.WriteString(e.KeyOnlyString)
 	}
 	return s.String()
+}
+
+// ObjectVal ...
+type ObjectVal struct {
+	Alts []*Alt `@@ ("|" @@)*`
+}
+
+func (e *ObjectVal) String() string {
+	var s strings.Builder
+	for i, e := range e.Alts {
+		if i > 0 {
+			s.WriteString(" | ")
+		}
+		fmt.Fprint(&s, e)
+	}
+	return s.String()
+}
+
+func (e *ObjectVal) toIndices() []interface{} {
+	var xs []interface{}
+	for _, e := range e.Alts {
+		x := e.toIndices()
+		if x == nil {
+			return nil
+		}
+		xs = append(xs, x...)
+	}
+	return xs
 }
 
 // Array ...

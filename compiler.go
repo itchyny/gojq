@@ -808,12 +808,21 @@ func (c *compiler) compileObject(e *Object) error {
 				c.append(&code{op: oppush, v: kv.Key})
 			}
 			c.append(&code{op: opload, v: v})
-			if err := c.compileExpr(kv.Val); err != nil {
+			if err := c.compileObjectVal(kv.Val); err != nil {
 				return err
 			}
 		}
 	}
 	c.append(&code{op: opobject, v: len(e.KeyVals)})
+	return nil
+}
+
+func (c *compiler) compileObjectVal(e *ObjectVal) error {
+	for _, e := range e.Alts {
+		if err := c.compileAlt(e); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

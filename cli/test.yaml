@@ -429,6 +429,19 @@
       "quxx": 1
     }
 
+- name: object construction pipe in value
+  args:
+    - '{ "bar": { "baz": . } | . | select(true) }'
+  input: '{ "foo": 100 }'
+  expected: |
+    {
+      "bar": {
+        "baz": {
+          "foo": 100
+        }
+      }
+    }
+
 - name: empty object
   args:
     - '{}'
