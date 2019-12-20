@@ -12,7 +12,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/alecthomas/participle/lexer"
+	"github.com/alecthomas/participle"
 	"github.com/fatih/color"
 	"github.com/jessevdk/go-flags"
 	"github.com/mattn/go-runewidth"
@@ -131,20 +131,20 @@ Synopsis:
 }
 
 func (cli *cli) printParseError(fname, query string, err error) {
-	if err, ok := err.(*lexer.Error); ok {
+	if err, ok := err.(participle.Error); ok {
 		lines := strings.Split(query, "\n")
-		if 0 < err.Pos.Line && err.Pos.Line <= len(lines) {
+		if 0 < err.Position().Line && err.Position().Line <= len(lines) {
 			var prefix string
 			if len(lines) <= 1 && fname == "<arg>" {
 				fname = query
 			} else {
-				fname += fmt.Sprintf(":%d", err.Pos.Line)
-				prefix = fmt.Sprintf("%d | ", err.Pos.Line)
+				fname += fmt.Sprintf(":%d", err.Position().Line)
+				prefix = fmt.Sprintf("%d | ", err.Position().Line)
 			}
 			fmt.Fprintf(cli.errStream, "%s: invalid query: %s\n", name, fname)
 			fmt.Fprintf(
-				cli.errStream, "    %s%s\n%s  %s\n", prefix, lines[err.Pos.Line-1],
-				strings.Repeat(" ", 3+err.Pos.Column+len(prefix))+"^", err.Message)
+				cli.errStream, "    %s%s\n%s  %s\n", prefix, lines[err.Position().Line-1],
+				strings.Repeat(" ", 3+err.Position().Column+len(prefix))+"^", err.Message())
 			return
 		}
 	}
