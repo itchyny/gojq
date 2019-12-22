@@ -2,6 +2,7 @@
 Pure Go implementation of [jq](https://github.com/stedolan/jq).
 
 ## Usage
+### from command line
 ```sh
  $ echo '{"foo": 128}' | gojq '.foo'
 128
@@ -40,6 +41,37 @@ gojq: invalid query: .foo & .bar
 gojq: invalid json: <stdin>
     {"foo": { bar: [] } }
               ^  invalid character 'b' looking for beginning of object key string
+```
+
+### as a library
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/itchyny/gojq"
+)
+
+func main() {
+	query, err := gojq.Parse(".foo | ..")
+	if err != nil {
+		log.Fatalf("%s\n", err)
+	}
+	input := map[string]interface{}{"foo": []interface{}{1, 2, 3}}
+	iter := query.Run(input)
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if err, ok := v.(error); ok {
+			log.Fatalf("%s\n", err)
+		}
+		fmt.Printf("%#v\n", v)
+	}
+}
 ```
 
 ## Installation
