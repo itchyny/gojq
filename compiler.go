@@ -241,14 +241,6 @@ func (c *compiler) compileExpr(e *Expr) (err error) {
 	}
 	if e.Logic != nil {
 		return c.compileLogic(e.Logic)
-	} else if e.If != nil {
-		return c.compileIf(e.If)
-	} else if e.Try != nil {
-		return c.compileTry(e.Try)
-	} else if e.Reduce != nil {
-		return c.compileReduce(e.Reduce)
-	} else if e.Foreach != nil {
-		return c.compileForeach(e.Foreach)
 	} else if e.Label != nil {
 		return c.compileLabel(e.Label)
 	} else {
@@ -440,7 +432,7 @@ func (c *compiler) compileLogic(e *Logic) error {
 		&If{
 			Cond: (&Logic{e.Left, e.Right[:len(e.Right)-1]}).toQuery(),
 			Then: (&Term{True: true}).toQuery(),
-			Else: (&Expr{If: &If{
+			Else: (&Term{If: &If{
 				Cond: e.Right[len(e.Right)-1].Right.toQuery(),
 				Then: (&Term{True: true}).toQuery(),
 				Else: (&Term{False: true}).toQuery(),
@@ -487,7 +479,7 @@ func (c *compiler) compileTry(e *Try) error {
 	})()
 	setforkopt()
 	if e.Catch != nil {
-		return c.compileQuery(e.Catch)
+		return c.compileTerm(e.Catch)
 	}
 	c.append(&code{op: opbacktrack})
 	return nil
@@ -565,7 +557,7 @@ func (c *compiler) compileAndExpr(e *AndExpr) error {
 	return c.compileIf(
 		&If{
 			Cond: (&AndExpr{e.Left, e.Right[:len(e.Right)-1]}).toQuery(),
-			Then: (&Expr{If: &If{
+			Then: (&Term{If: &If{
 				Cond: e.Right[len(e.Right)-1].Right.toQuery(),
 				Then: (&Term{True: true}).toQuery(),
 				Else: (&Term{False: true}).toQuery(),
@@ -655,6 +647,14 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 	} else if e.False {
 		c.append(&code{op: opconst, v: false})
 		return nil
+	} else if e.If != nil {
+		return c.compileIf(e.If)
+	} else if e.Try != nil {
+		return c.compileTry(e.Try)
+	} else if e.Reduce != nil {
+		return c.compileReduce(e.Reduce)
+	} else if e.Foreach != nil {
+		return c.compileForeach(e.Foreach)
 	} else if e.Break != "" {
 		c.append(&code{op: opconst, v: e.Break})
 		return c.compileCall("_break", nil)

@@ -1821,6 +1821,13 @@
       2.5
     ]
 
+- name: condition precedence
+  args:
+    - '. + if 1 then 2 else 3 end + 4'
+  input: '1'
+  expected: |
+    7
+
 - name: not function
   args:
     - 'map(not)'
@@ -1863,6 +1870,13 @@
       "utf8bytelength cannot be applied to: boolean (false)"
     ]
 
+- name: try precedence
+  args:
+    - '1 + try 2 catch 3 + 4'
+  input: '1'
+  expected: |
+    7
+
 - name: reduce iterator
   args:
     - '[range(.)] | reduce .[] as $i (0; . + $i)'
@@ -1890,6 +1904,20 @@
   input: 'null'
   expected: |
     null
+
+- name: reduce precedence
+  args:
+    - '. + reduce . as $n (. + [2]; [.]) + .'
+  input: '[1]'
+  expected: |
+    [
+      1,
+      [
+        1,
+        2
+      ],
+      1
+    ]
 
 - name: foreach iterator
   args:

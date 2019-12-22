@@ -170,11 +170,7 @@ func (e AltRight) String() string {
 
 // Expr ...
 type Expr struct {
-	Logic    *Logic   `( @@`
-	If       *If      `| @@`
-	Try      *Try     `| @@`
-	Reduce   *Reduce  `| @@`
-	Foreach  *Foreach `| @@ )`
+	Logic    *Logic   `@@`
 	UpdateOp Operator `( ( @UpdateOp | @UpdateAltOp )`
 	Update   *Alt     `  @@`
 	Bind     *Bind    `| @@ )?`
@@ -193,14 +189,6 @@ func (e *Expr) String() string {
 	var s strings.Builder
 	if e.Logic != nil {
 		fmt.Fprint(&s, e.Logic)
-	} else if e.If != nil {
-		fmt.Fprint(&s, e.If)
-	} else if e.Try != nil {
-		fmt.Fprint(&s, e.Try)
-	} else if e.Reduce != nil {
-		fmt.Fprint(&s, e.Reduce)
-	} else if e.Foreach != nil {
-		fmt.Fprint(&s, e.Foreach)
 	}
 	if e.Update != nil {
 		fmt.Fprintf(&s, " %s %s", e.UpdateOp, e.Update)
@@ -469,6 +457,10 @@ type Term struct {
 	Null       bool      `| @"null"`
 	True       bool      `| @"true"`
 	False      bool      `| @"false"`
+	If         *If       `| @@`
+	Try        *Try      `| @@`
+	Reduce     *Reduce   `| @@`
+	Foreach    *Foreach  `| @@`
 	Break      string    `| "break" @Ident`
 	Query      *Query    `| "(" @@ ")" )`
 	SuffixList []*Suffix `@@*`
@@ -502,6 +494,14 @@ func (e *Term) String() string {
 		s.WriteString("true")
 	} else if e.False {
 		s.WriteString("false")
+	} else if e.If != nil {
+		fmt.Fprint(&s, e.If)
+	} else if e.Try != nil {
+		fmt.Fprint(&s, e.Try)
+	} else if e.Reduce != nil {
+		fmt.Fprint(&s, e.Reduce)
+	} else if e.Foreach != nil {
+		fmt.Fprint(&s, e.Foreach)
 	} else if e.Break != "" {
 		fmt.Fprintf(&s, "break %s", e.Break)
 	} else if e.Query != nil {
@@ -867,7 +867,7 @@ func (e *IfElif) String() string {
 // Try ...
 type Try struct {
 	Body  *Query `"try" @@`
-	Catch *Query `("catch" @@)?`
+	Catch *Term  `("catch" @@)?`
 }
 
 func (e *Try) String() string {
