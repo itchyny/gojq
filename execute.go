@@ -6,10 +6,13 @@ import (
 	"sort"
 )
 
-func (env *env) execute(bc *bytecode, v interface{}) Iter {
+func (env *env) execute(bc *Code, v interface{}, vars ...interface{}) Iter {
 	env.codes = bc.codes
 	env.codeinfos = bc.codeinfos
 	env.push(v)
+	for i := len(vars) - 1; i >= 0; i-- {
+		env.push(vars[i])
+	}
 	env.debugCodes()
 	return env
 }

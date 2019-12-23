@@ -60,11 +60,11 @@ func (e *Query) toIndices() []interface{} {
 
 // Run query.
 func (e *Query) Run(v interface{}) Iter {
-	code, err := compile(e)
+	code, err := Compile(e)
 	if err != nil {
 		return unitIterator(err)
 	}
-	return newEnv().execute(code, normalizeNumbers(v))
+	return code.Run(v)
 }
 
 // Comma ...

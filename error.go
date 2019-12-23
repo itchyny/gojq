@@ -2,6 +2,7 @@ package gojq
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 	"reflect"
@@ -112,6 +113,16 @@ type zeroModuloError struct {
 
 func (err *zeroModuloError) Error() string {
 	return fmt.Sprintf("cannot modulo %s by: %s", typeErrorPreview(err.l), typeErrorPreview(err.r))
+}
+
+var errTooManyVariables = errors.New("too many variables provided")
+
+type expectedVariableError struct {
+	n string
+}
+
+func (err *expectedVariableError) Error() string {
+	return fmt.Sprintf("variable defined but not bound: %s", err.n)
 }
 
 type variableNotFoundError struct {

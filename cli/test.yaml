@@ -3759,3 +3759,27 @@
       "foo": 10
     }
   error: 'open testdata/6.json:'
+
+- name: 'single variable'
+  args:
+    - '--arg'
+    - 'mul=10'
+    - '. * $mul'
+  input: '123'
+  expected: |
+    1230
+
+- name: 'multiple variables'
+  args:
+    - '--arg=x=2'
+    - '--arg=y=3'
+    - '--arg=z=4'
+    - -n
+    - '{ x: $x, y: $y, z: $z }'
+  input: '123'
+  expected: |
+    {
+      "x": 2,
+      "y": 3,
+      "z": 4
+    }
