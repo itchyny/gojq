@@ -57,7 +57,7 @@ import (
 func main() {
 	query, err := gojq.Parse(".foo | ..")
 	if err != nil {
-		log.Fatalf("%s\n", err)
+		log.Fatalln(err)
 	}
 	input := map[string]interface{}{"foo": []interface{}{1, 2, 3}}
 	iter := query.Run(input)
@@ -67,7 +67,7 @@ func main() {
 			break
 		}
 		if err, ok := v.(error); ok {
-			log.Fatalf("%s\n", err)
+			log.Fatalln(err)
 		}
 		fmt.Printf("%#v\n", v)
 	}
