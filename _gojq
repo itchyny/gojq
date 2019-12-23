@@ -1,0 +1,20 @@
+#compdef gojq
+
+_gojq()
+{
+  _arguments -C \
+    '(-c --compact-output)'{-c,--compact-output}'[compact output]' \
+    '(-r --raw-output)'{-r,--raw-output}'[output raw strings]' \
+    '(-j --join-output)'{-j,--join-output}'[stop printing a newline after each output]' \
+    '(-C --color-output)'{-C,--color-output}'[colorize output even if piped]' \
+    '(-M --monochrome-output)'{-M,--monochrome-output}'[stop colorizing output]' \
+    '(--yaml-output)'--yaml-output'[output by YAML]' \
+    '(-n --null-input)'{-n,--null-input}'[use null as input value]' \
+    '(-R --raw-input)'{-R,--raw-input}'[read input as raw strings]' \
+    '(-s --slurp)'{-s,--slurp}'[read all inputs into an array]' \
+    '(--yaml-input)'--yaml-input'[read input as YAML]' \
+    '(-f --from-file)'{-f,--from-file}'[load query from file]' \
+    '(-v --version)'{-v,--version}'[print version]' \
+    '(-h --help)'{-h,--help}'[print help]' \
+    && ret=0
+}
