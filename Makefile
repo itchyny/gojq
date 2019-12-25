@@ -65,9 +65,13 @@ clean:
 
 .PHONY: bump
 bump: $(GOBIN)/gobump
-	@git status --porcelain | grep "^" && echo "git workspace is dirty" >/dev/stderr && exit 1 || :
-	@test "$(shell git branch --show-current)" != master && echo "current branch is not master" >/dev/stderr && exit 1 || :
-	@gobump set $$(sh -c 'read -p "input next version (current: $(VERSION)): " v && echo $$v') -w $(VERSION_PATH)
+ifneq ($(shell git status --porcelain),)
+	$(error git workspace is dirty)
+endif
+ifneq ($(shell git branch --show-current),master)
+	$(error current branch is not master)
+endif
+	@gobump up -w "$(VERSION_PATH)"
 	git commit -am "bump up version to $(VERSION)"
 	git tag "v$(VERSION)"
 	git push origin master
