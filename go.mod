@@ -10,7 +10,7 @@ require (
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/lestrrat-go/strftime v1.0.0
 	github.com/mattn/go-colorable v0.1.4 // indirect
-	github.com/mattn/go-isatty v0.0.11 // indirect
+	github.com/mattn/go-isatty v0.0.11
 	github.com/mattn/go-runewidth v0.0.7
 	github.com/pbnjay/strptime v0.0.0-20140226051138-5c05b0d668c9
 	github.com/stretchr/testify v1.4.0
