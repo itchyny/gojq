@@ -18,9 +18,26 @@ type compiler struct {
 	funcs      []*funcinfo
 }
 
-type bytecode struct {
+// Code is a compiled jq query.
+type Code struct {
+	vars      []string
 	codes     []*code
 	codeinfos []codeinfo
+}
+
+// Run runs the code with the given variables bound (if any) and returns
+// a result iterator.
+func (c *Code) Run(v interface{}, vars ...interface{}) Iter {
+	e := newEnv()
+	for i, name := range c.vars {
+		if i >= len(vars) {
+			return unitIterator(&expectedVariableError{name})
+		}
+	}
+	if len(vars) > len(c.vars) {
+		return unitIterator(errTooManyVariables)
+	}
+	return e.execute(c, normalizeNumbers(v), vars...)
 }
 
 type codeinfo struct {
@@ -46,27 +63,47 @@ type funcinfo struct {
 	argsorder []int
 }
 
-func compile(q *Query) (*bytecode, error) {
+// Compile compiles a query.
+// If additional variable names are passed, they must be bound at program
+// startup by passing their values to (*Code).Run.
+func Compile(q *Query, variables ...string) (*Code, error) {
 	c := &compiler{}
 	scope := c.newScope()
 	c.scopes = []*scopeinfo{scope}
 	defer c.lazy(func() *code {
 		return &code{op: opscope, v: [2]int{scope.id, len(scope.variables)}}
 	})()
-	return c.compile(q)
+	return c.compile(q, variables)
 }
 
-func (c *compiler) compile(q *Query) (*bytecode, error) {
+func (c *compiler) compile(q *Query, variables []string) (*Code, error) {
+	c.pushVariables(variables)
 	if err := c.compileQuery(q); err != nil {
 		return nil, err
 	}
 	c.append(&code{op: opret})
 	c.optimizeJumps()
-	return &bytecode{c.codes, c.codeinfos}, nil
+	variables = append([]string(nil), variables...)
+	return &Code{
+		vars:      variables,
+		codes:     c.codes,
+		codeinfos: c.codeinfos,
+	}, nil
 }
 
 func (c *compiler) newVariable() [2]int {
 	return c.pushVariable("")
+}
+
+func (c *compiler) pushVariables(names []string) error {
+	for _, name := range names {
+		if !strings.HasPrefix(name, "$") {
+			return &bindVariableNameError{name}
+		}
+		v := c.pushVariable(name)
+		c.append(&code{op: opstore, v: v})
+	}
+	return nil
 }
 
 func (c *compiler) pushVariable(name string) [2]int {
@@ -133,7 +170,7 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 		}
 		cc.append(&code{op: opload, v: v})
 	}
-	bs, err := cc.compile(e.Body)
+	bs, err := cc.compile(e.Body, nil)
 	if err != nil {
 		return err
 	}

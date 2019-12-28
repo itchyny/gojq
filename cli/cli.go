@@ -46,22 +46,25 @@ type cli struct {
 	inputSlurp    bool
 	inputYAML     bool
 
+	vars []*variable
+
 	outputYAMLSeparator bool
 }
 
 type flagopts struct {
-	OutputCompact bool   `short:"c" long:"compact-output" description:"compact output"`
-	OutputRaw     bool   `short:"r" long:"raw-output" description:"output raw strings"`
-	OutputJoin    bool   `short:"j" long:"join-output" description:"stop printing a newline after each output"`
-	OutputColor   bool   `short:"C" long:"color-output" description:"colorize output even if piped"`
-	OutputMono    bool   `short:"M" long:"monochrome-output" description:"stop colorizing output"`
-	OutputYAML    bool   `long:"yaml-output" description:"output by YAML"`
-	InputNull     bool   `short:"n" long:"null-input" description:"use null as input value"`
-	InputRaw      bool   `short:"R" long:"raw-input" description:"read input as raw strings"`
-	InputSlurp    bool   `short:"s" long:"slurp" description:"read all inputs into an array"`
-	InputYAML     bool   `long:"yaml-input" description:"read input as YAML"`
-	FromFile      string `short:"f" long:"from-file" description:"load query from file"`
-	Version       bool   `short:"v" long:"version" description:"print version"`
+	OutputCompact bool        `short:"c" long:"compact-output" description:"compact output"`
+	OutputRaw     bool        `short:"r" long:"raw-output" description:"output raw strings"`
+	OutputJoin    bool        `short:"j" long:"join-output" description:"stop printing a newline after each output"`
+	OutputColor   bool        `short:"C" long:"color-output" description:"colorize output even if piped"`
+	OutputMono    bool        `short:"M" long:"monochrome-output" description:"stop colorizing output"`
+	OutputYAML    bool        `long:"yaml-output" description:"output by YAML"`
+	InputNull     bool        `short:"n" long:"null-input" description:"use null as input value"`
+	InputRaw      bool        `short:"R" long:"raw-input" description:"read input as raw strings"`
+	InputSlurp    bool        `short:"s" long:"slurp" description:"read all inputs into an array"`
+	InputYAML     bool        `long:"yaml-input" description:"read input as YAML"`
+	FromFile      string      `short:"f" long:"from-file" description:"load query from file"`
+	Variables     []*variable `long:"arg" description:"a=v: set variable $a to value <v> (<v> may be JSON)"`
+	Version       bool        `short:"v" long:"version" description:"print version"`
 }
 
 func (cli *cli) run(args []string) int {
@@ -100,6 +103,7 @@ Synopsis:
 		color.NoColor = !isTTY(cli.outStream)
 	}
 	cli.inputRaw, cli.inputSlurp, cli.inputYAML = opts.InputRaw, opts.InputSlurp, opts.InputYAML
+	cli.vars = opts.Variables
 	var arg, fname string
 	if opts.FromFile != "" {
 		src, err := ioutil.ReadFile(opts.FromFile)
@@ -119,19 +123,29 @@ Synopsis:
 		cli.printParseError(fname, arg, err)
 		return exitCodeErr
 	}
+	code, err := gojq.Compile(query, variableNames(cli.vars)...)
+	if err != nil {
+		cli.printCompileError(fname, err)
+		return exitCodeErr
+	}
 	if opts.InputNull {
 		cli.inputRaw, cli.inputSlurp = false, false
-		return cli.process("<null>", bytes.NewReader([]byte("null")), query)
+		return cli.process("<null>", bytes.NewReader([]byte("null")), code)
 	}
+
 	if len(args) == 0 {
-		return cli.process("<stdin>", cli.inStream, query)
+		return cli.process("<stdin>", cli.inStream, code)
 	}
 	for _, arg := range args {
-		if exitCode := cli.processFile(arg, query); exitCode != exitCodeOK {
+		if exitCode := cli.processFile(arg, code); exitCode != exitCodeOK {
 			return exitCode
 		}
 	}
 	return exitCodeOK
+}
+
+func (cli *cli) printCompileError(fname string, err error) {
+	fmt.Fprintf(cli.errStream, "%s: compiler error: %v\n", fname, err)
 }
 
 func (cli *cli) printParseError(fname, query string, err error) {
@@ -155,34 +169,34 @@ func (cli *cli) printParseError(fname, query string, err error) {
 	fmt.Fprintf(cli.errStream, "%s: invalid query: %s\n", name, query)
 }
 
-func (cli *cli) processFile(fname string, query *gojq.Query) int {
+func (cli *cli) processFile(fname string, code *gojq.Code) int {
 	f, err := os.Open(fname)
 	if err != nil {
 		fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 		return exitCodeErr
 	}
 	defer f.Close()
-	return cli.process(fname, f, query)
+	return cli.process(fname, f, code)
 }
 
-func (cli *cli) process(fname string, in io.Reader, query *gojq.Query) int {
+func (cli *cli) process(fname string, in io.Reader, code *gojq.Code) int {
 	if cli.inputRaw {
-		return cli.processRaw(fname, in, query)
+		return cli.processRaw(fname, in, code)
 	}
 	if cli.inputYAML {
-		return cli.processYAML(fname, in, query)
+		return cli.processYAML(fname, in, code)
 	}
-	return cli.processJSON(fname, in, query)
+	return cli.processJSON(fname, in, code)
 }
 
-func (cli *cli) processRaw(fname string, in io.Reader, query *gojq.Query) int {
+func (cli *cli) processRaw(fname string, in io.Reader, code *gojq.Code) int {
 	if cli.inputSlurp {
 		xs, err := ioutil.ReadAll(in)
 		if err != nil {
 			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 			return exitCodeErr
 		}
-		if err := cli.printValue(query.Run(string(xs))); err != nil {
+		if err := cli.printValue(code.Run(string(xs), variableValues(cli.vars)...)); err != nil {
 			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 			return exitCodeErr
 		}
@@ -191,7 +205,7 @@ func (cli *cli) processRaw(fname string, in io.Reader, query *gojq.Query) int {
 	s := bufio.NewScanner(in)
 	exitCode := exitCodeOK
 	for s.Scan() {
-		if err := cli.printValue(query.Run(s.Text())); err != nil {
+		if err := cli.printValue(code.Run(s.Text(), variableValues(cli.vars)...)); err != nil {
 			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 			exitCode = exitCodeErr
 		}
@@ -203,7 +217,7 @@ func (cli *cli) processRaw(fname string, in io.Reader, query *gojq.Query) int {
 	return exitCode
 }
 
-func (cli *cli) processJSON(fname string, in io.Reader, query *gojq.Query) int {
+func (cli *cli) processJSON(fname string, in io.Reader, code *gojq.Code) int {
 	var buf bytes.Buffer
 	dec := json.NewDecoder(io.TeeReader(in, &buf))
 	dec.UseNumber()
@@ -213,7 +227,7 @@ func (cli *cli) processJSON(fname string, in io.Reader, query *gojq.Query) int {
 		if err := dec.Decode(&v); err != nil {
 			if err == io.EOF {
 				if cli.inputSlurp {
-					if err := cli.printValue(query.Run(vs)); err != nil {
+					if err := cli.printValue(code.Run(vs, variableValues(cli.vars)...)); err != nil {
 						fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 						return exitCodeErr
 					}
@@ -228,7 +242,7 @@ func (cli *cli) processJSON(fname string, in io.Reader, query *gojq.Query) int {
 			vs = append(vs, v)
 			continue
 		}
-		if err := cli.printValue(query.Run(v)); err != nil {
+		if err := cli.printValue(code.Run(v, variableValues(cli.vars)...)); err != nil {
 			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 			return exitCodeErr
 		}
@@ -266,7 +280,7 @@ func (cli *cli) printJSONError(fname, input string, err error) {
 	}
 }
 
-func (cli *cli) processYAML(fname string, in io.Reader, query *gojq.Query) int {
+func (cli *cli) processYAML(fname string, in io.Reader, code *gojq.Code) int {
 	var buf bytes.Buffer
 	dec := yaml.NewDecoder(io.TeeReader(in, &buf))
 	var vs []interface{}
@@ -275,7 +289,7 @@ func (cli *cli) processYAML(fname string, in io.Reader, query *gojq.Query) int {
 		if err := dec.Decode(&v); err != nil {
 			if err == io.EOF {
 				if cli.inputSlurp {
-					if err := cli.printValue(query.Run(vs)); err != nil {
+					if err := cli.printValue(code.Run(vs, variableValues(cli.vars)...)); err != nil {
 						fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 						return exitCodeErr
 					}
@@ -291,7 +305,7 @@ func (cli *cli) processYAML(fname string, in io.Reader, query *gojq.Query) int {
 			vs = append(vs, v)
 			continue
 		}
-		if err := cli.printValue(query.Run(v)); err != nil {
+		if err := cli.printValue(code.Run(v, variableValues(cli.vars)...)); err != nil {
 			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 			return exitCodeErr
 		}
