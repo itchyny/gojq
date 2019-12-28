@@ -63,7 +63,7 @@ type flagopts struct {
 	InputSlurp    bool        `short:"s" long:"slurp" description:"read all inputs into an array"`
 	InputYAML     bool        `long:"yaml-input" description:"read input as YAML"`
 	FromFile      string      `short:"f" long:"from-file" description:"load query from file"`
-	Variables     []*variable `long:"arg" description:"a=v: set variable $a to value <v> (<v> may be JSON)"`
+	Variables     []*variable `long:"arg" description:"name=value: set variable $name to <value> (<value> may be JSON)"`
 	Version       bool        `short:"v" long:"version" description:"print version"`
 }
 
