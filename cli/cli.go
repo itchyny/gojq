@@ -15,6 +15,7 @@ import (
 	"github.com/alecthomas/participle"
 	"github.com/fatih/color"
 	"github.com/jessevdk/go-flags"
+	"github.com/mattn/go-isatty"
 	"github.com/mattn/go-runewidth"
 	"gopkg.in/yaml.v3"
 
@@ -94,6 +95,9 @@ Synopsis:
 	if opts.OutputColor || opts.OutputMono {
 		defer func(x bool) { color.NoColor = x }(color.NoColor)
 		color.NoColor = opts.OutputMono
+	} else {
+		defer func(x bool) { color.NoColor = x }(color.NoColor)
+		color.NoColor = !isTTY(cli.outStream)
 	}
 	cli.inputRaw, cli.inputSlurp, cli.inputYAML = opts.InputRaw, opts.InputSlurp, opts.InputYAML
 	var arg, fname string
@@ -385,4 +389,13 @@ func (cli *cli) createMarshaler() marshaler {
 		return &rawMarshaler{f}
 	}
 	return f
+}
+
+// isTTY attempts to determine whether an output is a TTY.
+func isTTY(w io.Writer) bool {
+	if os.Getenv("TERM") == "dumb" {
+		return false
+	}
+	f, ok := w.(interface{ Fd() uintptr })
+	return ok && (isatty.IsTerminal(f.Fd()) || isatty.IsCygwinTerminal(f.Fd()))
 }
