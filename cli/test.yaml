@@ -3783,3 +3783,30 @@
       "y": 3,
       "z": 4
     }
+
+- name: 'multiple variables'
+  args:
+    - '--arg'
+    - 'x=2'
+    - '--arg'
+    - 'y=3'
+    - '--arg'
+    - 'z=4'
+    - -n
+    - '{ x: $x, y: $y, z: $z }'
+  input: '123'
+  expected: |
+    {
+      "x": 2,
+      "y": 3,
+      "z": 4
+    }
+
+- name: 'variable parse error'
+  args:
+    - '--arg'
+    - 'mul 10'
+    - -n
+    - '. * $mul'
+  error: |
+    invalid argument for flag `--arg'
