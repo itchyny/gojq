@@ -145,7 +145,7 @@ Synopsis:
 }
 
 func (cli *cli) printCompileError(fname string, err error) {
-	fmt.Fprintf(cli.errStream, "%s: compiler error: %v\n", fname, err)
+	fmt.Fprintf(cli.errStream, "%s: %s: compile error: %v\n", name, fname, err)
 }
 
 func (cli *cli) printParseError(fname, query string, err error) {
