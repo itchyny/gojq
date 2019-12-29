@@ -1,4 +1,10 @@
 # Changelog
+## [v0.7.0](https://github.com/itchyny/gojq/compare/v0.6.0..v0.7.0) (2019-12-22)
+* implement YAML input (`--yaml-input`) and output (`--yaml-output`)
+* fix pipe in object value
+* fix precedence of if, try, reduce and foreach expressions
+* release from GitHub Actions
+
 ## [v0.6.0](https://github.com/itchyny/gojq/compare/v0.5.0..v0.6.0) (2019-08-26)
 * implement arbitrary-precision integer calculation
 * implement various functions (`repeat`, `pow10`, `nan`, `isnan`, `nearbyint`,
