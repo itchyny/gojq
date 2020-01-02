@@ -3211,6 +3211,22 @@
   expected: |
     "{&quot;foo&quot;:&quot;\\u003cdiv\\u003e\\u0026&apos;\\&quot;\\u003c/div\\u003e&quot;}"
 
+- name: format strings @base64
+  args:
+    - '@base64'
+  input: |
+    {"foo": "bar"}
+  expected: |
+    "eyJmb28iOiJiYXIifQ=="
+
+- name: format strings @base64d
+  args:
+    - -R
+    - '@base64d'
+  input: eyJmb28iOiJiYXIifQ==
+  expected: |
+    "{\"foo\":\"bar\"}"
+
 - name: destructuring alternative operator
   args:
     - '.[] | . as {a:$a} ?// [$a] ?// $a | $a'

@@ -1,6 +1,7 @@
 package gojq
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -58,6 +59,8 @@ func init() {
 		"tojson":         argFunc0(funcToJSON),
 		"fromjson":       argFunc0(funcFromJSON),
 		"_tohtml":        argFunc0(funcToHTML),
+		"_tobase64":      argFunc0(funcToBase64),
+		"_tobase64d":     argFunc0(funcToBase64d),
 		"_index":         argFunc2(funcIndex),
 		"_slice":         argFunc3(funcSlice),
 		"_break":         argFunc0(funcBreak),
@@ -494,6 +497,28 @@ func funcToHTML(v interface{}) interface{} {
 	switch x := funcToString(v).(type) {
 	case string:
 		return htmlEscaper.Replace(x)
+	default:
+		return x
+	}
+}
+
+func funcToBase64(v interface{}) interface{} {
+	switch x := funcToString(v).(type) {
+	case string:
+		return base64.StdEncoding.EncodeToString([]byte(x))
+	default:
+		return x
+	}
+}
+
+func funcToBase64d(v interface{}) interface{} {
+	switch x := funcToString(v).(type) {
+	case string:
+		y, err := base64.StdEncoding.DecodeString(x)
+		if err != nil {
+			return err
+		}
+		return string(y)
 	default:
 		return x
 	}

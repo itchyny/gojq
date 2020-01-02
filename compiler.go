@@ -910,6 +910,10 @@ func (c *compiler) compileFormat(fmt string) error {
 		return c.compileFunc(&Func{Name: "tojson"})
 	case "@html":
 		return c.compileFunc(&Func{Name: "_tohtml"})
+	case "@base64":
+		return c.compileFunc(&Func{Name: "_tobase64"})
+	case "@base64d":
+		return c.compileFunc(&Func{Name: "_tobase64d"})
 	default:
 		return &formatNotFoundError{fmt}
 	}
