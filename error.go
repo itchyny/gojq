@@ -115,6 +115,14 @@ func (err *zeroModuloError) Error() string {
 	return fmt.Sprintf("cannot modulo %s by: %s", typeErrorPreview(err.l), typeErrorPreview(err.r))
 }
 
+type formatNotFoundError struct {
+	n string
+}
+
+func (err *formatNotFoundError) Error() string {
+	return fmt.Sprintf("format not defined: %s", err.n)
+}
+
 var errTooManyVariables = errors.New("too many variables provided")
 
 type expectedVariableError struct {

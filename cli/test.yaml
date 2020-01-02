@@ -3189,6 +3189,28 @@
   expected: |
     [false,true,false,false,true,false,false,false]
 
+- name: format strings @text
+  args:
+    - -n
+    - '@text'
+  expected: |
+    "null"
+
+- name: format strings @json
+  args:
+    - '@json'
+  input: '{"a":42}'
+  expected: |
+    "{\"a\":42}"
+
+- name: format strings @html
+  args:
+    - '@html'
+  input: |
+    {"foo": "<div>&'\"</div>"}
+  expected: |
+    "{&quot;foo&quot;:&quot;\\u003cdiv\\u003e\\u0026&apos;\\&quot;\\u003c/div\\u003e&quot;}"
+
 - name: destructuring alternative operator
   args:
     - '.[] | . as {a:$a} ?// [$a] ?// $a | $a'

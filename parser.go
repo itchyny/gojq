@@ -16,6 +16,7 @@ var parser = participle.MustBuild(
 		`|(?P<UpdateOp>(=|[-|+*/%]=))`+
 		`|(?P<Number>((\d*\.)?\d+([eE]([-+]?\d+))?\b))`+
 		`|(?P<String>"([^"\\]*|\\.)*")`+
+		`|(?P<Format>@[a-zA-Z0-9_]+)`+
 		"|(?P<Punct>[!-/:-@\\[-\\]^-`{-~])",
 	))),
 	participle.UseLookahead(2),

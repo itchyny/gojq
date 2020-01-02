@@ -670,6 +670,8 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 		return nil
 	} else if e.Unary != nil {
 		return c.compileUnary(e.Unary)
+	} else if e.Format != "" {
+		return c.compileFormat(e.Format)
 	} else if e.Str != "" {
 		return c.compileString(e.Str)
 	} else if e.RawStr != "" {
@@ -897,6 +899,19 @@ func (c *compiler) compileUnary(e *Unary) error {
 		return c.compileCall("_negate", nil)
 	default:
 		return fmt.Errorf("unexpected operator in Unary: %s", e.Op)
+	}
+}
+
+func (c *compiler) compileFormat(fmt string) error {
+	switch fmt {
+	case "@text":
+		return c.compileFunc(&Func{Name: "tostring"})
+	case "@json":
+		return c.compileFunc(&Func{Name: "tojson"})
+	case "@html":
+		return c.compileFunc(&Func{Name: "_tohtml"})
+	default:
+		return &formatNotFoundError{fmt}
 	}
 }
 

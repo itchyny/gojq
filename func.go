@@ -57,6 +57,7 @@ func init() {
 		"split":          function{argcount1 | argcount2, funcSplit},
 		"tojson":         argFunc0(funcToJSON),
 		"fromjson":       argFunc0(funcFromJSON),
+		"_tohtml":        argFunc0(funcToHTML),
 		"_index":         argFunc2(funcIndex),
 		"_slice":         argFunc3(funcSlice),
 		"_break":         argFunc0(funcBreak),
@@ -478,6 +479,23 @@ func funcFromJSON(v interface{}) interface{} {
 		return w
 	default:
 		return &funcTypeError{"fromjson", v}
+	}
+}
+
+var htmlEscaper = strings.NewReplacer(
+	`<`, "&lt;",
+	`>`, "&gt;",
+	`&`, "&amp;",
+	`'`, "&apos;",
+	`"`, "&quot;",
+)
+
+func funcToHTML(v interface{}) interface{} {
+	switch x := funcToString(v).(type) {
+	case string:
+		return htmlEscaper.Replace(x)
+	default:
+		return x
 	}
 }
 
