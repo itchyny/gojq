@@ -2444,12 +2444,15 @@
 
 - name: nan and isnan functions
   args:
-    - 'nan | ., .+1, isnan'
+    - 'nan,null | ., .+1, isnan'
   input: 'null'
   expected: |
     null
     null
     true
+    null
+    1
+    false
 
 - name: stringify nan and inf
   args:

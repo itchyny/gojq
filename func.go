@@ -802,6 +802,9 @@ func funcNan(interface{}) interface{} {
 func funcIsnan(v interface{}) interface{} {
 	x, ok := toFloat(v)
 	if !ok {
+		if v == nil {
+			return false
+		}
 		return &funcTypeError{"isnan", v}
 	}
 	return math.IsNaN(x)
