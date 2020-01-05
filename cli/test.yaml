@@ -994,14 +994,15 @@
 - name: tostring function
   args:
     - 'map(tostring)'
-  input: '["foo bar", 3.14, {"foo": "-43210"}, false, [1,2,3]]'
+  input: '["foo bar", 3.14, {"foo": "-43210"}, false, [1,2,3], ["<&><>"]]'
   expected: |
     [
       "foo bar",
       "3.14",
       "{\"foo\":\"-43210\"}",
       "false",
-      "[1,2,3]"
+      "[1,2,3]",
+      "[\"<&><>\"]"
     ]
 
 - name: type function
@@ -3212,7 +3213,7 @@
   input: |
     {"foo": "<div>&'\"</div>"}
   expected: |
-    "{&quot;foo&quot;:&quot;\\u003cdiv\\u003e\\u0026&apos;\\&quot;\\u003c/div\\u003e&quot;}"
+    "{&quot;foo&quot;:&quot;&lt;div&gt;&amp;&apos;\\&quot;&lt;/div&gt;&quot;}"
 
 - name: format strings @csv
   args:

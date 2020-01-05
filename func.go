@@ -1,6 +1,7 @@
 package gojq
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -463,14 +464,26 @@ func implode(v []interface{}) interface{} {
 }
 
 func funcToJSON(v interface{}) interface{} {
-	xs, err := json.Marshal(v)
+	s, err := encodeJSON(v)
 	if err != nil {
-		xs, err = json.Marshal(normalizeValues(v))
+		s, err = encodeJSON(normalizeValues(v))
 		if err != nil {
 			return err
 		}
 	}
-	return string(xs)
+	return s
+}
+
+func encodeJSON(v interface{}) (string, error) {
+	buf := new(bytes.Buffer)
+	enc := json.NewEncoder(buf)
+	enc.SetEscapeHTML(false)
+	err := enc.Encode(v)
+	if err != nil {
+		return "", err
+	}
+	s := buf.String()
+	return s[:len(s)-1], nil // trim last newline character
 }
 
 func funcFromJSON(v interface{}) interface{} {
