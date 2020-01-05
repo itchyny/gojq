@@ -3207,6 +3207,13 @@
   expected: |
     "{\"a\":42}"
 
+- name: format strings @json with string interpolation
+  args:
+    - '@json "0\(.)1\(. + .)2\([2])3"'
+  input: '[1]'
+  expected: |
+    "0[1]1[1,1]2[2]3"
+
 - name: format strings @html
   args:
     - '@html'
@@ -3215,6 +3222,14 @@
   expected: |
     "{&quot;foo&quot;:&quot;&lt;div&gt;&amp;&apos;\\&quot;&lt;/div&gt;&quot;}"
 
+- name: format strings @html with string interpolation
+  args:
+    - '@html "x\(.)x\(.+.)x"'
+  input: |
+    ["<>"]
+  expected: |
+    "x[&quot;&lt;&gt;&quot;]x[&quot;&lt;&gt;&quot;,&quot;&lt;&gt;&quot;]x"
+
 - name: format strings @csv
   args:
     - '@csv'
@@ -3222,6 +3237,14 @@
     [1, "foo", null, "foo,\n\"bar\"\tbaz"]
   expected: |
     "1,\"foo\",,\"foo,\n\"\"bar\"\"\tbaz\""
+
+- name: format strings @csv with string interpolation
+  args:
+    - '@csv "\(.),\(. + .)"'
+  input: |
+    [1, "foo", null, 2]
+  expected: |
+    "1,\"foo\",,2,1,\"foo\",,2,1,\"foo\",,2"
 
 - name: format strings @csv error
   args:
@@ -3239,6 +3262,14 @@
   expected: |
     "1\tfoo\t\tfoo,\\n\"bar\"\\tba\\\\z"
 
+- name: format strings @csv with string interpolation
+  args:
+    - '@tsv "\(.),\(. + .)"'
+  input: |
+    [1, "foo", null, 2]
+  expected: |
+    "1\tfoo\t\t2,1\tfoo\t\t2\t1\tfoo\t\t2"
+
 - name: format strings @tsv error
   args:
     - '@tsv'
@@ -3254,6 +3285,14 @@
     {"foo": "bar"}
   expected: |
     "eyJmb28iOiJiYXIifQ=="
+
+- name: format strings @base64 with string interpolation
+  args:
+    - '@base64 "\(.),\(. + .),\(. + . + .)"'
+  input: |
+    [1,2]
+  expected: |
+    "WzEsMl0=,WzEsMiwxLDJd,WzEsMiwxLDIsMSwyXQ=="
 
 - name: format strings @base64d
   args:

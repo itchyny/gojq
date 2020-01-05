@@ -671,7 +671,7 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 	} else if e.Unary != nil {
 		return c.compileUnary(e.Unary)
 	} else if e.Format != "" {
-		return c.compileFormat(e.Format)
+		return c.compileFormat(e.Format, e.FormatStr)
 	} else if e.Str != "" {
 		return c.compileString(e.Str)
 	} else if e.RawStr != "" {
@@ -710,7 +710,7 @@ func (c *compiler) compileIndex(e *Term, x *Index) error {
 		return c.compileCall("_index", []*Query{e.toQuery(), (&Term{RawStr: x.Name}).toQuery()})
 	}
 	if x.Str != "" {
-		q, err := c.stringToQuery(x.Str)
+		q, err := c.stringToQuery(x.Str, nil)
 		if err != nil {
 			return err
 		}
@@ -902,24 +902,38 @@ func (c *compiler) compileUnary(e *Unary) error {
 	}
 }
 
-func (c *compiler) compileFormat(fmt string) error {
+func (c *compiler) compileFormat(fmt, str string) error {
+	if f := formatToFunc(fmt); f != nil {
+		if str == "" {
+			return c.compileFunc(f)
+		}
+		q, err := c.stringToQuery(str, f)
+		if err != nil {
+			return err
+		}
+		return c.compileQuery(q)
+	}
+	return &formatNotFoundError{fmt}
+}
+
+func formatToFunc(fmt string) *Func {
 	switch fmt {
 	case "@text":
-		return c.compileFunc(&Func{Name: "tostring"})
+		return &Func{Name: "tostring"}
 	case "@json":
-		return c.compileFunc(&Func{Name: "tojson"})
+		return &Func{Name: "tojson"}
 	case "@html":
-		return c.compileFunc(&Func{Name: "_tohtml"})
+		return &Func{Name: "_tohtml"}
 	case "@csv":
-		return c.compileFunc(&Func{Name: "_tocsv"})
+		return &Func{Name: "_tocsv"}
 	case "@tsv":
-		return c.compileFunc(&Func{Name: "_totsv"})
+		return &Func{Name: "_totsv"}
 	case "@base64":
-		return c.compileFunc(&Func{Name: "_tobase64"})
+		return &Func{Name: "_tobase64"}
 	case "@base64d":
-		return c.compileFunc(&Func{Name: "_tobase64d"})
+		return &Func{Name: "_tobase64d"}
 	default:
-		return &formatNotFoundError{fmt}
+		return nil
 	}
 }
 
@@ -931,14 +945,17 @@ func (c *compiler) compileString(s string) error {
 			return nil
 		}
 	}
-	q, err := c.stringToQuery(s)
+	q, err := c.stringToQuery(s, nil)
 	if err != nil {
 		return err
 	}
 	return c.compileQuery(q)
 }
 
-func (c *compiler) stringToQuery(s string) (*Query, error) {
+func (c *compiler) stringToQuery(s string, f *Func) (*Query, error) {
+	if f == nil {
+		f = &Func{Name: "tostring"}
+	}
 	// ref: strconv.Unquote
 	x := s[1 : len(s)-1]
 	var runeTmp [utf8.UTFMax]byte
@@ -975,10 +992,7 @@ func (c *compiler) stringToQuery(s string) (*Query, error) {
 				xs = append(xs, (&Term{RawStr: string(buf)}).toFilter())
 				buf = buf[:0]
 			}
-			q.Commas = append(
-				q.Commas,
-				(&Term{Func: &Func{Name: "tostring"}}).toQuery().Commas...,
-			)
+			q.Commas = append(q.Commas, (&Term{Func: f}).toQuery().Commas...)
 			name := fmt.Sprintf("$%%%d", cnt)
 			es = append(es, &Expr{
 				Logic: (&Term{Query: q}).toLogic(),

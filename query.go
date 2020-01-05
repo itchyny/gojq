@@ -452,7 +452,8 @@ type Term struct {
 	Array      *Array    `| @@`
 	Number     string    `| @Number`
 	Unary      *Unary    `| @@`
-	Format     string    `| @Format`
+	Format     string    `| ( @Format`
+	FormatStr  string    `    @String? )`
 	Str        string    `| @String`
 	RawStr     string    `| @" "` // never matches, used in compiler
 	Null       bool      `| @"null"`
