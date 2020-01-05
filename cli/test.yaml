@@ -3334,6 +3334,13 @@
   expected: |
     "{\"foo\":\"bar\"}"
 
+- name: format strings not defined error
+  args:
+    - -n
+    - '@foo'
+  error: |
+    format not defined: @foo
+
 - name: destructuring alternative operator
   args:
     - '.[] | . as {a:$a} ?// [$a] ?// $a | $a'
