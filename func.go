@@ -59,6 +59,8 @@ func init() {
 		"tojson":         argFunc0(funcToJSON),
 		"fromjson":       argFunc0(funcFromJSON),
 		"_tohtml":        argFunc0(funcToHTML),
+		"_tocsv":         argFunc0(funcToCSV),
+		"_totsv":         argFunc0(funcToTSV),
 		"_tobase64":      argFunc0(funcToBase64),
 		"_tobase64d":     argFunc0(funcToBase64d),
 		"_index":         argFunc2(funcIndex),
@@ -482,6 +484,63 @@ func funcFromJSON(v interface{}) interface{} {
 		return w
 	default:
 		return &funcTypeError{"fromjson", v}
+	}
+}
+
+func funcToCSV(v interface{}) interface{} {
+	return funcToCSVTSV("csv", v, ",", func(s string) string {
+		return `"` + strings.ReplaceAll(s, `"`, `""`) + `"`
+	})
+}
+
+var tsvEscaper = strings.NewReplacer(
+	"\t", `\t`,
+	"\r", `\r`,
+	"\n", `\n`,
+	"\\", `\\`,
+)
+
+func funcToTSV(v interface{}) interface{} {
+	return funcToCSVTSV("tsv", v, "\t", func(s string) string {
+		return tsvEscaper.Replace(s)
+	})
+}
+
+func funcToCSVTSV(typ string, v interface{}, sep string, escape func(string) string) interface{} {
+	switch xs := v.(type) {
+	case []interface{}:
+		ys := make([]string, len(xs))
+		for i, x := range xs {
+			y, err := toCSVTSV(typ, x, escape)
+			if err != nil {
+				return err
+			}
+			ys[i] = y
+		}
+		return strings.Join(ys, sep)
+	default:
+		return &expectedArrayError{v}
+	}
+}
+
+func toCSVTSV(typ string, v interface{}, escape func(string) string) (string, error) {
+	switch v := v.(type) {
+	case map[string]interface{}, []interface{}:
+		return "", &formatCsvTsvRowError{typ, v}
+	case string:
+		return escape(v), nil
+	default:
+		switch v := funcToJSON(v).(type) {
+		case error:
+			return "", v
+		case string:
+			if v != "null" {
+				return v, nil
+			}
+			return "", nil
+		default:
+			panic("unreachable")
+		}
 	}
 }
 

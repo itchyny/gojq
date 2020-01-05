@@ -123,6 +123,15 @@ func (err *formatNotFoundError) Error() string {
 	return fmt.Sprintf("format not defined: %s", err.n)
 }
 
+type formatCsvTsvRowError struct {
+	typ string
+	v   interface{}
+}
+
+func (err *formatCsvTsvRowError) Error() string {
+	return fmt.Sprintf("invalid %s row: %s", err.typ, typeErrorPreview(err.v))
+}
+
 var errTooManyVariables = errors.New("too many variables provided")
 
 type expectedVariableError struct {

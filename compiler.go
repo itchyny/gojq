@@ -910,6 +910,10 @@ func (c *compiler) compileFormat(fmt string) error {
 		return c.compileFunc(&Func{Name: "tojson"})
 	case "@html":
 		return c.compileFunc(&Func{Name: "_tohtml"})
+	case "@csv":
+		return c.compileFunc(&Func{Name: "_tocsv"})
+	case "@tsv":
+		return c.compileFunc(&Func{Name: "_totsv"})
 	case "@base64":
 		return c.compileFunc(&Func{Name: "_tobase64"})
 	case "@base64d":
