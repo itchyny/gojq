@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"net/url"
 	"os"
 	"regexp"
 	"sort"
@@ -60,6 +61,7 @@ func init() {
 		"tojson":         argFunc0(funcToJSON),
 		"fromjson":       argFunc0(funcFromJSON),
 		"_tohtml":        argFunc0(funcToHTML),
+		"_touri":         argFunc0(funcToURI),
 		"_tocsv":         argFunc0(funcToCSV),
 		"_totsv":         argFunc0(funcToTSV),
 		"_tobase64":      argFunc0(funcToBase64),
@@ -569,6 +571,15 @@ func funcToHTML(v interface{}) interface{} {
 	switch x := funcToString(v).(type) {
 	case string:
 		return htmlEscaper.Replace(x)
+	default:
+		return x
+	}
+}
+
+func funcToURI(v interface{}) interface{} {
+	switch x := funcToString(v).(type) {
+	case string:
+		return url.QueryEscape(x)
 	default:
 		return x
 	}

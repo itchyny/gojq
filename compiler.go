@@ -924,6 +924,8 @@ func formatToFunc(fmt string) *Func {
 		return &Func{Name: "tojson"}
 	case "@html":
 		return &Func{Name: "_tohtml"}
+	case "@uri":
+		return &Func{Name: "_touri"}
 	case "@csv":
 		return &Func{Name: "_tocsv"}
 	case "@tsv":

@@ -3230,6 +3230,22 @@
   expected: |
     "x[&quot;&lt;&gt;&quot;]x[&quot;&lt;&gt;&quot;,&quot;&lt;&gt;&quot;]x"
 
+- name: format strings @uri
+  args:
+    - '@uri'
+  input: |
+    [1, {"foo": "<div>&'\"()</div>"}]
+  expected: |
+    "%5B1%2C%7B%22foo%22%3A%22%3Cdiv%3E%26%27%5C%22%28%29%3C%2Fdiv%3E%22%7D%5D"
+
+- name: format strings @uri with string interpolation
+  args:
+    - '@uri "q=\(.)&q=\(. + .)"'
+  input: |
+    ["<>", "{&}"]
+  expected: |
+    "q=%5B%22%3C%3E%22%2C%22%7B%26%7D%22%5D&q=%5B%22%3C%3E%22%2C%22%7B%26%7D%22%2C%22%3C%3E%22%2C%22%7B%26%7D%22%5D"
+
 - name: format strings @csv
   args:
     - '@csv'
