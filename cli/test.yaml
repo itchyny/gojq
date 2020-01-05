@@ -3294,6 +3294,22 @@
   error: |
     invalid tsv row: array (["foo"])
 
+- name: format strings @sh
+  args:
+    - '@sh'
+  input: |
+    [1, "f'o'o", null, false]
+  expected: |
+    "1 'f'\\''o'\\''o' null false"
+
+- name: format strings @sh error
+  args:
+    - '@sh'
+  input: |
+    [{}]
+  error: |
+    cannot escape for shell: object ({})
+
 - name: format strings @base64
   args:
     - '@base64'

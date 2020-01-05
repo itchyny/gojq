@@ -930,6 +930,8 @@ func formatToFunc(fmt string) *Func {
 		return &Func{Name: "_tocsv"}
 	case "@tsv":
 		return &Func{Name: "_totsv"}
+	case "@sh":
+		return &Func{Name: "_tosh"}
 	case "@base64":
 		return &Func{Name: "_tobase64"}
 	case "@base64d":

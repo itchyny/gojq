@@ -64,6 +64,7 @@ func init() {
 		"_touri":         argFunc0(funcToURI),
 		"_tocsv":         argFunc0(funcToCSV),
 		"_totsv":         argFunc0(funcToTSV),
+		"_tosh":          argFunc0(funcToSh),
 		"_tobase64":      argFunc0(funcToBase64),
 		"_tobase64d":     argFunc0(funcToBase64d),
 		"_index":         argFunc2(funcIndex),
@@ -519,6 +520,35 @@ func funcToTSV(v interface{}) interface{} {
 	return funcToCSVTSV("tsv", v, "\t", func(s string) string {
 		return tsvEscaper.Replace(s)
 	})
+}
+
+func funcToSh(v interface{}) interface{} {
+	var xs []interface{}
+	if w, ok := v.([]interface{}); ok {
+		xs = w
+	} else {
+		xs = []interface{}{v}
+	}
+	var s strings.Builder
+	for i, x := range xs {
+		if i > 0 {
+			s.WriteByte(' ')
+		}
+		switch x := x.(type) {
+		case map[string]interface{}, []interface{}:
+			return &formatShError{x}
+		case string:
+			s.WriteString("'" + strings.ReplaceAll(x, "'", `'\''`) + "'")
+		default:
+			switch v := funcToJSON(x).(type) {
+			case error:
+				return v
+			case string:
+				s.WriteString(v)
+			}
+		}
+	}
+	return s.String()
 }
 
 func funcToCSVTSV(typ string, v interface{}, sep string, escape func(string) string) interface{} {

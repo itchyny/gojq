@@ -132,6 +132,14 @@ func (err *formatCsvTsvRowError) Error() string {
 	return fmt.Sprintf("invalid %s row: %s", err.typ, typeErrorPreview(err.v))
 }
 
+type formatShError struct {
+	v interface{}
+}
+
+func (err *formatShError) Error() string {
+	return fmt.Sprintf("cannot escape for shell: %s", typeErrorPreview(err.v))
+}
+
 var errTooManyVariables = errors.New("too many variables provided")
 
 type expectedVariableError struct {
