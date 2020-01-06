@@ -3306,9 +3306,9 @@
   args:
     - '@sh'
   input: |
-    [{}]
+    [{"foo": "<>"}]
   error: |
-    cannot escape for shell: object ({})
+    cannot escape for shell: object ({"foo":"<>"})
 
 - name: format strings @base64
   args:

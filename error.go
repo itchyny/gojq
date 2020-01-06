@@ -1,7 +1,6 @@
 package gojq
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
@@ -252,12 +251,11 @@ func preview(v interface{}) string {
 	if v == nil {
 		return ""
 	}
-	bs, err := json.Marshal(v)
+	s, err := encodeJSON(v)
 	if err != nil {
 		return ""
 	}
-	s, l := string(bs), 25
-	if len(s) > l {
+	if l := 25; len(s) > l {
 		s = s[:l-3] + " ..."
 	}
 	return s
