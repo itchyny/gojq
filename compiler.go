@@ -1203,7 +1203,7 @@ func (c *compiler) optimizeJumps() {
 		}
 		for {
 			d := c.codes[code.v.(int)-c.codeoffset]
-			if d.op != opjump {
+			if d.op != opjump || code.v.(int) == d.v.(int) {
 				break
 			}
 			code.v = d.v
