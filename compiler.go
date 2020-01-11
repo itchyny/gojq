@@ -28,16 +28,12 @@ type Code struct {
 // Run runs the code with the given variables bound (if any) and returns
 // a result iterator.
 func (c *Code) Run(v interface{}, vars ...interface{}) Iter {
-	e := newEnv()
-	for i, name := range c.vars {
-		if i >= len(vars) {
-			return unitIterator(&expectedVariableError{name})
-		}
-	}
 	if len(vars) > len(c.vars) {
 		return unitIterator(errTooManyVariables)
+	} else if len(vars) < len(c.vars) {
+		return unitIterator(&expectedVariableError{c.vars[len(vars)]})
 	}
-	return e.execute(c, normalizeNumbers(v), vars...)
+	return newEnv().execute(c, normalizeNumbers(v), vars...)
 }
 
 type codeinfo struct {
