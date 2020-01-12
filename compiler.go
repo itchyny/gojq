@@ -1,6 +1,7 @@
 package gojq
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -28,12 +29,21 @@ type Code struct {
 // Run runs the code with the given variables bound (if any) and returns
 // a result iterator.
 func (c *Code) Run(v interface{}, vars ...interface{}) Iter {
+	return c.run(nil, v, vars...)
+}
+
+// RunWithContext runs the code with context.
+func (c *Code) RunWithContext(ctx context.Context, v interface{}, vars ...interface{}) Iter {
+	return c.run(ctx, v, vars...)
+}
+
+func (c *Code) run(ctx context.Context, v interface{}, vars ...interface{}) Iter {
 	if len(vars) > len(c.vars) {
 		return unitIterator(errTooManyVariables)
 	} else if len(vars) < len(c.vars) {
 		return unitIterator(&expectedVariableError{c.vars[len(vars)]})
 	}
-	return newEnv().execute(c, normalizeNumbers(v), vars...)
+	return newEnv(ctx).execute(c, normalizeNumbers(v), vars...)
 }
 
 type codeinfo struct {

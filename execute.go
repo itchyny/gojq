@@ -19,12 +19,19 @@ func (env *env) execute(bc *Code, v interface{}, vars ...interface{}) Iter {
 
 func (env *env) Next() (interface{}, bool) {
 	var err error
-	pc, callpc, index, backtrack := env.pc, len(env.codes)-1, -1, env.backtrack
+	pc, callpc, index, backtrack, hasCtx := env.pc, len(env.codes)-1, -1, env.backtrack, env.ctx != nil
 	defer func() { env.pc, env.backtrack = pc, true }()
 loop:
 	for ; pc < len(env.codes); pc++ {
 		env.debugState(pc, backtrack)
 		code := env.codes[pc]
+		if hasCtx {
+			select {
+			case <-env.ctx.Done():
+				return env.ctx.Err(), true
+			default:
+			}
+		}
 		switch code.op {
 		case opnop:
 			// nop

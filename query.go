@@ -1,6 +1,7 @@
 package gojq
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -60,11 +61,20 @@ func (e *Query) toIndices() []interface{} {
 
 // Run query.
 func (e *Query) Run(v interface{}) Iter {
+	return e.run(nil, v)
+}
+
+// RunWithContext query.
+func (e *Query) RunWithContext(ctx context.Context, v interface{}) Iter {
+	return e.run(ctx, v)
+}
+
+func (e *Query) run(ctx context.Context, v interface{}) Iter {
 	code, err := Compile(e)
 	if err != nil {
 		return unitIterator(err)
 	}
-	return code.Run(v)
+	return code.RunWithContext(ctx, v)
 }
 
 // Comma ...

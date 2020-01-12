@@ -1,5 +1,7 @@
 package gojq
 
+import "context"
+
 type env struct {
 	pc        int
 	stack     *stack
@@ -12,10 +14,16 @@ type env struct {
 	backtrack bool
 	offset    int
 	expdepth  int
+	ctx       context.Context
 }
 
-func newEnv() *env {
-	return &env{stack: newStack(), scopes: newStack(), paths: newStack()}
+func newEnv(ctx context.Context) *env {
+	return &env{
+		stack:  newStack(),
+		scopes: newStack(),
+		paths:  newStack(),
+		ctx:    ctx,
+	}
 }
 
 type scope struct {

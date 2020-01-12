@@ -60,7 +60,7 @@ func main() {
 		log.Fatalln(err)
 	}
 	input := map[string]interface{}{"foo": []interface{}{1, 2, 3}}
-	iter := query.Run(input)
+	iter := query.Run(input) // or query.RunWithContext
 	for {
 		v, ok := iter.Next()
 		if !ok {
