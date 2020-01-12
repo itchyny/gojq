@@ -61,15 +61,11 @@ func (e *Query) toIndices() []interface{} {
 
 // Run query.
 func (e *Query) Run(v interface{}) Iter {
-	return e.run(nil, v)
+	return e.RunWithContext(nil, v)
 }
 
 // RunWithContext query.
 func (e *Query) RunWithContext(ctx context.Context, v interface{}) Iter {
-	return e.run(ctx, v)
-}
-
-func (e *Query) run(ctx context.Context, v interface{}) Iter {
 	code, err := Compile(e)
 	if err != nil {
 		return unitIterator(err)
