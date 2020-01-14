@@ -19,8 +19,10 @@ func (env *env) execute(bc *Code, v interface{}, vars ...interface{}) Iter {
 
 func (env *env) Next() (interface{}, bool) {
 	var err error
-	pc, callpc, index, backtrack, hasCtx := env.pc, len(env.codes)-1, -1, env.backtrack, env.ctx != nil
-	defer func() { env.pc, env.backtrack = pc, true }()
+	pc, callpc, index := env.pc, len(env.codes)-1, -1
+	backtrack := env.backtrack > 0
+	hasCtx := env.ctx != nil
+	defer func() { env.pc, env.backtrack = pc, pc }()
 loop:
 	for ; pc < len(env.codes); pc++ {
 		env.debugState(pc, backtrack)
@@ -84,8 +86,12 @@ loop:
 					break loop
 				}
 				if code.op == opforkopt {
-					env.pop()
-					env.push(err.Error())
+					if env.backtrack <= code.v.(int) {
+						env.pop()
+						env.push(err.Error())
+					} else {
+						break loop
+					}
 				}
 				pc, backtrack, err = code.v.(int), false, nil
 				goto loop
@@ -256,6 +262,9 @@ loop:
 		}
 	}
 	if len(env.forks) > 0 {
+		if !backtrack {
+			env.backtrack = pc
+		}
 		pc, backtrack = env.popfork().pc, true
 		goto loop
 	}

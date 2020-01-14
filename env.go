@@ -11,7 +11,7 @@ type env struct {
 	codes     []*code
 	codeinfos []codeinfo
 	forks     []*fork
-	backtrack bool
+	backtrack int
 	offset    int
 	expdepth  int
 	ctx       context.Context

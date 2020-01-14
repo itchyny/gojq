@@ -153,6 +153,20 @@
   error: |
     cannot iterate over: number (128)
 
+- name: error after optional
+  args:
+    - '1? | .foo'
+  input: 'null'
+  error: |
+    expected an object but got: number (1)
+
+- name: error after optional with fork in try
+  args:
+    - '(1,2)? | .foo'
+  input: 'null'
+  error: |
+    expected an object but got: number (1)
+
 - name: array index
   args:
     - '.[-5],.[-1],.[0],.[2],.[3],.[4]'
