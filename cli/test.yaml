@@ -2871,14 +2871,6 @@
   expected: |
     [[],["a"],["a","b"],["a","b",0],["a","b",1],["a","b",2],["c"],["c",0],["c",1]]
 
-- name: path function nested
-  args:
-    - -c
-    - 'path(.a[path(.b)[0]][path(.b.c)[1]])'
-  input: '{"a":{"b":{"c":0}}}'
-  expected: |
-    ["a","b","c"]
-
 - name: path function and pattern
   args:
     - -c
@@ -2894,6 +2886,14 @@
   input: '{"a":{"b":0}}'
   expected: |
     0
+
+- name: path function with select
+  args:
+    - -c
+    - '(.[] | select(.k == "b") | .v) = 0'
+  input: '[{"k": "a", "v": 1}, {"k": "b", "v": 2}, {"k": "c", "v": 3}]'
+  expected: |
+    [{"k":"a","v":1},{"k":"b","v":0},{"k":"c","v":3}]
 
 - name: path function error
   args:

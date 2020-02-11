@@ -1068,7 +1068,7 @@ func (c *compiler) compileCall(name string, args []*Query) error {
 		[3]interface{}{internalFuncs[name].callback, len(args), name},
 		args,
 		nil,
-		name == "_index" || name == "_slice",
+		name != "path" && name != "_index" && name != "_slice",
 	)
 }
 
@@ -1131,13 +1131,13 @@ func (c *compiler) compileCallInternal(fn interface{}, args []*Query, vars map[i
 		} else {
 			c.append(&code{op: oppushpc, v: pc})
 		}
-		if indexing && i == 1 {
-			if c.codes[len(c.codes)-2].op == opexpbegin {
-				c.codes[len(c.codes)-2] = c.codes[len(c.codes)-1]
-				c.codes = c.codes[:len(c.codes)-1]
-			} else {
-				c.append(&code{op: opexpend})
-			}
+	}
+	if indexing {
+		if c.codes[len(c.codes)-2].op == opexpbegin {
+			c.codes[len(c.codes)-2] = c.codes[len(c.codes)-1]
+			c.codes = c.codes[:len(c.codes)-1]
+		} else {
+			c.append(&code{op: opexpend})
 		}
 	}
 	c.append(&code{op: opload, v: idx})
