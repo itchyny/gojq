@@ -47,8 +47,6 @@ type cli struct {
 	inputSlurp    bool
 	inputYAML     bool
 
-	args      map[string]string
-	argsjson  map[string]interface{}
 	argnames  []string
 	argvalues []interface{}
 
@@ -110,8 +108,7 @@ Synopsis:
 		color.NoColor = !isTTY(cli.outStream)
 	}
 	cli.inputRaw, cli.inputSlurp, cli.inputYAML = opts.InputRaw, opts.InputSlurp, opts.InputYAML
-	cli.args = opts.Args
-	for k, v := range cli.args {
+	for k, v := range opts.Args {
 		if !argNameRe.MatchString(k) {
 			fmt.Fprintf(cli.errStream, "%s: invalid variable name: %s\n", name, k)
 			return exitCodeErr
@@ -119,7 +116,6 @@ Synopsis:
 		cli.argnames = append(cli.argnames, "$"+k)
 		cli.argvalues = append(cli.argvalues, v)
 	}
-	cli.argsjson = make(map[string]interface{}, len(opts.ArgsJSON))
 	for k, v := range opts.ArgsJSON {
 		if !argNameRe.MatchString(k) {
 			fmt.Fprintf(cli.errStream, "%s: invalid variable name: %s\n", name, k)
@@ -130,7 +126,6 @@ Synopsis:
 			fmt.Fprintf(cli.errStream, "%s: invalid JSON for $%s: %s\n", name, k, err)
 			return exitCodeErr
 		}
-		cli.argsjson[k] = val
 		cli.argnames = append(cli.argnames, "$"+k)
 		cli.argvalues = append(cli.argvalues, val)
 	}
