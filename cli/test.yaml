@@ -3830,8 +3830,7 @@
   args:
     - -f
     - testdata/3.jq
-  error: |
-    open testdata/3.jq: no such file or directory
+  error: 'open testdata/3.jq:'
 
 - name: invalid json eof
   input: '{'
@@ -4002,3 +4001,24 @@
     - '.'
   error: |
     invalid variable name: foo=10
+
+- name: rawfile option
+  args:
+    - '--rawfile'
+    - 'foo'
+    - 'testdata/7.json'
+    - '{ $foo }'
+  input: 'null'
+  expected: |
+    {
+      "foo": "1\n2\n{ \"foo\": 42 }\n"
+    }
+
+- name: rawfile option error
+  args:
+    - '--rawfile'
+    - 'foo'
+    - 'testdata/6.json'
+    - '{ $foo }'
+  input: 'null'
+  error: 'open testdata/6.json:'

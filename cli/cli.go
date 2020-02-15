@@ -67,6 +67,7 @@ type flagopts struct {
 	FromFile      string            `short:"f" long:"from-file" description:"load query from file"`
 	Args          map[string]string `long:"arg" description:"set variable to string value" count:"2" unquote:"false"`
 	ArgsJSON      map[string]string `long:"argjson" description:"set variable to JSON value" count:"2" unquote:"false"`
+	RawFile       map[string]string `long:"rawfile" description:"set variable to the contents of the file" count:"2" unquote:"false"`
 	Version       bool              `short:"v" long:"version" description:"print version"`
 }
 
@@ -128,6 +129,19 @@ Synopsis:
 		}
 		cli.argnames = append(cli.argnames, "$"+k)
 		cli.argvalues = append(cli.argvalues, val)
+	}
+	for k, v := range opts.RawFile {
+		if !argNameRe.MatchString(k) {
+			fmt.Fprintf(cli.errStream, "%s: invalid variable name: %s\n", name, k)
+			return exitCodeErr
+		}
+		val, err := ioutil.ReadFile(v)
+		if err != nil {
+			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+			return exitCodeErr
+		}
+		cli.argnames = append(cli.argnames, "$"+k)
+		cli.argvalues = append(cli.argvalues, string(val))
 	}
 	var arg, fname string
 	if opts.FromFile != "" {
