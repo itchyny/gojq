@@ -8,13 +8,14 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"runtime"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/alecthomas/participle"
 	"github.com/fatih/color"
-	"github.com/jessevdk/go-flags"
+	"github.com/itchyny/go-flags"
 	"github.com/mattn/go-isatty"
 	"github.com/mattn/go-runewidth"
 	"gopkg.in/yaml.v3"
@@ -46,26 +47,32 @@ type cli struct {
 	inputSlurp    bool
 	inputYAML     bool
 
-	vars []*variable
+	args      map[string]string
+	argsjson  map[string]interface{}
+	argnames  []string
+	argvalues []interface{}
 
 	outputYAMLSeparator bool
 }
 
 type flagopts struct {
-	OutputCompact bool        `short:"c" long:"compact-output" description:"compact output"`
-	OutputRaw     bool        `short:"r" long:"raw-output" description:"output raw strings"`
-	OutputJoin    bool        `short:"j" long:"join-output" description:"stop printing a newline after each output"`
-	OutputColor   bool        `short:"C" long:"color-output" description:"colorize output even if piped"`
-	OutputMono    bool        `short:"M" long:"monochrome-output" description:"stop colorizing output"`
-	OutputYAML    bool        `long:"yaml-output" description:"output by YAML"`
-	InputNull     bool        `short:"n" long:"null-input" description:"use null as input value"`
-	InputRaw      bool        `short:"R" long:"raw-input" description:"read input as raw strings"`
-	InputSlurp    bool        `short:"s" long:"slurp" description:"read all inputs into an array"`
-	InputYAML     bool        `long:"yaml-input" description:"read input as YAML"`
-	FromFile      string      `short:"f" long:"from-file" description:"load query from file"`
-	Variables     []*variable `long:"arg" description:"name=value: set variable $name to <value> (<value> may be JSON)"`
-	Version       bool        `short:"v" long:"version" description:"print version"`
+	OutputCompact bool              `short:"c" long:"compact-output" description:"compact output"`
+	OutputRaw     bool              `short:"r" long:"raw-output" description:"output raw strings"`
+	OutputJoin    bool              `short:"j" long:"join-output" description:"stop printing a newline after each output"`
+	OutputColor   bool              `short:"C" long:"color-output" description:"colorize output even if piped"`
+	OutputMono    bool              `short:"M" long:"monochrome-output" description:"stop colorizing output"`
+	OutputYAML    bool              `long:"yaml-output" description:"output by YAML"`
+	InputNull     bool              `short:"n" long:"null-input" description:"use null as input value"`
+	InputRaw      bool              `short:"R" long:"raw-input" description:"read input as raw strings"`
+	InputSlurp    bool              `short:"s" long:"slurp" description:"read all inputs into an array"`
+	InputYAML     bool              `long:"yaml-input" description:"read input as YAML"`
+	FromFile      string            `short:"f" long:"from-file" description:"load query from file"`
+	Args          map[string]string `long:"arg" description:"set variable to string value" count:"2" unquote:"false"`
+	ArgsJSON      map[string]string `long:"argjson" description:"set variable to JSON value" count:"2" unquote:"false"`
+	Version       bool              `short:"v" long:"version" description:"print version"`
 }
+
+var argNameRe = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 
 func (cli *cli) run(args []string) int {
 	var opts flagopts
@@ -103,7 +110,30 @@ Synopsis:
 		color.NoColor = !isTTY(cli.outStream)
 	}
 	cli.inputRaw, cli.inputSlurp, cli.inputYAML = opts.InputRaw, opts.InputSlurp, opts.InputYAML
-	cli.vars = opts.Variables
+	cli.args = opts.Args
+	for k, v := range cli.args {
+		if !argNameRe.MatchString(k) {
+			fmt.Fprintf(cli.errStream, "%s: invalid variable name: %s\n", name, k)
+			return exitCodeErr
+		}
+		cli.argnames = append(cli.argnames, "$"+k)
+		cli.argvalues = append(cli.argvalues, v)
+	}
+	cli.argsjson = make(map[string]interface{}, len(opts.ArgsJSON))
+	for k, v := range opts.ArgsJSON {
+		if !argNameRe.MatchString(k) {
+			fmt.Fprintf(cli.errStream, "%s: invalid variable name: %s\n", name, k)
+			return exitCodeErr
+		}
+		var val interface{}
+		if err := json.Unmarshal([]byte(v), &val); err != nil {
+			fmt.Fprintf(cli.errStream, "%s: invalid JSON for $%s: %s\n", name, k, err)
+			return exitCodeErr
+		}
+		cli.argsjson[k] = val
+		cli.argnames = append(cli.argnames, "$"+k)
+		cli.argvalues = append(cli.argvalues, val)
+	}
 	var arg, fname string
 	if opts.FromFile != "" {
 		src, err := ioutil.ReadFile(opts.FromFile)
@@ -123,7 +153,7 @@ Synopsis:
 		cli.printParseError(fname, arg, err)
 		return exitCodeErr
 	}
-	code, err := gojq.Compile(query, variableNames(cli.vars)...)
+	code, err := gojq.Compile(query, cli.argnames...)
 	if err != nil {
 		cli.printCompileError(fname, err)
 		return exitCodeErr
@@ -196,7 +226,7 @@ func (cli *cli) processRaw(fname string, in io.Reader, code *gojq.Code) int {
 			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 			return exitCodeErr
 		}
-		if err := cli.printValue(code.Run(string(xs), variableValues(cli.vars)...)); err != nil {
+		if err := cli.printValue(code.Run(string(xs), cli.argvalues...)); err != nil {
 			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 			return exitCodeErr
 		}
@@ -205,7 +235,7 @@ func (cli *cli) processRaw(fname string, in io.Reader, code *gojq.Code) int {
 	s := bufio.NewScanner(in)
 	exitCode := exitCodeOK
 	for s.Scan() {
-		if err := cli.printValue(code.Run(s.Text(), variableValues(cli.vars)...)); err != nil {
+		if err := cli.printValue(code.Run(s.Text(), cli.argvalues...)); err != nil {
 			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 			exitCode = exitCodeErr
 		}
@@ -227,7 +257,7 @@ func (cli *cli) processJSON(fname string, in io.Reader, code *gojq.Code) int {
 		if err := dec.Decode(&v); err != nil {
 			if err == io.EOF {
 				if cli.inputSlurp {
-					if err := cli.printValue(code.Run(vs, variableValues(cli.vars)...)); err != nil {
+					if err := cli.printValue(code.Run(vs, cli.argvalues...)); err != nil {
 						fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 						return exitCodeErr
 					}
@@ -242,7 +272,7 @@ func (cli *cli) processJSON(fname string, in io.Reader, code *gojq.Code) int {
 			vs = append(vs, v)
 			continue
 		}
-		if err := cli.printValue(code.Run(v, variableValues(cli.vars)...)); err != nil {
+		if err := cli.printValue(code.Run(v, cli.argvalues...)); err != nil {
 			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 			return exitCodeErr
 		}
@@ -289,7 +319,7 @@ func (cli *cli) processYAML(fname string, in io.Reader, code *gojq.Code) int {
 		if err := dec.Decode(&v); err != nil {
 			if err == io.EOF {
 				if cli.inputSlurp {
-					if err := cli.printValue(code.Run(vs, variableValues(cli.vars)...)); err != nil {
+					if err := cli.printValue(code.Run(vs, cli.argvalues...)); err != nil {
 						fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 						return exitCodeErr
 					}
@@ -305,7 +335,7 @@ func (cli *cli) processYAML(fname string, in io.Reader, code *gojq.Code) int {
 			vs = append(vs, v)
 			continue
 		}
-		if err := cli.printValue(code.Run(v, variableValues(cli.vars)...)); err != nil {
+		if err := cli.printValue(code.Run(v, cli.argvalues...)); err != nil {
 			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 			return exitCodeErr
 		}

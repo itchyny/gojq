@@ -7,7 +7,7 @@ require (
 	github.com/fatih/color v1.8.0
 	github.com/hokaccha/go-prettyjson v0.0.0-20190818114111-108c894c2c0e
 	github.com/itchyny/astgen-go v0.0.0-20191216142349-3fab548bba0b
-	github.com/jessevdk/go-flags v1.4.0
+	github.com/itchyny/go-flags v1.5.0
 	github.com/lestrrat-go/strftime v1.0.1
 	github.com/mattn/go-isatty v0.0.11
 	github.com/mattn/go-runewidth v0.0.7

@@ -3926,53 +3926,79 @@
     }
   error: 'open testdata/6.json:'
 
-- name: 'single variable'
+- name: arg option
   args:
     - '--arg'
-    - 'mul=10'
-    - '. * $mul'
-  input: '123'
-  expected: |
-    1230
-
-- name: 'multiple variables'
-  args:
-    - '--arg=x=2'
-    - '--arg=y=3'
-    - '--arg=z=4'
-    - -n
-    - '{ x: $x, y: $y, z: $z }'
+    - 'foo'
+    - 'value 1'
+    - '--arg=bar'
+    - '42'
+    - '{ $foo, $bar }'
   input: '123'
   expected: |
     {
-      "x": 2,
-      "y": 3,
-      "z": 4
+      "bar": "42",
+      "foo": "value 1"
     }
 
-- name: 'multiple variables'
+- name: arg option error
   args:
     - '--arg'
-    - 'x=2'
-    - '--arg'
-    - 'y=3'
-    - '--arg'
-    - 'z=4'
-    - -n
-    - '{ x: $x, y: $y, z: $z }'
-  input: '123'
-  expected: |
-    {
-      "x": 2,
-      "y": 3,
-      "z": 4
-    }
-
-- name: 'variable parse error'
-  args:
-    - '--arg'
-    - 'mul 10'
-    - -n
-    - '. * $mul'
+    - 'foo'
+    - '--null-input'
+    - '.'
   error: |
-    invalid argument for flag `--arg'
+    expected 2 arguments for flag `--arg', but got option `--null-input'
+
+- name: arg option error
+  args:
+    - '--arg'
+    - 'f.oo'
+    - '10'
+    - '.'
+  error: |
+    invalid variable name: f.oo
+
+- name: argjson option
+  args:
+    - '--argjson'
+    - 'foo'
+    - '{ "foo": 42 }'
+    - '--argjson'
+    - 'bar'
+    - '10'
+    - '{ $foo, $bar }'
+  input: '123'
+  expected: |
+    {
+      "bar": 10,
+      "foo": {
+        "foo": 42
+      }
+    }
+
+- name: arg and argjson options
+  args:
+    - '--arg'
+    - 'foo'
+    - '"false"'
+    - '--argjson'
+    - 'bar'
+    - '{ "bar": 24 }'
+    - '{ $foo, $bar }'
+  input: '123'
+  expected: |
+    {
+      "bar": {
+        "bar": 24
+      },
+      "foo": "\"false\""
+    }
+
+- name: argjson option error
+  args:
+    - '--argjson'
+    - 'foo=10'
+    - '.'
+  error: |
+    invalid variable name: foo=10

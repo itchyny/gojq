@@ -14,7 +14,8 @@ _gojq()
     '(-s --slurp)'{-s,--slurp}'[read all inputs into an array]' \
     '(--yaml-input)'--yaml-input'[read input as YAML]' \
     '(-f --from-file)'{-f,--from-file}'[load query from file]' \
-    '(--arg)'--arg'[set variable $name to <value> by name=value]' \
+    '(--arg)'--arg'[set variable to string value]' \
+    '(--argjson)'--argjson'[set variable to JSON value]' \
     '(-v --version)'{-v,--version}'[print version]' \
     '(-h --help)'{-h,--help}'[print help]' \
     && ret=0
