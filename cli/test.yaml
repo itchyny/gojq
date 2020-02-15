@@ -4002,6 +4002,33 @@
   error: |
     invalid variable name: foo=10
 
+- name: slurpfile option
+  args:
+    - '--slurpfile'
+    - 'foo'
+    - 'testdata/7.json'
+    - '{ $foo }'
+  input: 'null'
+  expected: |
+    {
+      "foo": [
+        1,
+        2,
+        {
+          "foo": 42
+        }
+      ]
+    }
+
+- name: slurpfile option error
+  args:
+    - '--slurpfile'
+    - 'foo'
+    - 'testdata/1.jq'
+    - '{ $foo }'
+  input: 'null'
+  error: 'failed to parse testdata/1.jq:'
+
 - name: rawfile option
   args:
     - '--rawfile'

@@ -67,6 +67,7 @@ type flagopts struct {
 	FromFile      string            `short:"f" long:"from-file" description:"load query from file"`
 	Args          map[string]string `long:"arg" description:"set variable to string value" count:"2" unquote:"false"`
 	ArgsJSON      map[string]string `long:"argjson" description:"set variable to JSON value" count:"2" unquote:"false"`
+	SlurpFile     map[string]string `long:"slurpfile" description:"set variable to the JSON contents of the file" count:"2" unquote:"false"`
 	RawFile       map[string]string `long:"rawfile" description:"set variable to the contents of the file" count:"2" unquote:"false"`
 	Version       bool              `short:"v" long:"version" description:"print version"`
 }
@@ -130,6 +131,19 @@ Synopsis:
 		cli.argnames = append(cli.argnames, "$"+k)
 		cli.argvalues = append(cli.argvalues, val)
 	}
+	for k, v := range opts.SlurpFile {
+		if !argNameRe.MatchString(k) {
+			fmt.Fprintf(cli.errStream, "%s: invalid variable name: %s\n", name, k)
+			return exitCodeErr
+		}
+		vals, err := slurpFile(v)
+		if err != nil {
+			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+			return exitCodeErr
+		}
+		cli.argnames = append(cli.argnames, "$"+k)
+		cli.argvalues = append(cli.argvalues, vals)
+	}
 	for k, v := range opts.RawFile {
 		if !argNameRe.MatchString(k) {
 			fmt.Fprintf(cli.errStream, "%s: invalid variable name: %s\n", name, k)
@@ -181,6 +195,27 @@ Synopsis:
 		}
 	}
 	return exitCodeOK
+}
+
+func slurpFile(name string) ([]interface{}, error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	var vals []interface{}
+	dec := json.NewDecoder(f)
+	for {
+		var val interface{}
+		if err := dec.Decode(&val); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, fmt.Errorf("failed to parse %s: %w", name, err)
+		}
+		vals = append(vals, val)
+	}
+	return vals, nil
 }
 
 func (cli *cli) printCompileError(fname string, err error) {
