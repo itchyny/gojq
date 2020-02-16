@@ -73,6 +73,11 @@ func (e *Query) RunWithContext(ctx context.Context, v interface{}) Iter {
 	return code.RunWithContext(ctx, v)
 }
 
+// ListFuncDefs gets the list of FuncDef.
+func (e *Query) ListFuncDefs() []*FuncDef {
+	return e.Commas[0].Filters[0].FuncDefs
+}
+
 // Comma ...
 type Comma struct {
 	Filters []*Filter `@@ ("," @@)*`

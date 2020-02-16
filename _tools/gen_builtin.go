@@ -44,7 +44,7 @@ func run(input, output string) error {
 	if err != nil {
 		return err
 	}
-	for _, fd := range q.Commas[0].Filters[0].FuncDefs {
+	for _, fd := range q.ListFuncDefs() {
 		name := fd.Name
 		if name[0] == '_' {
 			name = name[1:]
