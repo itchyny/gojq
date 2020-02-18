@@ -1,5 +1,5 @@
 # Changelog
-## [v0.8.0](https://github.com/itchyny/gojq/compare/v0.7.0..v0.8.0) (2020-02-15)
+## [v0.8.0](https://github.com/itchyny/gojq/compare/v0.7.0..v0.8.0) (2020-02-18)
 * implement format strings (`@text`, `@json`, `@html`, `@uri`, `@csv`, `@tsv`,
   `@sh`, `@base64`, `@base64d`)
 * implement options for binding variables from arguments (`--arg`, `--argjson`)
@@ -7,6 +7,7 @@
 * fix `isnan` for `null`
 * fix path analyzer
 * fix error after optional operator (`1? | .x`)
+* add `$ENV` variable
 * add zsh completion file
 
 ## [v0.7.0](https://github.com/itchyny/gojq/compare/v0.6.0..v0.7.0) (2019-12-22)

@@ -3094,6 +3094,16 @@
   expected: |
     true
 
+- name: $ENV variable
+  args:
+    - '[$ENV|length > 0, 1 as $ENV | $ENV]'
+  input: 'null'
+  expected: |
+    [
+      true,
+      1
+    ]
+
 - name: match function
   args:
     - -c

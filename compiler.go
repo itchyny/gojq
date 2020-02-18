@@ -753,6 +753,10 @@ func (c *compiler) compileFunc(e *Func) error {
 		}
 	}
 	if e.Name[0] == '$' {
+		if e.Name == "$ENV" {
+			c.append(&code{op: opconst, v: funcEnv(nil)})
+			return nil
+		}
 		return &variableNotFoundError{e.Name}
 	}
 	name := e.Name
