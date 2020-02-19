@@ -12,6 +12,6 @@ require (
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mattn/go-runewidth v0.0.8
 	github.com/pbnjay/strptime v0.0.0-20140226051138-5c05b0d668c9
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.5.0
 	gopkg.in/yaml.v3 v3.0.0-20200121175148-a6ecf24a6d71
 )
