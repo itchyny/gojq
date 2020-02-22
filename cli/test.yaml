@@ -3935,6 +3935,58 @@
     }
   error: 'open testdata/6.json:'
 
+- name: module directory option
+  args:
+    - -L
+    - testdata
+    - 'include "4"; 1 | f | g'
+  input: 0
+  expected: |
+    {
+      "foo": [
+        1,
+        2,
+        3
+      ]
+    }
+
+- name: module directory option
+  args:
+    - -L
+    - testdata
+    - 'include "m1"; f'
+  input: 0
+  expected: |
+    [
+      42,
+      42
+    ]
+
+- name: module directory option parse error
+  args:
+    - 'include "m"; f'
+  input: 0
+  error: 'compile error: module not found: "m"'
+
+- name: module directory option function error
+  args:
+    - -L
+    - testdata
+    - 'include "5"; i'
+  input: 0
+  error: 'function not defined: i/0'
+
+- name: invalid query in a module
+  args:
+    - -L
+    - testdata
+    - 'include "7"; .'
+  input: 0
+  error: |
+    invalid query: testdata/7.jq:1
+        1 | def f: 1 +
+                     ^  unexpected "+" (expected ";")
+
 - name: arg option
   args:
     - '--arg'

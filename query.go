@@ -55,11 +55,17 @@ func (e *FuncDef) String() string {
 
 // Query ...
 type Query struct {
-	Commas []*Comma `@@ ("|" @@)*`
+	Modules []string `( "include" @String ";" )*`
+	Commas  []*Comma `@@ ("|" @@)*`
 }
 
 func (e *Query) String() string {
 	var s strings.Builder
+	for _, m := range e.Modules {
+		s.WriteString("include ")
+		s.WriteString(m)
+		s.WriteString("; ")
+	}
 	for i, e := range e.Commas {
 		if i > 0 {
 			s.WriteString(" | ")
@@ -112,7 +118,7 @@ func (e *Comma) String() string {
 }
 
 func (e *Comma) toQuery() *Query {
-	return &Query{[]*Comma{e}}
+	return &Query{Commas: []*Comma{e}}
 }
 
 func (e *Comma) toIndices() []interface{} {

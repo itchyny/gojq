@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -11,13 +14,15 @@ import (
 )
 
 type compiler struct {
-	variables  []string
-	codes      []*code
-	codeinfos  []codeinfo
-	codeoffset int
-	scopes     []*scopeinfo
-	scopecnt   int
-	funcs      []*funcinfo
+	modulePaths  []string
+	moduleLoaded []string
+	variables    []string
+	codes        []*code
+	codeinfos    []codeinfo
+	codeoffset   int
+	scopes       []*scopeinfo
+	scopecnt     int
+	funcs        []*funcinfo
 }
 
 // Code is a compiled jq query.
@@ -82,6 +87,31 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 }
 
 func (c *compiler) compile(q *Query) (*Code, error) {
+	for _, path := range c.modulePaths {
+		if strings.HasSuffix(path, ".jq") {
+			fi, err := os.Stat(path)
+			if err != nil {
+				if os.IsNotExist(err) {
+					continue
+				}
+				return nil, err
+			}
+			if !fi.IsDir() {
+				if err := c.compileModuleFile(path); err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+	for _, m := range q.Modules {
+		path, err := c.lookupModule(m)
+		if err != nil {
+			return nil, err
+		}
+		if err := c.compileModuleFile(path); err != nil {
+			return nil, err
+		}
+	}
 	c.pushVariables(c.variables)
 	if err := c.compileQuery(q); err != nil {
 		return nil, err
@@ -93,6 +123,73 @@ func (c *compiler) compile(q *Query) (*Code, error) {
 		codes:     c.codes,
 		codeinfos: c.codeinfos,
 	}, nil
+}
+
+func (c *compiler) lookupModule(name string) (string, error) {
+	name, err := strconv.Unquote(name)
+	if err != nil {
+		return "", err
+	}
+	for _, base := range c.modulePaths {
+		path := filepath.Clean(filepath.Join(base, name+".jq"))
+		if _, err := os.Stat(path); err == nil {
+			return path, err
+		}
+		path = filepath.Clean(filepath.Join(base, filepath.Base(name), name+".jq"))
+		if _, err := os.Stat(path); err == nil {
+			return path, err
+		}
+	}
+	return "", fmt.Errorf("module not found: %q", name)
+}
+
+func (c *compiler) compileModuleFile(path string) error {
+	for _, p := range c.moduleLoaded {
+		if p == path {
+			return nil
+		}
+	}
+	c.moduleLoaded = append(c.moduleLoaded, path)
+	cnt, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	m, err := ParseModule(string(cnt))
+	if err != nil {
+		return &ModuleParseError{path, string(cnt), err}
+	}
+	cc := &compiler{
+		modulePaths: c.modulePaths, moduleLoaded: c.moduleLoaded,
+		codeoffset: c.pc(), scopecnt: c.scopecnt}
+	bs, err := cc.compileModule(m)
+	if err != nil {
+		return err
+	}
+	c.moduleLoaded = cc.moduleLoaded
+	c.codes = append(c.codes, bs.codes...)
+	c.funcs = append(c.funcs, cc.funcs...)
+	c.codeinfos = append(c.codeinfos, bs.codeinfos...)
+	c.scopecnt = cc.scopecnt
+	return nil
+}
+
+func (c *compiler) compileModule(m *Module) (*Code, error) {
+	for _, m := range m.Modules {
+		path, err := c.lookupModule(m)
+		if err != nil {
+			return nil, err
+		}
+		if err := c.compileModuleFile(path); err != nil {
+			return nil, err
+		}
+	}
+	defer func(i int) { c.funcs = c.funcs[i:] }(len(c.funcs))
+	for _, fd := range m.FuncDefs {
+		if err := c.compileFuncDef(fd, false); err != nil {
+			return nil, err
+		}
+	}
+	return &Code{codes: c.codes, codeinfos: c.codeinfos}, nil
 }
 
 func (c *compiler) newVariable() [2]int {
@@ -1028,7 +1125,7 @@ func (c *compiler) stringToQuery(s string, f *Func) (*Query, error) {
 	if len(buf) > 0 {
 		xs = append(xs, (&Term{RawStr: string(buf)}).toFilter())
 	}
-	q := (&Term{Array: &Array{&Query{[]*Comma{&Comma{xs}}}}}).toQuery()
+	q := (&Term{Array: &Array{&Query{Commas: []*Comma{&Comma{xs}}}}}).toQuery()
 	q.Commas = append(q.Commas, (&Term{
 		Func: &Func{
 			Name: "join",
