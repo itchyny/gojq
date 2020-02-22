@@ -103,8 +103,8 @@ func (c *compiler) compile(q *Query) (*Code, error) {
 			}
 		}
 	}
-	for _, m := range q.Modules {
-		path, err := c.lookupModule(m)
+	for _, i := range q.Imports {
+		path, err := c.lookupModule(i.Path)
 		if err != nil {
 			return nil, err
 		}
@@ -174,8 +174,8 @@ func (c *compiler) compileModuleFile(path string) error {
 }
 
 func (c *compiler) compileModule(m *Module) (*Code, error) {
-	for _, m := range m.Modules {
-		path, err := c.lookupModule(m)
+	for _, i := range m.Imports {
+		path, err := c.lookupModule(i.Path)
 		if err != nil {
 			return nil, err
 		}

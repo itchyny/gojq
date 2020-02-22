@@ -9,16 +9,14 @@ import (
 
 // Module ...
 type Module struct {
-	Modules  []string   `( "include" @String ";" )*`
+	Imports  []*Import  `@@*`
 	FuncDefs []*FuncDef `@@*`
 }
 
 func (e *Module) String() string {
 	var s strings.Builder
-	for _, m := range e.Modules {
-		s.WriteString("include ")
-		s.WriteString(m)
-		s.WriteString("; ")
+	for _, i := range e.Imports {
+		fmt.Fprint(&s, i)
 	}
 	for i, fd := range e.FuncDefs {
 		if i > 0 {
@@ -26,6 +24,19 @@ func (e *Module) String() string {
 		}
 		fmt.Fprint(&s, fd)
 	}
+	return s.String()
+}
+
+// Import ...
+type Import struct {
+	Path string `"include" @String ";"`
+}
+
+func (e *Import) String() string {
+	var s strings.Builder
+	s.WriteString("include ")
+	s.WriteString(e.Path)
+	s.WriteString("; ")
 	return s.String()
 }
 
@@ -55,16 +66,14 @@ func (e *FuncDef) String() string {
 
 // Query ...
 type Query struct {
-	Modules []string `( "include" @String ";" )*`
-	Commas  []*Comma `@@ ("|" @@)*`
+	Imports []*Import `@@*`
+	Commas  []*Comma  `@@ ("|" @@)*`
 }
 
 func (e *Query) String() string {
 	var s strings.Builder
-	for _, m := range e.Modules {
-		s.WriteString("include ")
-		s.WriteString(m)
-		s.WriteString("; ")
+	for _, i := range e.Imports {
+		fmt.Fprint(&s, i)
 	}
 	for i, e := range e.Commas {
 		if i > 0 {
