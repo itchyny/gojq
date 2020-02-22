@@ -7,6 +7,28 @@ import (
 	"strings"
 )
 
+// Module ...
+type Module struct {
+	Modules  []string   `( "include" @String ";" )*`
+	FuncDefs []*FuncDef `@@*`
+}
+
+func (e *Module) String() string {
+	var s strings.Builder
+	for _, m := range e.Modules {
+		s.WriteString("include ")
+		s.WriteString(m)
+		s.WriteString("; ")
+	}
+	for i, fd := range e.FuncDefs {
+		if i > 0 {
+			s.WriteByte(' ')
+		}
+		fmt.Fprint(&s, fd)
+	}
+	return s.String()
+}
+
 // FuncDef ...
 type FuncDef struct {
 	Name string   `"def" @Ident`
@@ -71,11 +93,6 @@ func (e *Query) RunWithContext(ctx context.Context, v interface{}) Iter {
 		return unitIterator(err)
 	}
 	return code.RunWithContext(ctx, v)
-}
-
-// ListFuncDefs gets the list of FuncDef.
-func (e *Query) ListFuncDefs() []*FuncDef {
-	return e.Commas[0].Filters[0].FuncDefs
 }
 
 // Comma ...
