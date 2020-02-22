@@ -11,6 +11,7 @@ import (
 )
 
 type compiler struct {
+	variables  []string
 	codes      []*code
 	codeinfos  []codeinfo
 	codeoffset int
@@ -21,25 +22,26 @@ type compiler struct {
 
 // Code is a compiled jq query.
 type Code struct {
-	vars      []string
+	variables []string
 	codes     []*code
 	codeinfos []codeinfo
 }
 
-// Run runs the code with the given variables bound (if any) and returns
+// Run runs the code with the variable values (which should be in the
+// same order as the given variables using WithVariables) and returns
 // a result iterator.
-func (c *Code) Run(v interface{}, vars ...interface{}) Iter {
-	return c.RunWithContext(nil, v, vars...)
+func (c *Code) Run(v interface{}, values ...interface{}) Iter {
+	return c.RunWithContext(nil, v, values...)
 }
 
 // RunWithContext runs the code with context.
-func (c *Code) RunWithContext(ctx context.Context, v interface{}, vars ...interface{}) Iter {
-	if len(vars) > len(c.vars) {
+func (c *Code) RunWithContext(ctx context.Context, v interface{}, values ...interface{}) Iter {
+	if len(values) > len(c.variables) {
 		return unitIterator(errTooManyVariables)
-	} else if len(vars) < len(c.vars) {
-		return unitIterator(&expectedVariableError{c.vars[len(vars)]})
+	} else if len(values) < len(c.variables) {
+		return unitIterator(&expectedVariableError{c.variables[len(values)]})
 	}
-	return newEnv(ctx).execute(c, normalizeNumbers(v), vars...)
+	return newEnv(ctx).execute(c, normalizeNumbers(v), values...)
 }
 
 type codeinfo struct {
@@ -66,28 +68,28 @@ type funcinfo struct {
 }
 
 // Compile compiles a query.
-// If additional variable names are passed, they must be bound at program
-// startup by passing their values to (*Code).Run.
-func Compile(q *Query, variables ...string) (*Code, error) {
+func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 	c := &compiler{}
+	for _, opt := range options {
+		opt(c)
+	}
 	scope := c.newScope()
 	c.scopes = []*scopeinfo{scope}
 	defer c.lazy(func() *code {
 		return &code{op: opscope, v: [2]int{scope.id, len(scope.variables)}}
 	})()
-	return c.compile(q, variables)
+	return c.compile(q)
 }
 
-func (c *compiler) compile(q *Query, variables []string) (*Code, error) {
-	c.pushVariables(variables)
+func (c *compiler) compile(q *Query) (*Code, error) {
+	c.pushVariables(c.variables)
 	if err := c.compileQuery(q); err != nil {
 		return nil, err
 	}
 	c.append(&code{op: opret})
 	c.optimizeJumps()
-	variables = append([]string(nil), variables...)
 	return &Code{
-		vars:      variables,
+		variables: c.variables,
 		codes:     c.codes,
 		codeinfos: c.codeinfos,
 	}, nil
@@ -172,7 +174,7 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 		}
 		cc.append(&code{op: opload, v: v})
 	}
-	bs, err := cc.compile(e.Body, nil)
+	bs, err := cc.compile(e.Body)
 	if err != nil {
 		return err
 	}

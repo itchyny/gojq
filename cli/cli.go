@@ -176,7 +176,7 @@ Synopsis:
 		cli.printParseError(fname, arg, err)
 		return exitCodeErr
 	}
-	code, err := gojq.Compile(query, cli.argnames...)
+	code, err := gojq.Compile(query, gojq.WithVariables(cli.argnames))
 	if err != nil {
 		cli.printCompileError(fname, err)
 		return exitCodeErr
