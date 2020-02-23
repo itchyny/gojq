@@ -7,7 +7,8 @@ import (
 
 var parserOptions = []participle.Option{
 	participle.Lexer(lexer.Must(lexer.Regexp(`(\s+|#[^\n]*)` +
-		`|(?P<Keyword>(include|null|true|false|if|then|elif|else|end|or|and|as|try|catch|reduce|foreach|label|break)\b)` +
+		`|(?P<Keyword>(import|include|null|true|false|if|then|elif|else|end|or|and|as|try|catch|reduce|foreach|label|break)\b)` +
+		`|(?P<ModuleIdent>\$?[a-zA-Z_][a-zA-Z0-9_]*::[a-zA-Z_][a-zA-Z0-9_]*)` +
 		`|(?P<Ident>\$?[a-zA-Z_][a-zA-Z0-9_]*)` +
 		`|(?P<UpdateAltOp>(//=))` +
 		`|(?P<Op>(\.\.|\??//))` +

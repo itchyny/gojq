@@ -29,13 +29,22 @@ func (e *Module) String() string {
 
 // Import ...
 type Import struct {
-	Path string `"include" @String ";"`
+	ImportPath  string `( "import" @String`
+	ImportAlias string `  "as" @Ident`
+	IncludePath string `| "include" @String ) ";"`
 }
 
 func (e *Import) String() string {
 	var s strings.Builder
-	s.WriteString("include ")
-	s.WriteString(e.Path)
+	if e.ImportPath != "" {
+		s.WriteString("import ")
+		s.WriteString(e.ImportPath)
+		s.WriteString(" as ")
+		s.WriteString(e.ImportAlias)
+	} else {
+		s.WriteString("include ")
+		s.WriteString(e.IncludePath)
+	}
 	s.WriteString("; ")
 	return s.String()
 }
@@ -706,7 +715,7 @@ func (e *Index) toIndices() []interface{} {
 
 // Func ...
 type Func struct {
-	Name string   `@Ident`
+	Name string   `( @Ident | @ModuleIdent )`
 	Args []*Query `( "(" @@ (";" @@)* ")" )?`
 }
 

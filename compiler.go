@@ -97,18 +97,14 @@ func (c *compiler) compile(q *Query) (*Code, error) {
 				return nil, err
 			}
 			if !fi.IsDir() {
-				if err := c.compileModuleFile(path); err != nil {
+				if err := c.compileModuleFile(path, ""); err != nil {
 					return nil, err
 				}
 			}
 		}
 	}
 	for _, i := range q.Imports {
-		path, err := c.lookupModule(i.Path)
-		if err != nil {
-			return nil, err
-		}
-		if err := c.compileModuleFile(path); err != nil {
+		if err := c.compileImport(i); err != nil {
 			return nil, err
 		}
 	}
@@ -123,6 +119,23 @@ func (c *compiler) compile(q *Query) (*Code, error) {
 		codes:     c.codes,
 		codeinfos: c.codeinfos,
 	}, nil
+}
+
+func (c *compiler) compileImport(i *Import) error {
+	var path, alias string
+	if i.ImportPath != "" {
+		path, alias = i.ImportPath, i.ImportAlias
+	} else {
+		path = i.IncludePath
+	}
+	path, err := c.lookupModule(path)
+	if err != nil {
+		return err
+	}
+	if err := c.compileModuleFile(path, alias); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *compiler) lookupModule(name string) (string, error) {
@@ -143,13 +156,14 @@ func (c *compiler) lookupModule(name string) (string, error) {
 	return "", fmt.Errorf("module not found: %q", name)
 }
 
-func (c *compiler) compileModuleFile(path string) error {
+func (c *compiler) compileModuleFile(path, alias string) error {
+	key := alias + "::" + path
 	for _, p := range c.moduleLoaded {
-		if p == path {
+		if p == key {
 			return nil
 		}
 	}
-	c.moduleLoaded = append(c.moduleLoaded, path)
+	c.moduleLoaded = append(c.moduleLoaded, key)
 	cnt, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err
@@ -167,6 +181,11 @@ func (c *compiler) compileModuleFile(path string) error {
 	}
 	c.moduleLoaded = cc.moduleLoaded
 	c.codes = append(c.codes, bs.codes...)
+	if alias != "" {
+		for _, f := range cc.funcs {
+			f.name = alias + "::" + f.name
+		}
+	}
 	c.funcs = append(c.funcs, cc.funcs...)
 	c.codeinfos = append(c.codeinfos, bs.codeinfos...)
 	c.scopecnt = cc.scopecnt
@@ -175,11 +194,7 @@ func (c *compiler) compileModuleFile(path string) error {
 
 func (c *compiler) compileModule(m *Module) (*Code, error) {
 	for _, i := range m.Imports {
-		path, err := c.lookupModule(i.Path)
-		if err != nil {
-			return nil, err
-		}
-		if err := c.compileModuleFile(path); err != nil {
+		if err := c.compileImport(i); err != nil {
 			return nil, err
 		}
 	}

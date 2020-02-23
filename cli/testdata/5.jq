@@ -1,2 +1,2 @@
-include "6";
-def h: . * i;
+import "6" as foo;
+def h: . * foo::i;

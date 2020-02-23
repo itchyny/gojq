@@ -1,3 +1,3 @@
-include "m2";
+import "m2" as x;
 
-def f: 42 | g;
+def f: 42 | x::g;
