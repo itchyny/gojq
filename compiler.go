@@ -163,7 +163,7 @@ func (c *compiler) lookupModule(name, extension string) (string, error) {
 		if _, err := os.Stat(path); err == nil {
 			return path, err
 		}
-		path = filepath.Clean(filepath.Join(base, filepath.Base(name), name+extension))
+		path = filepath.Clean(filepath.Join(base, name, filepath.Base(name)+extension))
 		if _, err := os.Stat(path); err == nil {
 			return path, err
 		}
