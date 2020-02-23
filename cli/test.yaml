@@ -3943,7 +3943,7 @@
     - 'include "4"; 1 | f | g'
   input: 0
   expected: |
-    {"foo":[1,2,3,4]}
+    {"foo":[1,2,3,4,[1,2,{"foo":42}]]}
 
 - name: module directory option
   args:
@@ -3953,7 +3953,7 @@
     - 'import "4" as m1; 1 | m1::f | m1::g'
   input: 0
   expected: |
-    {"foo":[1,2,3,4]}
+    {"foo":[1,2,3,4,[1,2,{"foo":42}]]}
 
 - name: module directory option
   args:
@@ -3998,6 +3998,25 @@
     - 'include "5"; i'
   input: 0
   error: 'function not defined: i/0'
+
+- name: module directory option variable error
+  args:
+    - -L
+    - testdata
+    - 'include "4"; $x'
+  input: 0
+  error: 'compile error: variable not defined: $x'
+
+- name: module directory option variable name conflict
+  args:
+    - -c
+    - -L
+    - testdata
+    - 'include "6"; . as $x | $x, g'
+  input: 1
+  expected: |
+    1
+    [1,2,{"foo":42}]
 
 - name: invalid query in a module
   args:

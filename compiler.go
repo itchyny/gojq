@@ -56,9 +56,10 @@ type codeinfo struct {
 }
 
 type scopeinfo struct {
-	id        int
-	offset    int
-	variables []varinfo
+	id          int
+	offset      int
+	variables   []varinfo
+	variablecnt int
 }
 
 type varinfo struct {
@@ -82,7 +83,7 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 	scope := c.newScope()
 	c.scopes = []*scopeinfo{scope}
 	defer c.lazy(func() *code {
-		return &code{op: opscope, v: [2]int{scope.id, len(scope.variables)}}
+		return &code{op: opscope, v: [2]int{scope.id, scope.variablecnt}}
 	})()
 	return c.compile(q)
 }
@@ -208,8 +209,10 @@ func (c *compiler) compileModuleFile(path, alias string) error {
 		return &ModuleParseError{path, string(cnt), err}
 	}
 	cc := &compiler{
-		modulePaths: c.modulePaths, moduleLoaded: c.moduleLoaded,
-		codeoffset: c.pc(), scopecnt: c.scopecnt}
+		modulePaths: c.modulePaths, moduleLoaded: c.moduleLoaded, variables: c.variables,
+		codeoffset: c.pc(), scopes: c.scopes, scopecnt: c.scopecnt}
+	scope := c.scopes[len(c.scopes)-1]
+	defer func(i int) { scope.variables = scope.variables[:i] }(len(scope.variables))
 	bs, err := cc.compileModule(m)
 	if err != nil {
 		return err
@@ -266,8 +269,8 @@ func (c *compiler) pushVariable(name string) [2]int {
 			}
 		}
 	}
-	i := len(s.variables)
-	v := [2]int{s.id, i}
+	v := [2]int{s.id, s.variablecnt}
+	s.variablecnt++
 	s.variables = append(s.variables, varinfo{name, v})
 	return v
 }
@@ -275,7 +278,7 @@ func (c *compiler) pushVariable(name string) [2]int {
 func (c *compiler) newScope() *scopeinfo {
 	i := c.scopecnt // do not use len(c.scopes) because it pops
 	c.scopecnt++
-	return &scopeinfo{i, 0, nil}
+	return &scopeinfo{i, 0, nil, 0}
 }
 
 func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
