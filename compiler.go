@@ -85,12 +85,8 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 	defer c.lazy(func() *code {
 		return &code{op: opscope, v: [2]int{scope.id, scope.variablecnt}}
 	})()
-	return c.compile(q)
-}
-
-func (c *compiler) compile(q *Query) (*Code, error) {
 	for _, path := range c.modulePaths {
-		if strings.HasSuffix(path, ".jq") {
+		if filepath.Base(path) == ".jq" {
 			fi, err := os.Stat(path)
 			if err != nil {
 				if os.IsNotExist(err) {
@@ -105,6 +101,10 @@ func (c *compiler) compile(q *Query) (*Code, error) {
 			}
 		}
 	}
+	return c.compile(q)
+}
+
+func (c *compiler) compile(q *Query) (*Code, error) {
 	for _, i := range q.Imports {
 		if err := c.compileImport(i); err != nil {
 			return nil, err
