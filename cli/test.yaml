@@ -2,6 +2,13 @@
   input: ''
   expected: ''
 
+- name: empty query
+  args :
+    - ''
+  input: '128'
+  expected: |
+    128
+
 - name: number
   args:
     - '.'
@@ -4017,6 +4024,15 @@
   expected: |
     1
     [1,2,{"foo":42}]
+
+- name: empty module
+  args:
+    - -L
+    - testdata
+    - 'include "8"; .'
+  input: 0
+  expected: |
+    0
 
 - name: invalid query in a module
   args:

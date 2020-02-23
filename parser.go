@@ -1,6 +1,8 @@
 package gojq
 
 import (
+	"strings"
+
 	"github.com/alecthomas/participle"
 	"github.com/alecthomas/participle/lexer"
 )
@@ -28,7 +30,10 @@ var parser = participle.MustBuild(&Query{}, parserOptions...)
 func Parse(src string) (*Query, error) {
 	var query Query
 	if err := parser.ParseString(src, &query); err != nil {
-		return nil, err
+		if strings.TrimSpace(src) != "" {
+			return nil, err
+		}
+		parser.ParseString(".", &query)
 	}
 	return &query, nil
 }
@@ -39,7 +44,9 @@ var modulesParser = participle.MustBuild(&Module{}, parserOptions...)
 func ParseModule(src string) (*Module, error) {
 	var module Module
 	if err := modulesParser.ParseString(src, &module); err != nil {
-		return nil, err
+		if strings.TrimSpace(src) != "" {
+			return nil, err
+		}
 	}
 	return &module, nil
 }
