@@ -4025,6 +4025,16 @@
     1
     [1,2,{"foo":42}]
 
+- name: module directory option with same alias name
+  args:
+    - -c
+    - -L
+    - testdata
+    - 'include "4"; import "6" as bar; bar::g'
+  input: 1
+  expected: |
+    [1,2,{"foo":42}]
+
 - name: empty module
   args:
     - -L

@@ -15,15 +15,14 @@ import (
 )
 
 type compiler struct {
-	modulePaths  []string
-	moduleLoaded []string
-	variables    []string
-	codes        []*code
-	codeinfos    []codeinfo
-	codeoffset   int
-	scopes       []*scopeinfo
-	scopecnt     int
-	funcs        []*funcinfo
+	modulePaths []string
+	variables   []string
+	codes       []*code
+	codeinfos   []codeinfo
+	codeoffset  int
+	scopes      []*scopeinfo
+	scopecnt    int
+	funcs       []*funcinfo
 }
 
 // Code is a compiled jq query.
@@ -193,13 +192,6 @@ func slurpFile(name string) ([]interface{}, error) {
 }
 
 func (c *compiler) compileModuleFile(path, alias string) error {
-	key := alias + "::" + path
-	for _, p := range c.moduleLoaded {
-		if p == key {
-			return nil
-		}
-	}
-	c.moduleLoaded = append(c.moduleLoaded, key)
 	cnt, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err
@@ -209,7 +201,7 @@ func (c *compiler) compileModuleFile(path, alias string) error {
 		return &ModuleParseError{path, string(cnt), err}
 	}
 	cc := &compiler{
-		modulePaths: c.modulePaths, moduleLoaded: c.moduleLoaded, variables: c.variables,
+		modulePaths: c.modulePaths, variables: c.variables,
 		codeoffset: c.pc(), scopes: c.scopes, scopecnt: c.scopecnt}
 	scope := c.scopes[len(c.scopes)-1]
 	defer func(i int) { scope.variables = scope.variables[:i] }(len(scope.variables))
@@ -217,7 +209,6 @@ func (c *compiler) compileModuleFile(path, alias string) error {
 	if err != nil {
 		return err
 	}
-	c.moduleLoaded = cc.moduleLoaded
 	c.codes = append(c.codes, bs.codes...)
 	if alias != "" {
 		for _, f := range cc.funcs {
