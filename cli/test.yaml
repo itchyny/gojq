@@ -3965,6 +3965,26 @@
   expected: |
     [42,42]
 
+- name: module directory option
+  args:
+    - -c
+    - -L
+    - testdata
+    - 'import "7" as $foo; $foo'
+  input: 0
+  expected: |
+    [1,2,{"foo":42}]
+
+- name: module directory option
+  args:
+    - -c
+    - -L
+    - testdata
+    - 'import "m1" as $x; $x'
+  input: 0
+  expected: |
+    [42,{"m1":42}]
+
 - name: module directory option parse error
   args:
     - 'include "m"; f'

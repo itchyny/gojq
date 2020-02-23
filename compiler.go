@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -128,7 +129,20 @@ func (c *compiler) compileImport(i *Import) error {
 	} else {
 		path = i.IncludePath
 	}
-	path, err := c.lookupModule(path)
+	if strings.HasPrefix(alias, "$") {
+		path, err := c.lookupModule(path, ".json")
+		if err != nil {
+			return err
+		}
+		vals, err := slurpFile(path)
+		if err != nil {
+			return err
+		}
+		c.append(&code{op: oppush, v: vals})
+		c.append(&code{op: opstore, v: c.pushVariable(alias)})
+		return nil
+	}
+	path, err := c.lookupModule(path, ".jq")
 	if err != nil {
 		return err
 	}
@@ -138,22 +152,43 @@ func (c *compiler) compileImport(i *Import) error {
 	return nil
 }
 
-func (c *compiler) lookupModule(name string) (string, error) {
+func (c *compiler) lookupModule(name, extension string) (string, error) {
 	name, err := strconv.Unquote(name)
 	if err != nil {
 		return "", err
 	}
 	for _, base := range c.modulePaths {
-		path := filepath.Clean(filepath.Join(base, name+".jq"))
+		path := filepath.Clean(filepath.Join(base, name+extension))
 		if _, err := os.Stat(path); err == nil {
 			return path, err
 		}
-		path = filepath.Clean(filepath.Join(base, filepath.Base(name), name+".jq"))
+		path = filepath.Clean(filepath.Join(base, filepath.Base(name), name+extension))
 		if _, err := os.Stat(path); err == nil {
 			return path, err
 		}
 	}
 	return "", fmt.Errorf("module not found: %q", name)
+}
+
+func slurpFile(name string) ([]interface{}, error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	var vals []interface{}
+	dec := json.NewDecoder(f)
+	for {
+		var val interface{}
+		if err := dec.Decode(&val); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, fmt.Errorf("failed to parse %s: %w", name, err)
+		}
+		vals = append(vals, val)
+	}
+	return vals, nil
 }
 
 func (c *compiler) compileModuleFile(path, alias string) error {
