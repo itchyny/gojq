@@ -1,2 +1,2 @@
-import "6" as foo;
+import "6" as foo { test: "foo" };
 def h: . * foo::i;

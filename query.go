@@ -33,9 +33,10 @@ func (e *Module) String() string {
 
 // Import ...
 type Import struct {
-	ImportPath  string `( "import" @String`
-	ImportAlias string `  "as" @Ident`
-	IncludePath string `| "include" @String ) ";"`
+	ImportPath  string       `( "import" @String`
+	ImportAlias string       `  "as" @Ident`
+	IncludePath string       `| "include" @String )`
+	Meta        *ConstObject `@@? ";"`
 }
 
 func (e *Import) String() string {
@@ -48,6 +49,9 @@ func (e *Import) String() string {
 	} else {
 		s.WriteString("include ")
 		s.WriteString(e.IncludePath)
+	}
+	if e.Meta != nil {
+		fmt.Fprintf(&s, " %s", e.Meta)
 	}
 	s.WriteString(";\n")
 	return s.String()
