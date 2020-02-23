@@ -49,7 +49,7 @@ func (e *Import) String() string {
 		s.WriteString("include ")
 		s.WriteString(e.IncludePath)
 	}
-	s.WriteString("; ")
+	s.WriteString(";\n")
 	return s.String()
 }
 
