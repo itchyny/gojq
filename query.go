@@ -9,12 +9,16 @@ import (
 
 // Module ...
 type Module struct {
-	Imports  []*Import  `@@*`
-	FuncDefs []*FuncDef `@@*`
+	Meta     *ConstObject `( "module" @@ ";" )?`
+	Imports  []*Import    `@@*`
+	FuncDefs []*FuncDef   `@@*`
 }
 
 func (e *Module) String() string {
 	var s strings.Builder
+	if e.Meta != nil {
+		fmt.Fprintf(&s, "module %s;\n", e.Meta)
+	}
 	for _, i := range e.Imports {
 		fmt.Fprint(&s, i)
 	}
@@ -972,4 +976,93 @@ type Label struct {
 
 func (e *Label) String() string {
 	return fmt.Sprintf("label %s | %s", e.Ident, e.Body)
+}
+
+// ConstTerm ...
+type ConstTerm struct {
+	Object *ConstObject `  @@`
+	Array  *ConstArray  `| @@`
+	Number string       `| @Number`
+	Str    string       `| @String`
+	Null   bool         `| @"null"`
+	True   bool         `| @"true"`
+	False  bool         `| @"false"`
+}
+
+func (e *ConstTerm) String() string {
+	var s strings.Builder
+	if e.Object != nil {
+		fmt.Fprint(&s, e.Object)
+	} else if e.Array != nil {
+		fmt.Fprint(&s, e.Array)
+	} else if e.Number != "" {
+		fmt.Fprint(&s, e.Number)
+	} else if e.Str != "" {
+		fmt.Fprint(&s, e.Str)
+	} else if e.Null {
+		s.WriteString("null")
+	} else if e.True {
+		s.WriteString("true")
+	} else if e.False {
+		s.WriteString("false")
+	}
+	return s.String()
+}
+
+// ConstObject ...
+type ConstObject struct {
+	KeyVals []ConstObjectKeyVal `"{" (@@ ("," @@)*)? "}"`
+}
+
+func (e *ConstObject) String() string {
+	if len(e.KeyVals) == 0 {
+		return "{}"
+	}
+	var s strings.Builder
+	s.WriteString("{ ")
+	for i, kv := range e.KeyVals {
+		if i > 0 {
+			s.WriteString(", ")
+		}
+		fmt.Fprint(&s, &kv)
+	}
+	s.WriteString(" }")
+	return s.String()
+}
+
+// ConstObjectKeyVal ...
+type ConstObjectKeyVal struct {
+	Key       string     `( @Ident | @Keyword`
+	KeyString string     `| @String ) ":"`
+	Val       *ConstTerm `@@`
+}
+
+func (e *ConstObjectKeyVal) String() string {
+	var s strings.Builder
+	if e.Key != "" {
+		s.WriteString(e.Key)
+	} else {
+		s.WriteString(e.KeyString)
+	}
+	s.WriteString(": ")
+	fmt.Fprint(&s, e.Val)
+	return s.String()
+}
+
+// ConstArray ...
+type ConstArray struct {
+	Elems []*ConstTerm `"[" (@@ ("," @@)*)? "]"`
+}
+
+func (e *ConstArray) String() string {
+	var s strings.Builder
+	s.WriteString("[")
+	for i, e := range e.Elems {
+		if i > 0 {
+			s.WriteString(", ")
+		}
+		fmt.Fprint(&s, e)
+	}
+	s.WriteString("]")
+	return s.String()
 }

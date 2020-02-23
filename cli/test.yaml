@@ -4045,6 +4045,16 @@
         1 | def f: 1 +
                      ^  unexpected "+" (expected ";")
 
+- name: module directive
+  args:
+    - -c
+    - -L
+    - testdata
+    - 'include "9"; f(2)'
+  input: 3
+  expected: |
+    6
+
 - name: arg option
   args:
     - '--arg'
