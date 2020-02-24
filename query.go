@@ -681,8 +681,8 @@ func (e *PatternObject) String() string {
 
 // Index ...
 type Index struct {
-	Name    string `"." ( @Ident`
-	Str     string `| @String`
+	Name    string `@Index`
+	Str     string `| "." ( @String`
 	Start   *Query `| "[" ( @@`
 	IsSlice bool   `( @":"`
 	End     *Query `@@? )? | ":" @@ ) "]" )`
@@ -690,26 +690,28 @@ type Index struct {
 
 func (e *Index) String() string {
 	var s strings.Builder
-	s.WriteByte('.')
 	if e.Name != "" {
 		s.WriteString(e.Name)
-	} else if e.Str != "" {
-		s.WriteString(e.Str)
 	} else {
-		s.WriteByte('[')
-		if e.Start != nil {
-			fmt.Fprint(&s, e.Start)
-			if e.IsSlice {
-				s.WriteByte(':')
-				if e.End != nil {
-					fmt.Fprint(&s, e.End)
+		s.WriteByte('.')
+		if e.Str != "" {
+			s.WriteString(e.Str)
+		} else {
+			s.WriteByte('[')
+			if e.Start != nil {
+				fmt.Fprint(&s, e.Start)
+				if e.IsSlice {
+					s.WriteByte(':')
+					if e.End != nil {
+						fmt.Fprint(&s, e.End)
+					}
 				}
+			} else if e.End != nil {
+				s.WriteByte(':')
+				fmt.Fprint(&s, e.End)
 			}
-		} else if e.End != nil {
-			s.WriteByte(':')
-			fmt.Fprint(&s, e.End)
+			s.WriteByte(']')
 		}
-		s.WriteByte(']')
 	}
 	return s.String()
 }
@@ -718,7 +720,7 @@ func (e *Index) toIndices() []interface{} {
 	if e.Name == "" {
 		return nil
 	}
-	return []interface{}{e.Name}
+	return []interface{}{e.Name[1:]}
 }
 
 // Func ...

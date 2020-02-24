@@ -44,6 +44,15 @@
   expected: |
     4722366482869645213696
 
+- name: keyword in object index
+  args:
+    - '.and,.or,.try'
+  input: '{"and":1,"or":2,"try":3}'
+  expected: |
+    1
+    2
+    3
+
 - name: object index
   args:
     - '.["foo"]'
@@ -112,6 +121,15 @@
   input: '{"a": 10, "b": 20}'
   error: |
     expected an array but got: object ({"a":10,"b":20})
+
+- name: object index syntax error
+  args:
+    - '. a'
+  input: '{}'
+  error: |
+    invalid query: . a
+        . a
+          ^  unexpected token "a"
 
 - name: expected object
   args:

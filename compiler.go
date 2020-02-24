@@ -826,7 +826,7 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 func (c *compiler) compileIndex(e *Term, x *Index) error {
 	c.appendCodeInfo(x)
 	if x.Name != "" {
-		return c.compileCall("_index", []*Query{e.toQuery(), (&Term{RawStr: x.Name}).toQuery()})
+		return c.compileCall("_index", []*Query{e.toQuery(), (&Term{RawStr: x.Name[1:]}).toQuery()})
 	}
 	if x.Str != "" {
 		q, err := c.stringToQuery(x.Str, nil)
@@ -941,7 +941,7 @@ func (c *compiler) compileObject(e *Object) error {
 			} else {
 				c.append(&code{op: oppush, v: *kv.KeyOnly})
 				c.append(&code{op: opload, v: v})
-				if err := c.compileIndex(&Term{Identity: true}, &Index{Name: *kv.KeyOnly}); err != nil {
+				if err := c.compileIndex(&Term{Identity: true}, &Index{Name: "." + *kv.KeyOnly}); err != nil {
 					return err
 				}
 			}
