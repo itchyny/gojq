@@ -40,11 +40,11 @@ func run(input, output string) error {
 		return err
 	}
 	qs := make(map[string][]*gojq.FuncDef)
-	q, err := gojq.Parse(string(cnt) + ".")
+	m, err := gojq.ParseModule(string(cnt))
 	if err != nil {
 		return err
 	}
-	for _, fd := range q.ListFuncDefs() {
+	for _, fd := range m.FuncDefs {
 		name := fd.Name
 		if name[0] == '_' {
 			name = name[1:]

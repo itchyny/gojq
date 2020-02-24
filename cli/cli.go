@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -65,12 +66,15 @@ type flagopts struct {
 	InputSlurp    bool              `short:"s" long:"slurp" description:"read all inputs into an array"`
 	InputYAML     bool              `long:"yaml-input" description:"read input as YAML"`
 	FromFile      string            `short:"f" long:"from-file" description:"load query from file"`
+	ModulePaths   []string          `short:"L" description:"directory to search modules from"`
 	Args          map[string]string `long:"arg" description:"set variable to string value" count:"2" unquote:"false"`
 	ArgsJSON      map[string]string `long:"argjson" description:"set variable to JSON value" count:"2" unquote:"false"`
 	SlurpFile     map[string]string `long:"slurpfile" description:"set variable to the JSON contents of the file" count:"2" unquote:"false"`
 	RawFile       map[string]string `long:"rawfile" description:"set variable to the contents of the file" count:"2" unquote:"false"`
 	Version       bool              `short:"v" long:"version" description:"print version"`
 }
+
+var addDefaultModulePath = true
 
 var argNameRe = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 
@@ -176,7 +180,18 @@ Synopsis:
 		cli.printParseError(fname, arg, err)
 		return exitCodeErr
 	}
-	code, err := gojq.Compile(query, gojq.WithVariables(cli.argnames))
+	modulePaths := opts.ModulePaths
+	if len(modulePaths) == 0 && addDefaultModulePath {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+			return exitCodeErr
+		}
+		modulePaths = []string{filepath.Join(homeDir, ".jq")}
+	}
+	code, err := gojq.Compile(query,
+		gojq.WithModuleLoader(&moduleLoader{modulePaths}),
+		gojq.WithVariables(cli.argnames))
 	if err != nil {
 		cli.printCompileError(fname, err)
 		return exitCodeErr
@@ -219,6 +234,10 @@ func slurpFile(name string) ([]interface{}, error) {
 }
 
 func (cli *cli) printCompileError(fname string, err error) {
+	if err, ok := err.(*moduleParseError); ok {
+		cli.printParseError(err.path, err.src, err.err)
+		return
+	}
 	fmt.Fprintf(cli.errStream, "%s: %s: compile error: %v\n", name, fname, err)
 }
 
@@ -240,7 +259,7 @@ func (cli *cli) printParseError(fname, query string, err error) {
 			return
 		}
 	}
-	fmt.Fprintf(cli.errStream, "%s: invalid query: %s\n", name, query)
+	fmt.Fprintf(cli.errStream, "%s: invalid query: %s\n", name, err)
 }
 
 func (cli *cli) processFile(fname string, code *gojq.Code) int {

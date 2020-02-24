@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -11,13 +13,14 @@ import (
 )
 
 type compiler struct {
-	variables  []string
-	codes      []*code
-	codeinfos  []codeinfo
-	codeoffset int
-	scopes     []*scopeinfo
-	scopecnt   int
-	funcs      []*funcinfo
+	moduleLoader ModuleLoader
+	variables    []string
+	codes        []*code
+	codeinfos    []codeinfo
+	codeoffset   int
+	scopes       []*scopeinfo
+	scopecnt     int
+	funcs        []*funcinfo
 }
 
 // Code is a compiled jq query.
@@ -44,15 +47,23 @@ func (c *Code) RunWithContext(ctx context.Context, v interface{}, values ...inte
 	return newEnv(ctx).execute(c, normalizeNumbers(v), values...)
 }
 
+// ModuleLoader is an interface for loading modules.
+type ModuleLoader interface {
+	LoadInitModules() ([]*Module, error)
+	LoadModule(string) (*Module, error)
+	LoadJSON(string) (interface{}, error)
+}
+
 type codeinfo struct {
 	name string
 	pc   int
 }
 
 type scopeinfo struct {
-	id        int
-	offset    int
-	variables []varinfo
+	id          int
+	offset      int
+	variables   []varinfo
+	variablecnt int
 }
 
 type varinfo struct {
@@ -76,12 +87,28 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 	scope := c.newScope()
 	c.scopes = []*scopeinfo{scope}
 	defer c.lazy(func() *code {
-		return &code{op: opscope, v: [2]int{scope.id, len(scope.variables)}}
+		return &code{op: opscope, v: [2]int{scope.id, scope.variablecnt}}
 	})()
+	if c.moduleLoader != nil {
+		ms, err := c.moduleLoader.LoadInitModules()
+		if err != nil {
+			return nil, err
+		}
+		for _, m := range ms {
+			if err := c.compileModule(m, ""); err != nil {
+				return nil, err
+			}
+		}
+	}
 	return c.compile(q)
 }
 
 func (c *compiler) compile(q *Query) (*Code, error) {
+	for _, i := range q.Imports {
+		if err := c.compileImport(i); err != nil {
+			return nil, err
+		}
+	}
 	c.pushVariables(c.variables)
 	if err := c.compileQuery(q); err != nil {
 		return nil, err
@@ -93,6 +120,94 @@ func (c *compiler) compile(q *Query) (*Code, error) {
 		codes:     c.codes,
 		codeinfos: c.codeinfos,
 	}, nil
+}
+
+func (c *compiler) compileImport(i *Import) error {
+	var path, alias string
+	if i.ImportPath != "" {
+		path, alias = i.ImportPath, i.ImportAlias
+	} else {
+		path = i.IncludePath
+	}
+	if c.moduleLoader == nil {
+		return fmt.Errorf("cannot load module: %s", path)
+	}
+	path, err := strconv.Unquote(path)
+	if err != nil {
+		return err
+	}
+	if strings.HasPrefix(alias, "$") {
+		vals, err := c.moduleLoader.LoadJSON(path)
+		if err != nil {
+			return err
+		}
+		c.append(&code{op: oppush, v: vals})
+		c.append(&code{op: opstore, v: c.pushVariable(alias)})
+		return nil
+	}
+	m, err := c.moduleLoader.LoadModule(path)
+	if err != nil {
+		return err
+	}
+	return c.compileModule(m, alias)
+}
+
+func slurpFile(name string) ([]interface{}, error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	var vals []interface{}
+	dec := json.NewDecoder(f)
+	for {
+		var val interface{}
+		if err := dec.Decode(&val); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, fmt.Errorf("failed to parse %s: %w", name, err)
+		}
+		vals = append(vals, val)
+	}
+	return vals, nil
+}
+
+func (c *compiler) compileModule(m *Module, alias string) error {
+	cc := &compiler{
+		moduleLoader: c.moduleLoader, variables: c.variables,
+		codeoffset: c.pc(), scopes: c.scopes, scopecnt: c.scopecnt}
+	scope := c.scopes[len(c.scopes)-1]
+	defer func(i int) { scope.variables = scope.variables[:i] }(len(scope.variables))
+	bs, err := cc.compileModuleInternal(m)
+	if err != nil {
+		return err
+	}
+	c.codes = append(c.codes, bs.codes...)
+	if alias != "" {
+		for _, f := range cc.funcs {
+			f.name = alias + "::" + f.name
+		}
+	}
+	c.funcs = append(c.funcs, cc.funcs...)
+	c.codeinfos = append(c.codeinfos, bs.codeinfos...)
+	c.scopecnt = cc.scopecnt
+	return nil
+}
+
+func (c *compiler) compileModuleInternal(m *Module) (*Code, error) {
+	for _, i := range m.Imports {
+		if err := c.compileImport(i); err != nil {
+			return nil, err
+		}
+	}
+	defer func(i int) { c.funcs = c.funcs[i:] }(len(c.funcs))
+	for _, fd := range m.FuncDefs {
+		if err := c.compileFuncDef(fd, false); err != nil {
+			return nil, err
+		}
+	}
+	return &Code{codes: c.codes, codeinfos: c.codeinfos}, nil
 }
 
 func (c *compiler) newVariable() [2]int {
@@ -119,8 +234,8 @@ func (c *compiler) pushVariable(name string) [2]int {
 			}
 		}
 	}
-	i := len(s.variables)
-	v := [2]int{s.id, i}
+	v := [2]int{s.id, s.variablecnt}
+	s.variablecnt++
 	s.variables = append(s.variables, varinfo{name, v})
 	return v
 }
@@ -128,7 +243,7 @@ func (c *compiler) pushVariable(name string) [2]int {
 func (c *compiler) newScope() *scopeinfo {
 	i := c.scopecnt // do not use len(c.scopes) because it pops
 	c.scopecnt++
-	return &scopeinfo{i, 0, nil}
+	return &scopeinfo{i, 0, nil, 0}
 }
 
 func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
@@ -147,7 +262,7 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	defer c.appendCodeInfo(e.Name)
 	pc, argsorder := c.pc(), getArgsOrder(e.Args)
 	c.funcs = append(c.funcs, &funcinfo{e.Name, pc, e.Args, argsorder})
-	cc := &compiler{codeoffset: pc, scopecnt: c.scopecnt, funcs: c.funcs}
+	cc := &compiler{moduleLoader: c.moduleLoader, codeoffset: pc, scopecnt: c.scopecnt, funcs: c.funcs}
 	scope := cc.newScope()
 	cc.scopes = append(c.scopes, scope)
 	setscope := cc.lazy(func() *code {
@@ -1028,7 +1143,7 @@ func (c *compiler) stringToQuery(s string, f *Func) (*Query, error) {
 	if len(buf) > 0 {
 		xs = append(xs, (&Term{RawStr: string(buf)}).toFilter())
 	}
-	q := (&Term{Array: &Array{&Query{[]*Comma{&Comma{xs}}}}}).toQuery()
+	q := (&Term{Array: &Array{&Query{Commas: []*Comma{&Comma{xs}}}}}).toQuery()
 	q.Commas = append(q.Commas, (&Term{
 		Func: &Func{
 			Name: "join",

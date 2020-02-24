@@ -2,6 +2,13 @@
   input: ''
   expected: ''
 
+- name: empty query
+  args :
+    - ''
+  input: '128'
+  expected: |
+    128
+
 - name: number
   args:
     - '.'
@@ -3934,6 +3941,129 @@
       "foo": 10
     }
   error: 'open testdata/6.json:'
+
+- name: module directory option
+  args:
+    - -c
+    - -L
+    - testdata
+    - 'include "4"; 1 | f | g'
+  input: 0
+  expected: |
+    {"foo":[1,2,3,4,[1,2,{"foo":42}]]}
+
+- name: module directory option
+  args:
+    - -c
+    - -L
+    - testdata
+    - 'import "4" as m1; 1 | m1::f | m1::g'
+  input: 0
+  expected: |
+    {"foo":[1,2,3,4,[1,2,{"foo":42}]]}
+
+- name: module directory option
+  args:
+    - -c
+    - -L
+    - testdata
+    - 'include "m1"; f'
+  input: 0
+  expected: |
+    [42,42]
+
+- name: module directory option
+  args:
+    - -c
+    - -L
+    - testdata
+    - 'import "7" as $foo; $foo'
+  input: 0
+  expected: |
+    [1,2,{"foo":42}]
+
+- name: module directory option
+  args:
+    - -c
+    - -L
+    - testdata
+    - 'import "m1" as $x; $x'
+  input: 0
+  expected: |
+    [42,{"m1":42}]
+
+- name: module directory option parse error
+  args:
+    - 'include "m"; f'
+  input: 0
+  error: 'compile error: module not found: "m"'
+
+- name: module directory option function error
+  args:
+    - -L
+    - testdata
+    - 'include "5"; i'
+  input: 0
+  error: 'function not defined: i/0'
+
+- name: module directory option variable error
+  args:
+    - -L
+    - testdata
+    - 'include "4"; $x'
+  input: 0
+  error: 'compile error: variable not defined: $x'
+
+- name: module directory option variable name conflict
+  args:
+    - -c
+    - -L
+    - testdata
+    - 'include "6"; . as $x | $x, g'
+  input: 1
+  expected: |
+    1
+    [1,2,{"foo":42}]
+
+- name: module directory option with same alias name
+  args:
+    - -c
+    - -L
+    - testdata
+    - 'include "4"; import "6" as bar; bar::g'
+  input: 1
+  expected: |
+    [1,2,{"foo":42}]
+
+- name: empty module
+  args:
+    - -L
+    - testdata
+    - 'include "8"; .'
+  input: 0
+  expected: |
+    0
+
+- name: invalid query in a module
+  args:
+    - -L
+    - testdata
+    - 'include "7"; .'
+  input: 0
+  error: |
+    invalid query: testdata/7.jq:1
+        1 | def f: 1 +
+                     ^  unexpected "+" (expected ";")
+
+- name: module directive
+  args:
+    - -c
+    - -L
+    - testdata
+    - 'include "9"; f(2)'
+  input: 3
+  expected: |
+    6
 
 - name: arg option
   args:

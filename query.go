@@ -7,6 +7,56 @@ import (
 	"strings"
 )
 
+// Module ...
+type Module struct {
+	Meta     *ConstObject `( "module" @@ ";" )?`
+	Imports  []*Import    `@@*`
+	FuncDefs []*FuncDef   `@@*`
+}
+
+func (e *Module) String() string {
+	var s strings.Builder
+	if e.Meta != nil {
+		fmt.Fprintf(&s, "module %s;\n", e.Meta)
+	}
+	for _, i := range e.Imports {
+		fmt.Fprint(&s, i)
+	}
+	for i, fd := range e.FuncDefs {
+		if i > 0 {
+			s.WriteByte(' ')
+		}
+		fmt.Fprint(&s, fd)
+	}
+	return s.String()
+}
+
+// Import ...
+type Import struct {
+	ImportPath  string       `( "import" @String`
+	ImportAlias string       `  "as" @Ident`
+	IncludePath string       `| "include" @String )`
+	Meta        *ConstObject `@@? ";"`
+}
+
+func (e *Import) String() string {
+	var s strings.Builder
+	if e.ImportPath != "" {
+		s.WriteString("import ")
+		s.WriteString(e.ImportPath)
+		s.WriteString(" as ")
+		s.WriteString(e.ImportAlias)
+	} else {
+		s.WriteString("include ")
+		s.WriteString(e.IncludePath)
+	}
+	if e.Meta != nil {
+		fmt.Fprintf(&s, " %s", e.Meta)
+	}
+	s.WriteString(";\n")
+	return s.String()
+}
+
 // FuncDef ...
 type FuncDef struct {
 	Name string   `"def" @Ident`
@@ -33,11 +83,15 @@ func (e *FuncDef) String() string {
 
 // Query ...
 type Query struct {
-	Commas []*Comma `@@ ("|" @@)*`
+	Imports []*Import `@@*`
+	Commas  []*Comma  `@@ ("|" @@)*`
 }
 
 func (e *Query) String() string {
 	var s strings.Builder
+	for _, i := range e.Imports {
+		fmt.Fprint(&s, i)
+	}
 	for i, e := range e.Commas {
 		if i > 0 {
 			s.WriteString(" | ")
@@ -73,11 +127,6 @@ func (e *Query) RunWithContext(ctx context.Context, v interface{}) Iter {
 	return code.RunWithContext(ctx, v)
 }
 
-// ListFuncDefs gets the list of FuncDef.
-func (e *Query) ListFuncDefs() []*FuncDef {
-	return e.Commas[0].Filters[0].FuncDefs
-}
-
 // Comma ...
 type Comma struct {
 	Filters []*Filter `@@ ("," @@)*`
@@ -95,7 +144,7 @@ func (e *Comma) String() string {
 }
 
 func (e *Comma) toQuery() *Query {
-	return &Query{[]*Comma{e}}
+	return &Query{Commas: []*Comma{e}}
 }
 
 func (e *Comma) toIndices() []interface{} {
@@ -674,7 +723,7 @@ func (e *Index) toIndices() []interface{} {
 
 // Func ...
 type Func struct {
-	Name string   `@Ident`
+	Name string   `( @Ident | @ModuleIdent )`
 	Args []*Query `( "(" @@ (";" @@)* ")" )?`
 }
 
@@ -931,4 +980,93 @@ type Label struct {
 
 func (e *Label) String() string {
 	return fmt.Sprintf("label %s | %s", e.Ident, e.Body)
+}
+
+// ConstTerm ...
+type ConstTerm struct {
+	Object *ConstObject `  @@`
+	Array  *ConstArray  `| @@`
+	Number string       `| @Number`
+	Str    string       `| @String`
+	Null   bool         `| @"null"`
+	True   bool         `| @"true"`
+	False  bool         `| @"false"`
+}
+
+func (e *ConstTerm) String() string {
+	var s strings.Builder
+	if e.Object != nil {
+		fmt.Fprint(&s, e.Object)
+	} else if e.Array != nil {
+		fmt.Fprint(&s, e.Array)
+	} else if e.Number != "" {
+		fmt.Fprint(&s, e.Number)
+	} else if e.Str != "" {
+		fmt.Fprint(&s, e.Str)
+	} else if e.Null {
+		s.WriteString("null")
+	} else if e.True {
+		s.WriteString("true")
+	} else if e.False {
+		s.WriteString("false")
+	}
+	return s.String()
+}
+
+// ConstObject ...
+type ConstObject struct {
+	KeyVals []ConstObjectKeyVal `"{" (@@ ("," @@)*)? "}"`
+}
+
+func (e *ConstObject) String() string {
+	if len(e.KeyVals) == 0 {
+		return "{}"
+	}
+	var s strings.Builder
+	s.WriteString("{ ")
+	for i, kv := range e.KeyVals {
+		if i > 0 {
+			s.WriteString(", ")
+		}
+		fmt.Fprint(&s, &kv)
+	}
+	s.WriteString(" }")
+	return s.String()
+}
+
+// ConstObjectKeyVal ...
+type ConstObjectKeyVal struct {
+	Key       string     `( @Ident | @Keyword`
+	KeyString string     `| @String ) ":"`
+	Val       *ConstTerm `@@`
+}
+
+func (e *ConstObjectKeyVal) String() string {
+	var s strings.Builder
+	if e.Key != "" {
+		s.WriteString(e.Key)
+	} else {
+		s.WriteString(e.KeyString)
+	}
+	s.WriteString(": ")
+	fmt.Fprint(&s, e.Val)
+	return s.String()
+}
+
+// ConstArray ...
+type ConstArray struct {
+	Elems []*ConstTerm `"[" (@@ ("," @@)*)? "]"`
+}
+
+func (e *ConstArray) String() string {
+	var s strings.Builder
+	s.WriteString("[")
+	for i, e := range e.Elems {
+		if i > 0 {
+			s.WriteString(", ")
+		}
+		fmt.Fprint(&s, e)
+	}
+	s.WriteString("]")
+	return s.String()
 }

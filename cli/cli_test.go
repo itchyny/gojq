@@ -12,6 +12,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+func init() {
+	addDefaultModulePath = false
+}
+
 func setLocation(loc *time.Location) func() {
 	orig := time.Local
 	time.Local = loc
