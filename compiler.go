@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -15,14 +13,14 @@ import (
 )
 
 type compiler struct {
-	modulePaths []string
-	variables   []string
-	codes       []*code
-	codeinfos   []codeinfo
-	codeoffset  int
-	scopes      []*scopeinfo
-	scopecnt    int
-	funcs       []*funcinfo
+	moduleLoader ModuleLoader
+	variables    []string
+	codes        []*code
+	codeinfos    []codeinfo
+	codeoffset   int
+	scopes       []*scopeinfo
+	scopecnt     int
+	funcs        []*funcinfo
 }
 
 // Code is a compiled jq query.
@@ -47,6 +45,13 @@ func (c *Code) RunWithContext(ctx context.Context, v interface{}, values ...inte
 		return unitIterator(&expectedVariableError{c.variables[len(values)]})
 	}
 	return newEnv(ctx).execute(c, normalizeNumbers(v), values...)
+}
+
+// ModuleLoader is an interface for loading modules.
+type ModuleLoader interface {
+	LoadInitModules() ([]*Module, error)
+	LoadModule(string) (*Module, error)
+	LoadJSON(string) (interface{}, error)
 }
 
 type codeinfo struct {
@@ -84,19 +89,14 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 	defer c.lazy(func() *code {
 		return &code{op: opscope, v: [2]int{scope.id, scope.variablecnt}}
 	})()
-	for _, path := range c.modulePaths {
-		if filepath.Base(path) == ".jq" {
-			fi, err := os.Stat(path)
-			if err != nil {
-				if os.IsNotExist(err) {
-					continue
-				}
+	if c.moduleLoader != nil {
+		ms, err := c.moduleLoader.LoadInitModules()
+		if err != nil {
+			return nil, err
+		}
+		for _, m := range ms {
+			if err := c.compileModule(m, ""); err != nil {
 				return nil, err
-			}
-			if !fi.IsDir() {
-				if err := c.compileModuleFile(path, ""); err != nil {
-					return nil, err
-				}
 			}
 		}
 	}
@@ -129,12 +129,15 @@ func (c *compiler) compileImport(i *Import) error {
 	} else {
 		path = i.IncludePath
 	}
+	if c.moduleLoader == nil {
+		return fmt.Errorf("cannot load module: %s", path)
+	}
+	path, err := strconv.Unquote(path)
+	if err != nil {
+		return err
+	}
 	if strings.HasPrefix(alias, "$") {
-		path, err := c.lookupModule(path, ".json")
-		if err != nil {
-			return err
-		}
-		vals, err := slurpFile(path)
+		vals, err := c.moduleLoader.LoadJSON(path)
 		if err != nil {
 			return err
 		}
@@ -142,32 +145,11 @@ func (c *compiler) compileImport(i *Import) error {
 		c.append(&code{op: opstore, v: c.pushVariable(alias)})
 		return nil
 	}
-	path, err := c.lookupModule(path, ".jq")
+	m, err := c.moduleLoader.LoadModule(path)
 	if err != nil {
 		return err
 	}
-	if err := c.compileModuleFile(path, alias); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c *compiler) lookupModule(name, extension string) (string, error) {
-	name, err := strconv.Unquote(name)
-	if err != nil {
-		return "", err
-	}
-	for _, base := range c.modulePaths {
-		path := filepath.Clean(filepath.Join(base, name+extension))
-		if _, err := os.Stat(path); err == nil {
-			return path, err
-		}
-		path = filepath.Clean(filepath.Join(base, name, filepath.Base(name)+extension))
-		if _, err := os.Stat(path); err == nil {
-			return path, err
-		}
-	}
-	return "", fmt.Errorf("module not found: %q", name)
+	return c.compileModule(m, alias)
 }
 
 func slurpFile(name string) ([]interface{}, error) {
@@ -191,21 +173,13 @@ func slurpFile(name string) ([]interface{}, error) {
 	return vals, nil
 }
 
-func (c *compiler) compileModuleFile(path, alias string) error {
-	cnt, err := ioutil.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	m, err := ParseModule(string(cnt))
-	if err != nil {
-		return &ModuleParseError{path, string(cnt), err}
-	}
+func (c *compiler) compileModule(m *Module, alias string) error {
 	cc := &compiler{
-		modulePaths: c.modulePaths, variables: c.variables,
+		moduleLoader: c.moduleLoader, variables: c.variables,
 		codeoffset: c.pc(), scopes: c.scopes, scopecnt: c.scopecnt}
 	scope := c.scopes[len(c.scopes)-1]
 	defer func(i int) { scope.variables = scope.variables[:i] }(len(scope.variables))
-	bs, err := cc.compileModule(m)
+	bs, err := cc.compileModuleInternal(m)
 	if err != nil {
 		return err
 	}
@@ -221,7 +195,7 @@ func (c *compiler) compileModuleFile(path, alias string) error {
 	return nil
 }
 
-func (c *compiler) compileModule(m *Module) (*Code, error) {
+func (c *compiler) compileModuleInternal(m *Module) (*Code, error) {
 	for _, i := range m.Imports {
 		if err := c.compileImport(i); err != nil {
 			return nil, err
@@ -288,7 +262,7 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	defer c.appendCodeInfo(e.Name)
 	pc, argsorder := c.pc(), getArgsOrder(e.Args)
 	c.funcs = append(c.funcs, &funcinfo{e.Name, pc, e.Args, argsorder})
-	cc := &compiler{codeoffset: pc, scopecnt: c.scopecnt, funcs: c.funcs}
+	cc := &compiler{moduleLoader: c.moduleLoader, codeoffset: pc, scopecnt: c.scopecnt, funcs: c.funcs}
 	scope := cc.newScope()
 	cc.scopes = append(c.scopes, scope)
 	setscope := cc.lazy(func() *code {

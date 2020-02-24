@@ -48,9 +48,8 @@ type cli struct {
 	inputSlurp    bool
 	inputYAML     bool
 
-	modulePaths []string
-	argnames    []string
-	argvalues   []interface{}
+	argnames  []string
+	argvalues []interface{}
 
 	outputYAMLSeparator bool
 }
@@ -114,7 +113,7 @@ Synopsis:
 		defer func(x bool) { color.NoColor = x }(color.NoColor)
 		color.NoColor = !isTTY(cli.outStream)
 	}
-	cli.inputRaw, cli.inputSlurp, cli.inputYAML, cli.modulePaths = opts.InputRaw, opts.InputSlurp, opts.InputYAML, opts.ModulePaths
+	cli.inputRaw, cli.inputSlurp, cli.inputYAML = opts.InputRaw, opts.InputSlurp, opts.InputYAML
 	for k, v := range opts.Args {
 		if !argNameRe.MatchString(k) {
 			fmt.Fprintf(cli.errStream, "%s: invalid variable name: %s\n", name, k)
@@ -181,7 +180,7 @@ Synopsis:
 		cli.printParseError(fname, arg, err)
 		return exitCodeErr
 	}
-	modulePaths := cli.modulePaths
+	modulePaths := opts.ModulePaths
 	if len(modulePaths) == 0 && addDefaultModulePath {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
@@ -191,7 +190,7 @@ Synopsis:
 		modulePaths = []string{filepath.Join(homeDir, ".jq")}
 	}
 	code, err := gojq.Compile(query,
-		gojq.WithModulePaths(modulePaths),
+		gojq.WithModuleLoader(&moduleLoader{modulePaths}),
 		gojq.WithVariables(cli.argnames))
 	if err != nil {
 		cli.printCompileError(fname, err)
@@ -235,8 +234,8 @@ func slurpFile(name string) ([]interface{}, error) {
 }
 
 func (cli *cli) printCompileError(fname string, err error) {
-	if err, ok := err.(*gojq.ModuleParseError); ok {
-		cli.printParseError(err.Path, err.Src, err.Err)
+	if err, ok := err.(*moduleParseError); ok {
+		cli.printParseError(err.path, err.src, err.err)
 		return
 	}
 	fmt.Fprintf(cli.errStream, "%s: %s: compile error: %v\n", name, fname, err)

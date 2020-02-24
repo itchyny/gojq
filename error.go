@@ -7,16 +7,6 @@ import (
 	"reflect"
 )
 
-// ModuleParseError is an error on parsing a module.
-type ModuleParseError struct {
-	Path, Src string
-	Err       error
-}
-
-func (err *ModuleParseError) Error() string {
-	return err.Err.Error()
-}
-
 type expectedObjectError struct {
 	v interface{}
 }

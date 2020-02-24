@@ -3,10 +3,10 @@ package gojq
 // CompilerOption ...
 type CompilerOption func(*compiler)
 
-// WithModulePaths is a compiler option for module paths.
-func WithModulePaths(modulePaths []string) CompilerOption {
+// WithModuleLoader is a compiler option for module loader.
+func WithModuleLoader(moduleLoader ModuleLoader) CompilerOption {
 	return func(c *compiler) {
-		c.modulePaths = modulePaths
+		c.moduleLoader = moduleLoader
 	}
 }
 
