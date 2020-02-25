@@ -12,13 +12,10 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
-	"unicode/utf8"
 
-	"github.com/alecthomas/participle"
 	"github.com/fatih/color"
 	"github.com/itchyny/go-flags"
 	"github.com/mattn/go-isatty"
-	"github.com/mattn/go-runewidth"
 	"gopkg.in/yaml.v3"
 
 	"github.com/itchyny/gojq"
@@ -79,6 +76,20 @@ var addDefaultModulePath = true
 var argNameRe = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 
 func (cli *cli) run(args []string) int {
+	if err := cli.runInternal(args); err != nil {
+		if errs, ok := err.(errors); ok {
+			for _, err := range errs {
+				fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+			}
+		} else {
+			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+		}
+		return exitCodeErr
+	}
+	return exitCodeOK
+}
+
+func (cli *cli) runInternal(args []string) error {
 	var opts flagopts
 	args, err := flags.NewParser(
 		&opts, flags.HelpFlag|flags.PassDoubleDash,
@@ -95,14 +106,13 @@ Synopsis:
 `,
 				name, version, revision, runtime.Version())
 			fmt.Fprintln(cli.outStream, err.Error())
-			return exitCodeOK
+			return nil
 		}
-		fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
-		return exitCodeErr
+		return err
 	}
 	if opts.Version {
 		fmt.Fprintf(cli.outStream, "%s %s (rev: %s/%s)\n", name, version, revision, runtime.Version())
-		return exitCodeOK
+		return nil
 	}
 	cli.outputCompact, cli.outputRaw, cli.outputJoin, cli.outputYAML =
 		opts.OutputCompact, opts.OutputRaw, opts.OutputJoin, opts.OutputYAML
@@ -116,47 +126,40 @@ Synopsis:
 	cli.inputRaw, cli.inputSlurp, cli.inputYAML = opts.InputRaw, opts.InputSlurp, opts.InputYAML
 	for k, v := range opts.Args {
 		if !argNameRe.MatchString(k) {
-			fmt.Fprintf(cli.errStream, "%s: invalid variable name: %s\n", name, k)
-			return exitCodeErr
+			return &variableNameError{k}
 		}
 		cli.argnames = append(cli.argnames, "$"+k)
 		cli.argvalues = append(cli.argvalues, v)
 	}
 	for k, v := range opts.ArgsJSON {
 		if !argNameRe.MatchString(k) {
-			fmt.Fprintf(cli.errStream, "%s: invalid variable name: %s\n", name, k)
-			return exitCodeErr
+			return &variableNameError{k}
 		}
 		var val interface{}
 		if err := json.Unmarshal([]byte(v), &val); err != nil {
-			cli.printJSONError(&jsonParseError{"$" + k, v, err})
-			return exitCodeErr
+			return &jsonParseError{"$" + k, v, err}
 		}
 		cli.argnames = append(cli.argnames, "$"+k)
 		cli.argvalues = append(cli.argvalues, val)
 	}
 	for k, v := range opts.SlurpFile {
 		if !argNameRe.MatchString(k) {
-			fmt.Fprintf(cli.errStream, "%s: invalid variable name: %s\n", name, k)
-			return exitCodeErr
+			return &variableNameError{k}
 		}
 		vals, err := slurpFile(v)
 		if err != nil {
-			cli.printJSONError(err)
-			return exitCodeErr
+			return err
 		}
 		cli.argnames = append(cli.argnames, "$"+k)
 		cli.argvalues = append(cli.argvalues, vals)
 	}
 	for k, v := range opts.RawFile {
 		if !argNameRe.MatchString(k) {
-			fmt.Fprintf(cli.errStream, "%s: invalid variable name: %s\n", name, k)
-			return exitCodeErr
+			return &variableNameError{k}
 		}
 		val, err := ioutil.ReadFile(v)
 		if err != nil {
-			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
-			return exitCodeErr
+			return err
 		}
 		cli.argnames = append(cli.argnames, "$"+k)
 		cli.argvalues = append(cli.argvalues, string(val))
@@ -165,8 +168,7 @@ Synopsis:
 	if opts.FromFile != "" {
 		src, err := ioutil.ReadFile(opts.FromFile)
 		if err != nil {
-			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
-			return exitCodeErr
+			return err
 		}
 		arg, fname = string(src), opts.FromFile
 	} else if len(args) == 0 {
@@ -177,15 +179,13 @@ Synopsis:
 	}
 	query, err := gojq.Parse(arg)
 	if err != nil {
-		cli.printParseError(fname, arg, err)
-		return exitCodeErr
+		return &queryParseError{fname, arg, err}
 	}
 	modulePaths := opts.ModulePaths
 	if len(modulePaths) == 0 && addDefaultModulePath {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
-			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
-			return exitCodeErr
+			return err
 		}
 		modulePaths = []string{filepath.Join(homeDir, ".jq")}
 	}
@@ -193,8 +193,7 @@ Synopsis:
 		gojq.WithModuleLoader(&moduleLoader{modulePaths}),
 		gojq.WithVariables(cli.argnames))
 	if err != nil {
-		cli.printCompileError(fname, err)
-		return exitCodeErr
+		return &compileError{err}
 	}
 	if opts.InputNull {
 		cli.inputRaw, cli.inputSlurp = false, false
@@ -205,20 +204,11 @@ Synopsis:
 		return cli.process("<stdin>", cli.inStream, code)
 	}
 	for _, arg := range args {
-		if exitCode := cli.processFile(arg, code); exitCode != exitCodeOK {
-			return exitCode
+		if err := cli.processFile(arg, code); err != nil {
+			return err
 		}
 	}
-	return exitCodeOK
-}
-
-type jsonParseError struct {
-	fname, contents string
-	err             error
-}
-
-func (err *jsonParseError) Error() string {
-	return fmt.Sprintf("invalid json: %s", err.fname)
+	return nil
 }
 
 func slurpFile(name string) ([]interface{}, error) {
@@ -243,49 +233,16 @@ func slurpFile(name string) ([]interface{}, error) {
 	return vals, nil
 }
 
-func (cli *cli) printCompileError(fname string, err error) {
-	switch err := err.(type) {
-	case *moduleParseError:
-		cli.printParseError(err.path, err.src, err.err)
-	case *jsonParseError:
-		cli.printJSONError(err)
-	default:
-		fmt.Fprintf(cli.errStream, "%s: %s: compile error: %v\n", name, fname, err)
-	}
-}
-
-func (cli *cli) printParseError(fname, query string, err error) {
-	if err, ok := err.(participle.Error); ok {
-		lines := strings.Split(query, "\n")
-		if 0 < err.Position().Line && err.Position().Line <= len(lines) {
-			var prefix string
-			if len(lines) <= 1 && fname == "<arg>" {
-				fname = query
-			} else {
-				fname += fmt.Sprintf(":%d", err.Position().Line)
-				prefix = fmt.Sprintf("%d | ", err.Position().Line)
-			}
-			fmt.Fprintf(cli.errStream, "%s: invalid query: %s\n", name, fname)
-			fmt.Fprintf(
-				cli.errStream, "    %s%s\n%s  %s\n", prefix, lines[err.Position().Line-1],
-				strings.Repeat(" ", 3+err.Position().Column+len(prefix))+"^", err.Message())
-			return
-		}
-	}
-	fmt.Fprintf(cli.errStream, "%s: invalid query: %s\n", name, err)
-}
-
-func (cli *cli) processFile(fname string, code *gojq.Code) int {
+func (cli *cli) processFile(fname string, code *gojq.Code) error {
 	f, err := os.Open(fname)
 	if err != nil {
-		fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
-		return exitCodeErr
+		return err
 	}
 	defer f.Close()
 	return cli.process(fname, f, code)
 }
 
-func (cli *cli) process(fname string, in io.Reader, code *gojq.Code) int {
+func (cli *cli) process(fname string, in io.Reader, code *gojq.Code) error {
 	if cli.inputRaw {
 		return cli.processRaw(fname, in, code)
 	}
@@ -295,35 +252,31 @@ func (cli *cli) process(fname string, in io.Reader, code *gojq.Code) int {
 	return cli.processJSON(fname, in, code)
 }
 
-func (cli *cli) processRaw(fname string, in io.Reader, code *gojq.Code) int {
+func (cli *cli) processRaw(fname string, in io.Reader, code *gojq.Code) error {
 	if cli.inputSlurp {
 		xs, err := ioutil.ReadAll(in)
 		if err != nil {
-			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
-			return exitCodeErr
+			return err
 		}
-		if err := cli.printValue(code.Run(string(xs), cli.argvalues...)); err != nil {
-			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
-			return exitCodeErr
-		}
-		return exitCodeOK
+		return cli.printValue(code.Run(string(xs), cli.argvalues...))
 	}
 	s := bufio.NewScanner(in)
-	exitCode := exitCodeOK
+	var errs errors
 	for s.Scan() {
 		if err := cli.printValue(code.Run(s.Text(), cli.argvalues...)); err != nil {
-			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
-			exitCode = exitCodeErr
+			errs = append(errs, err)
 		}
 	}
 	if err := s.Err(); err != nil {
-		fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
-		return exitCodeErr
+		return err
 	}
-	return exitCode
+	if errs != nil {
+		return errs
+	}
+	return nil
 }
 
-func (cli *cli) processJSON(fname string, in io.Reader, code *gojq.Code) int {
+func (cli *cli) processJSON(fname string, in io.Reader, code *gojq.Code) error {
 	var buf bytes.Buffer
 	dec := json.NewDecoder(io.TeeReader(in, &buf))
 	dec.UseNumber()
@@ -333,67 +286,23 @@ func (cli *cli) processJSON(fname string, in io.Reader, code *gojq.Code) int {
 		if err := dec.Decode(&v); err != nil {
 			if err == io.EOF {
 				if cli.inputSlurp {
-					if err := cli.printValue(code.Run(vs, cli.argvalues...)); err != nil {
-						fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
-						return exitCodeErr
-					}
+					return cli.printValue(code.Run(vs, cli.argvalues...))
 				}
-				return exitCodeOK
+				return nil
 			}
-			cli.printJSONError(&jsonParseError{fname, buf.String(), err})
-			return exitCodeErr
+			return &jsonParseError{fname, buf.String(), err}
 		}
 		if cli.inputSlurp {
 			vs = append(vs, v)
 			continue
 		}
 		if err := cli.printValue(code.Run(v, cli.argvalues...)); err != nil {
-			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
-			return exitCodeErr
+			return err
 		}
 	}
 }
 
-func (cli *cli) printJSONError(err error) {
-	fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
-	var contents string
-	switch e := err.(type) {
-	case *jsonParseError:
-		contents, err = e.contents, e.err
-	default:
-		return
-	}
-	if err.Error() == "unexpected EOF" {
-		lines := strings.Split(strings.TrimRight(contents, "\n"), "\n")
-		line := toValidUTF8(strings.TrimRight(lines[len(lines)-1], "\r"))
-		fmt.Fprintf(cli.errStream, "    %s\n%s  %s\n", line, strings.Repeat(" ", 4+runewidth.StringWidth(line))+"^", err)
-	} else if err, ok := err.(*json.SyntaxError); ok {
-		var s strings.Builder
-		var i, j int
-		for _, r := range toValidUTF8(contents) {
-			i += len([]byte(string(r)))
-			if i <= int(err.Offset) {
-				j += runewidth.RuneWidth(r)
-			}
-			if r == '\n' || r == '\r' {
-				if i == int(err.Offset) {
-					j++
-					break
-				} else if i > int(err.Offset) {
-					break
-				} else {
-					j = 0
-					s.Reset()
-				}
-			} else {
-				s.WriteRune(r)
-			}
-		}
-		fmt.Fprintf(cli.errStream, "    %s\n%s  %s\n", s.String(), strings.Repeat(" ", 3+j)+"^", err)
-	}
-}
-
-func (cli *cli) processYAML(fname string, in io.Reader, code *gojq.Code) int {
+func (cli *cli) processYAML(fname string, in io.Reader, code *gojq.Code) error {
 	var buf bytes.Buffer
 	dec := yaml.NewDecoder(io.TeeReader(in, &buf))
 	var vs []interface{}
@@ -402,16 +311,11 @@ func (cli *cli) processYAML(fname string, in io.Reader, code *gojq.Code) int {
 		if err := dec.Decode(&v); err != nil {
 			if err == io.EOF {
 				if cli.inputSlurp {
-					if err := cli.printValue(code.Run(vs, cli.argvalues...)); err != nil {
-						fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
-						return exitCodeErr
-					}
+					return cli.printValue(code.Run(vs, cli.argvalues...))
 				}
-				return exitCodeOK
+				return nil
 			}
-			fmt.Fprintf(cli.errStream, "%s: invalid yaml: %s\n", name, fname)
-			cli.printYAMLError(fname, buf.String(), err)
-			return exitCodeErr
+			return &yamlParseError{fname, buf.String(), err}
 		}
 		v = fixMapKeyToString(v) // Workaround for https://github.com/go-yaml/yaml/issues/139
 		if cli.inputSlurp {
@@ -419,46 +323,9 @@ func (cli *cli) processYAML(fname string, in io.Reader, code *gojq.Code) int {
 			continue
 		}
 		if err := cli.printValue(code.Run(v, cli.argvalues...)); err != nil {
-			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
-			return exitCodeErr
+			return err
 		}
 	}
-}
-
-func (cli *cli) printYAMLError(fname, input string, err error) {
-	var line int
-	fmt.Fscanf(strings.NewReader(err.Error()), "yaml: line %d:", &line)
-	if line == 0 {
-		return
-	}
-	msg := err.Error()[7+strings.IndexRune(err.Error()[5:], ':'):]
-	var s strings.Builder
-	var i, j int
-	var cr bool
-	for _, r := range toValidUTF8(input) {
-		i += len([]byte(string(r)))
-		if r == '\n' || r == '\r' {
-			if !cr || r != '\n' {
-				j++
-			}
-			cr = r == '\r'
-			if j == line {
-				break
-			}
-			s.Reset()
-		} else {
-			cr = false
-			s.WriteRune(r)
-		}
-	}
-	fmt.Fprintf(cli.errStream, "    %s\n    ^  %s\n", s.String(), msg)
-}
-
-func toValidUTF8(s string) string {
-	for !utf8.ValidString(s) {
-		s = s[:len(s)-1]
-	}
-	return s
 }
 
 func (cli *cli) printValue(v gojq.Iter) error {

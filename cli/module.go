@@ -35,7 +35,7 @@ func (l *moduleLoader) LoadInitModules() ([]*gojq.Module, error) {
 		}
 		m, err := gojq.ParseModule(string(cnt))
 		if err != nil {
-			return nil, &moduleParseError{path, string(cnt), err}
+			return nil, &queryParseError{path, string(cnt), err}
 		}
 		ms = append(ms, m)
 	}
@@ -53,7 +53,7 @@ func (l *moduleLoader) LoadModule(name string) (*gojq.Module, error) {
 	}
 	m, err := gojq.ParseModule(string(cnt))
 	if err != nil {
-		return nil, &moduleParseError{path, string(cnt), err}
+		return nil, &queryParseError{path, string(cnt), err}
 	}
 	return m, nil
 }
@@ -82,13 +82,4 @@ func (l *moduleLoader) lookupModule(name, extension string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("module not found: %q", name)
-}
-
-type moduleParseError struct {
-	path, src string
-	err       error
-}
-
-func (err *moduleParseError) Error() string {
-	return err.err.Error()
 }

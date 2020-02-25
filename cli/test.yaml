@@ -446,7 +446,7 @@
     - '(-.)'
   input: '"abcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcde"'
   error: |
-    gojq: cannot negate: string ("abcdeabcdeabcdeabcdea ...)
+    cannot negate: string ("abcdeabcdeabcdeabcdea ...)
 
 - name: object construction
   args:
@@ -3558,6 +3558,8 @@
       "foo": "bar"
     }
   error: |
+    cannot divide: string ("{") and number (2)
+    cannot divide: string ("  \"foo\": \"bar\"") and number (2)
     cannot divide: string ("}") and number (2)
 
 - name: null input value option
