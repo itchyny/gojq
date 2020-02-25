@@ -14,6 +14,7 @@ _gojq()
     '(-s --slurp)'{-s,--slurp}'[read all inputs into an array]' \
     '(--yaml-input)'--yaml-input'[read input as YAML]' \
     '(-f --from-file)'{-f,--from-file}'[load query from file]' \
+    '(-L)'-L'[directory to search modules from]' \
     '(--arg)'--arg'[set variable to string value]' \
     '(--argjson)'--argjson'[set variable to JSON value]' \
     '(--slurpfile)'--slurpfile'[set variable to the JSON contents of the file]' \
