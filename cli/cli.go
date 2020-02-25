@@ -77,11 +77,7 @@ var argNameRe = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 
 func (cli *cli) run(args []string) int {
 	if err := cli.runInternal(args); err != nil {
-		if errs, ok := err.(errors); ok {
-			for _, err := range errs {
-				fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
-			}
-		} else {
+		if _, ok := err.(*emptyError); !ok {
 			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
 		}
 		return exitCodeErr
@@ -204,11 +200,14 @@ Synopsis:
 		return cli.process("<stdin>", cli.inStream, code)
 	}
 	for _, arg := range args {
-		if err := cli.processFile(arg, code); err != nil {
-			return err
+		if er := cli.processFile(arg, code); er != nil {
+			if _, ok := er.(*emptyError); !ok {
+				fmt.Fprintf(cli.errStream, "%s: %s\n", name, er)
+			}
+			err = &emptyError{}
 		}
 	}
-	return nil
+	return err
 }
 
 func slurpFile(name string) ([]interface{}, error) {
@@ -261,19 +260,17 @@ func (cli *cli) processRaw(fname string, in io.Reader, code *gojq.Code) error {
 		return cli.printValue(code.Run(string(xs), cli.argvalues...))
 	}
 	s := bufio.NewScanner(in)
-	var errs errors
+	var err error
 	for s.Scan() {
-		if err := cli.printValue(code.Run(s.Text(), cli.argvalues...)); err != nil {
-			errs = append(errs, err)
+		if er := cli.printValue(code.Run(s.Text(), cli.argvalues...)); er != nil {
+			fmt.Fprintf(cli.errStream, "%s: %s\n", name, er)
+			err = &emptyError{}
 		}
 	}
 	if err := s.Err(); err != nil {
 		return err
 	}
-	if errs != nil {
-		return errs
-	}
-	return nil
+	return err
 }
 
 func (cli *cli) processJSON(fname string, in io.Reader, code *gojq.Code) error {

@@ -3960,6 +3960,11 @@
     {
       "foo": 10
     }
+    [
+      {
+        "bar": []
+      }
+    ]
   error: 'open testdata/6.json:'
 
 - name: module directory option

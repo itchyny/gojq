@@ -10,17 +10,10 @@ import (
 	"github.com/mattn/go-runewidth"
 )
 
-type errors []error
+type emptyError struct{}
 
-func (errs errors) Error() string {
-	var s strings.Builder
-	for i, err := range errs {
-		if i > 0 {
-			fmt.Fprint(&s, ", ")
-		}
-		fmt.Fprint(&s, err)
-	}
-	return s.String()
+func (emptyError) Error() string {
+	return ""
 }
 
 type variableNameError struct {
