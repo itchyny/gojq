@@ -104,12 +104,18 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 }
 
 func (c *compiler) compile(q *Query) (*Code, error) {
+	for _, name := range c.variables {
+		if !strings.HasPrefix(name, "$") {
+			return nil, &bindVariableNameError{name}
+		}
+		v := c.pushVariable(name)
+		c.append(&code{op: opstore, v: v})
+	}
 	for _, i := range q.Imports {
 		if err := c.compileImport(i); err != nil {
 			return nil, err
 		}
 	}
-	c.pushVariables(c.variables)
 	if err := c.compileQuery(q); err != nil {
 		return nil, err
 	}
@@ -212,17 +218,6 @@ func (c *compiler) compileModuleInternal(m *Module) (*Code, error) {
 
 func (c *compiler) newVariable() [2]int {
 	return c.pushVariable("")
-}
-
-func (c *compiler) pushVariables(names []string) error {
-	for _, name := range names {
-		if !strings.HasPrefix(name, "$") {
-			return &bindVariableNameError{name}
-		}
-		v := c.pushVariable(name)
-		c.append(&code{op: opstore, v: v})
-	}
-	return nil
 }
 
 func (c *compiler) pushVariable(name string) [2]int {

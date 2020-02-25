@@ -4010,6 +4010,19 @@
   expected: |
     [42,{"m1":42}]
 
+- name: module directory option with argjson
+  args:
+    - -c
+    - -L
+    - testdata
+    - --argjson
+    - x
+    - '{}'
+    - 'import "m1" as $x; $x'
+  input: 0
+  expected: |
+    [42,{"m1":42}]
+
 - name: module directory option parse error
   args:
     - 'include "m"; f'
