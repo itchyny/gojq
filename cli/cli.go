@@ -129,7 +129,7 @@ Synopsis:
 		}
 		var val interface{}
 		if err := json.Unmarshal([]byte(v), &val); err != nil {
-			fmt.Fprintf(cli.errStream, "%s: invalid JSON for $%s: %s\n", name, k, err)
+			cli.printJSONError(&jsonParseError{"$" + k, v, err})
 			return exitCodeErr
 		}
 		cli.argnames = append(cli.argnames, "$"+k)
@@ -142,7 +142,7 @@ Synopsis:
 		}
 		vals, err := slurpFile(v)
 		if err != nil {
-			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+			cli.printJSONError(err)
 			return exitCodeErr
 		}
 		cli.argnames = append(cli.argnames, "$"+k)
@@ -212,6 +212,15 @@ Synopsis:
 	return exitCodeOK
 }
 
+type jsonParseError struct {
+	fname, contents string
+	err             error
+}
+
+func (err *jsonParseError) Error() string {
+	return fmt.Sprintf("invalid json: %s", err.fname)
+}
+
 func slurpFile(name string) ([]interface{}, error) {
 	f, err := os.Open(name)
 	if err != nil {
@@ -219,14 +228,15 @@ func slurpFile(name string) ([]interface{}, error) {
 	}
 	defer f.Close()
 	var vals []interface{}
-	dec := json.NewDecoder(f)
+	var buf bytes.Buffer
+	dec := json.NewDecoder(io.TeeReader(f, &buf))
 	for {
 		var val interface{}
 		if err := dec.Decode(&val); err != nil {
 			if err == io.EOF {
 				break
 			}
-			return nil, fmt.Errorf("failed to parse %s: %w", name, err)
+			return nil, &jsonParseError{name, buf.String(), err}
 		}
 		vals = append(vals, val)
 	}
@@ -234,11 +244,14 @@ func slurpFile(name string) ([]interface{}, error) {
 }
 
 func (cli *cli) printCompileError(fname string, err error) {
-	if err, ok := err.(*moduleParseError); ok {
+	switch err := err.(type) {
+	case *moduleParseError:
 		cli.printParseError(err.path, err.src, err.err)
-		return
+	case *jsonParseError:
+		cli.printJSONError(err)
+	default:
+		fmt.Fprintf(cli.errStream, "%s: %s: compile error: %v\n", name, fname, err)
 	}
-	fmt.Fprintf(cli.errStream, "%s: %s: compile error: %v\n", name, fname, err)
 }
 
 func (cli *cli) printParseError(fname, query string, err error) {
@@ -327,8 +340,7 @@ func (cli *cli) processJSON(fname string, in io.Reader, code *gojq.Code) int {
 				}
 				return exitCodeOK
 			}
-			fmt.Fprintf(cli.errStream, "%s: invalid json: %s\n", name, fname)
-			cli.printJSONError(fname, buf.String(), err)
+			cli.printJSONError(&jsonParseError{fname, buf.String(), err})
 			return exitCodeErr
 		}
 		if cli.inputSlurp {
@@ -342,15 +354,23 @@ func (cli *cli) processJSON(fname string, in io.Reader, code *gojq.Code) int {
 	}
 }
 
-func (cli *cli) printJSONError(fname, input string, err error) {
+func (cli *cli) printJSONError(err error) {
+	fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+	var contents string
+	switch e := err.(type) {
+	case *jsonParseError:
+		contents, err = e.contents, e.err
+	default:
+		return
+	}
 	if err.Error() == "unexpected EOF" {
-		lines := strings.Split(strings.TrimRight(input, "\n"), "\n")
+		lines := strings.Split(strings.TrimRight(contents, "\n"), "\n")
 		line := toValidUTF8(strings.TrimRight(lines[len(lines)-1], "\r"))
 		fmt.Fprintf(cli.errStream, "    %s\n%s  %s\n", line, strings.Repeat(" ", 4+runewidth.StringWidth(line))+"^", err)
 	} else if err, ok := err.(*json.SyntaxError); ok {
 		var s strings.Builder
 		var i, j int
-		for _, r := range toValidUTF8(input) {
+		for _, r := range toValidUTF8(contents) {
 			i += len([]byte(string(r)))
 			if i <= int(err.Offset) {
 				j += runewidth.RuneWidth(r)

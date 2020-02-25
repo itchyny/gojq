@@ -4056,6 +4056,17 @@
     1
     [1,2,{"foo":42}]
 
+- name: module directory option json parse error
+  args:
+    - -L
+    - testdata
+    - 'import "4" as $x; $x'
+  input: 0
+  error: |
+    invalid json: testdata/4.json
+          bar
+          ^  invalid character 'b' looking for beginning of value
+
 - name: module directory option with same alias name
   args:
     - -c
@@ -4173,6 +4184,17 @@
   error: |
     invalid variable name: foo=10
 
+- name: argjson option parse error
+  args:
+    - '--argjson'
+    - 'foo'
+    - '{ foo }'
+    - '.'
+  error: |
+    invalid json: $foo
+        { foo }
+          ^  invalid character 'f' looking for beginning of object key string
+
 - name: slurpfile option
   args:
     - '--slurpfile'
@@ -4198,7 +4220,10 @@
     - 'testdata/1.jq'
     - '{ $foo }'
   input: 'null'
-  error: 'failed to parse testdata/1.jq:'
+  error: |
+    invalid json: testdata/1.jq
+        .foo.bar
+        ^  invalid character '.' looking for beginning of value
 
 - name: rawfile option
   args:
