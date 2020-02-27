@@ -155,6 +155,8 @@ func (c *compiler) compileImport(i *Import) error {
 	if err != nil {
 		return err
 	}
+	c.appendCodeInfo("module " + path)
+	defer c.appendCodeInfo("end of module " + path)
 	return c.compileModule(m, alias)
 }
 
@@ -254,7 +256,7 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 		return &code{op: opjump, v: c.pc()}
 	})()
 	c.appendCodeInfo(e.Name)
-	defer c.appendCodeInfo(e.Name)
+	defer c.appendCodeInfo("end of " + e.Name)
 	pc, argsorder := c.pc(), getArgsOrder(e.Args)
 	c.funcs = append(c.funcs, &funcinfo{e.Name, pc, e.Args, argsorder})
 	cc := &compiler{moduleLoader: c.moduleLoader, codeoffset: pc, scopecnt: c.scopecnt, funcs: c.funcs}

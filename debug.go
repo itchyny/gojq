@@ -38,13 +38,11 @@ func (c *compiler) appendCodeInfo(x interface{}) {
 	if !debug {
 		return
 	}
-	var prefix string
 	var diff int
-	if c.codes[len(c.codes)-1].op == opret {
-		prefix = "end of "
+	if len(c.codes) > 0 && c.codes[len(c.codes)-1].op == opret && strings.HasPrefix(name, "end of ") {
 		diff = -1
 	}
-	c.codeinfos = append(c.codeinfos, codeinfo{prefix + name, c.pc() + diff})
+	c.codeinfos = append(c.codeinfos, codeinfo{name, c.pc() + diff})
 }
 
 func (c *compiler) deleteCodeInfo(name string) {
@@ -57,13 +55,17 @@ func (c *compiler) deleteCodeInfo(name string) {
 	}
 }
 
-func (env *env) lookupFuncName(pc int) string {
+func (env *env) lookupInfoName(pc int) string {
+	var name string
 	for _, ci := range env.codeinfos {
 		if ci.pc == pc {
-			return ci.name
+			if name != "" {
+				name += ", "
+			}
+			name += ci.name
 		}
 	}
-	return ""
+	return name
 }
 
 func (env *env) debugCodes() {
@@ -84,8 +86,8 @@ func (env *env) debugCodes() {
 			}
 		}
 		var s string
-		if name := env.lookupFuncName(pc); name != "" {
-			if c.op == opcall || c.op == opjump {
+		if name := env.lookupInfoName(pc); name != "" {
+			if (c.op == opcall || c.op == opjump) && !strings.HasPrefix(name, "module ") {
 				s = "\t## call " + name
 			} else {
 				s = "\t## " + name
@@ -122,8 +124,8 @@ func (env *env) debugState(pc int, backtrack bool) {
 			pc = x - 1
 		}
 	}
-	if name := env.lookupFuncName(pc); name != "" {
-		if c.op == opcall || c.op == opjump {
+	if name := env.lookupInfoName(pc); name != "" {
+		if (c.op == opcall || c.op == opjump) && !strings.HasPrefix(name, "module ") {
 			buf.WriteString("\t\t\t## call " + name)
 		} else {
 			buf.WriteString("\t\t\t## " + name)
