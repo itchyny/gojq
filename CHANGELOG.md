@@ -1,9 +1,11 @@
 # Changelog
-## [v0.8.0](https://github.com/itchyny/gojq/compare/v0.7.0..v0.8.0) (2020-02-18)
+## [v0.8.0](https://github.com/itchyny/gojq/compare/v0.7.0..v0.8.0) (2020-02-27)
 * implement format strings (`@text`, `@json`, `@html`, `@uri`, `@csv`, `@tsv`,
   `@sh`, `@base64`, `@base64d`)
+* implement modules feature (`-L` option for directory to search modules from)
 * implement options for binding variables from arguments (`--arg`, `--argjson`)
 * implement options for binding variables from files (`--slurpfile`, `--rawfile`)
+* implement options for indentation count (`--indent`)
 * fix `isnan` for `null`
 * fix path analyzer
 * fix error after optional operator (`1? | .x`)
