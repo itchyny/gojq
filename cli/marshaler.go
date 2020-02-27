@@ -32,16 +32,22 @@ func (m *rawMarshaler) Marshal(v interface{}) ([]byte, error) {
 	return m.m.Marshal(v)
 }
 
-func yamlFormatter() *yamlMarshaler {
-	return &yamlMarshaler{}
+func yamlFormatter(indent *int) *yamlMarshaler {
+	return &yamlMarshaler{indent}
 }
 
-type yamlMarshaler struct{}
+type yamlMarshaler struct {
+	indent *int
+}
 
 func (m *yamlMarshaler) Marshal(v interface{}) ([]byte, error) {
 	var bs bytes.Buffer
 	enc := yaml.NewEncoder(&bs)
-	enc.SetIndent(2)
+	if i := m.indent; i != nil {
+		enc.SetIndent(*i)
+	} else {
+		enc.SetIndent(2)
+	}
 	if err := enc.Encode(v); err != nil {
 		return nil, err
 	}

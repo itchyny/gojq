@@ -3523,6 +3523,61 @@
       "foo": 42
     }
 
+- name: indent option
+  args:
+    - --indent
+    - 1
+    - '.'
+  input: '{ "foo": ["hello", "world"] }'
+  expected: |
+    {
+     "foo": [
+      "hello",
+      "world"
+     ]
+    }
+
+- name: indent option
+  args:
+    - --indent
+    - 0
+    - '.'
+  input: '{ "foo": ["hello", "world"] }'
+  expected: |
+    {"foo":["hello","world"]}
+
+- name: indent option
+  args:
+    - --indent
+    - 9
+    - '.'
+  input: '{ "foo": ["hello", "world"] }'
+  expected: |
+    {
+             "foo": [
+                      "hello",
+                      "world"
+             ]
+    }
+
+- name: indent option error
+  args:
+    - --indent
+    - 10
+    - '.'
+  input: '{ "foo": { "baz": ["hello", "world"] } }'
+  error: |
+    too many indentation count: 10
+
+- name: indent option error
+  args:
+    - --indent
+    - -1
+    - '.'
+  input: '{ "foo": { "baz": ["hello", "world"] } }'
+  error: |
+    negative indentation count: -1
+
 - name: raw strings input option
   args:
     - -R
@@ -3788,6 +3843,29 @@
     foo: 1
     ---
     bar
+
+- name: yaml output with indent option
+  args:
+    - --yaml-output
+    - --indent
+    - 8
+    - '.'
+  input: '{ "foo": { "baz": ["hello", "world"] } }'
+  expected: |
+    foo:
+            baz:
+                  - hello
+                  - world
+
+- name: yaml output with indent option error
+  args:
+    - --yaml-output
+    - --indent
+    - 10
+    - '.'
+  input: '{ "foo": { "baz": ["hello", "world"] } }'
+  error: |
+    too many indentation count: 10
 
 - name: source query from file
   args:

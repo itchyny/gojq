@@ -41,6 +41,7 @@ type cli struct {
 	outputRaw     bool
 	outputJoin    bool
 	outputYAML    bool
+	outputIndent  *int
 	inputRaw      bool
 	inputSlurp    bool
 	inputYAML     bool
@@ -58,6 +59,7 @@ type flagopts struct {
 	OutputColor   bool              `short:"C" long:"color-output" description:"colorize output even if piped"`
 	OutputMono    bool              `short:"M" long:"monochrome-output" description:"stop colorizing output"`
 	OutputYAML    bool              `long:"yaml-output" description:"output by YAML"`
+	OutputIndent  *int              `long:"indent" description:"number of spaces for indentation"`
 	InputNull     bool              `short:"n" long:"null-input" description:"use null as input value"`
 	InputRaw      bool              `short:"R" long:"raw-input" description:"read input as raw strings"`
 	InputSlurp    bool              `short:"s" long:"slurp" description:"read all inputs into an array"`
@@ -110,14 +112,21 @@ Synopsis:
 		fmt.Fprintf(cli.outStream, "%s %s (rev: %s/%s)\n", name, version, revision, runtime.Version())
 		return nil
 	}
-	cli.outputCompact, cli.outputRaw, cli.outputJoin, cli.outputYAML =
-		opts.OutputCompact, opts.OutputRaw, opts.OutputJoin, opts.OutputYAML
+	cli.outputCompact, cli.outputRaw, cli.outputJoin, cli.outputYAML, cli.outputIndent =
+		opts.OutputCompact, opts.OutputRaw, opts.OutputJoin, opts.OutputYAML, opts.OutputIndent
 	if opts.OutputColor || opts.OutputMono {
 		defer func(x bool) { color.NoColor = x }(color.NoColor)
 		color.NoColor = opts.OutputMono
 	} else {
 		defer func(x bool) { color.NoColor = x }(color.NoColor)
 		color.NoColor = !isTTY(cli.outStream)
+	}
+	if i := cli.outputIndent; i != nil {
+		if *i > 9 {
+			return fmt.Errorf("too many indentation count: %d", *i)
+		} else if *i < 0 {
+			return fmt.Errorf("negative indentation count: %d", *i)
+		}
 	}
 	cli.inputRaw, cli.inputSlurp, cli.inputYAML = opts.InputRaw, opts.InputSlurp, opts.InputYAML
 	for k, v := range opts.Args {
@@ -369,12 +378,19 @@ func (cli *cli) printValue(v gojq.Iter) error {
 
 func (cli *cli) createMarshaler() marshaler {
 	if cli.outputYAML {
-		return yamlFormatter()
+		return yamlFormatter(cli.outputIndent)
 	}
 	f := jsonFormatter()
 	if cli.outputCompact {
 		f.Indent = 0
 		f.Newline = ""
+	} else if i := cli.outputIndent; i != nil {
+		if *i == 0 {
+			f.Indent = 0
+			f.Newline = ""
+		} else {
+			f.Indent = *i
+		}
 	}
 	if cli.outputRaw || cli.outputJoin {
 		return &rawMarshaler{f}
