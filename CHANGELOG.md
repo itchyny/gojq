@@ -1,5 +1,5 @@
 # Changelog
-## [v0.8.0](https://github.com/itchyny/gojq/compare/v0.7.0..v0.8.0) (2020-02-27)
+## [v0.8.0](https://github.com/itchyny/gojq/compare/v0.7.0..v0.8.0) (2020-03-02)
 * implement format strings (`@text`, `@json`, `@html`, `@uri`, `@csv`, `@tsv`,
   `@sh`, `@base64`, `@base64d`)
 * implement modules feature (`-L` option for directory to search modules from)
