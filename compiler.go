@@ -597,9 +597,11 @@ func (c *compiler) compileLogic(e *Logic) error {
 func (c *compiler) compileIf(e *If) error {
 	c.appendCodeInfo(e)
 	c.append(&code{op: opdup}) // duplicate the value for then or else clause
+	c.append(&code{op: opexpbegin})
 	if err := c.compileQuery(e.Cond); err != nil {
 		return err
 	}
+	c.append(&code{op: opexpend})
 	setjumpifnot := c.lazy(func() *code {
 		return &code{op: opjumpifnot, v: c.pc() + 1} // if falsy, skip then clause
 	})
