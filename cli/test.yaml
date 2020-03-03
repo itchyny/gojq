@@ -2920,6 +2920,22 @@
   expected: |
     [{"k":"a","v":1},{"k":"b","v":0},{"k":"c","v":3}]
 
+- name: path function with select
+  args:
+    - -c
+    - 'path(.[] | select(.id | startswith("x")) | .id)'
+  input: '[{"id": "xy"}, {"id": "yx"}]'
+  expected: |
+    [0,"id"]
+
+- name: path function nested
+  args:
+    - -c
+    - 'path(.a[path(.b)[0]])'
+  input: '{"a":{"b":0}}'
+  expected: |
+    ["a","b"]
+
 - name: path function error
   args:
     - 'path(. + 1)'
