@@ -2928,6 +2928,14 @@
   expected: |
     [0,"id"]
 
+- name: path function nested
+  args:
+    - -c
+    - 'path(.a[path(.b)[0]])'
+  input: '{"a":{"b":0}}'
+  expected: |
+    ["a","b"]
+
 - name: path function error
   args:
     - 'path(. + 1)'

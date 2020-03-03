@@ -1188,7 +1188,7 @@ func (c *compiler) compileCall(name string, args []*Query) error {
 		[3]interface{}{internalFuncs[name].callback, len(args), name},
 		args,
 		nil,
-		name != "path" && name != "_index" && name != "_slice",
+		name == "_index" || name == "_slice",
 	)
 }
 
@@ -1213,7 +1213,7 @@ func (c *compiler) compileCallInternal(fn interface{}, args []*Query, vars map[i
 	}
 	idx := c.newVariable()
 	c.append(&code{op: opstore, v: idx})
-	if indexing {
+	if indexing && len(args) > 1 {
 		c.append(&code{op: opexpbegin})
 	}
 	for i := len(args) - 1; i >= 0; i-- {
@@ -1251,13 +1251,13 @@ func (c *compiler) compileCallInternal(fn interface{}, args []*Query, vars map[i
 		} else {
 			c.append(&code{op: oppushpc, v: pc})
 		}
-	}
-	if indexing {
-		if c.codes[len(c.codes)-2].op == opexpbegin {
-			c.codes[len(c.codes)-2] = c.codes[len(c.codes)-1]
-			c.codes = c.codes[:len(c.codes)-1]
-		} else {
-			c.append(&code{op: opexpend})
+		if indexing && i == 1 {
+			if c.codes[len(c.codes)-2].op == opexpbegin {
+				c.codes[len(c.codes)-2] = c.codes[len(c.codes)-1]
+				c.codes = c.codes[:len(c.codes)-1]
+			} else {
+				c.append(&code{op: opexpend})
+			}
 		}
 	}
 	c.append(&code{op: opload, v: idx})
