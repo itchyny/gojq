@@ -39,6 +39,7 @@ func TestCliRun(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
+			defer func() { assert.Nil(t, recover()) }()
 			outStream := new(bytes.Buffer)
 			errStream := new(bytes.Buffer)
 			cli := cli{
