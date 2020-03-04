@@ -263,7 +263,7 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	scope := cc.newScope()
 	cc.scopes = append(c.scopes, scope)
 	setscope := cc.lazy(func() *code {
-		return &code{op: opscope, v: [2]int{scope.id, len(scope.variables)}}
+		return &code{op: opscope, v: [2]int{scope.id, scope.variablecnt}}
 	})
 	if len(e.Args) > 0 {
 		v := cc.newVariable()
