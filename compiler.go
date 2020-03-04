@@ -930,52 +930,52 @@ func (c *compiler) compileObject(e *Object) error {
 	v := c.newVariable()
 	c.append(&code{op: opstore, v: v})
 	for _, kv := range e.KeyVals {
-		if kv.KeyOnly != nil {
-			if (*kv.KeyOnly)[0] == '$' {
-				c.append(&code{op: oppush, v: (*kv.KeyOnly)[1:]})
-				c.append(&code{op: opload, v: v})
-				if err := c.compileFunc(&Func{Name: *kv.KeyOnly}); err != nil {
-					return err
-				}
-			} else {
-				c.append(&code{op: oppush, v: *kv.KeyOnly})
-				c.append(&code{op: opload, v: v})
-				if err := c.compileIndex(&Term{Identity: true}, &Index{Name: "." + *kv.KeyOnly}); err != nil {
-					return err
-				}
-			}
-		} else if kv.KeyOnlyString != "" {
-			c.append(&code{op: opload, v: v})
-			if err := c.compileString(kv.KeyOnlyString); err != nil {
-				return err
-			}
-			c.append(&code{op: opdup})
-			c.append(&code{op: opload, v: v})
-			c.append(&code{op: opload, v: v})
-			// ref: compileCall
-			c.append(&code{op: opcall, v: [3]interface{}{internalFuncs["_index"].callback, 2, "_index"}})
-		} else {
-			if kv.Query != nil {
-				c.append(&code{op: opload, v: v})
-				if err := c.compileQuery(kv.Query); err != nil {
-					return err
-				}
-			} else if kv.KeyString != "" {
-				c.append(&code{op: opload, v: v})
-				if err := c.compileString(kv.KeyString); err != nil {
-					return err
-				}
-			} else {
-				c.append(&code{op: oppush, v: kv.Key})
-			}
-			c.append(&code{op: opload, v: v})
-			if err := c.compileObjectVal(kv.Val); err != nil {
-				return err
-			}
+		if err := c.compileObjectKeyVal(v, kv); err != nil {
+			return err
 		}
 	}
 	c.append(&code{op: opobject, v: len(e.KeyVals)})
 	return nil
+}
+
+func (c *compiler) compileObjectKeyVal(v [2]int, kv ObjectKeyVal) error {
+	if kv.KeyOnly != nil {
+		if (*kv.KeyOnly)[0] == '$' {
+			c.append(&code{op: oppush, v: (*kv.KeyOnly)[1:]})
+			c.append(&code{op: opload, v: v})
+			return c.compileFunc(&Func{Name: *kv.KeyOnly})
+		}
+		c.append(&code{op: oppush, v: *kv.KeyOnly})
+		c.append(&code{op: opload, v: v})
+		return c.compileIndex(&Term{Identity: true}, &Index{Name: "." + *kv.KeyOnly})
+	} else if kv.KeyOnlyString != "" {
+		c.append(&code{op: opload, v: v})
+		if err := c.compileString(kv.KeyOnlyString); err != nil {
+			return err
+		}
+		c.append(&code{op: opdup})
+		c.append(&code{op: opload, v: v})
+		c.append(&code{op: opload, v: v})
+		// ref: compileCall
+		c.append(&code{op: opcall, v: [3]interface{}{internalFuncs["_index"].callback, 2, "_index"}})
+		return nil
+	} else {
+		if kv.Query != nil {
+			c.append(&code{op: opload, v: v})
+			if err := c.compileQuery(kv.Query); err != nil {
+				return err
+			}
+		} else if kv.KeyString != "" {
+			c.append(&code{op: opload, v: v})
+			if err := c.compileString(kv.KeyString); err != nil {
+				return err
+			}
+		} else {
+			c.append(&code{op: oppush, v: kv.Key})
+		}
+		c.append(&code{op: opload, v: v})
+		return c.compileObjectVal(kv.Val)
+	}
 }
 
 func (c *compiler) compileObjectVal(e *ObjectVal) error {
