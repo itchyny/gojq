@@ -61,7 +61,7 @@ type codeinfo struct {
 
 type scopeinfo struct {
 	id          int
-	offset      int
+	depth       int
 	variables   []varinfo
 	variablecnt int
 }
@@ -69,6 +69,7 @@ type scopeinfo struct {
 type varinfo struct {
 	name  string
 	index [2]int
+	depth int
 }
 
 type funcinfo struct {
@@ -185,8 +186,7 @@ func (c *compiler) compileModule(m *Module, alias string) error {
 	cc := &compiler{
 		moduleLoader: c.moduleLoader, variables: c.variables,
 		codeoffset: c.pc(), scopes: c.scopes, scopecnt: c.scopecnt}
-	scope := c.scopes[len(c.scopes)-1]
-	defer func(i int) { scope.variables = scope.variables[:i] }(len(scope.variables))
+	defer cc.newScopeDepth()()
 	bs, err := cc.compileModuleInternal(m)
 	if err != nil {
 		return err
@@ -226,14 +226,14 @@ func (c *compiler) pushVariable(name string) [2]int {
 	s := c.scopes[len(c.scopes)-1]
 	if name != "" {
 		for _, v := range s.variables {
-			if v.name == name {
+			if v.name == name && v.depth == s.depth {
 				return v.index
 			}
 		}
 	}
 	v := [2]int{s.id, s.variablecnt}
 	s.variablecnt++
-	s.variables = append(s.variables, varinfo{name, v})
+	s.variables = append(s.variables, varinfo{name, v, s.depth})
 	return v
 }
 
@@ -241,6 +241,16 @@ func (c *compiler) newScope() *scopeinfo {
 	i := c.scopecnt // do not use len(c.scopes) because it pops
 	c.scopecnt++
 	return &scopeinfo{i, 0, nil, 0}
+}
+
+func (c *compiler) newScopeDepth() func() {
+	scope := c.scopes[len(c.scopes)-1]
+	l := len(scope.variables)
+	scope.depth++
+	return func() {
+		scope.depth--
+		scope.variables = scope.variables[:l]
+	}
 }
 
 func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
@@ -598,16 +608,20 @@ func (c *compiler) compileIf(e *If) error {
 	c.appendCodeInfo(e)
 	c.append(&code{op: opdup}) // duplicate the value for then or else clause
 	c.append(&code{op: opexpbegin})
+	f := c.newScopeDepth()
 	if err := c.compileQuery(e.Cond); err != nil {
 		return err
 	}
+	f()
 	c.append(&code{op: opexpend})
 	setjumpifnot := c.lazy(func() *code {
 		return &code{op: opjumpifnot, v: c.pc() + 1} // if falsy, skip then clause
 	})
+	f = c.newScopeDepth()
 	if err := c.compileQuery(e.Then); err != nil {
 		return err
 	}
+	f()
 	setjumpifnot()
 	defer c.lazy(func() *code {
 		return &code{op: opjump, v: c.pc()} // jump to ret after else clause
@@ -616,6 +630,7 @@ func (c *compiler) compileIf(e *If) error {
 		return c.compileIf(&If{e.Elif[0].Cond, e.Elif[0].Then, e.Elif[1:], e.Else})
 	}
 	if e.Else != nil {
+		defer c.newScopeDepth()()
 		return c.compileQuery(e.Else)
 	}
 	return nil
@@ -626,14 +641,17 @@ func (c *compiler) compileTry(e *Try) error {
 	setforkopt := c.lazy(func() *code {
 		return &code{op: opforkopt, v: c.pc()}
 	})
+	f := c.newScopeDepth()
 	if err := c.compileQuery(e.Body); err != nil {
 		return err
 	}
+	f()
 	defer c.lazy(func() *code {
 		return &code{op: opjump, v: c.pc()}
 	})()
 	setforkopt()
 	if e.Catch != nil {
+		defer c.newScopeDepth()()
 		return c.compileTerm(e.Catch)
 	}
 	c.append(&code{op: opbacktrack})
@@ -647,9 +665,11 @@ func (c *compiler) compileReduce(e *Reduce) error {
 	})()
 	c.append(&code{op: opdup})
 	v := c.newVariable()
+	f := c.newScopeDepth()
 	if err := c.compileQuery(e.Start); err != nil {
 		return err
 	}
+	f()
 	c.append(&code{op: opstore, v: v})
 	if err := c.compileTerm(e.Term); err != nil {
 		return err
@@ -658,9 +678,11 @@ func (c *compiler) compileReduce(e *Reduce) error {
 		return err
 	}
 	c.append(&code{op: opload, v: v})
+	f = c.newScopeDepth()
 	if err := c.compileQuery(e.Update); err != nil {
 		return err
 	}
+	f()
 	c.append(&code{op: opstore, v: v})
 	c.append(&code{op: opbacktrack})
 	c.append(&code{op: oppop})
@@ -672,9 +694,11 @@ func (c *compiler) compileForeach(e *Foreach) error {
 	c.appendCodeInfo(e)
 	c.append(&code{op: opdup})
 	v := c.newVariable()
+	f := c.newScopeDepth()
 	if err := c.compileQuery(e.Start); err != nil {
 		return err
 	}
+	f()
 	c.append(&code{op: opstore, v: v})
 	if err := c.compileTerm(e.Term); err != nil {
 		return err
@@ -683,12 +707,15 @@ func (c *compiler) compileForeach(e *Foreach) error {
 		return err
 	}
 	c.append(&code{op: opload, v: v})
+	f = c.newScopeDepth()
 	if err := c.compileQuery(e.Update); err != nil {
 		return err
 	}
+	f()
 	c.append(&code{op: opdup})
 	c.append(&code{op: opstore, v: v})
 	if e.Extract != nil {
+		defer c.newScopeDepth()()
 		return c.compileQuery(e.Extract)
 	}
 	return nil
@@ -816,6 +843,7 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 		c.append(&code{op: opconst, v: e.Break})
 		return c.compileCall("_break", nil)
 	} else if e.Query != nil {
+		defer c.newScopeDepth()()
 		return c.compileQuery(e.Query)
 	} else {
 		return fmt.Errorf("invalid term: %s", e)
@@ -927,6 +955,7 @@ func (c *compiler) compileObject(e *Object) error {
 		c.append(&code{op: opconst, v: map[string]interface{}{}})
 		return nil
 	}
+	defer c.newScopeDepth()()
 	v := c.newVariable()
 	c.append(&code{op: opstore, v: v})
 	for _, kv := range e.KeyVals {
@@ -962,9 +991,11 @@ func (c *compiler) compileObjectKeyVal(v [2]int, kv ObjectKeyVal) error {
 	} else {
 		if kv.Query != nil {
 			c.append(&code{op: opload, v: v})
+			f := c.newScopeDepth()
 			if err := c.compileQuery(kv.Query); err != nil {
 				return err
 			}
+			f()
 		} else if kv.KeyString != "" {
 			c.append(&code{op: opload, v: v})
 			if err := c.compileString(kv.KeyString); err != nil {
@@ -999,6 +1030,7 @@ func (c *compiler) compileArray(e *Array) error {
 	defer c.lazy(func() *code {
 		return &code{op: opfork, v: c.pc() - 2}
 	})()
+	defer c.newScopeDepth()()
 	if err := c.compileQuery(e.Query); err != nil {
 		return err
 	}

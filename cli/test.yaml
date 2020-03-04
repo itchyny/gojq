@@ -2248,6 +2248,108 @@
       }
     ]
 
+- name: binding variable scope in parenthesis
+  args:
+    - '. as $x | (.foo as $x | [$x]) | .+[$x]'
+  input: '{"foo": 42}'
+  expected: |
+    [
+      42,
+      {
+        "foo": 42
+      }
+    ]
+
+- name: binding variable scope in array
+  args:
+    - '. as $x | [.foo as $x | $x] | $x'
+  input: '{"foo": 42}'
+  expected: |
+    {
+      "foo": 42
+    }
+
+- name: binding variable scope in object
+  args:
+    - '. as $x | {bar: .foo as $x | $x} | $x'
+  input: '{"foo": "bar"}'
+  expected: |
+    {
+      "foo": "bar"
+    }
+
+- name: binding variable scope in object key
+  args:
+    - '. as $x | {(.foo as $x | $x): $x}'
+  input: '{"foo": "bar"}'
+  expected: |
+    {
+      "bar": {
+        "foo": "bar"
+      }
+    }
+
+- name: binding variable scope in condition
+  args:
+    - -c
+    - '. as $x | if (.foo,.bar) as $x | $x then 1 as $x | $x else 2 as $x | $x end | [., $x]'
+  input: '{"foo": "bar"}'
+  expected: |
+    [1,{"foo":"bar"}]
+    [2,{"foo":"bar"}]
+
+- name: binding variable scope in try catch
+  args:
+    - '. as $x | try .foo as $x | $x | error catch $x'
+  input: '{"foo": 42}'
+  expected: |
+    {
+      "foo": 42
+    }
+
+- name: binding variable scope in reduce
+  args:
+    - '[range(.)] | 3 as $x | reduce .[] as $i (.[5] as $x | $x; . + $x + $i)'
+  input: 10
+  expected: |
+    80
+
+- name: binding variable scope in foreach
+  args:
+    - -c
+    - '[2 as $x | foreach range(.) as $item (. as $x | $x; . + $item * $x; . + $x)]'
+  input: 5
+  expected: |
+    [7,9,13,19,27]
+
+- name: binding variable scope error in parenthesis
+  args:
+    - '(. as $i | $i) | $i'
+  input: 0
+  error: |
+    variable not defined: $i
+
+- name: binding variable scope error in array
+  args:
+    - '[. as $i | $i] | $i'
+  input: 0
+  error: |
+    variable not defined: $i
+
+- name: binding variable scope error in object
+  args:
+    - '{x: . as $i | $i} | $i'
+  input: 0
+  error: |
+    variable not defined: $i
+
+- name: binding variable scope error in object key
+  args:
+    - '{(. as $i | $i): $i}'
+  input: '"x"'
+  error: |
+    variable not defined: $i
+
 - name: first/0, last/0 functions
   args:
     - -c
