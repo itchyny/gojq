@@ -2939,6 +2939,30 @@
   expected: |
     [{"a":2,"b":2},{"a":3,"b":4},{"a":8,"b":8}]
 
+- name: modify operator with empty
+  args:
+    - -c
+    - '.foo |= empty'
+  input: '{"foo": 42, "bar": 48}'
+  expected: |
+    {"bar":48}
+
+- name: modify operator with empty
+  args:
+    - -c
+    - '(.[] | select(. % 2 > 0)) |= empty'
+  input: '[1,2,3,4,5]'
+  expected: |
+    [2,4]
+
+- name: modify operator with empty
+  args:
+    - -c
+    - '[range(.)] | .[] |= if . % 2 == 0 then empty else [., -.] end'
+  input: '10'
+  expected: |
+    [[1,-1],[3,-3],[5,-5],[7,-7],[9,-9]]
+
 - name: update operators
   args:
     - -c

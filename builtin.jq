@@ -201,7 +201,8 @@ def _assign(ps; $v):
   reduce path(ps) as $p (.; setpath($p; $v));
 def _modify(ps; f):
   reduce path(ps) as $p
-    (.; label $out | (setpath($p; getpath($p) | f) | ., break $out), delpaths([$p]));
+    ([., []]; label $out | ([0] + $p as $q | setpath($q; getpath($q) | f) | ., break $out), .[1] += [$p])
+      | . as $x | $x[0] | delpaths($x[1]);
 def map_values(f): .[] |= f;
 def del(f): delpaths([path(f)]);
 def paths:
