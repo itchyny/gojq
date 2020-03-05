@@ -1959,6 +1959,21 @@
       1
     ]
 
+- name: reduce variable scope
+  args:
+    - '. as $x | reduce .[] as $x (.; . + .) | [., $x]'
+  input: '[1]'
+  expected: |
+    [
+      [
+        1,
+        1
+      ],
+      [
+        1
+      ]
+    ]
+
 - name: foreach iterator
   args:
     - 'foreach range(5) as $item (0; $item)'
@@ -2002,6 +2017,21 @@
     5
     0
     1
+
+- name: foreach variable scope
+  args:
+    - '. as $x | foreach .[] as $x (.; . + .) | [., $x]'
+  input: '[1]'
+  expected: |
+    [
+      [
+        1,
+        1
+      ],
+      [
+        1
+      ]
+    ]
 
 - name: label and break syntax
   args:

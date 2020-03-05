@@ -660,6 +660,7 @@ func (c *compiler) compileTry(e *Try) error {
 
 func (c *compiler) compileReduce(e *Reduce) error {
 	c.appendCodeInfo(e)
+	defer c.newScopeDepth()()
 	defer c.lazy(func() *code {
 		return &code{op: opfork, v: c.pc() - 2}
 	})()
@@ -692,6 +693,7 @@ func (c *compiler) compileReduce(e *Reduce) error {
 
 func (c *compiler) compileForeach(e *Foreach) error {
 	c.appendCodeInfo(e)
+	defer c.newScopeDepth()()
 	c.append(&code{op: opdup})
 	v := c.newVariable()
 	f := c.newScopeDepth()
