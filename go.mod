@@ -1,6 +1,6 @@
 module github.com/itchyny/gojq
 
-go 1.13
+go 1.14
 
 require (
 	github.com/alecthomas/participle v0.4.2-0.20191220090139-9fbceec1d131
