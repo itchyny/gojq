@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -159,27 +157,6 @@ func (c *compiler) compileImport(i *Import) error {
 	c.appendCodeInfo("module " + path)
 	defer c.appendCodeInfo("end of module " + path)
 	return c.compileModule(m, alias)
-}
-
-func slurpFile(name string) ([]interface{}, error) {
-	f, err := os.Open(name)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	var vals []interface{}
-	dec := json.NewDecoder(f)
-	for {
-		var val interface{}
-		if err := dec.Decode(&val); err != nil {
-			if err == io.EOF {
-				break
-			}
-			return nil, fmt.Errorf("failed to parse %s: %w", name, err)
-		}
-		vals = append(vals, val)
-	}
-	return vals, nil
 }
 
 func (c *compiler) compileModule(m *Module, alias string) error {
