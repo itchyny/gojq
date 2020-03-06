@@ -53,15 +53,18 @@ func TestCliRun(t *testing.T) {
 				assert.Equal(t, tc.Expected, outStream.String())
 				assert.Equal(t, "", errStream.String())
 			} else {
-				if strings.Contains(errStream.String(), "DEBUG:") {
+				errStr := errStream.String()
+				if strings.Contains(errStr, "DEBUG:") {
 					assert.Equal(t, exitCodeOK, code)
 				} else {
 					assert.Equal(t, exitCodeErr, code)
 				}
 				assert.Equal(t, tc.Expected, outStream.String())
 				assert.Contains(t,
-					strings.ReplaceAll(errStream.String(), name+": ", ""),
+					strings.ReplaceAll(errStr, name+": ", ""),
 					strings.TrimSpace(tc.Error))
+				assert.Equal(t, '\n', rune(errStr[len(errStr)-1]), errStr)
+				assert.NotEqual(t, '\n', rune(errStr[len(errStr)-2]), errStr)
 			}
 		})
 	}

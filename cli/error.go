@@ -51,12 +51,12 @@ func (err *queryParseError) Error() string {
 			}
 			fmt.Fprintf(&s, "invalid query: %s\n", fname)
 			fmt.Fprintf(
-				&s, "    %s%s\n%s  %s\n", prefix, lines[er.Position().Line-1],
+				&s, "    %s%s\n%s  %s", prefix, lines[er.Position().Line-1],
 				strings.Repeat(" ", 3+er.Position().Column+len(prefix))+"^", er.Message())
 			return s.String()
 		}
 	}
-	fmt.Fprintf(&s, "invalid query: %s: %s\n", err.fname, err.err)
+	fmt.Fprintf(&s, "invalid query: %s: %s", err.fname, err.err)
 	return s.String()
 }
 
@@ -67,11 +67,11 @@ type jsonParseError struct {
 
 func (err *jsonParseError) Error() string {
 	var s strings.Builder
-	fmt.Fprintf(&s, "invalid json: %s\n", err.fname)
+	fmt.Fprintf(&s, "invalid json: %s", err.fname)
 	if er := err.err; er.Error() == "unexpected EOF" {
 		lines := strings.Split(strings.TrimRight(err.contents, "\n"), "\n")
 		line := toValidUTF8(strings.TrimRight(lines[len(lines)-1], "\r"))
-		fmt.Fprintf(&s, "    %s\n%s  %s\n", line, strings.Repeat(" ", 4+runewidth.StringWidth(line))+"^", er)
+		fmt.Fprintf(&s, "\n    %s\n%s  %s", line, strings.Repeat(" ", 4+runewidth.StringWidth(line))+"^", er)
 	} else if er, ok := er.(*json.SyntaxError); ok {
 		var ss strings.Builder
 		var i, j int
@@ -94,7 +94,7 @@ func (err *jsonParseError) Error() string {
 				ss.WriteRune(r)
 			}
 		}
-		fmt.Fprintf(&s, "    %s\n%s  %s\n", ss.String(), strings.Repeat(" ", 3+j)+"^", er)
+		fmt.Fprintf(&s, "\n    %s\n%s  %s", ss.String(), strings.Repeat(" ", 3+j)+"^", er)
 	}
 	return s.String()
 }
@@ -133,7 +133,7 @@ func (err *yamlParseError) Error() string {
 			ss.WriteRune(r)
 		}
 	}
-	fmt.Fprintf(&s, "    %s\n    ^  %s\n", ss.String(), msg)
+	fmt.Fprintf(&s, "    %s\n    ^  %s", ss.String(), msg)
 	return s.String()
 }
 
