@@ -9,7 +9,6 @@ import (
 	"math"
 	"math/big"
 	"net/url"
-	"os"
 	"regexp"
 	"sort"
 	"strings"
@@ -47,6 +46,7 @@ func init() {
 		"debug":          argFunc0(nil),
 		"stderr":         argFunc0(nil),
 		"halt":           argFunc0(nil),
+		"env":            argFunc0(nil),
 		"length":         argFunc0(funcLength),
 		"utf8bytelength": argFunc0(funcUtf8ByteLength),
 		"keys":           argFunc0(funcKeys),
@@ -159,7 +159,6 @@ func init() {
 		"_match_impl":    argFunc3(funcMatchImpl),
 		"error":          function{argcount0 | argcount1, funcError},
 		"builtins":       argFunc0(funcBuiltins),
-		"env":            argFunc0(funcEnv),
 		"_type_error":    argFunc1(internalfuncTypeError),
 	}
 }
@@ -1315,15 +1314,6 @@ func funcBuiltins(interface{}) interface{} {
 		ys[i] = x
 	}
 	return ys
-}
-
-func funcEnv(interface{}) interface{} {
-	env := make(map[string]interface{})
-	for _, kv := range os.Environ() {
-		xs := strings.SplitN(kv, "=", 2)
-		env[xs[0]] = xs[1]
-	}
-	return env
 }
 
 func internalfuncTypeError(v, x interface{}) interface{} {

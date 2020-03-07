@@ -11,14 +11,15 @@ import (
 )
 
 type compiler struct {
-	moduleLoader ModuleLoader
-	variables    []string
-	codes        []*code
-	codeinfos    []codeinfo
-	codeoffset   int
-	scopes       []*scopeinfo
-	scopecnt     int
-	funcs        []*funcinfo
+	moduleLoader  ModuleLoader
+	environLoader func() []string
+	variables     []string
+	codes         []*code
+	codeinfos     []codeinfo
+	codeoffset    int
+	scopes        []*scopeinfo
+	scopecnt      int
+	funcs         []*funcinfo
 }
 
 // Code is a compiled jq query.
@@ -161,7 +162,7 @@ func (c *compiler) compileImport(i *Import) error {
 
 func (c *compiler) compileModule(m *Module, alias string) error {
 	cc := &compiler{
-		moduleLoader: c.moduleLoader, variables: c.variables,
+		moduleLoader: c.moduleLoader, environLoader: c.environLoader, variables: c.variables,
 		codeoffset: c.pc(), scopes: c.scopes, scopecnt: c.scopecnt}
 	defer cc.newScopeDepth()()
 	bs, err := cc.compileModuleInternal(m)
@@ -246,7 +247,9 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	defer c.appendCodeInfo("end of " + e.Name)
 	pc, argsorder := c.pc(), getArgsOrder(e.Args)
 	c.funcs = append(c.funcs, &funcinfo{e.Name, pc, e.Args, argsorder})
-	cc := &compiler{moduleLoader: c.moduleLoader, codeoffset: pc, scopecnt: c.scopecnt, funcs: c.funcs}
+	cc := &compiler{
+		moduleLoader: c.moduleLoader, environLoader: c.environLoader,
+		codeoffset: pc, scopecnt: c.scopecnt, funcs: c.funcs}
 	scope := cc.newScope()
 	cc.scopes = append(c.scopes, scope)
 	setscope := cc.lazy(func() *code {
@@ -875,11 +878,18 @@ func (c *compiler) compileFunc(e *Func) error {
 			}
 		}
 	}
-	if e.Name[0] == '$' {
-		if e.Name == "$ENV" {
-			c.append(&code{op: opconst, v: funcEnv(nil)})
-			return nil
+	if e.Name == "$ENV" || e.Name == "env" {
+		env := make(map[string]interface{})
+		if c.environLoader != nil {
+			for _, kv := range c.environLoader() {
+				xs := strings.SplitN(kv, "=", 2)
+				env[xs[0]] = xs[1]
+			}
 		}
+		c.append(&code{op: opconst, v: env})
+		return nil
+	}
+	if e.Name[0] == '$' {
 		return &variableNotFoundError{e.Name}
 	}
 	name := e.Name

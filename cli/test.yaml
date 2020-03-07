@@ -3279,7 +3279,7 @@
 
 - name: builtins function
   args:
-    - 'builtins|length > 100'
+    - 'builtins | length > 100'
   input: 'null'
   expected: |
     true
@@ -3287,6 +3287,20 @@
 - name: env function
   args:
     - 'env|length > 0'
+  input: 'null'
+  expected: |
+    true
+
+- name: env in function
+  args:
+    - 'def f: env; f|length > 0'
+  input: 'null'
+  expected: |
+    true
+
+- name: env in builtin
+  args:
+    - 'builtins | contains(["env/0"])'
   input: 'null'
   expected: |
     true

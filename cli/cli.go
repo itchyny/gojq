@@ -196,6 +196,7 @@ Synopsis:
 	}
 	code, err := gojq.Compile(query,
 		gojq.WithModuleLoader(&moduleLoader{modulePaths}),
+		gojq.WithEnvironLoader(os.Environ),
 		gojq.WithVariables(cli.argnames))
 	if err != nil {
 		return &compileError{err}
