@@ -11,6 +11,8 @@ func WithModuleLoader(moduleLoader ModuleLoader) CompilerOption {
 }
 
 // WithEnvironLoader is a compiler option for environment variables loader.
+// The OS environment variables is not accessible by default due to security
+// reason. You can pass os.Environ if you allow to access it.
 func WithEnvironLoader(environLoader func() []string) CompilerOption {
 	return func(c *compiler) {
 		c.environLoader = environLoader
