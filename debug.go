@@ -28,15 +28,15 @@ func init() {
 }
 
 func (c *compiler) appendCodeInfo(x interface{}) {
+	if !debug {
+		return
+	}
 	var name string
 	switch x := x.(type) {
 	case string:
 		name = x
 	default:
 		name = fmt.Sprint(x)
-	}
-	if !debug {
-		return
 	}
 	var diff int
 	if len(c.codes) > 0 && c.codes[len(c.codes)-1].op == opret && strings.HasPrefix(name, "end of ") {
