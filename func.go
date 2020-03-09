@@ -57,7 +57,7 @@ func init() {
 		"contains":       argFunc1(funcContains),
 		"explode":        argFunc0(funcExplode),
 		"implode":        argFunc0(funcImplode),
-		"split":          function{argcount1 | argcount2, funcSplit},
+		"split":          {argcount1 | argcount2, funcSplit},
 		"tojson":         argFunc0(funcToJSON),
 		"fromjson":       argFunc0(funcFromJSON),
 		"_tohtml":        argFunc0(funcToHTML),
@@ -157,7 +157,7 @@ func init() {
 		"strptime":       argFunc1(funcStrptime),
 		"now":            argFunc0(funcNow),
 		"_match_impl":    argFunc3(funcMatchImpl),
-		"error":          function{argcount0 | argcount1, funcError},
+		"error":          {argcount0 | argcount1, funcError},
 		"builtins":       argFunc0(funcBuiltins),
 		"_type_error":    argFunc1(internalfuncTypeError),
 	}

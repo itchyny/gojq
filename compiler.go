@@ -1143,7 +1143,7 @@ func (c *compiler) stringToQuery(s string, f *Func) (*Query, error) {
 			name := fmt.Sprintf("$%%%d", cnt)
 			es = append(es, &Expr{
 				Logic: (&Term{Query: q}).toLogic(),
-				Bind:  &Bind{Patterns: []*Pattern{&Pattern{Name: name}}},
+				Bind:  &Bind{Patterns: []*Pattern{{Name: name}}},
 			})
 			xs = append(xs, (&Term{Func: &Func{Name: name}}).toFilter())
 			cnt++
@@ -1163,7 +1163,7 @@ func (c *compiler) stringToQuery(s string, f *Func) (*Query, error) {
 	if len(buf) > 0 {
 		xs = append(xs, (&Term{RawStr: string(buf)}).toFilter())
 	}
-	q := (&Term{Array: &Array{&Query{Commas: []*Comma{&Comma{xs}}}}}).toQuery()
+	q := (&Term{Array: &Array{&Query{Commas: []*Comma{{xs}}}}}).toQuery()
 	q.Commas = append(q.Commas, (&Term{
 		Func: &Func{
 			Name: "join",

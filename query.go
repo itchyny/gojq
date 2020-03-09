@@ -865,7 +865,7 @@ func (e *Suffix) toTerm() (*Term, bool) {
 	} else if e.SuffixIndex != nil {
 		return &Term{Index: e.SuffixIndex.toIndex()}, true
 	} else if e.Iter {
-		return &Term{Identity: true, SuffixList: []*Suffix{&Suffix{Iter: true}}}, true
+		return &Term{Identity: true, SuffixList: []*Suffix{{Iter: true}}}, true
 	} else {
 		return nil, false
 	}
