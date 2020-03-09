@@ -34,7 +34,9 @@ func Parse(src string) (*Query, error) {
 		if strings.TrimSpace(src) != "" {
 			return nil, err
 		}
-		parser.ParseString(".", &query)
+		if err = parser.ParseString(".", &query); err != nil {
+			return nil, err
+		}
 	}
 	return &query, nil
 }
