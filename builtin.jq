@@ -109,16 +109,12 @@ def endswith($x):
     _type_error("endswith")
   end;
 def ltrimstr($x):
-  if type == "string" then
-    if startswith($x) then .[$x | length:] end
-  else
-    _type_error("ltrimstr")
+  if type == "string" and ($x|type == "string") and startswith($x) then
+    .[$x | length:]
   end;
 def rtrimstr($x):
-  if type == "string" then
-    if endswith($x) then .[:- ($x | length)] end
-  else
-    _type_error("rtrimstr")
+  if type == "string" and ($x|type == "string") and endswith($x) then
+    .[:- ($x | length)]
   end;
 
 def combinations:

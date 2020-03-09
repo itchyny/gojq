@@ -1215,29 +1215,45 @@
 
 - name: ltrimstr function
   args:
-    - 'map(ltrimstr("foo"))'
-  input: '["", "fo", "foo", "fooo", "barfoo"]'
+    - 'map(ltrimstr("foo")), ("x"|ltrimstr(0, null, {}))'
+  input: '["", "fo", "foo", "fooo", "barfoo", 0, null, true, {}, []]'
   expected: |
     [
       "",
       "fo",
       "",
       "o",
-      "barfoo"
+      "barfoo",
+      0,
+      null,
+      true,
+      {},
+      []
     ]
+    "x"
+    "x"
+    "x"
 
 - name: rtrimstr function
   args:
-    - 'map(rtrimstr("foo"))'
-  input: '["", "fo", "foo", "fooo", "barfoo"]'
+    - 'map(rtrimstr("foo")), ("x"|rtrimstr(0, null, {}))'
+  input: '["", "fo", "foo", "fooo", "barfoo", 0, null, true, {}, []]'
   expected: |
     [
       "",
       "fo",
       "",
       "fooo",
-      "bar"
+      "bar",
+      0,
+      null,
+      true,
+      {},
+      []
     ]
+    "x"
+    "x"
+    "x"
 
 - name: combinations/0 function
   args:
