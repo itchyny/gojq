@@ -813,18 +813,6 @@ func (e *ObjectVal) String() string {
 	return s.String()
 }
 
-func (e *ObjectVal) toIndices() []interface{} {
-	var xs []interface{}
-	for _, e := range e.Alts {
-		x := e.toIndices()
-		if x == nil {
-			return nil
-		}
-		xs = append(xs, x...)
-	}
-	return xs
-}
-
 // Array ...
 type Array struct {
 	Query *Query `"[" @@? "]"`
