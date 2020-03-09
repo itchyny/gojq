@@ -90,13 +90,21 @@ def rindex($x): indices($x) | .[-1:][0];
 def inside(xs): . as $x | xs | contains($x);
 def startswith($x):
   if type == "string" then
-    .[:$x | length] == $x
+    if $x|type == "string" then
+      .[:$x | length] == $x
+    else
+      $x | _type_error("startswith")
+    end
   else
     _type_error("startswith")
   end;
 def endswith($x):
   if type == "string" then
-    .[- ($x | length):] == $x
+    if $x|type == "string" then
+      .[- ($x | length):] == $x
+    else
+      $x | _type_error("endswith")
+    end
   else
     _type_error("endswith")
   end;

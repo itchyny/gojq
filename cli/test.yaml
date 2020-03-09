@@ -1184,6 +1184,14 @@
       false
     ]
 
+- name: startswith function error
+  args:
+    - '("x" | try startswith({}) catch .), (10 | try startswith("x") catch .)'
+  input: 0
+  expected: |
+    "startswith cannot be applied to: object ({})"
+    "startswith cannot be applied to: number (10)"
+
 - name: endswith function
   args:
     - 'map(endswith("foo"))'
@@ -1196,6 +1204,14 @@
       false,
       true
     ]
+
+- name: endswith function error
+  args:
+    - '("x" | try endswith({}) catch .), (10 | try endswith("x") catch .)'
+  input: 0
+  expected: |
+    "endswith cannot be applied to: object ({})"
+    "endswith cannot be applied to: number (10)"
 
 - name: ltrimstr function
   args:
