@@ -187,7 +187,6 @@ func (c *compiler) compileModuleInternal(m *Module) (*Code, error) {
 			return nil, err
 		}
 	}
-	defer func(i int) { c.funcs = c.funcs[i:] }(len(c.funcs))
 	for _, fd := range m.FuncDefs {
 		if err := c.compileFuncDef(fd, false); err != nil {
 			return nil, err
@@ -223,11 +222,12 @@ func (c *compiler) newScope() *scopeinfo {
 
 func (c *compiler) newScopeDepth() func() {
 	scope := c.scopes[len(c.scopes)-1]
-	l := len(scope.variables)
+	l, m := len(scope.variables), len(c.funcs)
 	scope.depth++
 	return func() {
 		scope.depth--
 		scope.variables = scope.variables[:l]
+		c.funcs = c.funcs[:m]
 	}
 }
 

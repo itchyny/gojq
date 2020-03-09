@@ -2380,6 +2380,69 @@
   error: |
     variable not defined: $i
 
+- name: function scope in parenthesis
+  args:
+    - 'def f: 1; . | (def f: 2; f) | f, .'
+  input: 0
+  expected: |
+    1
+    2
+
+- name: function scope in array
+  args:
+    - -c
+    - 'def f: 1; . | [def f: 2; f] | f, .'
+  input: 0
+  expected: |
+    1
+    [2]
+
+- name: function scope in object
+  args:
+    - -c
+    - 'def f: 1; . | {bar: (def f: .foo; f)} | f, .'
+  input: '{"foo": "bar"}'
+  expected: |
+    1
+    {"bar":"bar"}
+
+- name: function scope in object key
+  args:
+    - 'def f: 1; . | {(def f: "foo"; f): f}'
+  input: 0
+  expected: |
+    {
+      "foo": 1
+    }
+
+- name: function scope error in parenthesis
+  args:
+    - '(def f: 1; f) | f'
+  input: 0
+  error: |
+    function not defined: f
+
+- name: function scope error in array
+  args:
+    - '[def f: 1; f] | f'
+  input: 0
+  error: |
+    function not defined: f
+
+- name: function scope error in object
+  args:
+    - '{x: (def f: 1; f)} | f'
+  input: 0
+  error: |
+    function not defined: f
+
+- name: function scope error in object key
+  args:
+    - '{(def f: 1; f): f}'
+  input: '"x"'
+  error: |
+    function not defined: f
+
 - name: first/0, last/0 functions
   args:
     - -c
