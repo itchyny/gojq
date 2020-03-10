@@ -2,7 +2,6 @@
 Pure Go implementation of [jq](https://github.com/stedolan/jq).
 
 ## Usage
-### from command line
 ```sh
  $ echo '{"foo": 128}' | gojq '.foo'
 128
@@ -43,7 +42,27 @@ gojq: invalid json: <stdin>
               ^  invalid character 'b' looking for beginning of object key string
 ```
 
-### as a library
+## Installation
+### Homebrew
+```sh
+brew install itchyny/tap/gojq
+```
+
+### Build from source
+```bash
+go get -u github.com/itchyny/gojq/cmd/gojq
+```
+
+## Difference to jq
+- gojq is purely implemented with Go language and is completely portable. jq depends on the C standard library so the availability of math functions depends on the library. jq also depends on the regular expression library and it makes build scripts complex.
+- gojq implements nice error messages for invalid query and JSON input. The error message of jq is sometimes difficult to tell where to fix the query.
+- gojq does not keep the order of object keys. I understand this might cause problems for some scripts but basically we should not rely on the order of object keys. I would implement when ordered map is implemented in the standard library of Go but I'm less motivated.
+- gojq supports arbitrary-precision integer calculation while jq does not. This is important to keeping the precision of numeric IDs or nanosecond values. You can use gojq to solve some mathematical problems which require big integers.
+- gojq supports reading from YAML input while jq does not. gojq also supports YAML output.
+
+## Usage as a library
+You can use the gojq parser and interpreter from your Go products.
+
 ```go
 package main
 
@@ -74,23 +93,17 @@ func main() {
 }
 ```
 
-## Installation
-### Homebrew
-```sh
-brew install itchyny/tap/gojq
-```
+- Firstly, use [`gojq.Parse(string) (*Query, error)`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#Parse) to get the query from a string.
+- Secondly, get the result iterator
+  - using [`query.Run`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#Query.Run) or [`query.RunWithContext`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#Query.RunWithContext)
+  - or alternatively, compile the query using [`gojq.Compile`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#Compile) and then [`code.Run`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#Code.Run) or [`code.RunWithContext`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#Code.RunWithContext). You can reuse the `*Code` against multiple inputs to avoid compiling the same query.
+- Thirdly, iterate through the results using [`iter.Next() (interface{}, bool)`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#Iter). The iterater can emit an error so make sure to handle it. Termination is notified by the second returned value of `Next()`.
 
-### Build from source
-```bash
-go get -u github.com/itchyny/gojq/cmd/gojq
-```
+`gojq.Compile` allows to configure the following compiler options. You can look into [examples](./option_test.go).
 
-## Difference to jq
-- gojq is purely implemented with Go language and is completely portable. jq depends on the C standard library so the availability of math functions depends on the library. jq also depends on the regular expression library and it makes build scripts complex.
-- gojq implements nice error messages for invalid query and JSON input. The error message of jq is sometimes difficult to tell where to fix the query.
-- gojq does not keep the order of object keys. I understand this might cause problems for some scripts but basically we should not rely on the order of object keys. I would implement when ordered map is implemented in the standard library of Go but I'm less motivated.
-- gojq supports arbitrary-precision integer calculation while jq does not. This is important to keeping the precision of numeric IDs or nanosecond values. You can use gojq to solve some mathematical problems which require big integers.
-- gojq supports reading from YAML input while jq does not. gojq also supports YAML output.
+- [`gojq.WithModuleLoader`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#WithModuleLoader) allows to load modules. By default, the module feature is disabled.
+- [`gojq.WithEnvironLoader`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#WithEnvironLoader) allows to configure the environment variables referenced by `env` and `$ENV`. By default, OS environment variables are not accessible due to security reason. You can use `gojq.WithEnvironLoader(os.Environ)` if you want.
+- [`gojq.WithVariables`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#WithVariables) allows to configure the variables which can be used in the query. Pass the values of the variables to [`code.Run`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#Code.Run) in the same order.
 
 ## Bug Tracker
 Report bug at [Issues・itchyny/gojq - GitHub](https://github.com/itchyny/gojq/issues).
