@@ -97,6 +97,7 @@ func main() {
 - Secondly, get the result iterator
   - using [`query.Run`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#Query.Run) or [`query.RunWithContext`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#Query.RunWithContext)
   - or alternatively, compile the query using [`gojq.Compile`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#Compile) and then [`code.Run`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#Code.Run) or [`code.RunWithContext`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#Code.RunWithContext). You can reuse the `*Code` against multiple inputs to avoid compiling the same query.
+  - In either case, the query input should have type `[]interface{}` for an array and `map[string]interface{}` for a map (just like decoded to an `interface{}` using the [encoding/json](https://golang.org/pkg/encoding/json/) package). You can't use `[]int` or `map[string]string`, for example.
 - Thirdly, iterate through the results using [`iter.Next() (interface{}, bool)`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#Iter). The iterater can emit an error so make sure to handle it. Termination is notified by the second returned value of `Next()`.
 
 `gojq.Compile` allows to configure the following compiler options. You can look into [examples](./option_test.go).
