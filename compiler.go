@@ -782,6 +782,15 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 		return nil
 	} else if e.Recurse {
 		return c.compileFunc(&Func{Name: "recurse"})
+	} else if e.Null {
+		c.append(&code{op: opconst, v: nil})
+		return nil
+	} else if e.True {
+		c.append(&code{op: opconst, v: true})
+		return nil
+	} else if e.False {
+		c.append(&code{op: opconst, v: false})
+		return nil
 	} else if e.Func != nil {
 		return c.compileFunc(e.Func)
 	} else if e.Object != nil {
@@ -803,15 +812,6 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 		return c.compileString(e.Str)
 	} else if e.RawStr != "" {
 		c.append(&code{op: opconst, v: e.RawStr})
-		return nil
-	} else if e.Null {
-		c.append(&code{op: opconst, v: nil})
-		return nil
-	} else if e.True {
-		c.append(&code{op: opconst, v: true})
-		return nil
-	} else if e.False {
-		c.append(&code{op: opconst, v: false})
 		return nil
 	} else if e.If != nil {
 		return c.compileIf(e.If)

@@ -19,5 +19,7 @@ jobs:
       run: make test
     - name: Lint
       run: make lint
+    - name: Check alignment
+      run: make maligned
     - name: Check tools
       run: make check-tools

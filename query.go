@@ -507,6 +507,9 @@ type Term struct {
 	Index      *Index    `( @@`
 	Identity   bool      `| @"."`
 	Recurse    bool      `| @".."`
+	Null       bool      `| @"null"`
+	True       bool      `| @"true"`
+	False      bool      `| @"false"`
 	Func       *Func     `| @@`
 	Object     *Object   `| @@`
 	Array      *Array    `| @@`
@@ -516,9 +519,6 @@ type Term struct {
 	FormatStr  string    `    @String? )`
 	Str        string    `| @String`
 	RawStr     string    `| @" "` // never matches, used in compiler
-	Null       bool      `| @"null"`
-	True       bool      `| @"true"`
-	False      bool      `| @"false"`
 	If         *If       `| @@`
 	Try        *Try      `| @@`
 	Reduce     *Reduce   `| @@`
@@ -536,6 +536,12 @@ func (e *Term) String() string {
 		s.WriteString(".")
 	} else if e.Recurse {
 		s.WriteString("..")
+	} else if e.Null {
+		s.WriteString("null")
+	} else if e.True {
+		s.WriteString("true")
+	} else if e.False {
+		s.WriteString("false")
 	} else if e.Func != nil {
 		fmt.Fprint(&s, e.Func)
 	} else if e.Object != nil {
@@ -550,12 +556,6 @@ func (e *Term) String() string {
 		fmt.Fprint(&s, e.Str)
 	} else if e.RawStr != "" {
 		fmt.Fprint(&s, strconv.Quote(e.RawStr))
-	} else if e.Null {
-		s.WriteString("null")
-	} else if e.True {
-		s.WriteString("true")
-	} else if e.False {
-		s.WriteString("false")
 	} else if e.If != nil {
 		fmt.Fprint(&s, e.If)
 	} else if e.Try != nil {

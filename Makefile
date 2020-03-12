@@ -54,6 +54,13 @@ lint: $(GOBIN)/golint
 $(GOBIN)/golint:
 	cd && go get golang.org/x/lint/golint
 
+.PHONY: maligned
+maligned: $(GOBIN)/maligned
+	! maligned *.go | grep ^
+
+$(GOBIN)/maligned:
+	cd && go get github.com/mdempsky/maligned
+
 .PHONY: check-tools
 check-tools:
 	go run _tools/print_builtin.go
