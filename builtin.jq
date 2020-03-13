@@ -74,6 +74,7 @@ def iterables: select(type |. == "array" or . == "object");
 def booleans: select(type == "boolean");
 def numbers: select(type == "number");
 def finites: select(isfinite);
+def normals: select(isnormal);
 def strings: select(type == "string");
 def nulls: select(. == null);
 def values: select(. != null);

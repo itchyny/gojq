@@ -2773,6 +2773,14 @@
     true
     true
 
+- name: normals function
+  args:
+    - -c
+    - 'infinite, pow(9; 999), nan, "", [], {}, 0, 9 | normals'
+  input: 'null'
+  expected: |
+    9
+
 - name: stringify nan and inf
   args:
     - '(2|asin),(1|atanh),(-1|atanh) | tojson,([]|join(",")),.'
