@@ -2725,6 +2725,14 @@
     null
     null
 
+- name: isfinite and isinfinite functions
+  args:
+    - -c
+    - '[infinite, pow(9; 999) | ., -., 1/., 1/(-.), nan, tostring | isfinite, isinfinite]'
+  input: 'null'
+  expected: |
+    [false,true,false,true,true,false,true,false,true,false,false,false,false,true,false,true,true,false,true,false,true,false,false,false]
+
 - name: nan and isnan functions
   args:
     - 'nan,null | ., .+1, isnan'

@@ -145,6 +145,8 @@ func init() {
 		"pow10":          mathFunc("pow10", funcExp10),
 		"fma":            mathFunc3("fma", funcFma),
 		"infinite":       argFunc0(funcInfinite),
+		"isfinite":       argFunc0(funcIsfinite),
+		"isinfinite":     argFunc0(funcIsinfinite),
 		"nan":            argFunc0(funcNan),
 		"isnan":          argFunc0(funcIsnan),
 		"setpath":        argFunc2(funcSetpath),
@@ -851,6 +853,19 @@ func funcFma(x, y, z float64) float64 {
 
 func funcInfinite(interface{}) interface{} {
 	return math.MaxFloat64
+}
+
+func funcIsfinite(v interface{}) interface{} {
+	return typeof(v) == "number" && !funcIsinfinite(v).(bool)
+}
+
+func funcIsinfinite(v interface{}) interface{} {
+	x, ok := toFloat(v)
+	return ok && isinf(x)
+}
+
+func isinf(f float64) bool {
+	return f >= math.MaxFloat64 || f <= -math.MaxFloat64
 }
 
 func funcNan(interface{}) interface{} {
