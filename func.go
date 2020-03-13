@@ -1380,5 +1380,5 @@ func bigToFloat(x *big.Int) float64 {
 	if f, err := json.Number(string(bs)).Float64(); err == nil {
 		return f
 	}
-	return float64(x.Sign()) * math.MaxFloat64
+	return math.Copysign(math.MaxFloat64, float64(x.Sign()))
 }

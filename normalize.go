@@ -53,11 +53,8 @@ func normalizeValues(v interface{}) interface{} {
 	case float64:
 		if math.IsNaN(v) {
 			return nil
-		} else if math.IsInf(v, 0) {
-			if v > 0 {
-				return math.MaxFloat64
-			}
-			return -math.MaxFloat64
+		} else if isinf(v) {
+			return math.Copysign(math.MaxFloat64, v)
 		} else {
 			return v
 		}
