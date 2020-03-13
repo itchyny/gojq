@@ -2734,6 +2734,18 @@
   expected: |
     [false,true,false,true,true,false,true,false,true,false,false,false,false,true,false,true,true,false,true,false,true,false,false,false]
 
+- name: finites function
+  args:
+    - -c
+    - 'infinite, pow(9; 999), nan | ., -., 1/. | finites'
+  input: 'null'
+  expected: |
+    0
+    0
+    null
+    null
+    null
+
 - name: nan and isnan functions
   args:
     - 'nan,null | ., .+1, isnan'
