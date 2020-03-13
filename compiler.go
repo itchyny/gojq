@@ -878,7 +878,7 @@ func (c *compiler) compileFunc(e *Func) error {
 			}
 		}
 	}
-	if e.Name == "$ENV" || e.Name == "env" {
+	if (e.Name == "$ENV" || e.Name == "env") && len(e.Args) == 0 {
 		env := make(map[string]interface{})
 		if c.environLoader != nil {
 			for _, kv := range c.environLoader() {

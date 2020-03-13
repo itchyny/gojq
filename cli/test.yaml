@@ -3410,6 +3410,13 @@
       1
     ]
 
+- name: env arguments count error
+  args:
+    - 'env(0)'
+  input: 'null'
+  error: |
+    function not defined: env/1
+
 - name: match function
   args:
     - -c
