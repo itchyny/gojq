@@ -434,8 +434,19 @@ func funcOpDiv(_, l, r interface{}) interface{} {
 			return float64(l) / float64(r)
 		},
 		func(l, r float64) interface{} {
-			if r == 0.0 {
+			switch r {
+			case 0.0:
 				return &zeroDivisionError{l, r}
+			case math.MaxFloat64, -math.MaxFloat64:
+				switch l {
+				case math.MaxFloat64, -math.MaxFloat64:
+					return nil
+				default:
+					if (r >= 0) == (l >= 0) {
+						return 0.0
+					}
+					return math.Copysign(0, -1)
+				}
 			}
 			return l / r
 		},
