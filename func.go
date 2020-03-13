@@ -149,6 +149,7 @@ func init() {
 		"isinfinite":     argFunc0(funcIsinfinite),
 		"nan":            argFunc0(funcNan),
 		"isnan":          argFunc0(funcIsnan),
+		"isnormal":       argFunc0(funcIsnormal),
 		"setpath":        argFunc2(funcSetpath),
 		"delpaths":       argFunc1(funcDelpaths),
 		"getpath":        argFunc1(funcGetpath),
@@ -881,6 +882,11 @@ func funcIsnan(v interface{}) interface{} {
 		return &funcTypeError{"isnan", v}
 	}
 	return math.IsNaN(x)
+}
+
+func funcIsnormal(v interface{}) interface{} {
+	x, ok := toFloat(v)
+	return ok && !math.IsNaN(x) && !isinf(x) && x != 0.0
 }
 
 func funcSetpath(v, p, w interface{}) interface{} {

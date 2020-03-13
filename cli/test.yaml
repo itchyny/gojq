@@ -2758,6 +2758,21 @@
     1
     false
 
+- name: isnormal function
+  args:
+    - -c
+    - 'infinite, pow(9; 999), nan, 9 | ., 1/. | isnormal'
+  input: 'null'
+  expected: |
+    false
+    false
+    false
+    false
+    false
+    false
+    true
+    true
+
 - name: stringify nan and inf
   args:
     - '(2|asin),(1|atanh),(-1|atanh) | tojson,([]|join(",")),.'
