@@ -438,7 +438,7 @@ func funcOpDiv(_, l, r interface{}) interface{} {
 				return &zeroDivisionError{l, r}
 			} else if isinf(r) {
 				if isinf(l) {
-					return nil
+					return math.NaN()
 				}
 				if (r >= 0) == (l >= 0) {
 					return 0.0

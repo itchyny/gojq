@@ -2771,7 +2771,7 @@
 
 - name: nan and isnan functions
   args:
-    - 'nan,null | ., .+1, isnan'
+    - 'nan,null,infinite/infinite | ., .+1, isnan'
   input: 'null'
   expected: |
     null
@@ -2780,6 +2780,9 @@
     null
     1
     false
+    null
+    null
+    true
 
 - name: isnormal function
   args:
