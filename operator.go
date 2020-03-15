@@ -429,12 +429,18 @@ func funcOpDiv(_, l, r interface{}) interface{} {
 	return binopTypeSwitch(l, r,
 		func(l, r int) interface{} {
 			if r == 0 {
+				if l == 0 {
+					return math.NaN()
+				}
 				return &zeroDivisionError{l, r}
 			}
 			return float64(l) / float64(r)
 		},
 		func(l, r float64) interface{} {
 			if r == 0.0 {
+				if l == 0.0 {
+					return math.NaN()
+				}
 				return &zeroDivisionError{l, r}
 			} else if isinf(r) {
 				if isinf(l) {
@@ -449,6 +455,9 @@ func funcOpDiv(_, l, r interface{}) interface{} {
 		},
 		func(l, r *big.Int) interface{} {
 			if r.Sign() == 0 {
+				if l.Sign() == 0 {
+					return math.NaN()
+				}
 				return &zeroDivisionError{l, r}
 			}
 			x := new(big.Int).Div(l, r)

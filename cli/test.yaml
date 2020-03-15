@@ -2771,18 +2771,15 @@
 
 - name: nan and isnan functions
   args:
-    - 'nan,null,infinite/infinite | ., .+1, isnan'
+    - -c
+    - 'nan, null, 0/0, 0/0.0, infinite/infinite | [., .+1, isnan]'
   input: 'null'
   expected: |
-    null
-    null
-    true
-    null
-    1
-    false
-    null
-    null
-    true
+    [null,null,true]
+    [null,1,false]
+    [null,null,true]
+    [null,null,true]
+    [null,null,true]
 
 - name: isnormal function
   args:
