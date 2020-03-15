@@ -34,7 +34,7 @@ func (e *Module) String() string {
 // Import ...
 type Import struct {
 	ImportPath  string       `( "import" @String`
-	ImportAlias string       `  "as" @Ident`
+	ImportAlias string       `  "as" ( @Ident | @Variable )`
 	IncludePath string       `| "include" @String )`
 	Meta        *ConstObject `@@? ";"`
 }
@@ -60,7 +60,7 @@ func (e *Import) String() string {
 // FuncDef ...
 type FuncDef struct {
 	Name string   `"def" @Ident`
-	Args []string `("(" @Ident (";" @Ident)* ")")? ":"`
+	Args []string `("(" ( @Ident | @Variable ) (";" ( @Ident | @Variable ))* ")")? ":"`
 	Body *Query   `@@ ";"`
 }
 
@@ -523,7 +523,7 @@ type Term struct {
 	Try        *Try      `| @@`
 	Reduce     *Reduce   `| @@`
 	Foreach    *Foreach  `| @@`
-	Break      string    `| "break" @Ident`
+	Break      string    `| "break" @Variable`
 	Query      *Query    `| "(" @@ ")" )`
 	SuffixList []*Suffix `@@*`
 }
@@ -620,7 +620,7 @@ func (e *Unary) String() string {
 
 // Pattern ...
 type Pattern struct {
-	Name   string          `  @Ident`
+	Name   string          `  @Variable`
 	Array  []*Pattern      `| "[" @@ ("," @@)* "]"`
 	Object []PatternObject `| "{" @@ ("," @@)* "}"`
 }
@@ -653,11 +653,11 @@ func (e *Pattern) String() string {
 
 // PatternObject ...
 type PatternObject struct {
-	Key       string   `( ( @Ident | @Keyword )`
+	Key       string   `( ( @Ident | @Variable | @Keyword )`
 	KeyString string   `  | @String`
 	Query     *Query   `  | "(" @@ ")" ) ":"`
 	Val       *Pattern `@@`
-	KeyOnly   string   `| @Ident`
+	KeyOnly   string   `| @Variable`
 }
 
 func (e *PatternObject) String() string {
@@ -725,7 +725,7 @@ func (e *Index) toIndices() []interface{} {
 
 // Func ...
 type Func struct {
-	Name string   `( @Ident | @ModuleIdent )`
+	Name string   `( @Ident | @Variable | @ModuleIdent )`
 	Args []*Query `( "(" @@ (";" @@)* ")" )?`
 }
 
@@ -768,11 +768,11 @@ func (e *Object) String() string {
 
 // ObjectKeyVal ...
 type ObjectKeyVal struct {
-	Key           string     `( ( ( @Ident | @Keyword )`
+	Key           string     `( ( ( @Ident | @Variable | @Keyword )`
 	KeyString     string     `  | @String )`
 	Query         *Query     `| "(" @@ ")" ) ":"`
 	Val           *ObjectVal `@@`
-	KeyOnly       *string    `| @Ident`
+	KeyOnly       *string    `| @Ident | @Variable`
 	KeyOnlyString string     `| @String`
 }
 
@@ -964,7 +964,7 @@ func (e *Foreach) String() string {
 
 // Label ...
 type Label struct {
-	Ident string `"label" @Ident`
+	Ident string `"label" @Variable`
 	Body  *Query `"|" @@`
 }
 
@@ -1026,7 +1026,7 @@ func (e *ConstObject) String() string {
 
 // ConstObjectKeyVal ...
 type ConstObjectKeyVal struct {
-	Key       string     `( @Ident | @Keyword`
+	Key       string     `( @Ident | @Variable | @Keyword`
 	KeyString string     `| @String ) ":"`
 	Val       *ConstTerm `@@`
 }

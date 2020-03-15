@@ -1461,6 +1461,16 @@
   error: |
     function not defined: f/0
 
+- name: function declaration name error
+  args:
+    - -c
+    - 'def $f: .; $f'
+  input: 'null'
+  error: |
+    invalid query: def $f: .; $f
+        def $f: .; $f
+            ^  unexpected token "$f"
+
 - name: add, subtract, multiply, divide, modulo numbers
   args:
     - -c
@@ -2092,7 +2102,9 @@
     - 'label foo | .'
   input: '1'
   error: |
-    label should start with "$" but got: "foo"
+    invalid query: label foo | .
+        label foo | .
+              ^  unexpected "foo" (expected <variable>)
 
 - name: label not defined error for break syntax
   args:
@@ -2100,6 +2112,15 @@
   input: '1'
   error: |
     label not defined: "$test"
+
+- name: invalid break name
+  args:
+    - 'label $x | break x'
+  input: '1'
+  error: |
+    invalid query: label $x | break x
+        label $x | break x
+                         ^  unexpected "x" (expected <variable>)
 
 - name: string interpolation
   args:
@@ -2181,9 +2202,11 @@
 - name: variable name error
   args:
     - '.foo as foo | {$bar}'
-  input: '{ "foo": 10 }'
+  input: 'null'
   error: |
-    variable should start with "$" but got: "foo"
+    invalid query: .foo as foo | {$bar}
+        .foo as foo | {$bar}
+             ^  unexpected token "as"
 
 - name: variable name not found error
   args:

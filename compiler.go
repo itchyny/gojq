@@ -489,9 +489,6 @@ func (c *compiler) compileBind(b *Bind) error {
 func (c *compiler) compilePattern(p *Pattern) ([][2]int, error) {
 	c.appendCodeInfo(p)
 	if p.Name != "" {
-		if p.Name[0] != '$' {
-			return nil, &bindVariableNameError{p.Name}
-		}
 		v := c.pushVariable(p.Name)
 		c.append(&code{op: opstore, v: v})
 		return [][2]int{v}, nil
@@ -519,9 +516,6 @@ func (c *compiler) compilePattern(p *Pattern) ([][2]int, error) {
 		for _, kv := range p.Object {
 			var key, name string
 			if kv.KeyOnly != "" {
-				if kv.KeyOnly[0] != '$' {
-					return nil, &bindVariableNameError{kv.KeyOnly}
-				}
 				key, name = kv.KeyOnly[1:], kv.KeyOnly
 				c.append(&code{op: oppush, v: key})
 			} else if kv.Key != "" {
@@ -705,9 +699,6 @@ func (c *compiler) compileForeach(e *Foreach) error {
 
 func (c *compiler) compileLabel(e *Label) error {
 	c.appendCodeInfo(e)
-	if e.Ident[0] != '$' {
-		return &labelNameError{e.Ident}
-	}
 	defer c.lazy(func() *code {
 		return &code{op: opforklabel, v: e.Ident}
 	})()
