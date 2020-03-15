@@ -1,6 +1,6 @@
 package gojq
 
-// Iter ...
+// Iter is an interface for an iterator.
 type Iter interface {
 	Next() (interface{}, bool)
 }
