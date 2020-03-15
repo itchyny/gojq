@@ -157,12 +157,12 @@ func (err *variableNotFoundError) Error() string {
 	return fmt.Sprintf("variable not defined: %s", err.n)
 }
 
-type bindVariableNameError struct {
+type variableNameError struct {
 	n string
 }
 
-func (err *bindVariableNameError) Error() string {
-	return fmt.Sprintf(`variable should start with "$" but got: %q`, err.n)
+func (err *variableNameError) Error() string {
+	return "invalid variable name: " + err.n
 }
 
 type breakError struct {

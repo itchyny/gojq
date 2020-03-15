@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -103,10 +104,12 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 	return c.compile(q)
 }
 
+var varNameRe = regexp.MustCompile(`^\$[a-zA-Z_][a-zA-Z0-9_]*$`)
+
 func (c *compiler) compile(q *Query) (*Code, error) {
 	for _, name := range c.variables {
-		if !strings.HasPrefix(name, "$") {
-			return nil, &bindVariableNameError{name}
+		if !varNameRe.MatchString(name) {
+			return nil, &variableNameError{name}
 		}
 		v := c.pushVariable(name)
 		c.append(&code{op: opstore, v: v})
