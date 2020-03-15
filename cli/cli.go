@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 
@@ -75,8 +74,6 @@ type flagopts struct {
 
 var addDefaultModulePath = true
 
-var argNameRe = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
-
 func (cli *cli) run(args []string) int {
 	if err := cli.runInternal(args); err != nil {
 		if _, ok := err.(*emptyError); !ok {
@@ -130,16 +127,10 @@ Synopsis:
 	}
 	cli.inputRaw, cli.inputSlurp, cli.inputYAML = opts.InputRaw, opts.InputSlurp, opts.InputYAML
 	for k, v := range opts.Args {
-		if !argNameRe.MatchString(k) {
-			return &variableNameError{k}
-		}
 		cli.argnames = append(cli.argnames, "$"+k)
 		cli.argvalues = append(cli.argvalues, v)
 	}
 	for k, v := range opts.ArgsJSON {
-		if !argNameRe.MatchString(k) {
-			return &variableNameError{k}
-		}
 		var val interface{}
 		if err := json.Unmarshal([]byte(v), &val); err != nil {
 			return &jsonParseError{"$" + k, v, err}
@@ -148,9 +139,6 @@ Synopsis:
 		cli.argvalues = append(cli.argvalues, val)
 	}
 	for k, v := range opts.SlurpFile {
-		if !argNameRe.MatchString(k) {
-			return &variableNameError{k}
-		}
 		vals, err := slurpFile(v)
 		if err != nil {
 			return err
@@ -159,9 +147,6 @@ Synopsis:
 		cli.argvalues = append(cli.argvalues, vals)
 	}
 	for k, v := range opts.RawFile {
-		if !argNameRe.MatchString(k) {
-			return &variableNameError{k}
-		}
 		val, err := ioutil.ReadFile(v)
 		if err != nil {
 			return err

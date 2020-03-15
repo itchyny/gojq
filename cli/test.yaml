@@ -4596,7 +4596,7 @@
     - '10'
     - '.'
   error: |
-    invalid variable name: f.oo
+    invalid variable name: $f.oo
 
 - name: argjson option
   args:
@@ -4637,10 +4637,11 @@
 - name: argjson option error
   args:
     - '--argjson'
-    - 'foo=10'
+    - '0x'
+    - '0'
     - '.'
   error: |
-    invalid variable name: foo=10
+    invalid variable name: $0x
 
 - name: argjson option parse error
   args:
