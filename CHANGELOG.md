@@ -1,4 +1,17 @@
 # Changelog
+## [v0.9.0](https://github.com/itchyny/gojq/compare/v0.8.0..v0.9.0) (2020-03-15)
+* implement various functions (`infinite`, `isfinite`, `isinfinite`, `finites`, `isnormal`, `normals`)
+* implement environment variables loader as a compiler option
+* implement `$NAME::NAME` syntax for imported JSON variable
+* fix modify operator with empty against array (`[range(9)] | (.[] | select(. % 2 > 0)) |= empty`)
+* fix variable and function scopes (`{ x: 1 } | . as $x | (.x as $x | $x) | ., $x`)
+* fix path analyzer
+* fix type check in `startswith` and `endswith`
+* ignore type error of `ltrimstr` and `rtrimstr`
+* remove nano seconds from `mktime` output
+* trim newline at the end of error messages
+* improve documents and examples
+
 ## [v0.8.0](https://github.com/itchyny/gojq/compare/v0.7.0..v0.8.0) (2020-03-02)
 * implement format strings (`@text`, `@json`, `@html`, `@uri`, `@csv`, `@tsv`,
   `@sh`, `@base64`, `@base64d`)
