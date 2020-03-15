@@ -149,6 +149,8 @@ func (c *compiler) compileImport(i *Import) error {
 		}
 		c.append(&code{op: oppush, v: vals})
 		c.append(&code{op: opstore, v: c.pushVariable(alias)})
+		c.append(&code{op: oppush, v: vals})
+		c.append(&code{op: opstore, v: c.pushVariable(alias + "::" + alias[1:])})
 		return nil
 	}
 	m, err := c.moduleLoader.LoadModule(path)

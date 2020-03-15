@@ -4451,9 +4451,10 @@
     - -c
     - -L
     - testdata
-    - 'import "7" as $foo; $foo'
+    - 'import "7" as $foo; $foo, $foo::foo'
   input: 0
   expected: |
+    [1,2,{"foo":42}]
     [1,2,{"foo":42}]
 
 - name: module directory option
@@ -4461,9 +4462,10 @@
     - -c
     - -L
     - testdata
-    - 'import "m1" as $x; $x'
+    - 'import "m1" as $x; $x, $x::x'
   input: 0
   expected: |
+    [42,{"m1":42}]
     [42,{"m1":42}]
 
 - name: module directory option with argjson
