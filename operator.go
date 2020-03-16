@@ -117,8 +117,9 @@ func (op Operator) String() string {
 		return "%="
 	case OpUpdateAlt:
 		return "//="
+	default:
+		panic(op)
 	}
-	panic(op)
 }
 
 // GoString implements GoStringer.
@@ -168,8 +169,9 @@ func (op Operator) GoString() string {
 		return "OpUpdateMod"
 	case OpUpdateAlt:
 		return "OpUpdateAlt"
+	default:
+		panic(op)
 	}
-	panic(op)
 }
 
 func (op Operator) getFunc() string {
@@ -218,8 +220,9 @@ func (op Operator) getFunc() string {
 		return "_modulo"
 	case OpUpdateAlt:
 		return "_alternative"
+	default:
+		panic(op)
 	}
-	panic(op)
 }
 
 func binopTypeSwitch(
