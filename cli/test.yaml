@@ -3920,15 +3920,15 @@
 - name: indent option
   args:
     - --indent
-    - 9
+    - 7
     - '.'
   input: '{ "foo": ["hello", "world"] }'
   expected: |
     {
-             "foo": [
-                      "hello",
-                      "world"
-             ]
+           "foo": [
+                  "hello",
+                  "world"
+           ]
     }
 
 - name: indent option error
@@ -4570,7 +4570,8 @@
     - '--arg'
     - 'foo'
     - 'value 1'
-    - '--arg=bar'
+    - '--arg'
+    - 'bar'
     - '42'
     - '{ $foo, $bar }'
   input: '123'
