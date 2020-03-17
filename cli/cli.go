@@ -169,7 +169,7 @@ Synopsis:
 	}
 	query, err := gojq.Parse(arg)
 	if err != nil {
-		return &queryParseError{fname, arg, err}
+		return &queryParseError{"query", fname, arg, err}
 	}
 	modulePaths := opts.ModulePaths
 	if len(modulePaths) == 0 && addDefaultModulePath {
@@ -184,6 +184,12 @@ Synopsis:
 		gojq.WithEnvironLoader(os.Environ),
 		gojq.WithVariables(cli.argnames))
 	if err != nil {
+		if err, ok := err.(interface {
+			QueryParseError() (string, string, string, error)
+		}); ok {
+			typ, name, query, err := err.QueryParseError()
+			return &queryParseError{typ, fname + ":" + name, query, err}
+		}
 		return &compileError{err}
 	}
 	if opts.InputNull {

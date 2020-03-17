@@ -2166,6 +2166,16 @@
   expected: |
     "20(\\9\")"
 
+- name: string interpolation parse error
+  args:
+    - -c
+    - '"\(1 +)"'
+  input: '0'
+  error: |
+    invalid query in string interpolation: 1 +
+        1 +
+          ^  unexpected token "+"
+
 - name: tojson function
   args:
     - 'map(tojson)'
@@ -4579,7 +4589,7 @@
     - 'include "7"; .'
   input: 0
   error: |
-    invalid query: testdata/7.jq:1
+    invalid query in module: testdata/7.jq:1
         1 | def f: 1 +
                      ^  unexpected "+" (expected ";")
 

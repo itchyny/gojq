@@ -25,8 +25,8 @@ func (err *compileError) Error() string {
 }
 
 type queryParseError struct {
-	fname, contents string
-	err             error
+	typ, fname, contents string
+	err                  error
 }
 
 func (err *queryParseError) Error() string {
@@ -35,20 +35,20 @@ func (err *queryParseError) Error() string {
 		lines := strings.Split(err.contents, "\n")
 		if 0 < er.Position().Line && er.Position().Line <= len(lines) {
 			var prefix, fname string
-			if len(lines) <= 1 && err.fname == "<arg>" {
+			if len(lines) <= 1 && strings.HasPrefix(err.fname, "<arg>") {
 				fname = err.contents
 			} else {
 				fname = fmt.Sprintf("%s:%d", err.fname, er.Position().Line)
 				prefix = fmt.Sprintf("%d | ", er.Position().Line)
 			}
-			fmt.Fprintf(&s, "invalid query: %s\n", fname)
+			fmt.Fprintf(&s, "invalid %s: %s\n", err.typ, fname)
 			fmt.Fprintf(
 				&s, "    %s%s\n%s  %s", prefix, lines[er.Position().Line-1],
 				strings.Repeat(" ", 3+er.Position().Column+len(prefix))+"^", er.Message())
 			return s.String()
 		}
 	}
-	fmt.Fprintf(&s, "invalid query: %s: %s", err.fname, err.err)
+	fmt.Fprintf(&s, "invalid %s: %s: %s", err.typ, err.fname, err.err)
 	return s.String()
 }
 

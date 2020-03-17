@@ -35,7 +35,7 @@ func (l *moduleLoader) LoadInitModules() ([]*gojq.Module, error) {
 		}
 		m, err := gojq.ParseModule(string(cnt))
 		if err != nil {
-			return nil, &queryParseError{path, string(cnt), err}
+			return nil, &queryParseError{"query in module", path, string(cnt), err}
 		}
 		ms = append(ms, m)
 	}
@@ -53,7 +53,7 @@ func (l *moduleLoader) LoadModule(name string) (*gojq.Module, error) {
 	}
 	m, err := gojq.ParseModule(string(cnt))
 	if err != nil {
-		return nil, &queryParseError{path, string(cnt), err}
+		return nil, &queryParseError{"query in module", path, string(cnt), err}
 	}
 	return m, nil
 }

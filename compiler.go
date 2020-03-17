@@ -1117,9 +1117,10 @@ func (c *compiler) stringToQuery(s string, f *Func) (*Query, error) {
 			if i == 0 {
 				return nil, &stringLiteralError{s}
 			}
-			q, err := Parse(x[2 : i-1])
+			t := x[2 : i-1]
+			q, err := Parse(t)
 			if err != nil {
-				return nil, err
+				return nil, &stringQueryError{t, err}
 			}
 			x = x[i:]
 			if len(buf) > 0 {
