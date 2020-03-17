@@ -1026,7 +1026,7 @@ func (e *ConstObject) String() string {
 
 // ConstObjectKeyVal ...
 type ConstObjectKeyVal struct {
-	Key       string     `( @Ident | @Variable | @Keyword`
+	Key       string     `( @Ident | @Keyword`
 	KeyString string     `| @String ) ":"`
 	Val       *ConstTerm `@@`
 }
