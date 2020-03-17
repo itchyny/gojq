@@ -2138,6 +2138,34 @@
   expected: |
     [{"a":"0"},{"a":"1"},{"0":1},{"1":1},{"x":10},{"y":20}]
 
+- name: string interpolation nested
+  args:
+    - -c
+    - '"\("(") \("x" + "\(1 + 2)") \(")")"'
+  input: '0'
+  expected: |
+    "( x3 )"
+
+- name: string interpolation multiple lines
+  args:
+    - -c
+    - |
+      "\( # "
+        "\(
+          "\(2 * (4 # "
+              +#
+              6))"
+        )"  # "
+        # "
+        + (def f: "\("\("(" + "\\\((1 + 2) * 3)\"" + ")")")"; f)
+        # "
+        #  "
+        #   "
+      )"
+  input: '0'
+  expected: |
+    "20(\\9\")"
+
 - name: tojson function
   args:
     - 'map(tojson)'

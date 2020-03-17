@@ -7,6 +7,7 @@ import (
 	"github.com/alecthomas/participle/lexer"
 )
 
+//go:generate go run _tools/gen_string.go -o string.go
 var parserOptions = []participle.Option{
 	participle.Lexer(lexer.Must(lexer.Regexp(`(\s+|#[^\n]*)` +
 		`|(?P<Keyword>(import|include|null|true|false|if|then|elif|else|end|or|and|as|try|catch|reduce|foreach|label|break)\b)` +
@@ -19,7 +20,7 @@ var parserOptions = []participle.Option{
 		`|(?P<CompareOp>([=!]=|[<>]=?))` +
 		`|(?P<UpdateOp>(=|[-|+*/%]=))` +
 		`|(?P<Number>((\d*\.)?\d+([eE]([-+]?\d+))?\b))` +
-		`|(?P<String>"([^"\\]*|\\.)*")` +
+		`|(?P<String>` + stringPatternStr + `)` +
 		`|(?P<Format>@[a-zA-Z0-9_]+)` +
 		"|(?P<Punct>[!-/:-@\\[-\\]^-`{-~])",
 	))),

@@ -17,7 +17,7 @@ build: builtin.go
 build-debug: builtin.go
 	go build -tags debug -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
 
-builtin.go: builtin.jq query.go operator.go
+builtin.go string.go: builtin.jq parser.go query.go operator.go _tools/*
 	rm -f $@
 	GOOS= GOARCH= go generate
 

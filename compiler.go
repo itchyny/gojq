@@ -1112,21 +1112,12 @@ func (c *compiler) stringToQuery(s string, f *Func) (*Query, error) {
 			if !strings.HasPrefix(x, "\\(") {
 				return nil, err
 			}
-			x = x[2:]
-			i, d, b := 0, 1, true
-			for ; i < len(x) && b; i++ {
-				switch x[i] {
-				case '(':
-					d++
-				case ')':
-					d--
-					b = d != 0
-				}
-			}
-			if i == len(x) && b {
+			match := queryInStringPattern.FindString(x)
+			i := len([]byte(match))
+			if i == 0 {
 				return nil, &stringLiteralError{s}
 			}
-			q, err := Parse(x[:i-1])
+			q, err := Parse(x[2 : i-1])
 			if err != nil {
 				return nil, err
 			}
