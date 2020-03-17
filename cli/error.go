@@ -16,14 +16,6 @@ func (emptyError) Error() string {
 	return ""
 }
 
-type variableNameError struct {
-	name string
-}
-
-func (err *variableNameError) Error() string {
-	return "invalid variable name: " + err.name
-}
-
 type compileError struct {
 	err error
 }
