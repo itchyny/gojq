@@ -223,6 +223,29 @@
     []
     []
 
+- name: array and string slice with object
+  args:
+    - -c
+    - '[.[{"start": (null,range(-3;4)), "end": (null,range(-3;4))}]]'
+  input: '[0, 1, 2] "abcde"'
+  expected: |
+    [[0,1,2],[],[0],[0,1],[],[0],[0,1],[0,1,2],[0,1,2],[],[0],[0,1],[],[0],[0,1],[0,1,2],[1,2],[],[],[1],[],[],[1],[1,2],[2],[],[],[],[],[],[],[2],[0,1,2],[],[0],[0,1],[],[0],[0,1],[0,1,2],[1,2],[],[],[1],[],[],[1],[1,2],[2],[],[],[],[],[],[],[2],[],[],[],[],[],[],[],[]]
+    ["abcde","ab","abc","abcd","","a","ab","abc","cde","","c","cd","","","","c","de","","","d","","","","","e","","","","","","","","abcde","ab","abc","abcd","","a","ab","abc","bcde","b","bc","bcd","","","b","bc","cde","","c","cd","","","","c","de","","","d","","","",""]
+
+- name: array slice with object against null
+  args:
+    - '.[{"start": 1, "end": 2}]'
+  input: 'null'
+  expected: |
+    null
+
+- name: array slice with object error
+  args:
+    - '.[{"start": 1}]'
+  input: '[]'
+  error: |
+    expected "start" and "end" for slicing but got: object ({"start":1})
+
 - name: array index and slice with large number
   args:
     - -c

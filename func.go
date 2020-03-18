@@ -696,6 +696,19 @@ func funcIndex(_, v, x interface{}) interface{} {
 		default:
 			return &expectedArrayError{v}
 		}
+	case map[string]interface{}:
+		if v == nil {
+			return v
+		}
+		start, ok := x["start"]
+		if !ok {
+			return &expectedStartEndError{x}
+		}
+		end, ok := x["end"]
+		if !ok {
+			return &expectedStartEndError{x}
+		}
+		return funcSlice(nil, v, end, start)
 	default:
 		return &objectKeyNotStringError{x}
 	}

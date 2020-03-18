@@ -47,6 +47,14 @@ func (err *arrayIndexNotNumberError) Error() string {
 	return fmt.Sprintf("expected a number for indexing an array but got: %s", typeErrorPreview(err.v))
 }
 
+type expectedStartEndError struct {
+	v interface{}
+}
+
+func (err *expectedStartEndError) Error() string {
+	return fmt.Sprintf(`expected "start" and "end" for slicing but got: %s`, typeErrorPreview(err.v))
+}
+
 type funcNotFoundError struct {
 	f *Func
 }
