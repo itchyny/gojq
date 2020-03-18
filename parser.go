@@ -24,7 +24,6 @@ var parserOptions = []participle.Option{
 		`|(?P<Format>@[a-zA-Z0-9_]+)` +
 		"|(?P<Punct>[!-/:-@\\[-\\]^-`{-~])",
 	))),
-	participle.UseLookahead(1),
 }
 
 var parser = participle.MustBuild(&Query{}, parserOptions...)
