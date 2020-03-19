@@ -16,6 +16,10 @@ func (emptyError) Error() string {
 	return ""
 }
 
+func (emptyError) IsEmptyError() bool {
+	return true
+}
+
 type compileError struct {
 	err error
 }

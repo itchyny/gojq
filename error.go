@@ -1,6 +1,7 @@
 package gojq
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
@@ -70,6 +71,27 @@ type funcTypeError struct {
 
 func (err *funcTypeError) Error() string {
 	return fmt.Sprintf("%s cannot be applied to: %s", err.name, typeErrorPreview(err.v))
+}
+
+type funcHaltErrorError struct {
+	v interface{}
+	c int
+}
+
+func (err *funcHaltErrorError) Error() string {
+	if s, ok := err.v.(string); ok {
+		return fmt.Sprintf("error: %s", s)
+	}
+	bs, _ := json.Marshal(normalizeValues(err.v))
+	return fmt.Sprintf("error: %s", string(bs))
+}
+
+func (err *funcHaltErrorError) IsEmptyError() bool {
+	return err.v == nil
+}
+
+func (err *funcHaltErrorError) ExitCode() int {
+	return err.c
 }
 
 type funcContainsError struct {

@@ -3516,6 +3516,28 @@
     2
     1
 
+- name: halt_error function
+  args:
+    - 'halt_error'
+  input: '1'
+  error: |
+    error: 1
+  exit_code: 5
+
+- name: halt_error function
+  args:
+    - '0/0 | halt_error'
+  input: 'null'
+  error: |
+    error: null
+  exit_code: 5
+
+- name: halt_error function
+  args:
+    - 'halt_error(42)'
+  input: 'null'
+  exit_code: 42
+
 - name: builtins function
   args:
     - 'builtins | length > 100'

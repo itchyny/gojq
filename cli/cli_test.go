@@ -34,6 +34,7 @@ func TestCliRun(t *testing.T) {
 		Input    string
 		Expected string
 		Error    string
+		ExitCode int `yaml:"exit_code"`
 	}
 	require.NoError(t, yaml.NewDecoder(f).Decode(&testCases))
 
@@ -49,13 +50,15 @@ func TestCliRun(t *testing.T) {
 			}
 			code := cli.run(tc.Args)
 			if tc.Error == "" {
-				assert.Equal(t, exitCodeOK, code)
+				assert.Equal(t, tc.ExitCode, code)
 				assert.Equal(t, tc.Expected, outStream.String())
 				assert.Equal(t, "", errStream.String())
 			} else {
 				errStr := errStream.String()
 				if strings.Contains(errStr, "DEBUG:") {
 					assert.Equal(t, exitCodeOK, code)
+				} else if tc.ExitCode != 0 {
+					assert.Equal(t, tc.ExitCode, code)
 				} else {
 					assert.Equal(t, exitCodeErr, code)
 				}

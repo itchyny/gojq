@@ -163,6 +163,7 @@ func init() {
 		"now":            argFunc0(funcNow),
 		"_match_impl":    argFunc3(funcMatchImpl),
 		"error":          {argcount0 | argcount1, funcError},
+		"halt_error":     {argcount0 | argcount1, funcHaltError},
 		"builtins":       argFunc0(funcBuiltins),
 		"_type_error":    argFunc1(internalfuncTypeError),
 	}
@@ -1328,6 +1329,16 @@ func funcError(v interface{}, args []interface{}) interface{} {
 	} else {
 		return nil
 	}
+}
+
+func funcHaltError(v interface{}, args []interface{}) interface{} {
+	if len(args) != 1 {
+		return &funcHaltErrorError{v, 5}
+	}
+	if x, ok := toInt(args[0]); ok {
+		return &funcHaltErrorError{v, x}
+	}
+	return &funcTypeError{"halt_error", args[0]}
 }
 
 func funcBuiltins(interface{}) interface{} {

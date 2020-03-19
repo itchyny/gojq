@@ -76,8 +76,11 @@ var addDefaultModulePath = true
 
 func (cli *cli) run(args []string) int {
 	if err := cli.runInternal(args); err != nil {
-		if _, ok := err.(*emptyError); !ok {
+		if er, ok := err.(interface{ IsEmptyError() bool }); !ok || !er.IsEmptyError() {
 			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+		}
+		if err, ok := err.(interface{ ExitCode() int }); ok {
+			return err.ExitCode()
 		}
 		return exitCodeErr
 	}
