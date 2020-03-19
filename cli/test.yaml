@@ -4626,6 +4626,30 @@
   expected: |
     6
 
+- name: modulemeta function
+  args:
+    - -c
+    - -L
+    - testdata
+    - 'tostring | modulemeta'
+  input: 4 5 6 8 9
+  expected: |
+    {"deps":[{"is_data":false,"relpath":"5"},{"as":"bar","is_data":false,"relpath":"6"}]}
+    {"deps":[{"as":"foo","is_data":false,"relpath":"6","test":"foo"}]}
+    {"deps":[{"as":"x","is_data":true,"relpath":"7"}]}
+    {"deps":[]}
+    {"deps":[],"description":"This is a description","name":"sample-module","x":[[],{},{"y":10,"z":20}],"y":{"z":[128,"",false,true,null,[[]]]}}
+
+- name: modulemeta function error
+  args:
+    - -c
+    - -L
+    - testdata
+    - '"3" | modulemeta'
+  input: '0'
+  error: |
+    module not found: "3"
+
 - name: arg option
   args:
     - '--arg'

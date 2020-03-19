@@ -12,8 +12,17 @@ import (
 type moduleLoader struct{}
 
 func (*moduleLoader) LoadModule(name string) (*gojq.Module, error) {
-	if name == "module1" {
-		return gojq.ParseModule("def f: .foo;")
+	switch name {
+	case "module1":
+		return gojq.ParseModule(`
+			module { name: "module1", test: 42 };
+			import "module2" as foo;
+			def f: foo::f;
+		`)
+	case "module2":
+		return gojq.ParseModule(`
+			def f: .foo;
+		`)
 	}
 	return nil, fmt.Errorf("module not found: %q", name)
 }
@@ -61,6 +70,63 @@ func TestWithModuleLoaderError(t *testing.T) {
 	_, err = gojq.Compile(query)
 	if got, expected := err.Error(), `cannot load module: "module1"`; got != expected {
 		t.Errorf("expected: %v, got: %v", expected, got)
+	}
+
+	query, err = gojq.Parse("modulemeta")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	code, err := gojq.Compile(query)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	iter := code.Run("m")
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		err := v.(error)
+		if got, expected := err.Error(), `cannot load module: "m"`; got != expected {
+			t.Errorf("expected: %v, got: %v", expected, got)
+		}
+		break
+	}
+}
+
+func TestWithModuleLoader_modulemeta(t *testing.T) {
+	query, err := gojq.Parse(`
+		"module1" | modulemeta
+	`)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	code, err := gojq.Compile(
+		query,
+		gojq.WithModuleLoader(&moduleLoader{}),
+	)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	iter := code.Run(nil)
+	for {
+		got, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if expected := map[string]interface{}{
+			"deps": []interface{}{
+				map[string]interface{}{
+					"relpath": "module2",
+					"as":      "foo",
+					"is_data": false,
+				},
+			},
+			"name": "module1",
+			"test": 42,
+		}; !reflect.DeepEqual(got, expected) {
+			t.Errorf("expected: %v, got: %v", expected, got)
+		}
 	}
 }
 

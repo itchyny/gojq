@@ -951,11 +951,74 @@ func (c *compiler) compileFunc(e *Func) error {
 		case "halt":
 			c.append(&code{op: opdebug, v: "HALT:"})
 			return nil
+		case "modulemeta":
+			return c.compileCallInternal(
+				[3]interface{}{c.funcModulemeta(), 0, e.Name},
+				e.Args,
+				nil,
+				false,
+			)
 		default:
 			return c.compileCall(e.Name, e.Args)
 		}
 	}
 	return &funcNotFoundError{e}
+}
+
+func (c *compiler) funcModulemeta() func(interface{}, []interface{}) interface{} {
+	return func(v interface{}, _ []interface{}) interface{} {
+		s, ok := v.(string)
+		if !ok {
+			return &funcTypeError{"modulemeta", v}
+		}
+		if c.moduleLoader == nil {
+			return fmt.Errorf("cannot load module: %q", s)
+		}
+		var m *Module
+		var err error
+		if moduleLoader, ok := c.moduleLoader.(interface {
+			LoadModuleWithMeta(string, map[string]interface{}) (*Module, error)
+		}); ok {
+			if m, err = moduleLoader.LoadModuleWithMeta(s, nil); err != nil {
+				return err
+			}
+		} else if m, err = c.moduleLoader.LoadModule(s); err != nil {
+			return err
+		}
+		meta := m.Meta.ToValue()
+		if meta == nil {
+			meta = make(map[string]interface{})
+		}
+		var deps []interface{}
+		for _, i := range m.Imports {
+			v := i.Meta.ToValue()
+			if v == nil {
+				v = make(map[string]interface{})
+			} else {
+				for k := range v {
+					// dirty hack to remove the extra fields added in the cli package
+					if strings.HasPrefix(k, "$$") {
+						delete(v, k)
+					}
+				}
+			}
+			if i.ImportPath == "" {
+				v["relpath"], err = strconv.Unquote(i.IncludePath)
+			} else {
+				v["relpath"], err = strconv.Unquote(i.ImportPath)
+			}
+			if err != nil {
+				return err
+			}
+			if i.ImportAlias != "" {
+				v["as"] = strings.TrimPrefix(i.ImportAlias, "$")
+			}
+			v["is_data"] = strings.HasPrefix(i.ImportAlias, "$")
+			deps = append(deps, v)
+		}
+		meta["deps"] = deps
+		return meta
+	}
 }
 
 func (c *compiler) compileObject(e *Object) error {
