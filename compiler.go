@@ -50,8 +50,10 @@ func (c *Code) RunWithContext(ctx context.Context, v interface{}, values ...inte
 // ModuleLoader is an interface for loading modules.
 type ModuleLoader interface {
 	LoadModule(string) (*Module, error)
+	// (optional) LoadModuleWithMeta(string, map[string]interface{}) (*Module, error)
 	// (optional) LoadInitModules() ([]*Module, error)
 	// (optional) LoadJSON(string) (interface{}, error)
+	// (optional) LoadJSONWithMeta(string, map[string]interface{}) (interface{}, error)
 }
 
 type codeinfo struct {
@@ -150,15 +152,21 @@ func (c *compiler) compileImport(i *Import) error {
 		return err
 	}
 	if strings.HasPrefix(alias, "$") {
-		moduleLoader, ok := c.moduleLoader.(interface {
+		var vals interface{}
+		if moduleLoader, ok := c.moduleLoader.(interface {
+			LoadJSONWithMeta(string, map[string]interface{}) (interface{}, error)
+		}); ok {
+			if vals, err = moduleLoader.LoadJSONWithMeta(path, i.Meta.ToValue()); err != nil {
+				return err
+			}
+		} else if moduleLoader, ok := c.moduleLoader.(interface {
 			LoadJSON(string) (interface{}, error)
-		})
-		if !ok {
+		}); ok {
+			if vals, err = moduleLoader.LoadJSON(path); err != nil {
+				return err
+			}
+		} else {
 			return fmt.Errorf("module not found: %q", path)
-		}
-		vals, err := moduleLoader.LoadJSON(path)
-		if err != nil {
-			return err
 		}
 		c.append(&code{op: oppush, v: vals})
 		c.append(&code{op: opstore, v: c.pushVariable(alias)})
@@ -166,8 +174,14 @@ func (c *compiler) compileImport(i *Import) error {
 		c.append(&code{op: opstore, v: c.pushVariable(alias + "::" + alias[1:])})
 		return nil
 	}
-	m, err := c.moduleLoader.LoadModule(path)
-	if err != nil {
+	var m *Module
+	if moduleLoader, ok := c.moduleLoader.(interface {
+		LoadModuleWithMeta(string, map[string]interface{}) (*Module, error)
+	}); ok {
+		if m, err = moduleLoader.LoadModuleWithMeta(path, i.Meta.ToValue()); err != nil {
+			return err
+		}
+	} else if m, err = c.moduleLoader.LoadModule(path); err != nil {
 		return err
 	}
 	c.appendCodeInfo("module " + path)
