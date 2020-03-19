@@ -49,8 +49,8 @@ func (c *Code) RunWithContext(ctx context.Context, v interface{}, values ...inte
 
 // ModuleLoader is an interface for loading modules.
 type ModuleLoader interface {
-	LoadInitModules() ([]*Module, error)
 	LoadModule(string) (*Module, error)
+	// (optional) LoadInitModules() ([]*Module, error)
 	LoadJSON(string) (interface{}, error)
 }
 
@@ -91,13 +91,17 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 		return &code{op: opscope, v: [2]int{scope.id, scope.variablecnt}}
 	})()
 	if c.moduleLoader != nil {
-		ms, err := c.moduleLoader.LoadInitModules()
-		if err != nil {
-			return nil, err
-		}
-		for _, m := range ms {
-			if err := c.compileModule(m, ""); err != nil {
+		if moduleLoader, ok := c.moduleLoader.(interface {
+			LoadInitModules() ([]*Module, error)
+		}); ok {
+			ms, err := moduleLoader.LoadInitModules()
+			if err != nil {
 				return nil, err
+			}
+			for _, m := range ms {
+				if err := c.compileModule(m, ""); err != nil {
+					return nil, err
+				}
 			}
 		}
 	}

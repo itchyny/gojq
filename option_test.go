@@ -11,10 +11,6 @@ import (
 
 type moduleLoader struct{}
 
-func (*moduleLoader) LoadInitModules() ([]*gojq.Module, error) {
-	return nil, nil
-}
-
 func (*moduleLoader) LoadModule(name string) (*gojq.Module, error) {
 	if name == "module1" {
 		return gojq.ParseModule("def f: .foo;")
