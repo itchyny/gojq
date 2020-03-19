@@ -5,12 +5,18 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/itchyny/gojq"
 )
 
 type moduleLoader struct {
 	paths []string
+}
+
+type module struct {
+	path   string
+	module *gojq.Module
 }
 
 func (l *moduleLoader) LoadInitModules() ([]*gojq.Module, error) {
@@ -33,7 +39,7 @@ func (l *moduleLoader) LoadInitModules() ([]*gojq.Module, error) {
 		if err != nil {
 			return nil, err
 		}
-		m, err := gojq.ParseModule(string(cnt))
+		m, err := parseModule(path, string(cnt))
 		if err != nil {
 			return nil, &queryParseError{"query in module", path, string(cnt), err}
 		}
@@ -42,8 +48,12 @@ func (l *moduleLoader) LoadInitModules() ([]*gojq.Module, error) {
 	return ms, nil
 }
 
-func (l *moduleLoader) LoadModule(name string) (*gojq.Module, error) {
-	path, err := l.lookupModule(name, ".jq")
+func (l *moduleLoader) LoadModule(string) (*gojq.Module, error) {
+	panic("moduleLoader#LoadModule: unreachable")
+}
+
+func (l *moduleLoader) LoadModuleWithMeta(name string, meta map[string]interface{}) (*gojq.Module, error) {
+	path, err := l.lookupModule(name, ".jq", meta)
 	if err != nil {
 		return nil, err
 	}
@@ -51,15 +61,15 @@ func (l *moduleLoader) LoadModule(name string) (*gojq.Module, error) {
 	if err != nil {
 		return nil, err
 	}
-	m, err := gojq.ParseModule(string(cnt))
+	m, err := parseModule(path, string(cnt))
 	if err != nil {
 		return nil, &queryParseError{"query in module", path, string(cnt), err}
 	}
 	return m, nil
 }
 
-func (l *moduleLoader) LoadJSON(name string) (interface{}, error) {
-	path, err := l.lookupModule(name, ".json")
+func (l *moduleLoader) LoadJSONWithMeta(name string, meta map[string]interface{}) (interface{}, error) {
+	path, err := l.lookupModule(name, ".json", meta)
 	if err != nil {
 		return nil, err
 	}
@@ -70,8 +80,12 @@ func (l *moduleLoader) LoadJSON(name string) (interface{}, error) {
 	return vals, nil
 }
 
-func (l *moduleLoader) lookupModule(name, extension string) (string, error) {
-	for _, base := range l.paths {
+func (l *moduleLoader) lookupModule(name, extension string, meta map[string]interface{}) (string, error) {
+	paths := l.paths
+	if path := searchPath(meta); path != "" {
+		paths = append([]string{path}, paths...)
+	}
+	for _, base := range paths {
 		path := filepath.Clean(filepath.Join(base, name+extension))
 		if _, err := os.Stat(path); err == nil {
 			return path, err
@@ -82,4 +96,46 @@ func (l *moduleLoader) lookupModule(name, extension string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("module not found: %q", name)
+}
+
+// This is a dirty hack to implement the "search" field.
+// Note that gojq package should not depend on the filesystem.
+func parseModule(path, cnt string) (*gojq.Module, error) {
+	m, err := gojq.ParseModule(cnt)
+	if err != nil {
+		return nil, err
+	}
+	for _, i := range m.Imports {
+		if i.Meta == nil {
+			continue
+		}
+		i.Meta.KeyVals = append(
+			i.Meta.KeyVals,
+			gojq.ConstObjectKeyVal{
+				Key: "$$path",
+				Val: &gojq.ConstTerm{Str: strconv.Quote(path)},
+			},
+		)
+	}
+	return m, nil
+}
+
+func searchPath(meta map[string]interface{}) string {
+	x, ok := meta["$$path"]
+	if !ok {
+		return ""
+	}
+	path, ok := x.(string)
+	if !ok {
+		return ""
+	}
+	x, ok = meta["search"]
+	if !ok {
+		return ""
+	}
+	s, ok := x.(string)
+	if !ok {
+		return ""
+	}
+	return filepath.Join(filepath.Dir(path), s)
 }
