@@ -51,7 +51,7 @@ func (c *Code) RunWithContext(ctx context.Context, v interface{}, values ...inte
 type ModuleLoader interface {
 	LoadModule(string) (*Module, error)
 	// (optional) LoadInitModules() ([]*Module, error)
-	LoadJSON(string) (interface{}, error)
+	// (optional) LoadJSON(string) (interface{}, error)
 }
 
 type codeinfo struct {
@@ -150,7 +150,13 @@ func (c *compiler) compileImport(i *Import) error {
 		return err
 	}
 	if strings.HasPrefix(alias, "$") {
-		vals, err := c.moduleLoader.LoadJSON(path)
+		moduleLoader, ok := c.moduleLoader.(interface {
+			LoadJSON(string) (interface{}, error)
+		})
+		if !ok {
+			return fmt.Errorf("module not found: %q", path)
+		}
+		vals, err := moduleLoader.LoadJSON(path)
 		if err != nil {
 			return err
 		}

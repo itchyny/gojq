@@ -18,10 +18,6 @@ func (*moduleLoader) LoadModule(name string) (*gojq.Module, error) {
 	return nil, fmt.Errorf("module not found: %q", name)
 }
 
-func (*moduleLoader) LoadJSON(name string) (interface{}, error) {
-	return nil, fmt.Errorf("module not found: %q", name)
-}
-
 func ExampleWithModuleLoader() {
 	query, err := gojq.Parse(`
 		import "module1" as m;
