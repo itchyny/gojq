@@ -45,7 +45,6 @@ func init() {
 		"path":           argFunc1(nil),
 		"debug":          argFunc0(nil),
 		"stderr":         argFunc0(nil),
-		"halt":           argFunc0(nil),
 		"env":            argFunc0(nil),
 		"modulemeta":     argFunc0(nil),
 		"length":         argFunc0(funcLength),
@@ -164,6 +163,7 @@ func init() {
 		"now":            argFunc0(funcNow),
 		"_match_impl":    argFunc3(funcMatchImpl),
 		"error":          {argcount0 | argcount1, funcError},
+		"halt":           argFunc0(funcHalt),
 		"halt_error":     {argcount0 | argcount1, funcHaltError},
 		"builtins":       argFunc0(funcBuiltins),
 		"_type_error":    argFunc1(internalfuncTypeError),
@@ -1337,6 +1337,10 @@ func funcError(v interface{}, args []interface{}) interface{} {
 	} else {
 		return nil
 	}
+}
+
+func funcHalt(interface{}) interface{} {
+	return &funcHaltErrorError{}
 }
 
 func funcHaltError(v interface{}, args []interface{}) interface{} {

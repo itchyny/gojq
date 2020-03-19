@@ -948,9 +948,6 @@ func (c *compiler) compileFunc(e *Func) error {
 		case "stderr":
 			c.append(&code{op: opdebug, v: "STDERR:"})
 			return nil
-		case "halt":
-			c.append(&code{op: opdebug, v: "HALT:"})
-			return nil
 		case "modulemeta":
 			return c.compileCallInternal(
 				[3]interface{}{c.funcModulemeta(), 0, e.Name},
