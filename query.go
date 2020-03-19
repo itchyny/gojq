@@ -2,6 +2,7 @@ package gojq
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -1003,6 +1004,25 @@ func (e *ConstTerm) String() string {
 	return s.String()
 }
 
+func (e *ConstTerm) toValue() interface{} {
+	if e.Object != nil {
+		return e.Object.ToValue()
+	} else if e.Array != nil {
+		return e.Array.toValue()
+	} else if e.Number != "" {
+		return normalizeNumbers(json.Number(e.Number))
+	} else if e.Str != "" {
+		s, _ := strconv.Unquote(e.Str)
+		return s
+	} else if e.True {
+		return true
+	} else if e.False {
+		return false
+	} else {
+		return nil
+	}
+}
+
 // ConstObject ...
 type ConstObject struct {
 	KeyVals []ConstObjectKeyVal `"{" (@@ ("," @@)*)? "}"`
@@ -1022,6 +1042,22 @@ func (e *ConstObject) String() string {
 	}
 	s.WriteString(" }")
 	return s.String()
+}
+
+// ToValue converts the object to map[string]interface{}.
+func (e *ConstObject) ToValue() map[string]interface{} {
+	if e == nil {
+		return nil
+	}
+	v := make(map[string]interface{}, len(e.KeyVals))
+	for _, e := range e.KeyVals {
+		key := e.Key
+		if key == "" {
+			key, _ = strconv.Unquote(e.KeyString)
+		}
+		v[key] = e.Val.toValue()
+	}
+	return v
 }
 
 // ConstObjectKeyVal ...
@@ -1059,4 +1095,12 @@ func (e *ConstArray) String() string {
 	}
 	s.WriteString("]")
 	return s.String()
+}
+
+func (e *ConstArray) toValue() []interface{} {
+	v := make([]interface{}, len(e.Elems))
+	for i, e := range e.Elems {
+		v[i] = e.toValue()
+	}
+	return v
 }
