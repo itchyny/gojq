@@ -103,6 +103,7 @@ func init() {
 		"rint":           mathFunc("rint", math.Round),
 		"ceil":           mathFunc("ceil", math.Ceil),
 		"trunc":          mathFunc("trunc", math.Trunc),
+		"significand":    mathFunc("significand", funcSignificand),
 		"fabs":           mathFunc("fabs", math.Abs),
 		"sqrt":           mathFunc("sqrt", math.Sqrt),
 		"cbrt":           mathFunc("cbrt", math.Cbrt),
@@ -806,6 +807,13 @@ func toIndex(a []interface{}, i int) int {
 
 func funcBreak(x interface{}) interface{} {
 	return &breakError{x.(string)}
+}
+
+func funcSignificand(v float64) float64 {
+	if math.IsNaN(v) || isinf(v) || v == 0.0 {
+		return v
+	}
+	return math.Float64frombits((math.Float64bits(v) & 0x800fffffffffffff) | 0x3ff0000000000000)
 }
 
 func funcExp10(v float64) float64 {
