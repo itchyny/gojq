@@ -90,6 +90,9 @@ loop:
 						env.pop()
 						if er, ok := err.(*exitCodeError); ok {
 							env.push(er.v)
+							if er.halt {
+								break loop
+							}
 							if er.v == nil {
 								backtrack, err = true, nil
 								break loop

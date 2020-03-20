@@ -3546,7 +3546,7 @@
     2
     1
 
-- name: halt_error function
+- name: halt_error/0 function
   args:
     - 'halt_error'
   input: '1'
@@ -3554,7 +3554,7 @@
     error: 1
   exit_code: 5
 
-- name: halt_error function
+- name: halt_error/0 function
   args:
     - '0/0 | halt_error'
   input: 'null'
@@ -3562,7 +3562,15 @@
     error: null
   exit_code: 5
 
-- name: halt_error function
+- name: halt_error/0 function and try catch
+  args:
+    - 'range(5) | try halt_error catch .'
+  input: 'null'
+  error: |
+    error: 0
+  exit_code: 5
+
+- name: halt_error/1 function
   args:
     - 'halt_error(42)'
   input: 'null'

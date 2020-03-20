@@ -1322,21 +1322,21 @@ func funcError(v interface{}, args []interface{}) interface{} {
 	if len(args) > 0 {
 		v = args[0]
 	}
-	return &exitCodeError{v, 5}
+	return &exitCodeError{v, 5, false}
 }
 
 func funcHalt(interface{}) interface{} {
-	return &exitCodeError{}
+	return &exitCodeError{nil, 0, true}
 }
 
 func funcHaltError(v interface{}, args []interface{}) interface{} {
-	if len(args) != 1 {
-		return &exitCodeError{v, 5}
+	x, ok := 5, false
+	if len(args) > 0 {
+		if x, ok = toInt(args[0]); !ok {
+			return &funcTypeError{"halt_error", args[0]}
+		}
 	}
-	if x, ok := toInt(args[0]); ok {
-		return &exitCodeError{v, x}
-	}
-	return &funcTypeError{"halt_error", args[0]}
+	return &exitCodeError{v, x, true}
 }
 
 func funcBuiltins(interface{}) interface{} {

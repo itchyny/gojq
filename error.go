@@ -74,8 +74,9 @@ func (err *funcTypeError) Error() string {
 }
 
 type exitCodeError struct {
-	v interface{}
-	c int
+	v    interface{}
+	c    int
+	halt bool
 }
 
 func (err *exitCodeError) Error() string {
