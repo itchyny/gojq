@@ -130,6 +130,7 @@
     invalid query: . a
         . a
           ^  unexpected token "a"
+  exit_code: 3
 
 - name: expected object
   args:
@@ -797,6 +798,7 @@
   input: '[0]'
   error: |
     function not defined: has/0
+  exit_code: 3
 
 - name: has/2 is not defined
   args:
@@ -804,6 +806,7 @@
   input: '[0]'
   error: |
     function not defined: has/2
+  exit_code: 3
 
 - name: has function type error
   args:
@@ -1361,6 +1364,7 @@
   input: '{}'
   error: |
     function not defined: abc/0
+  exit_code: 3
 
 - name: variable not defined
   args:
@@ -1368,6 +1372,7 @@
   input: '{}'
   error: |
     variable not defined: $abc
+  exit_code: 3
 
 - name: argument count error
   args:
@@ -1375,6 +1380,7 @@
   input: '{}'
   error: |
     function not defined: map/2
+  exit_code: 3
 
 - name: function declaration
   args:
@@ -1483,6 +1489,7 @@
   input: '{}'
   error: |
     function not defined: f/0
+  exit_code: 3
 
 - name: function declaration name error
   args:
@@ -1493,6 +1500,7 @@
     invalid query: def $f: .; $f
         def $f: .; $f
             ^  unexpected token "$f"
+  exit_code: 3
 
 - name: add, subtract, multiply, divide, modulo numbers
   args:
@@ -1822,6 +1830,7 @@
     invalid query: . == . == .
         . == . == .
                ^  unexpected token "=="
+  exit_code: 3
 
 - name: logical operators
   args:
@@ -2128,6 +2137,7 @@
     invalid query: label foo | .
         label foo | .
               ^  unexpected "foo" (expected <variable>)
+  exit_code: 3
 
 - name: label not defined error for break syntax
   args:
@@ -2144,6 +2154,7 @@
     invalid query: label $x | break x
         label $x | break x
                          ^  unexpected "x" (expected <variable>)
+  exit_code: 3
 
 - name: string interpolation
   args:
@@ -2198,6 +2209,7 @@
     invalid query in string interpolation: 1 +
         1 +
           ^  unexpected token "+"
+  exit_code: 3
 
 - name: tojson function
   args:
@@ -2268,6 +2280,7 @@
     invalid query: .foo as foo | {$bar}
         .foo as foo | {$bar}
              ^  unexpected token "as"
+  exit_code: 3
 
 - name: variable name not found error
   args:
@@ -2275,6 +2288,7 @@
   input: '{ "foo": 10 }'
   error: |
     variable not defined: $bar
+  exit_code: 3
 
 - name: binding an array
   args:
@@ -2475,6 +2489,7 @@
   input: 0
   error: |
     variable not defined: $i
+  exit_code: 3
 
 - name: binding variable scope error in array
   args:
@@ -2482,6 +2497,7 @@
   input: 0
   error: |
     variable not defined: $i
+  exit_code: 3
 
 - name: binding variable scope error in object
   args:
@@ -2489,6 +2505,7 @@
   input: 0
   error: |
     variable not defined: $i
+  exit_code: 3
 
 - name: binding variable scope error in object key
   args:
@@ -2496,6 +2513,7 @@
   input: '"x"'
   error: |
     variable not defined: $i
+  exit_code: 3
 
 - name: function scope in parenthesis
   args:
@@ -2538,6 +2556,7 @@
   input: 0
   error: |
     function not defined: f
+  exit_code: 3
 
 - name: function scope error in array
   args:
@@ -2545,6 +2564,7 @@
   input: 0
   error: |
     function not defined: f
+  exit_code: 3
 
 - name: function scope error in object
   args:
@@ -2552,6 +2572,7 @@
   input: 0
   error: |
     function not defined: f
+  exit_code: 3
 
 - name: function scope error in object key
   args:
@@ -2559,6 +2580,7 @@
   input: '"x"'
   error: |
     function not defined: f
+  exit_code: 3
 
 - name: first/0, last/0 functions
   args:
@@ -3659,6 +3681,7 @@
   input: 'null'
   error: |
     function not defined: env/1
+  exit_code: 3
 
 - name: match function
   args:
@@ -3920,6 +3943,7 @@
     - '@foo'
   error: |
     format not defined: @foo
+  exit_code: 3
 
 - name: destructuring alternative operator
   args:
@@ -4449,6 +4473,7 @@
     invalid query: >abc
         >abc
         ^  unexpected ">"
+  exit_code: 3
 
 - name: invalid query
   args:
@@ -4458,6 +4483,7 @@
     invalid query: .abc[
         .abc[
             ^  unexpected token "["
+  exit_code: 3
 
 - name: invalid query
   args:
@@ -4467,6 +4493,7 @@
     invalid query: [ .[] | { .id } ]
         [ .[] | { .id } ]
               ^  unexpected "|" (expected "]")
+  exit_code: 3
 
 - name: invalid query
   args:
@@ -4476,6 +4503,7 @@
     invalid query: if 0then. else. end
         if 0then. else. end
            ^  invalid token '0'
+  exit_code: 3
 
 - name: invalid multiple line query
   args:
@@ -4489,6 +4517,7 @@
     invalid query: <arg>:3
         3 |   | { id } }
                        ^  unexpected "}" (expected "]")
+  exit_code: 3
 
 - name: invalid query in file
   args:
@@ -4498,6 +4527,7 @@
     invalid query: testdata/2.jq:3
         3 |   bar, []
                  ^  unexpected "," (expected "}")
+  exit_code: 3
 
 - name: query file not found
   args:
@@ -4673,6 +4703,7 @@
     - 'include "m"; f'
   input: 0
   error: 'compile error: module not found: "m"'
+  exit_code: 3
 
 - name: module directory option function error
   args:
@@ -4681,6 +4712,7 @@
     - 'include "5"; i'
   input: 0
   error: 'function not defined: i/0'
+  exit_code: 3
 
 - name: module directory option variable error
   args:
@@ -4689,6 +4721,7 @@
     - 'include "4"; $x'
   input: 0
   error: 'compile error: variable not defined: $x'
+  exit_code: 3
 
 - name: module directory option variable name conflict
   args:
@@ -4711,6 +4744,7 @@
     invalid json: testdata/4.json
           bar
           ^  invalid character 'b' looking for beginning of value
+  exit_code: 3
 
 - name: module directory option with same alias name
   args:
@@ -4741,6 +4775,7 @@
     invalid query in module: testdata/7.jq:1
         1 | def f: 1 +
                      ^  unexpected "+" (expected ";")
+  exit_code: 3
 
 - name: module directive
   args:
@@ -4800,8 +4835,7 @@
     - '.'
   error: |
     expected 2 arguments for flag `--arg', but got option `--null-input'
-  exit_code:
-    2
+  exit_code: 2
 
 - name: arg option error
   args:
@@ -4811,6 +4845,7 @@
     - '.'
   error: |
     invalid variable name: $f.oo
+  exit_code: 3
 
 - name: argjson option
   args:
@@ -4856,6 +4891,7 @@
     - '.'
   error: |
     invalid variable name: $0x
+  exit_code: 3
 
 - name: argjson option parse error
   args:
@@ -4926,16 +4962,14 @@
   input: 'null'
   expected: |
     null
-  exit_code:
-    1
+  exit_code: 1
 
 - name: exit status option
   args:
     - '-e'
     - 'empty'
   input: 'null'
-  exit_code:
-    4
+  exit_code: 4
 
 - name: exit status long option
   args:
@@ -4944,8 +4978,7 @@
   input: 'false'
   expected: |
     false
-  exit_code:
-    1
+  exit_code: 1
 
 - name: exit status long option
   args:
@@ -4972,16 +5005,14 @@
   input: 'false'
   error: |
     error: false
-  exit_code:
-    5
+  exit_code: 5
 
 - name: exit status long option with error function
   args:
     - '--exit-status'
     - 'error'
   input: 'null'
-  exit_code:
-    4
+  exit_code: 4
 
 - name: invalid option error
   args:
@@ -4989,5 +5020,4 @@
     - '.'
   error: |
     unknown flag `q'
-  exit_code:
-    2
+  exit_code: 2

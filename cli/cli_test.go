@@ -67,7 +67,7 @@ func TestCliRun(t *testing.T) {
 					assert.Equal(t, exitCodeOK, code)
 				} else if tc.ExitCode != 0 {
 					assert.Equal(t, tc.ExitCode, code)
-				} else if code != exitCodeCompileErr {
+				} else {
 					assert.Equal(t, exitCodeDefaultErr, code)
 				}
 				assert.Equal(t, tc.Expected, outStream.String())
