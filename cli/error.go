@@ -26,7 +26,7 @@ func (err *emptyError) ExitCode() int {
 	if err, ok := err.err.(interface{ ExitCode() int }); ok {
 		return err.ExitCode()
 	}
-	return exitCodeErr
+	return exitCodeDefaultErr
 }
 
 type exitCodeError struct {
@@ -54,7 +54,7 @@ func (err *flagParseError) Error() string {
 }
 
 func (err *flagParseError) ExitCode() int {
-	return 2
+	return exitCodeFlagParseErr
 }
 
 type compileError struct {
@@ -66,7 +66,7 @@ func (err *compileError) Error() string {
 }
 
 func (err *compileError) ExitCode() int {
-	return 3
+	return exitCodeCompileErr
 }
 
 type queryParseError struct {
@@ -98,7 +98,7 @@ func (err *queryParseError) Error() string {
 }
 
 func (err *queryParseError) ExitCode() int {
-	return 3
+	return exitCodeCompileErr
 }
 
 type jsonParseError struct {

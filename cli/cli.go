@@ -28,7 +28,11 @@ var revision = "HEAD"
 
 const (
 	exitCodeOK = iota
-	exitCodeErr
+	exitCodeFalsyErr
+	exitCodeFlagParseErr
+	exitCodeCompileErr
+	exitCodeNoValueErr
+	exitCodeDefaultErr
 )
 
 type cli struct {
@@ -84,7 +88,7 @@ func (cli *cli) run(args []string) int {
 		if err, ok := err.(interface{ ExitCode() int }); ok {
 			return err.ExitCode()
 		}
-		return exitCodeErr
+		return exitCodeDefaultErr
 	}
 	return exitCodeOK
 }
@@ -174,7 +178,7 @@ Synopsis:
 		args = args[1:]
 	}
 	if opts.ExitStatus {
-		cli.exitCodeError = &exitCodeError{4}
+		cli.exitCodeError = &exitCodeError{exitCodeNoValueErr}
 		defer func() {
 			if er, ok := err.(interface{ ExitCode() int }); !ok || er.ExitCode() == 0 {
 				err = cli.exitCodeError
@@ -367,9 +371,9 @@ func (cli *cli) printValues(v gojq.Iter) error {
 		}
 		if cli.exitCodeError != nil {
 			if x == nil || x == false {
-				cli.exitCodeError = &exitCodeError{1}
+				cli.exitCodeError = &exitCodeError{exitCodeFalsyErr}
 			} else {
-				cli.exitCodeError = &exitCodeError{0}
+				cli.exitCodeError = &exitCodeError{exitCodeOK}
 			}
 		}
 		if cli.outputYAMLSeparator {
