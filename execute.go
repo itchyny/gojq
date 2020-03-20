@@ -89,11 +89,11 @@ loop:
 					if env.backtrack <= code.v.(int) {
 						env.pop()
 						if er, ok := err.(*exitCodeError); ok {
-							env.push(er.v)
+							env.push(er.value)
 							if er.halt {
 								break loop
 							}
-							if er.v == nil {
+							if er.value == nil {
 								backtrack, err = true, nil
 								break loop
 							}

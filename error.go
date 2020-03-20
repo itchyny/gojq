@@ -74,25 +74,25 @@ func (err *funcTypeError) Error() string {
 }
 
 type exitCodeError struct {
-	v    interface{}
-	c    int
-	halt bool
+	value interface{}
+	code  int
+	halt  bool
 }
 
 func (err *exitCodeError) Error() string {
-	if s, ok := err.v.(string); ok {
+	if s, ok := err.value.(string); ok {
 		return fmt.Sprintf("error: %s", s)
 	}
-	bs, _ := json.Marshal(normalizeValues(err.v))
+	bs, _ := json.Marshal(normalizeValues(err.value))
 	return fmt.Sprintf("error: %s", string(bs))
 }
 
 func (err *exitCodeError) IsEmptyError() bool {
-	return err.v == nil
+	return err.value == nil
 }
 
 func (err *exitCodeError) ExitCode() int {
-	return err.c
+	return err.code
 }
 
 type funcContainsError struct {
