@@ -53,6 +53,10 @@ func (err *compileError) Error() string {
 	return "compile error: " + err.err.Error()
 }
 
+func (err *compileError) ExitCode() int {
+	return 3
+}
+
 type queryParseError struct {
 	typ, fname, contents string
 	err                  error
@@ -79,6 +83,10 @@ func (err *queryParseError) Error() string {
 	}
 	fmt.Fprintf(&s, "invalid %s: %s: %s", err.typ, err.fname, err.err)
 	return s.String()
+}
+
+func (err *queryParseError) ExitCode() int {
+	return 3
 }
 
 type jsonParseError struct {
