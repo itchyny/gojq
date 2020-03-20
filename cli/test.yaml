@@ -3248,7 +3248,7 @@
     - '.foo[] | error'
   input: '{ "foo": ["error message", "bar"] }'
   error: |
-    error message
+    error: error message
   exit_code: 5
 
 - name: error/0 function and try catch
@@ -3258,27 +3258,30 @@
   expected: |
     "foo"
 
-- name: error/0 function error
+- name: error/0 function and try catch
   args:
-    - '.foo | error'
-  input: '{ "foo": 1 }'
-  error: |
-    error cannot be applied to: number (1)
+    - 'null,1,[],{} | try error catch .'
+  input: '0'
+  expected: |
+    1
+    []
+    {}
 
 - name: error/1 function
   args:
     - '.foo | error("error message")'
   input: '{ "foo": 1 }'
   error: |
-    error message
+    error: error message
   exit_code: 5
 
-- name: error/1 function error
+- name: error/1 function
   args:
     - '.foo | error({})'
   input: '{ "foo": "error" }'
   error: |
-    error cannot be applied to: object ({})
+    error: {}
+  exit_code: 5
 
 - name: path function identity
   args:

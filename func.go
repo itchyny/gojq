@@ -1322,10 +1322,7 @@ func funcError(v interface{}, args []interface{}) interface{} {
 	if len(args) > 0 {
 		v = args[0]
 	}
-	if v, ok := v.(string); ok {
-		return &exitCodeError{v, 5}
-	}
-	return &funcTypeError{"error", v}
+	return &exitCodeError{v, 5}
 }
 
 func funcHalt(interface{}) interface{} {
