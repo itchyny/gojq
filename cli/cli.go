@@ -260,12 +260,12 @@ func (cli *cli) processRaw(fname string, in io.Reader, code *gojq.Code) error {
 		if err != nil {
 			return err
 		}
-		return cli.printValue(code.Run(string(xs), cli.argvalues...))
+		return cli.printValues(code.Run(string(xs), cli.argvalues...))
 	}
 	s := bufio.NewScanner(in)
 	var err error
 	for s.Scan() {
-		if er := cli.printValue(code.Run(s.Text(), cli.argvalues...)); er != nil {
+		if er := cli.printValues(code.Run(s.Text(), cli.argvalues...)); er != nil {
 			cli.printError(er)
 			err = &emptyError{er}
 		}
@@ -286,7 +286,7 @@ func (cli *cli) processJSON(fname string, in io.Reader, code *gojq.Code) error {
 		if err := dec.Decode(&v); err != nil {
 			if err == io.EOF {
 				if cli.inputSlurp {
-					return cli.printValue(code.Run(vs, cli.argvalues...))
+					return cli.printValues(code.Run(vs, cli.argvalues...))
 				}
 				return nil
 			}
@@ -296,7 +296,7 @@ func (cli *cli) processJSON(fname string, in io.Reader, code *gojq.Code) error {
 			vs = append(vs, v)
 			continue
 		}
-		if err := cli.printValue(code.Run(v, cli.argvalues...)); err != nil {
+		if err := cli.printValues(code.Run(v, cli.argvalues...)); err != nil {
 			return err
 		}
 	}
@@ -311,7 +311,7 @@ func (cli *cli) processYAML(fname string, in io.Reader, code *gojq.Code) error {
 		if err := dec.Decode(&v); err != nil {
 			if err == io.EOF {
 				if cli.inputSlurp {
-					return cli.printValue(code.Run(vs, cli.argvalues...))
+					return cli.printValues(code.Run(vs, cli.argvalues...))
 				}
 				return nil
 			}
@@ -322,13 +322,13 @@ func (cli *cli) processYAML(fname string, in io.Reader, code *gojq.Code) error {
 			vs = append(vs, v)
 			continue
 		}
-		if err := cli.printValue(code.Run(v, cli.argvalues...)); err != nil {
+		if err := cli.printValues(code.Run(v, cli.argvalues...)); err != nil {
 			return err
 		}
 	}
 }
 
-func (cli *cli) printValue(v gojq.Iter) error {
+func (cli *cli) printValues(v gojq.Iter) error {
 	m := cli.createMarshaler()
 	for {
 		m, outStream := m, cli.outStream
