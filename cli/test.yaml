@@ -3995,6 +3995,19 @@
       "foo": 42
     }
 
+- name: NO_COLOR environment variable
+  args:
+    - --color-output
+    - '.'
+  input: |
+    { "foo": 42 }
+  env:
+    - NO_COLOR=1
+  expected: |
+    {
+      "foo": 42
+    }
+
 - name: indent option
   args:
     - --indent

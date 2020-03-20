@@ -14,6 +14,7 @@ import (
 
 func init() {
 	addDefaultModulePath = false
+	os.Setenv("NO_COLOR", "")
 }
 
 func setLocation(loc *time.Location) func() {
@@ -32,6 +33,7 @@ func TestCliRun(t *testing.T) {
 		Name     string
 		Args     []string
 		Input    string
+		Env      []string
 		Expected string
 		Error    string
 		ExitCode int `yaml:"exit_code"`
@@ -47,6 +49,12 @@ func TestCliRun(t *testing.T) {
 				inStream:  strings.NewReader(tc.Input),
 				outStream: outStream,
 				errStream: errStream,
+			}
+			for _, env := range tc.Env {
+				xs := strings.SplitN(env, "=", 2)
+				k, v := xs[0], xs[1]
+				defer func(v string) { os.Setenv(k, v) }(os.Getenv(k))
+				os.Setenv(k, v)
 			}
 			code := cli.run(tc.Args)
 			if tc.Error == "" {

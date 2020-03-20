@@ -114,11 +114,12 @@ Synopsis:
 	}
 	cli.outputCompact, cli.outputRaw, cli.outputJoin, cli.outputYAML, cli.outputIndent =
 		opts.OutputCompact, opts.OutputRaw, opts.OutputJoin, opts.OutputYAML, opts.OutputIndent
-	if opts.OutputColor || opts.OutputMono {
-		defer func(x bool) { color.NoColor = x }(color.NoColor)
+	defer func(x bool) { color.NoColor = x }(color.NoColor)
+	if os.Getenv("NO_COLOR") != "" {
+		color.NoColor = true
+	} else if opts.OutputColor || opts.OutputMono {
 		color.NoColor = opts.OutputMono
 	} else {
-		defer func(x bool) { color.NoColor = x }(color.NoColor)
 		color.NoColor = !isTTY(cli.outStream)
 	}
 	if i := cli.outputIndent; i != nil {
