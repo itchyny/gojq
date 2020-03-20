@@ -3251,6 +3251,11 @@
     error: error message
   exit_code: 5
 
+- name: error/0 function with null
+  args:
+    - 'error'
+  input: 'null'
+
 - name: error/0 function and try catch
   args:
     - 'try error catch .'
@@ -3282,6 +3287,11 @@
   error: |
     error: {}
   exit_code: 5
+
+- name: error/1 function with null
+  args:
+    - 'error(null)'
+  input: '1'
 
 - name: path function identity
   args:
