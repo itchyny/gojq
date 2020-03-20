@@ -50,6 +50,7 @@ type cli struct {
 	argvalues []interface{}
 
 	outputYAMLSeparator bool
+	exitCodeError       error
 }
 
 type flagopts struct {
@@ -71,6 +72,7 @@ type flagopts struct {
 	ArgsJSON      map[string]string `long:"argjson" description:"set variable to JSON value" count:"2" unquote:"false"`
 	SlurpFile     map[string]string `long:"slurpfile" description:"set variable to the JSON contents of the file" count:"2" unquote:"false"`
 	RawFile       map[string]string `long:"rawfile" description:"set variable to the contents of the file" count:"2" unquote:"false"`
+	ExitStatus    bool              `short:"e" long:"exit-status" description:"exit 1 when the last value is false or null"`
 	Version       bool              `short:"v" long:"version" description:"print version"`
 }
 
@@ -87,9 +89,9 @@ func (cli *cli) run(args []string) int {
 	return exitCodeOK
 }
 
-func (cli *cli) runInternal(args []string) error {
+func (cli *cli) runInternal(args []string) (err error) {
 	var opts flagopts
-	args, err := flags.NewParser(
+	args, err = flags.NewParser(
 		&opts, flags.HelpFlag|flags.PassDoubleDash,
 	).ParseArgs(args)
 	if err != nil {
@@ -170,6 +172,14 @@ Synopsis:
 	} else {
 		arg, fname = strings.TrimSpace(args[0]), "<arg>"
 		args = args[1:]
+	}
+	if opts.ExitStatus {
+		cli.exitCodeError = &exitCodeError{4}
+		defer func() {
+			if er, ok := err.(interface{ ExitCode() int }); !ok || er.ExitCode() == 0 {
+				err = cli.exitCodeError
+			}
+		}()
 	}
 	query, err := gojq.Parse(arg)
 	if err != nil {
@@ -354,6 +364,13 @@ func (cli *cli) printValues(v gojq.Iter) error {
 		xs, err := m.Marshal(x)
 		if err != nil {
 			return err
+		}
+		if cli.exitCodeError != nil {
+			if x == nil || x == false {
+				cli.exitCodeError = &exitCodeError{1}
+			} else {
+				cli.exitCodeError = &exitCodeError{0}
+			}
 		}
 		if cli.outputYAMLSeparator {
 			outStream.Write([]byte("---\n"))

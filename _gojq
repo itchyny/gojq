@@ -21,6 +21,7 @@ _gojq()
     '(--argjson)'--argjson'[set variable to JSON value]' \
     '(--slurpfile)'--slurpfile'[set variable to the JSON contents of the file]' \
     '(--rawfile)'--rawfile'[set variable to the contents of the file]' \
+    '(-e --exit-status)'{-e,--exit-status}'[exit 1 when the last value is false or null]' \
     '(-v --version)'{-v,--version}'[print version]' \
     '(-h --help)'{-h,--help}'[print help]' \
     && ret=0

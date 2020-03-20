@@ -29,6 +29,22 @@ func (err *emptyError) ExitCode() int {
 	return exitCodeErr
 }
 
+type exitCodeError struct {
+	code int
+}
+
+func (err *exitCodeError) Error() string {
+	return fmt.Sprintf("exit code: %d", err.code)
+}
+
+func (err *exitCodeError) IsEmptyError() bool {
+	return true
+}
+
+func (err *exitCodeError) ExitCode() int {
+	return err.code
+}
+
 type compileError struct {
 	err error
 }

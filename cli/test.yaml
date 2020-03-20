@@ -4916,3 +4916,67 @@
     - '{ $foo }'
   input: 'null'
   error: 'open testdata/6.json:'
+
+- name: exit status option
+  args:
+    - '-e'
+    - '.'
+  input: 'null'
+  expected: |
+    null
+  exit_code:
+    1
+
+- name: exit status option
+  args:
+    - '-e'
+    - 'empty'
+  input: 'null'
+  exit_code:
+    4
+
+- name: exit status long option
+  args:
+    - '--exit-status'
+    - '.'
+  input: 'false'
+  expected: |
+    false
+  exit_code:
+    1
+
+- name: exit status long option
+  args:
+    - '--exit-status'
+    - 'not'
+  input: 'false'
+  expected: |
+    true
+
+- name: exit status long option
+  args:
+    - '--exit-status'
+    - '1,not,2'
+  input: 'false'
+  expected: |
+    1
+    true
+    2
+
+- name: exit status long option with error function
+  args:
+    - '--exit-status'
+    - 'error'
+  input: 'false'
+  error: |
+    error: false
+  exit_code:
+    5
+
+- name: exit status long option with error function
+  args:
+    - '--exit-status'
+    - 'error'
+  input: 'null'
+  exit_code:
+    4
