@@ -3249,6 +3249,14 @@
   input: '{ "foo": ["error message", "bar"] }'
   error: |
     error message
+  exit_code: 5
+
+- name: error/0 function and try catch
+  args:
+    - 'try error catch .'
+  input: '"foo"'
+  expected: |
+    "foo"
 
 - name: error/0 function error
   args:
@@ -3263,6 +3271,7 @@
   input: '{ "foo": 1 }'
   error: |
     error message
+  exit_code: 5
 
 - name: error/1 function error
   args:

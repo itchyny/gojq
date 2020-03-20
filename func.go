@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 	"math/big"
@@ -1320,35 +1319,25 @@ func compileRegexp(re, flags string) (*regexp.Regexp, error) {
 }
 
 func funcError(v interface{}, args []interface{}) interface{} {
-	if len(args) == 0 {
-		switch v := v.(type) {
-		case string:
-			return errors.New(v)
-		default:
-			return &funcTypeError{"error", v}
-		}
-	} else if len(args) == 1 {
-		switch v := args[0].(type) {
-		case string:
-			return errors.New(v)
-		default:
-			return &funcTypeError{"error", v}
-		}
-	} else {
-		return nil
+	if len(args) > 0 {
+		v = args[0]
 	}
+	if v, ok := v.(string); ok {
+		return &exitCodeError{v, 5}
+	}
+	return &funcTypeError{"error", v}
 }
 
 func funcHalt(interface{}) interface{} {
-	return &funcHaltErrorError{}
+	return &exitCodeError{}
 }
 
 func funcHaltError(v interface{}, args []interface{}) interface{} {
 	if len(args) != 1 {
-		return &funcHaltErrorError{v, 5}
+		return &exitCodeError{v, 5}
 	}
 	if x, ok := toInt(args[0]); ok {
-		return &funcHaltErrorError{v, x}
+		return &exitCodeError{v, x}
 	}
 	return &funcTypeError{"halt_error", args[0]}
 }

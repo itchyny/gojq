@@ -88,7 +88,11 @@ loop:
 				if code.op == opforkopt {
 					if env.backtrack <= code.v.(int) {
 						env.pop()
-						env.push(err.Error())
+						if er, ok := err.(*exitCodeError); ok {
+							env.push(er.v)
+						} else {
+							env.push(err.Error())
+						}
 					} else {
 						break loop
 					}

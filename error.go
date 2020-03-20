@@ -73,12 +73,12 @@ func (err *funcTypeError) Error() string {
 	return fmt.Sprintf("%s cannot be applied to: %s", err.name, typeErrorPreview(err.v))
 }
 
-type funcHaltErrorError struct {
+type exitCodeError struct {
 	v interface{}
 	c int
 }
 
-func (err *funcHaltErrorError) Error() string {
+func (err *exitCodeError) Error() string {
 	if s, ok := err.v.(string); ok {
 		return fmt.Sprintf("error: %s", s)
 	}
@@ -86,11 +86,11 @@ func (err *funcHaltErrorError) Error() string {
 	return fmt.Sprintf("error: %s", string(bs))
 }
 
-func (err *funcHaltErrorError) IsEmptyError() bool {
+func (err *exitCodeError) IsEmptyError() bool {
 	return err.v == nil
 }
 
-func (err *funcHaltErrorError) ExitCode() int {
+func (err *exitCodeError) ExitCode() int {
 	return err.c
 }
 
