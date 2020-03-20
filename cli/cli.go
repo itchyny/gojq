@@ -108,7 +108,7 @@ Synopsis:
 			fmt.Fprintln(cli.outStream, err.Error())
 			return nil
 		}
-		return err
+		return &flagParseError{err}
 	}
 	if opts.Version {
 		fmt.Fprintf(cli.outStream, "%s %s (rev: %s/%s)\n", name, version, revision, runtime.Version())

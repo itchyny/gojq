@@ -4800,6 +4800,8 @@
     - '.'
   error: |
     expected 2 arguments for flag `--arg', but got option `--null-input'
+  exit_code:
+    2
 
 - name: arg option error
   args:
@@ -4980,3 +4982,12 @@
   input: 'null'
   exit_code:
     4
+
+- name: invalid option error
+  args:
+    - '-q'
+    - '.'
+  error: |
+    unknown flag `q'
+  exit_code:
+    2

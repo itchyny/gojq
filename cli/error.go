@@ -45,6 +45,18 @@ func (err *exitCodeError) ExitCode() int {
 	return err.code
 }
 
+type flagParseError struct {
+	err error
+}
+
+func (err *flagParseError) Error() string {
+	return err.err.Error()
+}
+
+func (err *flagParseError) ExitCode() int {
+	return 2
+}
+
 type compileError struct {
 	err error
 }
