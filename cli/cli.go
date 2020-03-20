@@ -78,9 +78,7 @@ var addDefaultModulePath = true
 
 func (cli *cli) run(args []string) int {
 	if err := cli.runInternal(args); err != nil {
-		if er, ok := err.(interface{ IsEmptyError() bool }); !ok || !er.IsEmptyError() {
-			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
-		}
+		cli.printError(err)
 		if err, ok := err.(interface{ ExitCode() int }); ok {
 			return err.ExitCode()
 		}
@@ -208,10 +206,8 @@ Synopsis:
 	}
 	for _, arg := range args {
 		if er := cli.processFile(arg, code); er != nil {
-			if _, ok := er.(*emptyError); !ok {
-				fmt.Fprintf(cli.errStream, "%s: %s\n", name, er)
-			}
-			err = &emptyError{}
+			cli.printError(er)
+			err = &emptyError{er}
 		}
 	}
 	return err
@@ -270,8 +266,8 @@ func (cli *cli) processRaw(fname string, in io.Reader, code *gojq.Code) error {
 	var err error
 	for s.Scan() {
 		if er := cli.printValue(code.Run(s.Text(), cli.argvalues...)); er != nil {
-			fmt.Fprintf(cli.errStream, "%s: %s\n", name, er)
-			err = &emptyError{}
+			cli.printError(er)
+			err = &emptyError{er}
 		}
 	}
 	if err := s.Err(); err != nil {
@@ -395,6 +391,12 @@ func (cli *cli) createMarshaler() marshaler {
 		return &rawMarshaler{f}
 	}
 	return f
+}
+
+func (cli *cli) printError(err error) {
+	if er, ok := err.(interface{ IsEmptyError() bool }); !ok || !er.IsEmptyError() {
+		fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+	}
 }
 
 // isTTY attempts to determine whether an output is a TTY.

@@ -10,14 +10,23 @@ import (
 	"github.com/mattn/go-runewidth"
 )
 
-type emptyError struct{}
+type emptyError struct {
+	err error
+}
 
-func (emptyError) Error() string {
+func (*emptyError) Error() string {
 	return ""
 }
 
-func (emptyError) IsEmptyError() bool {
+func (*emptyError) IsEmptyError() bool {
 	return true
+}
+
+func (err *emptyError) ExitCode() int {
+	if err, ok := err.err.(interface{ ExitCode() int }); ok {
+		return err.ExitCode()
+	}
+	return exitCodeErr
 }
 
 type compileError struct {
