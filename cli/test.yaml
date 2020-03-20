@@ -3975,6 +3975,20 @@
   input: '["foo",[{},{}],1,[2,3]]'
   expected: "foo[\n  {},\n  {}\n]1[\n  2,\n  3\n]"
 
+- name: nul output option
+  args:
+    - '-0'
+    - '.[]'
+  input: '["foo",1,2,3]'
+  expected: "foo\x001\x002\x003\x00"
+
+- name: nul output long option
+  args:
+    - --nul-output
+    - '.[]'
+  input: '["foo",[{},{}],1,[2,3]]'
+  expected: "foo\x00[\n  {},\n  {}\n]\x001\x00[\n  2,\n  3\n]\x00"
+
 - name: color output option
   args:
     - -C

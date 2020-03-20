@@ -39,6 +39,7 @@ type cli struct {
 	outputCompact bool
 	outputRaw     bool
 	outputJoin    bool
+	outputNul     bool
 	outputYAML    bool
 	outputIndent  *int
 	inputRaw      bool
@@ -55,6 +56,7 @@ type flagopts struct {
 	OutputCompact bool              `short:"c" long:"compact-output" description:"compact output"`
 	OutputRaw     bool              `short:"r" long:"raw-output" description:"output raw strings"`
 	OutputJoin    bool              `short:"j" long:"join-output" description:"stop printing a newline after each output"`
+	OutputNul     bool              `short:"0" long:"nul-output" description:"print NUL after each ouput"`
 	OutputColor   bool              `short:"C" long:"color-output" description:"colorize output even if piped"`
 	OutputMono    bool              `short:"M" long:"monochrome-output" description:"stop colorizing output"`
 	OutputYAML    bool              `long:"yaml-output" description:"output by YAML"`
@@ -112,8 +114,8 @@ Synopsis:
 		fmt.Fprintf(cli.outStream, "%s %s (rev: %s/%s)\n", name, version, revision, runtime.Version())
 		return nil
 	}
-	cli.outputCompact, cli.outputRaw, cli.outputJoin, cli.outputYAML, cli.outputIndent =
-		opts.OutputCompact, opts.OutputRaw, opts.OutputJoin, opts.OutputYAML, opts.OutputIndent
+	cli.outputCompact, cli.outputRaw, cli.outputJoin, cli.outputNul, cli.outputYAML, cli.outputIndent =
+		opts.OutputCompact, opts.OutputRaw, opts.OutputJoin, opts.OutputNul, opts.OutputYAML, opts.OutputIndent
 	defer func(x bool) { color.NoColor = x }(color.NoColor)
 	if os.Getenv("NO_COLOR") != "" {
 		color.NoColor = true
@@ -363,7 +365,11 @@ func (cli *cli) printValue(v gojq.Iter) error {
 		outStream.Write(xs)
 		cli.outputYAMLSeparator = cli.outputYAML
 		if !cli.outputJoin && !cli.outputYAML {
-			outStream.Write([]byte{'\n'})
+			if cli.outputNul {
+				outStream.Write([]byte{'\x00'})
+			} else {
+				outStream.Write([]byte{'\n'})
+			}
 		}
 	}
 	return nil
@@ -385,7 +391,7 @@ func (cli *cli) createMarshaler() marshaler {
 			f.Indent = *i
 		}
 	}
-	if cli.outputRaw || cli.outputJoin {
+	if cli.outputRaw || cli.outputJoin || cli.outputNul {
 		return &rawMarshaler{f}
 	}
 	return f
