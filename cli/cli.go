@@ -213,7 +213,7 @@ Synopsis:
 		return &compileError{err}
 	}
 	if opts.InputNull {
-		cli.inputRaw, cli.inputSlurp = false, false
+		cli.inputRaw, cli.inputSlurp, cli.inputStream = false, false, false
 		return cli.process("<null>", bytes.NewReader([]byte("null")), code)
 	}
 

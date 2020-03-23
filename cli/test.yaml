@@ -4339,6 +4339,15 @@
     [["z",0]]
     [["z"]]
 
+- name: stream option with null input option
+  args:
+    - -n
+    - --stream
+    - .
+  input: '1'
+  expected: |
+    null
+
 - name: yaml input option
   args:
     - --yaml-input
