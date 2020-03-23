@@ -48,6 +48,7 @@ type cli struct {
 	outputIndent  *int
 	inputRaw      bool
 	inputSlurp    bool
+	inputStream   bool
 	inputYAML     bool
 
 	argnames  []string
@@ -69,6 +70,7 @@ type flagopts struct {
 	InputNull     bool              `short:"n" long:"null-input" description:"use null as input value"`
 	InputRaw      bool              `short:"R" long:"raw-input" description:"read input as raw strings"`
 	InputSlurp    bool              `short:"s" long:"slurp" description:"read all inputs into an array"`
+	InputStream   bool              `long:"stream" description:"parse input in stream fashon"`
 	InputYAML     bool              `long:"yaml-input" description:"read input as YAML"`
 	FromFile      string            `short:"f" long:"from-file" description:"load query from file"`
 	ModulePaths   []string          `short:"L" description:"directory to search modules from"`
@@ -135,7 +137,7 @@ Synopsis:
 			return fmt.Errorf("negative indentation count: %d", *i)
 		}
 	}
-	cli.inputRaw, cli.inputSlurp, cli.inputYAML = opts.InputRaw, opts.InputSlurp, opts.InputYAML
+	cli.inputRaw, cli.inputSlurp, cli.inputStream, cli.inputYAML = opts.InputRaw, opts.InputSlurp, opts.InputStream, opts.InputYAML
 	for k, v := range opts.Args {
 		cli.argnames = append(cli.argnames, "$"+k)
 		cli.argvalues = append(cli.argvalues, v)
@@ -259,13 +261,16 @@ func (cli *cli) processFile(fname string, code *gojq.Code) error {
 }
 
 func (cli *cli) process(fname string, in io.Reader, code *gojq.Code) error {
-	if cli.inputRaw {
+	switch {
+	case cli.inputRaw:
 		return cli.processRaw(fname, in, code)
-	}
-	if cli.inputYAML {
+	case cli.inputStream:
+		return cli.processStream(fname, in, code)
+	case cli.inputYAML:
 		return cli.processYAML(fname, in, code)
+	default:
+		return cli.processJSON(fname, in, code)
 	}
-	return cli.processJSON(fname, in, code)
 }
 
 func (cli *cli) processRaw(fname string, in io.Reader, code *gojq.Code) error {
@@ -309,6 +314,25 @@ func (cli *cli) processJSON(fname string, in io.Reader, code *gojq.Code) error {
 		if cli.inputSlurp {
 			vs = append(vs, v)
 			continue
+		}
+		if err := cli.printValues(code.Run(v, cli.argvalues...)); err != nil {
+			return err
+		}
+	}
+}
+
+func (cli *cli) processStream(fname string, in io.Reader, code *gojq.Code) error {
+	var buf bytes.Buffer
+	dec := json.NewDecoder(io.TeeReader(in, &buf))
+	dec.UseNumber()
+	s := newJSONStream(dec)
+	for {
+		v, err := s.next()
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return &jsonParseError{fname, buf.String(), err}
 		}
 		if err := cli.printValues(code.Run(v, cli.argvalues...)); err != nil {
 			return err
