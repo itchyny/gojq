@@ -326,16 +326,23 @@ func (cli *cli) processStream(fname string, in io.Reader, code *gojq.Code) error
 	dec := json.NewDecoder(io.TeeReader(in, &buf))
 	dec.UseNumber()
 	s := newJSONStream(dec)
+	var n int64
 	for {
 		v, err := s.next()
 		if err != nil {
 			if err == io.EOF {
 				return nil
 			}
+			if err, ok := err.(*json.SyntaxError); ok {
+				err.Offset -= n
+			}
 			return &jsonParseError{fname, buf.String(), err}
 		}
 		if err := cli.printValues(code.Run(v, cli.argvalues...)); err != nil {
 			return err
+		}
+		if buf.Len() >= 256*1024 {
+			buf.Reset()
 		}
 	}
 }
