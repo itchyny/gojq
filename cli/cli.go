@@ -137,7 +137,8 @@ Synopsis:
 			return fmt.Errorf("negative indentation count: %d", *i)
 		}
 	}
-	cli.inputRaw, cli.inputSlurp, cli.inputStream, cli.inputYAML = opts.InputRaw, opts.InputSlurp, opts.InputStream, opts.InputYAML
+	cli.inputRaw, cli.inputSlurp, cli.inputStream, cli.inputYAML =
+		opts.InputRaw, opts.InputSlurp, opts.InputStream, opts.InputYAML
 	for k, v := range opts.Args {
 		cli.argnames = append(cli.argnames, "$"+k)
 		cli.argvalues = append(cli.argvalues, v)
@@ -216,7 +217,6 @@ Synopsis:
 		cli.inputRaw, cli.inputSlurp, cli.inputStream = false, false, false
 		return cli.process("<null>", bytes.NewReader([]byte("null")), code)
 	}
-
 	if len(args) == 0 {
 		return cli.process("<stdin>", cli.inStream, code)
 	}
