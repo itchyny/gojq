@@ -200,16 +200,26 @@ Synopsis:
 		}
 		modulePaths = []string{filepath.Join(homeDir, ".jq")}
 	}
-	code, err := gojq.Compile(query,
+	copts := []gojq.CompilerOption{
 		gojq.WithModuleLoader(&moduleLoader{modulePaths}),
 		gojq.WithEnvironLoader(os.Environ),
-		gojq.WithVariables(cli.argnames))
+		gojq.WithVariables(cli.argnames),
+	}
+	if opts.InputNull || len(args) > 0 {
+		iter := cli.createInputIter(args)
+		defer iter.Close()
+		copts = append(copts, gojq.WithInputIter(iter))
+	}
+	code, err := gojq.Compile(query, copts...)
 	if err != nil {
 		if err, ok := err.(interface {
 			QueryParseError() (string, string, string, error)
 		}); ok {
 			typ, name, query, err := err.QueryParseError()
 			return &queryParseError{typ, fname + ":" + name, query, err}
+		}
+		if err, ok := err.(interface{ IsInputNotAllowed() }); ok {
+			return &compileError{fmt.Errorf("%s without -n (--null-input)", err)}
 		}
 		return &compileError{err}
 	}
@@ -249,6 +259,13 @@ func slurpFile(name string) ([]interface{}, error) {
 		vals = append(vals, val)
 	}
 	return vals, nil
+}
+
+func (cli *cli) createInputIter(args []string) inputIter {
+	if len(args) == 0 {
+		return newSingleInputIter(cli.inStream, "<stdin>")
+	}
+	return newFilesInputIter(args)
 }
 
 func (cli *cli) processFile(fname string, code *gojq.Code) error {
