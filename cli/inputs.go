@@ -48,13 +48,14 @@ func (i *singleInputIter) Close() error {
 
 type filesInputIter struct {
 	fnames []string
-	iter   *singleInputIter
+	stream bool
+	iter   inputIter
 	file   *os.File
 	err    error
 }
 
-func newFilesInputIter(fnames []string) *filesInputIter {
-	return &filesInputIter{fnames: fnames}
+func newFilesInputIter(fnames []string, stream bool) *filesInputIter {
+	return &filesInputIter{fnames: fnames, stream: stream}
 }
 
 func (i *filesInputIter) Next() (interface{}, bool) {
@@ -73,7 +74,14 @@ func (i *filesInputIter) Next() (interface{}, bool) {
 			if i.err != nil {
 				return i.err, true
 			}
-			i.iter = newSingleInputIter(i.file, fname)
+			if i.iter != nil {
+				i.iter.Close()
+			}
+			if i.stream {
+				i.iter = newStreamInputIter(i.file, fname)
+			} else {
+				i.iter = newSingleInputIter(i.file, fname)
+			}
 		}
 		if v, ok := i.iter.Next(); ok {
 			return v, ok
@@ -91,5 +99,38 @@ func (i *filesInputIter) Close() error {
 		i.file = nil
 		i.err = io.EOF
 	}
+	return nil
+}
+
+type streamInputIter struct {
+	stream *jsonStream
+	fname  string
+	err    error
+}
+
+func newStreamInputIter(in io.Reader, fname string) *streamInputIter {
+	dec := json.NewDecoder(in)
+	dec.UseNumber()
+	return &streamInputIter{stream: newJSONStream(dec), fname: fname}
+}
+
+func (i *streamInputIter) Next() (interface{}, bool) {
+	if i.err != nil {
+		return nil, false
+	}
+	v, err := i.stream.next()
+	if err != nil {
+		if err == io.EOF {
+			i.err = err
+			return nil, false
+		}
+		i.err = &jsonParseError{i.fname, "", err}
+		return i.err, true
+	}
+	return v, true
+}
+
+func (i *streamInputIter) Close() error {
+	i.err = io.EOF
 	return nil
 }
