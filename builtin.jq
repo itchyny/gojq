@@ -278,6 +278,12 @@ def sub($re; str; $flags):
 def gsub($re; str): sub($re; str; "g");
 def gsub($re; str; $flags): sub($re; str; $flags + "g");
 
+def inputs:
+  try
+    repeat(input)
+  catch
+    if . == "break" then empty else error end;
+
 def INDEX(stream; idx_expr):
   reduce stream as $row ({}; .[$row|idx_expr|tostring] = $row);
 def INDEX(idx_expr): INDEX(.[]; idx_expr);
