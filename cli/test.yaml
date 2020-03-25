@@ -4985,10 +4985,10 @@
 
 - name: arg option
   args:
-    - '--arg'
+    - --arg
     - 'foo'
     - 'value 1'
-    - '--arg'
+    - --arg
     - 'bar'
     - '42'
     - '{ $foo, $bar }'
@@ -5001,9 +5001,9 @@
 
 - name: arg option error
   args:
-    - '--arg'
+    - --arg
     - 'foo'
-    - '--null-input'
+    - --null-input
     - '.'
   error: |
     expected 2 arguments for flag `--arg', but got option `--null-input'
@@ -5011,7 +5011,7 @@
 
 - name: arg option error
   args:
-    - '--arg'
+    - --arg
     - 'f.oo'
     - '10'
     - '.'
@@ -5021,10 +5021,10 @@
 
 - name: argjson option
   args:
-    - '--argjson'
+    - --argjson
     - 'foo'
     - '{ "foo": 42 }'
-    - '--argjson'
+    - --argjson
     - 'bar'
     - '10'
     - '{ $foo, $bar }'
@@ -5039,10 +5039,10 @@
 
 - name: arg and argjson options
   args:
-    - '--arg'
+    - --arg
     - 'foo'
     - '"false"'
-    - '--argjson'
+    - --argjson
     - 'bar'
     - '{ "bar": 24 }'
     - '{ $foo, $bar }'
@@ -5057,7 +5057,7 @@
 
 - name: argjson option error
   args:
-    - '--argjson'
+    - --argjson
     - '0x'
     - '0'
     - '.'
@@ -5067,7 +5067,7 @@
 
 - name: argjson option parse error
   args:
-    - '--argjson'
+    - --argjson
     - 'foo'
     - '{ foo }'
     - '.'
@@ -5078,7 +5078,7 @@
 
 - name: slurpfile option
   args:
-    - '--slurpfile'
+    - --slurpfile
     - 'foo'
     - 'testdata/7.json'
     - '{ $foo }'
@@ -5096,7 +5096,7 @@
 
 - name: slurpfile option error
   args:
-    - '--slurpfile'
+    - --slurpfile
     - 'foo'
     - 'testdata/1.jq'
     - '{ $foo }'
@@ -5108,7 +5108,7 @@
 
 - name: rawfile option
   args:
-    - '--rawfile'
+    - --rawfile
     - 'foo'
     - 'testdata/7.json'
     - '{ $foo }'
@@ -5120,7 +5120,7 @@
 
 - name: rawfile option error
   args:
-    - '--rawfile'
+    - --rawfile
     - 'foo'
     - 'testdata/6.json'
     - '{ $foo }'
@@ -5129,7 +5129,7 @@
 
 - name: exit status option
   args:
-    - '-e'
+    - -e
     - '.'
   input: 'null'
   expected: |
@@ -5138,14 +5138,14 @@
 
 - name: exit status option
   args:
-    - '-e'
+    - -e
     - 'empty'
   input: 'null'
   exit_code: 4
 
 - name: exit status long option
   args:
-    - '--exit-status'
+    - --exit-status
     - '.'
   input: 'false'
   expected: |
@@ -5154,7 +5154,7 @@
 
 - name: exit status long option
   args:
-    - '--exit-status'
+    - --exit-status
     - 'not'
   input: 'false'
   expected: |
@@ -5162,7 +5162,7 @@
 
 - name: exit status long option
   args:
-    - '--exit-status'
+    - --exit-status
     - '1,not,2'
   input: 'false'
   expected: |
@@ -5172,7 +5172,7 @@
 
 - name: exit status long option with error function
   args:
-    - '--exit-status'
+    - --exit-status
     - 'error'
   input: 'false'
   error: |
@@ -5181,14 +5181,14 @@
 
 - name: exit status long option with error function
   args:
-    - '--exit-status'
+    - --exit-status
     - 'error'
   input: 'null'
   exit_code: 4
 
 - name: invalid option error
   args:
-    - '-q'
+    - -q
     - '.'
   error: |
     unknown flag `q'
