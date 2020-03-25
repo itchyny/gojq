@@ -25,3 +25,10 @@ func WithVariables(variables []string) CompilerOption {
 		c.variables = variables
 	}
 }
+
+// WithInputIter is a compiler option for input iterator used by input(s)/0.
+func WithInputIter(inputIter Iter) CompilerOption {
+	return func(c *compiler) {
+		c.inputIter = inputIter
+	}
+}

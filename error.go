@@ -56,6 +56,15 @@ func (err *expectedStartEndError) Error() string {
 	return fmt.Sprintf(`expected "start" and "end" for slicing but got: %s`, typeErrorPreview(err.v))
 }
 
+type inputNotAllowedError struct {
+}
+
+func (*inputNotAllowedError) Error() string {
+	return "input(s)/0 is not allowed"
+}
+
+func (*inputNotAllowedError) IsInputNotAllowed() {}
+
 type funcNotFoundError struct {
 	f *Func
 }

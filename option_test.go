@@ -299,3 +299,75 @@ func TestWithVariablesError2(t *testing.T) {
 		}
 	}
 }
+
+type testInputIter struct {
+	n int
+}
+
+func (i *testInputIter) Next() (interface{}, bool) {
+	if i.n >= 5 {
+		return nil, false
+	}
+	i.n++
+	return i.n, true
+}
+
+func ExampleWithInputIter() {
+	query, err := gojq.Parse("input")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	code, err := gojq.Compile(
+		query,
+		gojq.WithInputIter(&testInputIter{}),
+	)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	iter := code.Run(nil)
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if err, ok := v.(error); ok {
+			log.Fatalln(err)
+		}
+		fmt.Printf("%#v\n", v)
+	}
+
+	// Output:
+	// 1
+}
+
+func TestWithInputIter(t *testing.T) {
+	query, err := gojq.Parse("range(10) | input")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	code, err := gojq.Compile(
+		query,
+		gojq.WithInputIter(&testInputIter{}),
+	)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	iter := code.Run(nil)
+	n := 1
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if err, ok := v.(error); ok {
+			if expected := "break"; err.Error() != expected {
+				t.Errorf("expected: %v, got: %v", expected, err)
+			}
+			break
+		}
+		if v != n {
+			t.Errorf("expected: %v, got: %v", n, v)
+		}
+		n++
+	}
+}

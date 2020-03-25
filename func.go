@@ -45,6 +45,7 @@ func init() {
 		"debug":          argFunc0(nil),
 		"stderr":         argFunc0(nil),
 		"env":            argFunc0(nil),
+		"input":          argFunc0(nil),
 		"modulemeta":     argFunc0(nil),
 		"length":         argFunc0(funcLength),
 		"utf8bytelength": argFunc0(funcUtf8ByteLength),

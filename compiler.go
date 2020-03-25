@@ -3,6 +3,7 @@ package gojq
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
 	"sort"
@@ -15,6 +16,7 @@ type compiler struct {
 	moduleLoader  ModuleLoader
 	environLoader func() []string
 	variables     []string
+	inputIter     Iter
 	codes         []*code
 	codeinfos     []codeinfo
 	codeoffset    int
@@ -191,7 +193,7 @@ func (c *compiler) compileImport(i *Import) error {
 
 func (c *compiler) compileModule(m *Module, alias string) error {
 	cc := &compiler{
-		moduleLoader: c.moduleLoader, environLoader: c.environLoader, variables: c.variables,
+		moduleLoader: c.moduleLoader, environLoader: c.environLoader, variables: c.variables, inputIter: c.inputIter,
 		codeoffset: c.pc(), scopes: c.scopes, scopecnt: c.scopecnt}
 	defer cc.newScopeDepth()()
 	bs, err := cc.compileModuleInternal(m)
@@ -277,7 +279,7 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	pc, argsorder := c.pc(), getArgsOrder(e.Args)
 	c.funcs = append(c.funcs, &funcinfo{e.Name, pc, e.Args, argsorder})
 	cc := &compiler{
-		moduleLoader: c.moduleLoader, environLoader: c.environLoader,
+		moduleLoader: c.moduleLoader, environLoader: c.environLoader, inputIter: c.inputIter,
 		codeoffset: pc, scopecnt: c.scopecnt, funcs: c.funcs}
 	scope := cc.newScope()
 	cc.scopes = append(c.scopes, scope)
@@ -948,6 +950,16 @@ func (c *compiler) compileFunc(e *Func) error {
 		case "stderr":
 			c.append(&code{op: opdebug, v: "STDERR:"})
 			return nil
+		case "input":
+			if c.inputIter == nil {
+				return &inputNotAllowedError{}
+			}
+			return c.compileCallInternal(
+				[3]interface{}{c.funcInput, 0, e.Name},
+				e.Args,
+				nil,
+				false,
+			)
 		case "modulemeta":
 			return c.compileCallInternal(
 				[3]interface{}{c.funcModulemeta, 0, e.Name},
@@ -960,6 +972,14 @@ func (c *compiler) compileFunc(e *Func) error {
 		}
 	}
 	return &funcNotFoundError{e}
+}
+
+func (c *compiler) funcInput(interface{}, []interface{}) interface{} {
+	v, ok := c.inputIter.Next()
+	if !ok {
+		return errors.New("break")
+	}
+	return normalizeNumbers(v)
 }
 
 func (c *compiler) funcModulemeta(v interface{}, _ []interface{}) interface{} {
