@@ -56,6 +56,27 @@ func (i *singleInputIter) Close() error {
 	return nil
 }
 
+type nullInputIter struct {
+	err error
+}
+
+func newNullInputIter() inputIter {
+	return &nullInputIter{}
+}
+
+func (i *nullInputIter) Next() (interface{}, bool) {
+	if i.err != nil {
+		return nil, false
+	}
+	i.err = io.EOF
+	return nil, true
+}
+
+func (i *nullInputIter) Close() error {
+	i.err = io.EOF
+	return nil
+}
+
 type filesInputIter struct {
 	newIter func(io.Reader, string) inputIter
 	fnames  []string
@@ -80,10 +101,11 @@ func (i *filesInputIter) Next() (interface{}, bool) {
 			}
 			fname := i.fnames[0]
 			i.fnames = i.fnames[1:]
-			i.file, i.err = os.Open(fname)
-			if i.err != nil {
-				return i.err, true
+			file, err := os.Open(fname)
+			if err != nil {
+				return err, true
 			}
+			i.file = file
 			if i.iter != nil {
 				i.iter.Close()
 			}

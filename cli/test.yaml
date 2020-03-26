@@ -4554,6 +4554,20 @@
   expected: |
     null
 
+- name: stream option with raw input option
+  args:
+    - -R
+    - --stream
+    - .
+  input: |
+    1
+    2
+    3
+  expected: |
+    "1"
+    "2"
+    "3"
+
 - name: yaml input option
   args:
     - --yaml-input

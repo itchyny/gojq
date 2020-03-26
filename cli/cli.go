@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -15,7 +14,6 @@ import (
 	"github.com/fatih/color"
 	"github.com/itchyny/go-flags"
 	"github.com/mattn/go-isatty"
-	"gopkg.in/yaml.v3"
 
 	"github.com/itchyny/gojq"
 )
@@ -218,19 +216,9 @@ Synopsis:
 		return &compileError{err}
 	}
 	if opts.InputNull {
-		cli.inputRaw, cli.inputSlurp, cli.inputStream = false, false, false
-		return cli.process("<null>", bytes.NewReader([]byte("null")), code)
+		iter = newNullInputIter()
 	}
-	if len(args) == 0 {
-		return cli.processIter(iter, code)
-	}
-	for _, arg := range args {
-		if er := cli.processFile(arg, code); er != nil {
-			cli.printError(er)
-			err = &emptyError{er}
-		}
-	}
-	return err
+	return cli.process(iter, code)
 }
 
 func slurpFile(name string) ([]interface{}, error) {
@@ -280,141 +268,21 @@ func (cli *cli) createInputIter(args []string) inputIter {
 	return newFilesInputIter(newIter, args)
 }
 
-func (cli *cli) processFile(fname string, code *gojq.Code) error {
-	f, err := os.Open(fname)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	return cli.process(fname, f, code)
-}
-
-func (cli *cli) processIter(iter inputIter, code *gojq.Code) error {
+func (cli *cli) process(iter inputIter, code *gojq.Code) error {
 	var err error
 	for {
 		v, ok := iter.Next()
 		if !ok {
 			return err
 		}
-		if err, ok = v.(error); ok {
-			return err
+		if er, ok := v.(error); ok {
+			cli.printError(er)
+			err = &emptyError{er}
+			continue
 		}
 		if er := cli.printValues(code.Run(v, cli.argvalues...)); er != nil {
 			cli.printError(er)
 			err = &emptyError{er}
-		}
-	}
-}
-
-func (cli *cli) process(fname string, in io.Reader, code *gojq.Code) error {
-	switch {
-	case cli.inputRaw:
-		return cli.processRaw(fname, in, code)
-	case cli.inputStream:
-		return cli.processStream(fname, in, code)
-	case cli.inputYAML:
-		return cli.processYAML(fname, in, code)
-	default:
-		return cli.processJSON(fname, in, code)
-	}
-}
-
-func (cli *cli) processRaw(fname string, in io.Reader, code *gojq.Code) error {
-	if cli.inputSlurp {
-		xs, err := ioutil.ReadAll(in)
-		if err != nil {
-			return err
-		}
-		return cli.printValues(code.Run(string(xs), cli.argvalues...))
-	}
-	s := bufio.NewScanner(in)
-	var err error
-	for s.Scan() {
-		if er := cli.printValues(code.Run(s.Text(), cli.argvalues...)); er != nil {
-			cli.printError(er)
-			err = &emptyError{er}
-		}
-	}
-	if err := s.Err(); err != nil {
-		return err
-	}
-	return err
-}
-
-func (cli *cli) processJSON(fname string, in io.Reader, code *gojq.Code) error {
-	var buf bytes.Buffer
-	dec := json.NewDecoder(io.TeeReader(in, &buf))
-	dec.UseNumber()
-	var vs []interface{}
-	for {
-		var v interface{}
-		if err := dec.Decode(&v); err != nil {
-			if err == io.EOF {
-				if cli.inputSlurp {
-					return cli.printValues(code.Run(vs, cli.argvalues...))
-				}
-				return nil
-			}
-			return &jsonParseError{fname, buf.String(), err}
-		}
-		if cli.inputSlurp {
-			vs = append(vs, v)
-			continue
-		}
-		if err := cli.printValues(code.Run(v, cli.argvalues...)); err != nil {
-			return err
-		}
-	}
-}
-
-func (cli *cli) processStream(fname string, in io.Reader, code *gojq.Code) error {
-	var buf bytes.Buffer
-	dec := json.NewDecoder(io.TeeReader(in, &buf))
-	dec.UseNumber()
-	s := newJSONStream(dec)
-	var n int64
-	for {
-		v, err := s.next()
-		if err != nil {
-			if err == io.EOF {
-				return nil
-			}
-			if err, ok := err.(*json.SyntaxError); ok {
-				err.Offset -= n
-			}
-			return &jsonParseError{fname, buf.String(), err}
-		}
-		if err := cli.printValues(code.Run(v, cli.argvalues...)); err != nil {
-			return err
-		}
-		if buf.Len() >= 256*1024 {
-			buf.Reset()
-		}
-	}
-}
-
-func (cli *cli) processYAML(fname string, in io.Reader, code *gojq.Code) error {
-	var buf bytes.Buffer
-	dec := yaml.NewDecoder(io.TeeReader(in, &buf))
-	var vs []interface{}
-	for {
-		var v interface{}
-		if err := dec.Decode(&v); err != nil {
-			if err == io.EOF {
-				if cli.inputSlurp {
-					return cli.printValues(code.Run(vs, cli.argvalues...))
-				}
-				return nil
-			}
-			return &yamlParseError{fname, buf.String(), err}
-		}
-		v = fixMapKeyToString(v) // Workaround for https://github.com/go-yaml/yaml/issues/139
-		if cli.inputSlurp {
-			vs = append(vs, v)
-			continue
-		}
-		if err := cli.printValues(code.Run(v, cli.argvalues...)); err != nil {
-			return err
 		}
 	}
 }
