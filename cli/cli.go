@@ -262,13 +262,17 @@ func slurpFile(name string) ([]interface{}, error) {
 }
 
 func (cli *cli) createInputIter(args []string) inputIter {
-	if len(args) == 0 {
-		if cli.inputStream {
-			return newStreamInputIter(cli.inStream, "<stdin>")
-		}
-		return newSingleInputIter(cli.inStream, "<stdin>")
+	var newIter func(io.Reader, string) inputIter
+	switch {
+	case cli.inputStream:
+		newIter = newStreamInputIter
+	default:
+		newIter = newSingleInputIter
 	}
-	return newFilesInputIter(args, cli.inputStream)
+	if len(args) == 0 {
+		return newIter(cli.inStream, "<stdin>")
+	}
+	return newFilesInputIter(newIter, args)
 }
 
 func (cli *cli) processFile(fname string, code *gojq.Code) error {

@@ -19,7 +19,7 @@ type singleInputIter struct {
 	err   error
 }
 
-func newSingleInputIter(in io.Reader, fname string) *singleInputIter {
+func newSingleInputIter(in io.Reader, fname string) inputIter {
 	dec := json.NewDecoder(in)
 	dec.UseNumber()
 	return &singleInputIter{dec: dec, fname: fname}
@@ -47,15 +47,15 @@ func (i *singleInputIter) Close() error {
 }
 
 type filesInputIter struct {
-	fnames []string
-	stream bool
-	iter   inputIter
-	file   *os.File
-	err    error
+	newIter func(io.Reader, string) inputIter
+	fnames  []string
+	iter    inputIter
+	file    *os.File
+	err     error
 }
 
-func newFilesInputIter(fnames []string, stream bool) *filesInputIter {
-	return &filesInputIter{fnames: fnames, stream: stream}
+func newFilesInputIter(newIter func(io.Reader, string) inputIter, fnames []string) *filesInputIter {
+	return &filesInputIter{newIter: newIter, fnames: fnames}
 }
 
 func (i *filesInputIter) Next() (interface{}, bool) {
@@ -77,11 +77,7 @@ func (i *filesInputIter) Next() (interface{}, bool) {
 			if i.iter != nil {
 				i.iter.Close()
 			}
-			if i.stream {
-				i.iter = newStreamInputIter(i.file, fname)
-			} else {
-				i.iter = newSingleInputIter(i.file, fname)
-			}
+			i.iter = i.newIter(i.file, fname)
 		}
 		if v, ok := i.iter.Next(); ok {
 			return v, ok
@@ -108,7 +104,7 @@ type streamInputIter struct {
 	err    error
 }
 
-func newStreamInputIter(in io.Reader, fname string) *streamInputIter {
+func newStreamInputIter(in io.Reader, fname string) inputIter {
 	dec := json.NewDecoder(in)
 	dec.UseNumber()
 	return &streamInputIter{stream: newJSONStream(dec), fname: fname}
