@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -150,12 +149,12 @@ Synopsis:
 		cli.argvalues = append(cli.argvalues, val)
 	}
 	for k, v := range opts.SlurpFile {
-		vals, err := slurpFile(v)
+		val, err := slurpFile(v)
 		if err != nil {
 			return err
 		}
 		cli.argnames = append(cli.argnames, "$"+k)
-		cli.argvalues = append(cli.argvalues, vals)
+		cli.argvalues = append(cli.argvalues, val)
 	}
 	for k, v := range opts.RawFile {
 		val, err := ioutil.ReadFile(v)
@@ -221,26 +220,14 @@ Synopsis:
 	return cli.process(iter, code)
 }
 
-func slurpFile(name string) ([]interface{}, error) {
-	f, err := os.Open(name)
-	if err != nil {
+func slurpFile(name string) (interface{}, error) {
+	iter := newFilesInputIter(newSlurpInputIter(newSingleInputIter), []string{name})
+	defer iter.Close()
+	val, _ := iter.Next()
+	if err, ok := val.(error); ok {
 		return nil, err
 	}
-	defer f.Close()
-	var vals []interface{}
-	var buf bytes.Buffer
-	dec := json.NewDecoder(io.TeeReader(f, &buf))
-	for {
-		var val interface{}
-		if err := dec.Decode(&val); err != nil {
-			if err == io.EOF {
-				break
-			}
-			return nil, &jsonParseError{name, buf.String(), err}
-		}
-		vals = append(vals, val)
-	}
-	return vals, nil
+	return val, nil
 }
 
 func (cli *cli) createInputIter(args []string) inputIter {

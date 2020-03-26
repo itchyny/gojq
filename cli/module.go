@@ -73,11 +73,7 @@ func (l *moduleLoader) LoadJSONWithMeta(name string, meta map[string]interface{}
 	if err != nil {
 		return nil, err
 	}
-	vals, err := slurpFile(path)
-	if err != nil {
-		return nil, err
-	}
-	return vals, nil
+	return slurpFile(path)
 }
 
 func (l *moduleLoader) lookupModule(name, extension string, meta map[string]interface{}) (string, error) {
