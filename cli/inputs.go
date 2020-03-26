@@ -18,21 +18,21 @@ type inputIter interface {
 	io.Closer
 }
 
-type singleInputIter struct {
+type jsonInputIter struct {
 	dec   *json.Decoder
 	buf   *bytes.Buffer
 	fname string
 	err   error
 }
 
-func newSingleInputIter(r io.Reader, fname string) inputIter {
+func newJSONInputIter(r io.Reader, fname string) inputIter {
 	buf := new(bytes.Buffer)
 	dec := json.NewDecoder(io.TeeReader(r, buf))
 	dec.UseNumber()
-	return &singleInputIter{dec: dec, buf: buf, fname: fname}
+	return &jsonInputIter{dec: dec, buf: buf, fname: fname}
 }
 
-func (i *singleInputIter) Next() (interface{}, bool) {
+func (i *jsonInputIter) Next() (interface{}, bool) {
 	if i.err != nil {
 		return nil, false
 	}
@@ -51,7 +51,7 @@ func (i *singleInputIter) Next() (interface{}, bool) {
 	return v, true
 }
 
-func (i *singleInputIter) Close() error {
+func (i *jsonInputIter) Close() error {
 	i.err = io.EOF
 	return nil
 }

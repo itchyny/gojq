@@ -221,7 +221,7 @@ Synopsis:
 }
 
 func slurpFile(name string) (interface{}, error) {
-	iter := newFilesInputIter(newSlurpInputIter(newSingleInputIter), []string{name})
+	iter := newFilesInputIter(newSlurpInputIter(newJSONInputIter), []string{name})
 	defer iter.Close()
 	val, _ := iter.Next()
 	if err, ok := val.(error); ok {
@@ -244,7 +244,7 @@ func (cli *cli) createInputIter(args []string) inputIter {
 	case cli.inputYAML:
 		newIter = newYAMLInputIter
 	default:
-		newIter = newSingleInputIter
+		newIter = newJSONInputIter
 	}
 	if cli.inputSlurp && !cli.inputRaw {
 		newIter = newSlurpInputIter(newIter)
