@@ -121,9 +121,7 @@ func (i *filesInputIter) Next() (interface{}, bool) {
 
 func (i *filesInputIter) Close() error {
 	if i.file != nil {
-		if err := i.file.Close(); err != nil {
-			return err
-		}
+		i.file.Close()
 		i.file = nil
 		i.err = io.EOF
 	}
