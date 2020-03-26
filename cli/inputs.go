@@ -20,14 +20,16 @@ type inputIter interface {
 
 type singleInputIter struct {
 	dec   *json.Decoder
+	buf   *bytes.Buffer
 	fname string
 	err   error
 }
 
 func newSingleInputIter(r io.Reader, fname string) inputIter {
-	dec := json.NewDecoder(r)
+	buf := new(bytes.Buffer)
+	dec := json.NewDecoder(io.TeeReader(r, buf))
 	dec.UseNumber()
-	return &singleInputIter{dec: dec, fname: fname}
+	return &singleInputIter{dec: dec, buf: buf, fname: fname}
 }
 
 func (i *singleInputIter) Next() (interface{}, bool) {
@@ -40,8 +42,11 @@ func (i *singleInputIter) Next() (interface{}, bool) {
 			i.err = err
 			return nil, false
 		}
-		i.err = &jsonParseError{i.fname, "", err}
+		i.err = &jsonParseError{i.fname, i.buf.String(), err}
 		return i.err, true
+	}
+	if i.buf.Len() >= 256*1024 {
+		i.buf.Reset()
 	}
 	return v, true
 }
