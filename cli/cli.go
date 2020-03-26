@@ -272,6 +272,8 @@ func (cli *cli) createInputIter(args []string) inputIter {
 		}
 	case cli.inputStream:
 		newIter = newStreamInputIter
+	case cli.inputYAML:
+		newIter = newYAMLInputIter
 	default:
 		newIter = newSingleInputIter
 	}

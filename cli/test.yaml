@@ -3843,6 +3843,53 @@
   expected: |
     "a b\nc\n"
 
+- name: inputs function with yaml input option
+  args:
+    - -n
+    - --yaml-input
+    - 'inputs'
+  input: |
+    foo: 1
+    ---
+    bar: 2
+    ---
+    baz: 3
+  expected: |
+    {
+      "foo": 1
+    }
+    {
+      "bar": 2
+    }
+    {
+      "baz": 3
+    }
+
+- name: inputs function with yaml input, slurp option
+  args:
+    - -n
+    - --slurp
+    - --yaml-input
+    - 'inputs'
+  input: |
+    foo: 1
+    ---
+    bar: 2
+    ---
+    baz: 3
+  expected: |
+    [
+      {
+        "foo": 1
+      },
+      {
+        "bar": 2
+      },
+      {
+        "baz": 3
+      }
+    ]
+
 - name: match function
   args:
     - -c

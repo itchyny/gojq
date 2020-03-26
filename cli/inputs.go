@@ -2,10 +2,13 @@ package cli
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"io"
 	"io/ioutil"
 	"os"
+
+	"gopkg.in/yaml.v3"
 
 	"github.com/itchyny/gojq"
 )
@@ -184,6 +187,40 @@ func (i *streamInputIter) Next() (interface{}, bool) {
 }
 
 func (i *streamInputIter) Close() error {
+	i.err = io.EOF
+	return nil
+}
+
+type yamlInputIter struct {
+	dec   *yaml.Decoder
+	buf   *bytes.Buffer
+	fname string
+	err   error
+}
+
+func newYAMLInputIter(r io.Reader, fname string) inputIter {
+	buf := new(bytes.Buffer)
+	dec := yaml.NewDecoder(io.TeeReader(r, buf))
+	return &yamlInputIter{dec: dec, buf: buf, fname: fname}
+}
+
+func (i *yamlInputIter) Next() (interface{}, bool) {
+	if i.err != nil {
+		return nil, false
+	}
+	var v interface{}
+	if err := i.dec.Decode(&v); err != nil {
+		if err == io.EOF {
+			i.err = err
+			return nil, false
+		}
+		i.err = &yamlParseError{i.fname, i.buf.String(), err}
+		return i.err, true
+	}
+	return fixMapKeyToString(v), true
+}
+
+func (i *yamlInputIter) Close() error {
 	i.err = io.EOF
 	return nil
 }
