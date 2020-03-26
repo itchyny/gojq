@@ -200,26 +200,20 @@ Synopsis:
 		}
 		modulePaths = []string{filepath.Join(homeDir, ".jq")}
 	}
-	copts := []gojq.CompilerOption{
+	iter := cli.createInputIter(args)
+	defer iter.Close()
+	code, err := gojq.Compile(query,
 		gojq.WithModuleLoader(&moduleLoader{modulePaths}),
 		gojq.WithEnvironLoader(os.Environ),
 		gojq.WithVariables(cli.argnames),
-	}
-	if opts.InputNull || len(args) > 0 {
-		iter := cli.createInputIter(args)
-		defer iter.Close()
-		copts = append(copts, gojq.WithInputIter(iter))
-	}
-	code, err := gojq.Compile(query, copts...)
+		gojq.WithInputIter(iter),
+	)
 	if err != nil {
 		if err, ok := err.(interface {
 			QueryParseError() (string, string, string, error)
 		}); ok {
 			typ, name, query, err := err.QueryParseError()
 			return &queryParseError{typ, fname + ":" + name, query, err}
-		}
-		if err, ok := err.(interface{ IsInputNotAllowed() }); ok {
-			return &compileError{fmt.Errorf("%s without -n (--null-input)", err)}
 		}
 		return &compileError{err}
 	}
@@ -228,7 +222,7 @@ Synopsis:
 		return cli.process("<null>", bytes.NewReader([]byte("null")), code)
 	}
 	if len(args) == 0 {
-		return cli.process("<stdin>", cli.inStream, code)
+		return cli.processIter(iter, code)
 	}
 	for _, arg := range args {
 		if er := cli.processFile(arg, code); er != nil {
@@ -293,6 +287,23 @@ func (cli *cli) processFile(fname string, code *gojq.Code) error {
 	}
 	defer f.Close()
 	return cli.process(fname, f, code)
+}
+
+func (cli *cli) processIter(iter inputIter, code *gojq.Code) error {
+	var err error
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			return err
+		}
+		if err, ok = v.(error); ok {
+			return err
+		}
+		if er := cli.printValues(code.Run(v, cli.argvalues...)); er != nil {
+			cli.printError(er)
+			err = &emptyError{er}
+		}
+	}
 }
 
 func (cli *cli) process(fname string, in io.Reader, code *gojq.Code) error {

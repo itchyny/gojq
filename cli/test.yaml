@@ -3735,11 +3735,10 @@
 
 - name: input function without null input option
   args:
-    - 'input'
-  input: 1
-  error: |
-    input(s)/0 is not allowed without -n (--null-input)
-  exit_code: 3
+    - '. + input'
+  input: 1 2
+  expected: |
+    3
 
 - name: input function with stream option
   args:

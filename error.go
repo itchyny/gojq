@@ -63,8 +63,6 @@ func (*inputNotAllowedError) Error() string {
 	return "input(s)/0 is not allowed"
 }
 
-func (*inputNotAllowedError) IsInputNotAllowed() {}
-
 type funcNotFoundError struct {
 	f *Func
 }
