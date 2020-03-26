@@ -265,11 +265,18 @@ func (cli *cli) createInputIter(args []string) inputIter {
 	var newIter func(io.Reader, string) inputIter
 	switch {
 	case cli.inputRaw:
-		newIter = newRawInputIter
+		if cli.inputSlurp {
+			newIter = newReadAllInputIter
+		} else {
+			newIter = newRawInputIter
+		}
 	case cli.inputStream:
 		newIter = newStreamInputIter
 	default:
 		newIter = newSingleInputIter
+	}
+	if cli.inputSlurp && !cli.inputRaw {
+		newIter = newSlurpInputIter(newIter)
 	}
 	if len(args) == 0 {
 		return newIter(cli.inStream, "<stdin>")

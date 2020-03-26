@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"os"
 
 	"github.com/itchyny/gojq"
@@ -20,8 +21,8 @@ type singleInputIter struct {
 	err   error
 }
 
-func newSingleInputIter(in io.Reader, fname string) inputIter {
-	dec := json.NewDecoder(in)
+func newSingleInputIter(r io.Reader, fname string) inputIter {
+	dec := json.NewDecoder(r)
 	dec.UseNumber()
 	return &singleInputIter{dec: dec, fname: fname}
 }
@@ -55,7 +56,7 @@ type filesInputIter struct {
 	err     error
 }
 
-func newFilesInputIter(newIter func(io.Reader, string) inputIter, fnames []string) *filesInputIter {
+func newFilesInputIter(newIter func(io.Reader, string) inputIter, fnames []string) inputIter {
 	return &filesInputIter{newIter: newIter, fnames: fnames}
 }
 
@@ -104,8 +105,8 @@ type rawInputIter struct {
 	err     error
 }
 
-func newRawInputIter(in io.Reader, _ string) inputIter {
-	return &rawInputIter{scanner: bufio.NewScanner(in)}
+func newRawInputIter(r io.Reader, _ string) inputIter {
+	return &rawInputIter{scanner: bufio.NewScanner(r)}
 }
 
 func (i *rawInputIter) Next() (interface{}, bool) {
@@ -127,14 +128,41 @@ func (i *rawInputIter) Close() error {
 	return nil
 }
 
+type readAllInputIter struct {
+	r   io.Reader
+	err error
+}
+
+func newReadAllInputIter(r io.Reader, _ string) inputIter {
+	return &readAllInputIter{r: r}
+}
+
+func (i *readAllInputIter) Next() (interface{}, bool) {
+	if i.err != nil {
+		return nil, false
+	}
+	bs, err := ioutil.ReadAll(i.r)
+	if err != nil {
+		i.err = err
+		return err, true
+	}
+	i.err = io.EOF
+	return string(bs), true
+}
+
+func (i *readAllInputIter) Close() error {
+	i.err = io.EOF
+	return nil
+}
+
 type streamInputIter struct {
 	stream *jsonStream
 	fname  string
 	err    error
 }
 
-func newStreamInputIter(in io.Reader, fname string) inputIter {
-	dec := json.NewDecoder(in)
+func newStreamInputIter(r io.Reader, fname string) inputIter {
+	dec := json.NewDecoder(r)
 	dec.UseNumber()
 	return &streamInputIter{stream: newJSONStream(dec), fname: fname}
 }
@@ -157,5 +185,45 @@ func (i *streamInputIter) Next() (interface{}, bool) {
 
 func (i *streamInputIter) Close() error {
 	i.err = io.EOF
+	return nil
+}
+
+type slurpInputIter struct {
+	iter inputIter
+	err  error
+}
+
+func newSlurpInputIter(newIter func(io.Reader, string) inputIter) func(io.Reader, string) inputIter {
+	return func(r io.Reader, fname string) inputIter {
+		return &slurpInputIter{iter: newIter(r, fname)}
+	}
+}
+
+func (i *slurpInputIter) Next() (interface{}, bool) {
+	if i.err != nil {
+		return nil, false
+	}
+	var vs []interface{}
+	var v interface{}
+	var ok bool
+	for {
+		v, ok = i.iter.Next()
+		if !ok {
+			i.err = io.EOF
+			return vs, true
+		}
+		if i.err, ok = v.(error); ok {
+			return i.err, true
+		}
+		vs = append(vs, v)
+	}
+}
+
+func (i *slurpInputIter) Close() error {
+	if i.iter != nil {
+		i.iter.Close()
+		i.iter = nil
+		i.err = io.EOF
+	}
 	return nil
 }

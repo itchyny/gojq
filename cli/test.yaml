@@ -3792,6 +3792,29 @@
     null
     "x"
 
+- name: inputs function with stream and slurp option
+  args:
+    - -n
+    - --stream
+    - --slurp
+    - 'inputs'
+  input: 1 2 3
+  expected: |
+    [
+      [
+        [],
+        1
+      ],
+      [
+        [],
+        2
+      ],
+      [
+        [],
+        3
+      ]
+    ]
+
 - name: inputs function with raw input option
   args:
     - -n
@@ -3807,6 +3830,18 @@
     "c"
     "d"
     "1"
+
+- name: inputs function with raw input and slurp option
+  args:
+    - -n
+    - -R
+    - -s
+    - 'inputs'
+  input: |
+    a b
+    c
+  expected: |
+    "a b\nc\n"
 
 - name: match function
   args:
