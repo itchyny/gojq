@@ -264,6 +264,8 @@ func slurpFile(name string) ([]interface{}, error) {
 func (cli *cli) createInputIter(args []string) inputIter {
 	var newIter func(io.Reader, string) inputIter
 	switch {
+	case cli.inputRaw:
+		newIter = newRawInputIter
 	case cli.inputStream:
 		newIter = newStreamInputIter
 	default:

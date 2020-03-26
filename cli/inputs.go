@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bufio"
 	"encoding/json"
 	"io"
 	"os"
@@ -95,6 +96,34 @@ func (i *filesInputIter) Close() error {
 		i.file = nil
 		i.err = io.EOF
 	}
+	return nil
+}
+
+type rawInputIter struct {
+	scanner *bufio.Scanner
+	err     error
+}
+
+func newRawInputIter(in io.Reader, _ string) inputIter {
+	return &rawInputIter{scanner: bufio.NewScanner(in)}
+}
+
+func (i *rawInputIter) Next() (interface{}, bool) {
+	if i.err != nil {
+		return nil, false
+	}
+	if i.scanner.Scan() {
+		return i.scanner.Text(), true
+	}
+	if i.err = i.scanner.Err(); i.err != nil {
+		return i.err, true
+	}
+	i.err = io.EOF
+	return nil, false
+}
+
+func (i *rawInputIter) Close() error {
+	i.err = io.EOF
 	return nil
 }
 

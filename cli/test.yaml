@@ -3792,6 +3792,22 @@
     null
     "x"
 
+- name: inputs function with raw input option
+  args:
+    - -n
+    - -R
+    - 'inputs'
+  input: |
+    a b
+    c
+    d
+    1
+  expected: |
+    "a b"
+    "c"
+    "d"
+    "1"
+
 - name: match function
   args:
     - -c
