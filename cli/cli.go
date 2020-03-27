@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -141,9 +140,9 @@ Synopsis:
 		cli.argvalues = append(cli.argvalues, v)
 	}
 	for k, v := range opts.ArgsJSON {
-		var val interface{}
-		if err := json.Unmarshal([]byte(v), &val); err != nil {
-			return &jsonParseError{"$" + k, v, err}
+		val, _ := newJSONInputIter(strings.NewReader(v), "$"+k).Next()
+		if err, ok := val.(error); ok {
+			return err
 		}
 		cli.argnames = append(cli.argnames, "$"+k)
 		cli.argvalues = append(cli.argvalues, val)

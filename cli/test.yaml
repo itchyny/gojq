@@ -5148,6 +5148,16 @@
       }
     }
 
+- name: argjson option with big integer
+  args:
+    - --argjson
+    - 'foo'
+    - '10000000000000000000000000000000'
+    - '$foo * 2'
+  input: 0
+  expected: |
+    20000000000000000000000000000000
+
 - name: arg and argjson options
   args:
     - --arg
