@@ -4587,6 +4587,31 @@
     "2"
     "3"
 
+- name: stream option with slurp option
+  args:
+    - --stream
+    - --slurp
+    - .
+  input: |
+    1
+    2
+    3
+  expected: |
+    [
+      [
+        [],
+        1
+      ],
+      [
+        [],
+        2
+      ],
+      [
+        [],
+        3
+      ]
+    ]
+
 - name: yaml input option
   args:
     - --yaml-input
