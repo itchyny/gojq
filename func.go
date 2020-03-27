@@ -60,6 +60,7 @@ func init() {
 		"split":          {argcount1 | argcount2, funcSplit},
 		"tojson":         argFunc0(funcToJSON),
 		"fromjson":       argFunc0(funcFromJSON),
+		"format":         argFunc1(funcFormat),
 		"_tohtml":        argFunc0(funcToHTML),
 		"_touri":         argFunc0(funcToURI),
 		"_tocsv":         argFunc0(funcToCSV),
@@ -506,6 +507,20 @@ func funcFromJSON(v interface{}) interface{} {
 		return w
 	default:
 		return &funcTypeError{"fromjson", v}
+	}
+}
+
+func funcFormat(v, x interface{}) interface{} {
+	switch x := x.(type) {
+	case string:
+		fmt := "@" + x
+		f := formatToFunc(fmt)
+		if f == nil {
+			return &formatNotFoundError{fmt}
+		}
+		return internalFuncs[f.Name].callback(v, nil)
+	default:
+		return &funcTypeError{"format", x}
 	}
 }
 

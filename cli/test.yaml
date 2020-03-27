@@ -4002,6 +4002,25 @@
   expected: |
     [false,true,false,false,true,false,false,false]
 
+- name: format function
+  args:
+    - -n
+    - '("html","uri","csv","tsv","sh","base64") as $x | [1,2,3] | format($x)'
+  expected: |
+    "[1,2,3]"
+    "%5B1%2C2%2C3%5D"
+    "1,2,3"
+    "1\t2\t3"
+    "1 2 3"
+    "WzEsMiwzXQ=="
+
+- name: format function error
+  args:
+    - -n
+    - 'format("t")'
+  error: |
+    format not defined: @t
+
 - name: format strings @text
   args:
     - -n
