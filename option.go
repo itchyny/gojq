@@ -19,7 +19,9 @@ func WithEnvironLoader(environLoader func() []string) CompilerOption {
 	}
 }
 
-// WithVariables is a compiler option for variable names.
+// WithVariables is a compiler option for variable names. The variables can be
+// used in the query. You have to give the values to query.Run or code.Run in
+// the same order.
 func WithVariables(variables []string) CompilerOption {
 	return func(c *compiler) {
 		c.variables = variables
@@ -27,11 +29,10 @@ func WithVariables(variables []string) CompilerOption {
 }
 
 // WithInputIter is a compiler option for input iterator used by input(s)/0.
-//
-// Note that `input` and `inputs` functions are not allowed by default. We have
-// to distinguish the query input and the values for `input(s)` functions. For
-// example, consider using `inputs` with `--null-input`. If you want to allow
-// `input(s)` functions, create an `Iter` and use `WithInputIter` option.
+// Note that input and inputs functions are not allowed by default. We have
+// to distinguish the query input and the values for input(s) functions. For
+// example, consider using inputs with --null-input. If you want to allow
+// input(s) functions, create an Iter and use WithInputIter option.
 func WithInputIter(inputIter Iter) CompilerOption {
 	return func(c *compiler) {
 		c.inputIter = inputIter
