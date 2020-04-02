@@ -1,4 +1,23 @@
 # Changelog
+## [v0.10.0](https://github.com/itchyny/gojq/compare/v0.9.0..v0.10.0) (2020-04-02)
+* implement various functions (`format`, `significand`, `modulemeta`, `halt_error`)
+* implement `input`, `inputs` functions
+* implement stream option (`--stream`)
+* implement slicing with object (`.[{"start": 1, "end": 2}]`)
+* implement `NO_COLOR` environment variable support
+* implement `nul` output option (`-0`, `--nul-output`)
+* implement exit status option (`-e`, `--exit-status`)
+* implement `search` field of module meta object
+* implement combination of `--yaml-input` and `--slurp`
+* improve string token lexer and support nested string interpolation
+* improve the exit code for jq compatibility
+* improve default module search paths for jq compatibility
+* improve documentation for the usage as a library
+* change methods of `ModuleLoader` optional, implement `LoadModuleWithMeta` and `LoadJSONWithMeta`
+* fix number normalization for JSON arguments (`--argjson`, `--slurpfile`)
+* fix `0/0` and `infinite/infinite`
+* fix `error` function against `null`
+
 ## [v0.9.0](https://github.com/itchyny/gojq/compare/v0.8.0..v0.9.0) (2020-03-15)
 * implement various functions (`infinite`, `isfinite`, `isinfinite`, `finites`, `isnormal`, `normals`)
 * implement environment variables loader as a compiler option
@@ -18,7 +37,7 @@
 * implement modules feature (`-L` option for directory to search modules from)
 * implement options for binding variables from arguments (`--arg`, `--argjson`)
 * implement options for binding variables from files (`--slurpfile`, `--rawfile`)
-* implement options for indentation count (`--indent`)
+* implement an option for indentation count (`--indent`)
 * fix `isnan` for `null`
 * fix path analyzer
 * fix error after optional operator (`1? | .x`)
@@ -35,7 +54,9 @@
 * implement arbitrary-precision integer calculation
 * implement various functions (`repeat`, `pow10`, `nan`, `isnan`, `nearbyint`,
   `halt`, `INDEX`, `JOIN`, `IN`)
-* implement long options (`--compact-output`, `--raw-output`, etc.)
+* implement long options (`--compact-output`, `--raw-output`, `--join-output`,
+  `--color-output`, `--monochrome-output`, `--null-input`, `--raw-input`,
+  `--slurp`, `--from-file`, `--version`)
 * implement join output options (`-j`, `--join-output`)
 * implement color/monochrome output options (`-C`, `--color-output`,
   `-M`, `--monochrome-output`)
