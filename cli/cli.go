@@ -78,7 +78,7 @@ type flagopts struct {
 	Version       bool              `short:"v" long:"version" description:"print version"`
 }
 
-var addDefaultModulePath = true
+var addDefaultModulePaths = true
 
 func (cli *cli) run(args []string) int {
 	if err := cli.runInternal(args); err != nil {
@@ -189,12 +189,12 @@ Synopsis:
 		return &queryParseError{"query", fname, arg, err}
 	}
 	modulePaths := opts.ModulePaths
-	if len(modulePaths) == 0 && addDefaultModulePath {
+	if len(modulePaths) == 0 && addDefaultModulePaths {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
 			return err
 		}
-		modulePaths = []string{filepath.Join(homeDir, ".jq")}
+		modulePaths = []string{filepath.Join(homeDir, ".jq"), "../lib/jq", "lib"}
 	}
 	iter := cli.createInputIter(args)
 	defer iter.Close()

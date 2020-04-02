@@ -13,7 +13,7 @@ import (
 )
 
 func init() {
-	addDefaultModulePath = false
+	addDefaultModulePaths = false
 	os.Setenv("NO_COLOR", "")
 }
 
