@@ -100,11 +100,12 @@ func main() {
   - In either case, the query input should have type `[]interface{}` for an array and `map[string]interface{}` for a map (just like decoded to an `interface{}` using the [encoding/json](https://golang.org/pkg/encoding/json/) package). You can't use `[]int` or `map[string]string`, for example.
 - Thirdly, iterate through the results using [`iter.Next() (interface{}, bool)`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#Iter). The iterater can emit an error so make sure to handle it. Termination is notified by the second returned value of `Next()`.
 
-`gojq.Compile` allows to configure the following compiler options. You can look into [examples](./option_test.go).
+[`gojq.Compile`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#Compile) allows to configure the following compiler options.
 
 - [`gojq.WithModuleLoader`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#WithModuleLoader) allows to load modules. By default, the module feature is disabled.
 - [`gojq.WithEnvironLoader`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#WithEnvironLoader) allows to configure the environment variables referenced by `env` and `$ENV`. By default, OS environment variables are not accessible due to security reason. You can use `gojq.WithEnvironLoader(os.Environ)` if you want.
 - [`gojq.WithVariables`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#WithVariables) allows to configure the variables which can be used in the query. Pass the values of the variables to [`code.Run`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#Code.Run) in the same order.
+- [`gojq.WithInputIter`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#WithInputIter) allows to use `input` and `inputs` functions. By default, these functions are disabled.
 
 ## Bug Tracker
 Report bug at [Issues・itchyny/gojq - GitHub](https://github.com/itchyny/gojq/issues).
