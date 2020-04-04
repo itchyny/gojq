@@ -3,6 +3,7 @@ package gojq_test
 import (
 	"log"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/itchyny/gojq"
@@ -194,7 +195,9 @@ func TestWithInputIter(t *testing.T) {
 	}
 	code, err := gojq.Compile(
 		query,
-		gojq.WithInputIter(&testInputIter{}),
+		gojq.WithInputIter(
+			newTestInputIter(strings.NewReader("1 2 3 4 5")),
+		),
 	)
 	if err != nil {
 		log.Fatalln(err)

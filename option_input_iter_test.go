@@ -1,32 +1,46 @@
 package gojq_test
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"strings"
 
 	"github.com/itchyny/gojq"
 )
 
 type testInputIter struct {
-	n int
+	dec *json.Decoder
+}
+
+func newTestInputIter(r io.Reader) *testInputIter {
+	dec := json.NewDecoder(r)
+	dec.UseNumber()
+	return &testInputIter{dec: dec}
 }
 
 func (i *testInputIter) Next() (interface{}, bool) {
-	if i.n >= 5 {
-		return nil, false
+	var v interface{}
+	if err := i.dec.Decode(&v); err != nil {
+		if err == io.EOF {
+			return nil, false
+		}
+		return err, true
 	}
-	i.n++
-	return i.n, true
+	return v, true
 }
 
 func ExampleWithInputIter() {
-	query, err := gojq.Parse("input")
+	query, err := gojq.Parse("reduce inputs as $x (0; . + $x)")
 	if err != nil {
 		log.Fatalln(err)
 	}
 	code, err := gojq.Compile(
 		query,
-		gojq.WithInputIter(&testInputIter{}),
+		gojq.WithInputIter(
+			newTestInputIter(strings.NewReader("1 2 3 4 5")),
+		),
 	)
 	if err != nil {
 		log.Fatalln(err)
@@ -44,5 +58,5 @@ func ExampleWithInputIter() {
 	}
 
 	// Output:
-	// 1
+	// 15
 }
