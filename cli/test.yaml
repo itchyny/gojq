@@ -1713,6 +1713,24 @@
     [1,2]
     []
 
+- name: ensure arrays are immutable during addition
+  args:
+    - '. as $first | .[:0] + [6, 7, 8] | ., $first'
+  input: '[1, 2, 3, 4, 5]'
+  expected: |
+    [
+      6,
+      7,
+      8
+    ]
+    [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+
 - name: subtract arrays
   args:
     - -c
