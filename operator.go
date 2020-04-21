@@ -335,7 +335,15 @@ func funcOpAdd(_, l, r interface{}) interface{} {
 		func(l, r float64) interface{} { return l + r },
 		func(l, r *big.Int) interface{} { return new(big.Int).Add(l, r) },
 		func(l, r string) interface{} { return l + r },
-		func(l, r []interface{}) interface{} { return append(l, r...) },
+		func(l, r []interface{}) interface{} {
+			if len(r) == 0 {
+				return l
+			} else if len(r) == 0 {
+				return l
+			}
+			v := make([]interface{}, 0, len(l)+len(r))
+			return append(append(v, l...), r...)
+		},
 		func(l, r map[string]interface{}) interface{} {
 			m := make(map[string]interface{})
 			for k, v := range l {
