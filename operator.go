@@ -338,8 +338,8 @@ func funcOpAdd(_, l, r interface{}) interface{} {
 		func(l, r []interface{}) interface{} {
 			if len(r) == 0 {
 				return l
-			} else if len(r) == 0 {
-				return l
+			} else if len(l) == 0 {
+				return r
 			}
 			v := make([]interface{}, 0, len(l)+len(r))
 			return append(append(v, l...), r...)
