@@ -1,4 +1,7 @@
 # Changelog
+## [v0.10.1](https://github.com/itchyny/gojq/compare/v0.10.0..v0.10.1) (2020-04-24)
+* fix array addition not to modify the left hand side
+
 ## [v0.10.0](https://github.com/itchyny/gojq/compare/v0.9.0..v0.10.0) (2020-04-02)
 * implement various functions (`format`, `significand`, `modulemeta`, `halt_error`)
 * implement `input`, `inputs` functions
