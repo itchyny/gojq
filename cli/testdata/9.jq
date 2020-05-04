@@ -8,7 +8,7 @@ module {
   ],
   y: {
     z: [128, "", false, true, null, [[]]]
-  }
+  },
 };
 
 def f($x): $x * .;

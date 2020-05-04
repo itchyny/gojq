@@ -492,6 +492,16 @@
       "quxx": 1
     }
 
+- name: object construction with trailing comma
+  args:
+    - '{foo,bar,}'
+  input: '{"foo": 1, "bar": 2, "baz": 3}'
+  expected: |
+    {
+      "bar": 2,
+      "foo": 1
+    }
+
 - name: object construction pipe in value
   args:
     - '{ "bar": { "baz": . } | . | select(true) }'
@@ -4871,7 +4881,7 @@
   error: |
     invalid query: testdata/2.jq:3
         3 |   bar, []
-                 ^  unexpected token "," (expected "}")
+                   ^  unexpected token "[" (expected "}")
   exit_code: 3
 
 - name: query file not found

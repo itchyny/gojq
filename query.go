@@ -748,7 +748,7 @@ func (e *Func) String() string {
 
 // Object ...
 type Object struct {
-	KeyVals []ObjectKeyVal `"{" (@@ ("," @@)*)? "}"`
+	KeyVals []ObjectKeyVal `"{" (@@ ("," @@)* ","?)? "}"`
 }
 
 func (e *Object) String() string {
@@ -1025,7 +1025,7 @@ func (e *ConstTerm) toValue() interface{} {
 
 // ConstObject ...
 type ConstObject struct {
-	KeyVals []ConstObjectKeyVal `"{" (@@ ("," @@)*)? "}"`
+	KeyVals []ConstObjectKeyVal `"{" (@@ ("," @@)* ","?)? "}"`
 }
 
 func (e *ConstObject) String() string {
