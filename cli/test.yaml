@@ -2154,7 +2154,7 @@
   error: |
     invalid query: label foo | .
         label foo | .
-              ^  unexpected "foo" (expected <variable>)
+              ^  unexpected token "foo" (expected <variable>)
   exit_code: 3
 
 - name: label not defined error for break syntax
@@ -2171,7 +2171,7 @@
   error: |
     invalid query: label $x | break x
         label $x | break x
-                         ^  unexpected "x" (expected <variable>)
+                         ^  unexpected token "x" (expected <variable>)
   exit_code: 3
 
 - name: string interpolation
@@ -4817,7 +4817,7 @@
   error: |
     invalid query: >abc
         >abc
-        ^  unexpected ">"
+        ^  unexpected token ">"
   exit_code: 3
 
 - name: invalid query
@@ -4837,7 +4837,7 @@
   error: |
     invalid query: [ .[] | { .id } ]
         [ .[] | { .id } ]
-              ^  unexpected "|" (expected "]")
+              ^  unexpected token "|" (expected "]")
   exit_code: 3
 
 - name: invalid query
@@ -4861,7 +4861,7 @@
   error: |
     invalid query: <arg>:3
         3 |   | { id } }
-                       ^  unexpected "}" (expected "]")
+                       ^  unexpected token "}" (expected "]")
   exit_code: 3
 
 - name: invalid query in file
@@ -4871,7 +4871,7 @@
   error: |
     invalid query: testdata/2.jq:3
         3 |   bar, []
-                 ^  unexpected "," (expected "}")
+                 ^  unexpected token "," (expected "}")
   exit_code: 3
 
 - name: query file not found
@@ -5119,7 +5119,7 @@
   error: |
     invalid query in module: testdata/7.jq:1
         1 | def f: 1 +
-                     ^  unexpected "+" (expected ";")
+                     ^  unexpected token "+" (expected ";")
   exit_code: 3
 
 - name: module directive

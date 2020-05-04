@@ -78,18 +78,19 @@ func (err *queryParseError) Error() string {
 	var s strings.Builder
 	if er, ok := err.err.(participle.Error); ok {
 		lines := strings.Split(err.contents, "\n")
-		if 0 < er.Position().Line && er.Position().Line <= len(lines) {
+		pos := er.Token().Pos
+		if 0 < pos.Line && pos.Line <= len(lines) {
 			var prefix, fname string
 			if len(lines) <= 1 && strings.HasPrefix(err.fname, "<arg>") {
 				fname = err.contents
 			} else {
-				fname = fmt.Sprintf("%s:%d", err.fname, er.Position().Line)
-				prefix = fmt.Sprintf("%d | ", er.Position().Line)
+				fname = fmt.Sprintf("%s:%d", err.fname, pos.Line)
+				prefix = fmt.Sprintf("%d | ", pos.Line)
 			}
 			fmt.Fprintf(&s, "invalid %s: %s\n", err.typ, fname)
 			fmt.Fprintf(
-				&s, "    %s%s\n%s  %s", prefix, lines[er.Position().Line-1],
-				strings.Repeat(" ", 3+er.Position().Column+len(prefix))+"^", er.Message())
+				&s, "    %s%s\n%s  %s", prefix, lines[pos.Line-1],
+				strings.Repeat(" ", 3+pos.Column+len(prefix))+"^", er.Message())
 			return s.String()
 		}
 	}
