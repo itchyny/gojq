@@ -19,12 +19,14 @@ var parserOptions = []participle.Option{
 		`|(?P<Op>(\.\.|\??//))` +
 		`|(?P<CompareOp>([=!]=|[<>]=?))` +
 		`|(?P<UpdateOp>(=|[-|+*/%]=))` +
-		`|(?P<Number>((\d*\.)?\d+([eE]([-+]?\d+))?\b))` +
+		`|(?P<Number>` + numberPatternStr + `)` +
 		`|(?P<String>` + stringPatternStr + `)` +
 		`|(?P<Format>@[a-zA-Z0-9_]+)` +
 		"|(?P<Punct>[!-/:-@\\[-\\]^-`{-~])",
 	))),
 }
+
+const numberPatternStr = `(?:\d*\.)?\d+(?:[eE][-+]?\d+)?\b`
 
 var parser = participle.MustBuild(&Query{}, parserOptions...)
 

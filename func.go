@@ -320,16 +320,17 @@ func funcHas(v, x interface{}) interface{} {
 	}
 }
 
+var numberPattern = regexp.MustCompile("^[-+]?" + numberPatternStr + "$")
+
 func funcToNumber(v interface{}) interface{} {
 	switch v := v.(type) {
 	case int, float64, *big.Int:
 		return v
 	case string:
-		var x float64
-		if err := json.Unmarshal([]byte(v), &x); err != nil {
-			return fmt.Errorf("%s: %q", err, v)
+		if !numberPattern.MatchString(v) {
+			return fmt.Errorf("invalid number: %q", v)
 		}
-		return x
+		return normalizeNumbers(json.Number(v))
 	default:
 		return &funcTypeError{"tonumber", v}
 	}
