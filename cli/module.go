@@ -14,11 +14,6 @@ type moduleLoader struct {
 	paths []string
 }
 
-type module struct {
-	path   string
-	module *gojq.Module
-}
-
 func (l *moduleLoader) LoadInitModules() ([]*gojq.Module, error) {
 	var ms []*gojq.Module
 	for _, path := range l.paths {
