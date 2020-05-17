@@ -50,7 +50,7 @@ brew install itchyny/tap/gojq
 
 ### Build from source
 ```bash
-GO111MODULE=on go get github.com/itchyny/gojq/cmd/gojq
+env GO111MODULE=on go get github.com/itchyny/gojq/cmd/gojq
 ```
 
 ## Difference to jq
