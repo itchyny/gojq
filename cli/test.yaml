@@ -2239,7 +2239,7 @@
   error: |
     invalid query in string interpolation: 1 +
         1 +
-          ^  unexpected token "+"
+           ^  unexpected token "<EOF>"
   exit_code: 3
 
 - name: tojson function
@@ -2310,7 +2310,7 @@
   error: |
     invalid query: .foo as foo | {$bar}
         .foo as foo | {$bar}
-             ^  unexpected token "as"
+                ^  unexpected token "foo" (expected <variable> | "[" | "{")
   exit_code: 3
 
 - name: variable name not found error
@@ -4840,7 +4840,7 @@
   error: |
     invalid query: .abc[
         .abc[
-            ^  unexpected token "["
+             ^  unexpected token "<EOF>" (expected "]")
   exit_code: 3
 
 - name: invalid query

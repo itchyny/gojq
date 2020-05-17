@@ -3,7 +3,7 @@ module github.com/itchyny/gojq
 go 1.14
 
 require (
-	github.com/alecthomas/participle v0.4.2-0.20200224000046-9a4297c13d0d
+	github.com/alecthomas/participle v0.4.4
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
 	github.com/fatih/color v1.9.0
 	github.com/hokaccha/go-prettyjson v0.0.0-20190818114111-108c894c2c0e
