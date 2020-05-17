@@ -4712,7 +4712,7 @@
     bar:
   error: |
     invalid yaml: <stdin>
-        bar:
+        10
         ^  could not find expected ':'
 
 - name: yaml output option
@@ -4723,9 +4723,9 @@
   expected: |
     bar:
       baz:
-      - 1
-      - qux
-      - []
+        - 1
+        - qux
+        - []
     foo: 128
 
 - name: yaml output option with multiple values
@@ -4735,9 +4735,9 @@
   input: '{"foo": 128, "bar": [1,2,"foo"]}'
   expected: |
     bar:
-    - 1
-    - 2
-    - foo
+      - 1
+      - 2
+      - foo
     foo: 128
     ---
     - 1

@@ -19,5 +19,5 @@ require (
 	github.com/stretchr/testify v1.5.0
 	github.com/tebeka/strftime v0.1.3 // indirect
 	golang.org/x/sys v0.0.0-20200331124033-c3d80250170d // indirect
-	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
+	gopkg.in/yaml.v3 v3.0.0-20200506231410-2ff61e1afc86
 )
