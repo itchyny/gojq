@@ -294,6 +294,21 @@ type Expr struct {
 	Label    *Label   `| @@`
 }
 
+func (e *Expr) String() string {
+	var s strings.Builder
+	if e.Logic != nil {
+		fmt.Fprint(&s, e.Logic)
+	}
+	if e.Update != nil {
+		fmt.Fprintf(&s, " %s %s", e.UpdateOp, e.Update)
+	} else if e.Bind != nil {
+		fmt.Fprint(&s, e.Bind)
+	} else if e.Label != nil {
+		fmt.Fprint(&s, e.Label)
+	}
+	return s.String()
+}
+
 func (e *Expr) minify() {
 	if e.Logic != nil {
 		e.Logic.minify()
@@ -313,21 +328,6 @@ func (e *Expr) toQuery() *Query {
 
 func (e *Expr) toFilter() *Filter {
 	return (&Alt{Left: e}).toFilter()
-}
-
-func (e *Expr) String() string {
-	var s strings.Builder
-	if e.Logic != nil {
-		fmt.Fprint(&s, e.Logic)
-	}
-	if e.Update != nil {
-		fmt.Fprintf(&s, " %s %s", e.UpdateOp, e.Update)
-	} else if e.Bind != nil {
-		fmt.Fprint(&s, e.Bind)
-	} else if e.Label != nil {
-		fmt.Fprint(&s, e.Label)
-	}
-	return s.String()
 }
 
 func (e *Expr) toFunc() string {
