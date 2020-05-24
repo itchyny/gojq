@@ -86,6 +86,7 @@ func init() {
 		"_greatereq":     argFunc2(funcOpGe),
 		"_lesseq":        argFunc2(funcOpLe),
 		"_sort_by":       argFunc1(funcSortBy),
+		"_group_by":      argFunc1(funcGroupBy),
 		"sin":            mathFunc("sin", math.Sin),
 		"cos":            mathFunc("cos", math.Cos),
 		"tan":            mathFunc("tan", math.Tan),
@@ -851,6 +852,38 @@ func funcSortBy(v, x interface{}) interface{} {
 		rs[i] = x.v
 	}
 	return rs
+}
+
+func funcGroupBy(v, x interface{}) interface{} {
+	vs, ok := v.([]interface{})
+	if !ok {
+		return &expectedArrayError{v}
+	}
+	xs, ok := x.([]interface{})
+	if !ok {
+		return &expectedArrayError{x}
+	}
+	if len(vs) != len(xs) {
+		panic("length mismatch in group_by")
+	}
+	type Y struct{ x, v interface{} }
+	ys := make([]*Y, len(vs))
+	for i, v := range vs {
+		ys[i] = &Y{xs[i], v}
+	}
+	sort.SliceStable(ys, func(i, j int) bool {
+		return compare(ys[i].x, ys[j].x) < 0
+	})
+	var ss []interface{}
+	var last interface{}
+	for i, r := range ys {
+		if i == 0 || compare(last, r.x) != 0 {
+			ss, last = append(ss, []interface{}{r.v}), r.x
+		} else {
+			ss[len(ss)-1] = append(ss[len(ss)-1].([]interface{}), r.v)
+		}
+	}
+	return ss
 }
 
 func funcSignificand(v float64) float64 {

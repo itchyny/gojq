@@ -47,16 +47,7 @@ def max: max_by(.);
 def max_by(f): reduce .[1:][] as $x (.[0]; if (.|f) <= ($x|f) then $x end);
 def sort: sort_by(.);
 def sort_by(f): _sort_by(map([f]));
-def group_by(f):
-  def _group_by:
-    if length > 0 then
-      .[0] as $x | .[1:] as $xs | ($x|[f]) as $fx
-        | [$x, $xs[] | select([f] == $fx)],
-          ([$xs[] | select([f] != $fx)] | _group_by)
-    else
-      empty
-    end;
-  sort_by(f) | [_group_by];
+def group_by(f): _group_by(map([f]));
 def unique: group_by(.) | map(.[0]);
 def unique_by(f): group_by(f) | map(.[0]);
 
