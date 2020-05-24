@@ -49,6 +49,7 @@ func run(input, output string) error {
 		if name[0] == '_' {
 			name = name[1:]
 		}
+		fd.Minify()
 		qs[name] = append(qs[fd.Name], fd)
 	}
 	t, err := astgen.Build(qs)

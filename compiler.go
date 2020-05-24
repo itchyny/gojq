@@ -349,7 +349,22 @@ func (c *compiler) compileQuery(e *Query) error {
 }
 
 func (c *compiler) compileComma(e *Comma) error {
-	if len(e.Filters) == 1 {
+	if e.Func != "" { // ref: Term#toFunc
+		switch e.Func {
+		case ".":
+			return c.compileTerm(&Term{Identity: true})
+		case "..":
+			return c.compileTerm(&Term{Recurse: true})
+		case "null":
+			return c.compileTerm(&Term{Null: true})
+		case "true":
+			return c.compileTerm(&Term{True: true})
+		case "false":
+			return c.compileTerm(&Term{False: true})
+		default:
+			return c.compileFunc(&Func{Name: e.Func})
+		}
+	} else if len(e.Filters) == 1 {
 		return c.compileFilter(e.Filters[0])
 	}
 	setfork := c.lazy(func() *code {
@@ -1256,7 +1271,7 @@ func (c *compiler) stringToQuery(s string, f *Func) (*Query, error) {
 	if len(buf) > 0 {
 		xs = append(xs, (&Term{RawStr: string(buf)}).toFilter())
 	}
-	q := (&Term{Array: &Array{&Query{Commas: []*Comma{{xs}}}}}).toQuery()
+	q := (&Term{Array: &Array{&Query{Commas: []*Comma{&Comma{Filters: xs}}}}}).toQuery()
 	q.Commas = append(q.Commas, (&Term{
 		Func: &Func{
 			Name: "join",

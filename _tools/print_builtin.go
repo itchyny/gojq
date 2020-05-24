@@ -26,6 +26,7 @@ func main() {
 		if name[0] == '_' {
 			name = name[1:]
 		}
+		fd.Minify()
 		fds[name] = append(fds[fd.Name], fd)
 	}
 	count := len(fds)
@@ -43,6 +44,9 @@ func main() {
 		m, err := gojq.ParseModule(s.String())
 		if err != nil {
 			panic(err)
+		}
+		for _, fd := range m.FuncDefs {
+			fd.Minify()
 		}
 		if !reflect.DeepEqual(m.FuncDefs, fds[n]) {
 			fmt.Printf("failed: %s: %s %s\n", n, m.FuncDefs, fds[n])

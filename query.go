@@ -82,6 +82,11 @@ func (e *FuncDef) String() string {
 	return s.String()
 }
 
+// Minify ...
+func (e *FuncDef) Minify() {
+	e.Body.minify()
+}
+
 // Query ...
 type Query struct {
 	Imports []*Import `@@*`
@@ -100,6 +105,12 @@ func (e *Query) String() string {
 		fmt.Fprint(&s, e)
 	}
 	return s.String()
+}
+
+func (e *Query) minify() {
+	for _, x := range e.Commas {
+		x.minify()
+	}
 }
 
 func (e *Query) toIndices() []interface{} {
@@ -131,9 +142,13 @@ func (e *Query) RunWithContext(ctx context.Context, v interface{}) Iter {
 // Comma ...
 type Comma struct {
 	Filters []*Filter `@@ ("," @@)*`
+	Func    string    `| @" "` // never matches, used in minifier
 }
 
 func (e *Comma) String() string {
+	if e.Func != "" {
+		return e.Func
+	}
 	var s strings.Builder
 	for i, e := range e.Filters {
 		if i > 0 {
@@ -142,6 +157,17 @@ func (e *Comma) String() string {
 		fmt.Fprint(&s, e)
 	}
 	return s.String()
+}
+
+func (e *Comma) minify() {
+	if len(e.Filters) == 1 {
+		if e.Func = e.Filters[0].toFunc(); e.Func != "" {
+			e.Filters = nil
+		}
+	}
+	for _, e := range e.Filters {
+		e.minify()
+	}
 }
 
 func (e *Comma) toQuery() *Query {
@@ -169,17 +195,29 @@ func (e *Filter) String() string {
 		}
 		fmt.Fprint(&s, fd)
 	}
-	if e.Alt != nil {
-		if len(e.FuncDefs) > 0 {
-			s.WriteByte(' ')
-		}
-		fmt.Fprint(&s, e.Alt)
+	if len(e.FuncDefs) > 0 {
+		s.WriteByte(' ')
 	}
+	fmt.Fprint(&s, e.Alt)
 	return s.String()
 }
 
+func (e *Filter) minify() {
+	for _, e := range e.FuncDefs {
+		e.Minify()
+	}
+	e.Alt.minify()
+}
+
 func (e *Filter) toQuery() *Query {
-	return (&Comma{[]*Filter{e}}).toQuery()
+	return (&Comma{Filters: []*Filter{e}}).toQuery()
+}
+
+func (e *Filter) toFunc() string {
+	if len(e.FuncDefs) != 0 {
+		return ""
+	}
+	return e.Alt.toFunc()
 }
 
 func (e *Filter) toIndices() []interface{} {
@@ -204,12 +242,26 @@ func (e *Alt) String() string {
 	return s.String()
 }
 
+func (e *Alt) minify() {
+	e.Left.minify()
+	for _, e := range e.Right {
+		e.minify()
+	}
+}
+
 func (e *Alt) toQuery() *Query {
 	return (&Filter{Alt: e}).toQuery()
 }
 
 func (e *Alt) toFilter() *Filter {
 	return &Filter{Alt: e}
+}
+
+func (e *Alt) toFunc() string {
+	if len(e.Right) != 0 {
+		return ""
+	}
+	return e.Left.toFunc()
 }
 
 func (e *Alt) toIndices() []interface{} {
@@ -229,6 +281,10 @@ func (e AltRight) String() string {
 	return fmt.Sprintf(" %s %s", e.Op, e.Right)
 }
 
+func (e *AltRight) minify() {
+	e.Right.minify()
+}
+
 // Expr ...
 type Expr struct {
 	Logic    *Logic   `@@`
@@ -236,6 +292,19 @@ type Expr struct {
 	Update   *Alt     `  @@`
 	Bind     *Bind    `| @@ )?`
 	Label    *Label   `| @@`
+}
+
+func (e *Expr) minify() {
+	if e.Logic != nil {
+		e.Logic.minify()
+	}
+	if e.Update != nil {
+		e.Update.minify()
+	} else if e.Bind != nil {
+		e.Bind.minify()
+	} else if e.Label != nil {
+		e.Label.minify()
+	}
 }
 
 func (e *Expr) toQuery() *Query {
@@ -259,6 +328,13 @@ func (e *Expr) String() string {
 		fmt.Fprint(&s, e.Label)
 	}
 	return s.String()
+}
+
+func (e *Expr) toFunc() string {
+	if e.Update != nil || e.Bind != nil || e.Logic == nil {
+		return ""
+	}
+	return e.Logic.toFunc()
 }
 
 func (e *Expr) toIndices() []interface{} {
@@ -287,6 +363,10 @@ func (e *Bind) String() string {
 	return s.String()
 }
 
+func (e *Bind) minify() {
+	e.Body.minify()
+}
+
 // Logic ...
 type Logic struct {
 	Left  *AndExpr     `@@`
@@ -302,12 +382,26 @@ func (e *Logic) String() string {
 	return s.String()
 }
 
+func (e *Logic) minify() {
+	e.Left.minify()
+	for _, e := range e.Right {
+		e.minify()
+	}
+}
+
 func (e *Logic) toQuery() *Query {
 	return (&Expr{Logic: e}).toQuery()
 }
 
 func (e *Logic) toFilter() *Filter {
 	return (&Expr{Logic: e}).toFilter()
+}
+
+func (e *Logic) toFunc() string {
+	if len(e.Right) != 0 {
+		return ""
+	}
+	return e.Left.toFunc()
 }
 
 func (e *Logic) toIndices() []interface{} {
@@ -327,6 +421,10 @@ func (e LogicRight) String() string {
 	return fmt.Sprintf(" %s %s", e.Op, e.Right)
 }
 
+func (e *LogicRight) minify() {
+	e.Right.minify()
+}
+
 // AndExpr ...
 type AndExpr struct {
 	Left  *Compare       `@@`
@@ -342,6 +440,13 @@ func (e *AndExpr) String() string {
 	return s.String()
 }
 
+func (e *AndExpr) minify() {
+	e.Left.minify()
+	for _, e := range e.Right {
+		e.minify()
+	}
+}
+
 func (e *AndExpr) toQuery() *Query {
 	return (&Logic{Left: e}).toQuery()
 }
@@ -352,6 +457,13 @@ func (e *AndExpr) toFilter() *Filter {
 
 func (e *AndExpr) toLogic() *Logic {
 	return &Logic{Left: e}
+}
+
+func (e *AndExpr) toFunc() string {
+	if len(e.Right) != 0 {
+		return ""
+	}
+	return e.Left.toFunc()
 }
 
 func (e *AndExpr) toIndices() []interface{} {
@@ -371,10 +483,21 @@ func (e AndExprRight) String() string {
 	return fmt.Sprintf(" %s %s", e.Op, e.Right)
 }
 
+func (e *AndExprRight) minify() {
+	e.Right.minify()
+}
+
 // Compare ...
 type Compare struct {
 	Left  *Arith        `@@`
 	Right *CompareRight `@@?`
+}
+
+func (e *Compare) minify() {
+	e.Left.minify()
+	if e.Right != nil {
+		e.Right.minify()
+	}
 }
 
 func (e *Compare) toQuery() *Query {
@@ -398,6 +521,13 @@ func (e *Compare) String() string {
 	return s.String()
 }
 
+func (e *Compare) toFunc() string {
+	if e.Right != nil {
+		return ""
+	}
+	return e.Left.toFunc()
+}
+
 func (e *Compare) toIndices() []interface{} {
 	if e.Right != nil {
 		return nil
@@ -415,6 +545,10 @@ func (e *CompareRight) String() string {
 	return fmt.Sprintf(" %s %s", e.Op, e.Right)
 }
 
+func (e *CompareRight) minify() {
+	e.Right.minify()
+}
+
 // Arith ...
 type Arith struct {
 	Left  *Factor      `@@`
@@ -430,6 +564,13 @@ func (e *Arith) String() string {
 	return s.String()
 }
 
+func (e *Arith) minify() {
+	e.Left.minify()
+	for _, e := range e.Right {
+		e.minify()
+	}
+}
+
 func (e *Arith) toQuery() *Query {
 	return (&Compare{Left: e}).toQuery()
 }
@@ -440,6 +581,13 @@ func (e *Arith) toFilter() *Filter {
 
 func (e *Arith) toLogic() *Logic {
 	return (&Compare{Left: e}).toLogic()
+}
+
+func (e *Arith) toFunc() string {
+	if len(e.Right) != 0 {
+		return ""
+	}
+	return e.Left.toFunc()
 }
 
 func (e *Arith) toIndices() []interface{} {
@@ -459,6 +607,10 @@ func (e ArithRight) String() string {
 	return fmt.Sprintf(" %s %s", e.Op, e.Right)
 }
 
+func (e *ArithRight) minify() {
+	e.Right.minify()
+}
+
 // Factor ...
 type Factor struct {
 	Left  *Term         `@@`
@@ -474,6 +626,13 @@ func (e *Factor) String() string {
 	return s.String()
 }
 
+func (e *Factor) minify() {
+	e.Left.minify()
+	for _, e := range e.Right {
+		e.minify()
+	}
+}
+
 func (e *Factor) toQuery() *Query {
 	return (&Arith{Left: e}).toQuery()
 }
@@ -484,6 +643,13 @@ func (e *Factor) toFilter() *Filter {
 
 func (e *Factor) toLogic() *Logic {
 	return (&Arith{Left: e}).toLogic()
+}
+
+func (e *Factor) toFunc() string {
+	if len(e.Right) != 0 {
+		return ""
+	}
+	return e.Left.toFunc()
 }
 
 func (e *Factor) toIndices() []interface{} {
@@ -501,6 +667,10 @@ type FactorRight struct {
 
 func (e FactorRight) String() string {
 	return fmt.Sprintf(" %s %s", e.Op, e.Right)
+}
+
+func (e *FactorRight) minify() {
+	e.Right.minify()
 }
 
 // Term ...
@@ -576,6 +746,33 @@ func (e *Term) String() string {
 	return s.String()
 }
 
+func (e *Term) minify() {
+	if e.Index != nil {
+		e.Index.minify()
+	} else if e.Func != nil {
+		e.Func.minify()
+	} else if e.Object != nil {
+		e.Object.minify()
+	} else if e.Array != nil {
+		e.Array.minify()
+	} else if e.Unary != nil {
+		e.Unary.minify()
+	} else if e.If != nil {
+		e.If.minify()
+	} else if e.Try != nil {
+		e.Try.minify()
+	} else if e.Reduce != nil {
+		e.Reduce.minify()
+	} else if e.Foreach != nil {
+		e.Foreach.minify()
+	} else if e.Query != nil {
+		e.Query.minify()
+	}
+	for _, e := range e.SuffixList {
+		e.minify()
+	}
+}
+
 func (e *Term) toQuery() *Query {
 	return (&Factor{Left: e}).toQuery()
 }
@@ -586,6 +783,28 @@ func (e *Term) toFilter() *Filter {
 
 func (e *Term) toLogic() *Logic {
 	return (&Factor{Left: e}).toLogic()
+}
+
+func (e *Term) toFunc() string {
+	if len(e.SuffixList) != 0 {
+		return ""
+	}
+	// ref: compiler#compileComma
+	if e.Identity {
+		return "."
+	} else if e.Recurse {
+		return ".."
+	} else if e.Null {
+		return "null"
+	} else if e.True {
+		return "true"
+	} else if e.False {
+		return "false"
+	} else if e.Func != nil {
+		return e.Func.toFunc()
+	} else {
+		return ""
+	}
 }
 
 func (e *Term) toIndices() []interface{} {
@@ -617,6 +836,10 @@ type Unary struct {
 
 func (e *Unary) String() string {
 	return fmt.Sprintf("%s%s", e.Op, e.Term)
+}
+
+func (e *Unary) minify() {
+	e.Term.minify()
 }
 
 // Pattern ...
@@ -717,6 +940,15 @@ func (e *Index) String() string {
 	return s.String()
 }
 
+func (e *Index) minify() {
+	if e.Start != nil {
+		e.Start.minify()
+	}
+	if e.End != nil {
+		e.End.minify()
+	}
+}
+
 func (e *Index) toIndices() []interface{} {
 	if e.Name == "" {
 		return nil
@@ -746,6 +978,19 @@ func (e *Func) String() string {
 	return s.String()
 }
 
+func (e *Func) minify() {
+	for _, x := range e.Args {
+		x.minify()
+	}
+}
+
+func (e *Func) toFunc() string {
+	if len(e.Args) != 0 {
+		return ""
+	}
+	return e.Name
+}
+
 // Object ...
 type Object struct {
 	KeyVals []ObjectKeyVal `"{" (@@ ("," @@)* ","?)? "}"`
@@ -765,6 +1010,12 @@ func (e *Object) String() string {
 	}
 	s.WriteString(" }")
 	return s.String()
+}
+
+func (e *Object) minify() {
+	for _, e := range e.KeyVals {
+		e.minify()
+	}
 }
 
 // ObjectKeyVal ...
@@ -798,6 +1049,15 @@ func (e *ObjectKeyVal) String() string {
 	return s.String()
 }
 
+func (e *ObjectKeyVal) minify() {
+	if e.Query != nil {
+		e.Query.minify()
+	}
+	if e.Val != nil {
+		e.Val.minify()
+	}
+}
+
 // ObjectVal ...
 type ObjectVal struct {
 	Alts []*Alt `@@ ("|" @@)*`
@@ -814,6 +1074,12 @@ func (e *ObjectVal) String() string {
 	return s.String()
 }
 
+func (e *ObjectVal) minify() {
+	for _, e := range e.Alts {
+		e.minify()
+	}
+}
+
 // Array ...
 type Array struct {
 	Query *Query `"[" @@? "]"`
@@ -824,6 +1090,12 @@ func (e *Array) String() string {
 		return "[]"
 	}
 	return fmt.Sprintf("[%s]", e.Query)
+}
+
+func (e *Array) minify() {
+	if e.Query != nil {
+		e.Query.minify()
+	}
 }
 
 // Suffix ...
@@ -846,6 +1118,14 @@ func (e *Suffix) String() string {
 		s.WriteString("?")
 	}
 	return s.String()
+}
+
+func (e *Suffix) minify() {
+	if e.Index != nil {
+		e.Index.minify()
+	} else if e.SuffixIndex != nil {
+		e.SuffixIndex.minify()
+	}
 }
 
 func (e *Suffix) toTerm() (*Term, bool) {
@@ -878,6 +1158,15 @@ func (e *SuffixIndex) String() string {
 	return e.toIndex().String()[1:]
 }
 
+func (e *SuffixIndex) minify() {
+	if e.Start != nil {
+		e.Start.minify()
+	}
+	if e.End != nil {
+		e.End.minify()
+	}
+}
+
 func (e *SuffixIndex) toIndex() *Index {
 	return &Index{
 		Start:   e.Start,
@@ -907,6 +1196,17 @@ func (e *If) String() string {
 	return s.String()
 }
 
+func (e *If) minify() {
+	e.Cond.minify()
+	e.Then.minify()
+	for _, x := range e.Elif {
+		x.minify()
+	}
+	if e.Else != nil {
+		e.Else.minify()
+	}
+}
+
 // IfElif ...
 type IfElif struct {
 	Cond *Query `"elif" @@`
@@ -915,6 +1215,11 @@ type IfElif struct {
 
 func (e *IfElif) String() string {
 	return fmt.Sprintf("elif %s then %s", e.Cond, e.Then)
+}
+
+func (e *IfElif) minify() {
+	e.Cond.minify()
+	e.Then.minify()
 }
 
 // Try ...
@@ -932,6 +1237,13 @@ func (e *Try) String() string {
 	return s.String()
 }
 
+func (e *Try) minify() {
+	e.Body.minify()
+	if e.Catch != nil {
+		e.Catch.minify()
+	}
+}
+
 // Reduce ...
 type Reduce struct {
 	Term    *Term    `"reduce" @@`
@@ -942,6 +1254,12 @@ type Reduce struct {
 
 func (e *Reduce) String() string {
 	return fmt.Sprintf("reduce %s as %s (%s; %s)", e.Term, e.Pattern, e.Start, e.Update)
+}
+
+func (e *Reduce) minify() {
+	e.Term.minify()
+	e.Start.minify()
+	e.Update.minify()
 }
 
 // Foreach ...
@@ -963,6 +1281,15 @@ func (e *Foreach) String() string {
 	return s.String()
 }
 
+func (e *Foreach) minify() {
+	e.Term.minify()
+	e.Start.minify()
+	e.Update.minify()
+	if e.Extract != nil {
+		e.Extract.minify()
+	}
+}
+
 // Label ...
 type Label struct {
 	Ident string `"label" @Variable`
@@ -971,6 +1298,10 @@ type Label struct {
 
 func (e *Label) String() string {
 	return fmt.Sprintf("label %s | %s", e.Ident, e.Body)
+}
+
+func (e *Label) minify() {
+	e.Body.minify()
 }
 
 // ConstTerm ...
