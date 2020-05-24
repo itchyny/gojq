@@ -1,4 +1,11 @@
 # Changelog
+## [v0.10.2](https://github.com/itchyny/gojq/compare/v0.10.1..v0.10.2) (2020-05-24)
+* implement `sort_by`, `group_by`, `bsearch` by internal functions for performance
+  and reducing the binary size
+* fix object construction and constant object to allow trailing commas
+* fix `tonumber` function to allow leading zeros
+* minify the builtin functions to reduce the binary size
+
 ## [v0.10.1](https://github.com/itchyny/gojq/compare/v0.10.0..v0.10.1) (2020-04-24)
 * fix array addition not to modify the left hand side
 
