@@ -85,6 +85,7 @@ func init() {
 		"_less":          argFunc2(funcOpLt),
 		"_greatereq":     argFunc2(funcOpGe),
 		"_lesseq":        argFunc2(funcOpLe),
+		"_sort_by":       argFunc1(funcSortBy),
 		"sin":            mathFunc("sin", math.Sin),
 		"cos":            mathFunc("cos", math.Cos),
 		"tan":            mathFunc("tan", math.Tan),
@@ -823,6 +824,33 @@ func toIndex(a []interface{}, i int) int {
 
 func funcBreak(x interface{}) interface{} {
 	return &breakError{x.(string)}
+}
+
+func funcSortBy(v, x interface{}) interface{} {
+	vs, ok := v.([]interface{})
+	if !ok {
+		return &expectedArrayError{v}
+	}
+	xs, ok := x.([]interface{})
+	if !ok {
+		return &expectedArrayError{x}
+	}
+	if len(vs) != len(xs) {
+		panic("length mismatch in sort_by")
+	}
+	type Y struct{ x, v interface{} }
+	ys := make([]*Y, len(vs))
+	for i, v := range vs {
+		ys[i] = &Y{xs[i], v}
+	}
+	sort.SliceStable(ys, func(i, j int) bool {
+		return compare(ys[i].x, ys[j].x) < 0
+	})
+	rs := make([]interface{}, len(vs))
+	for i, x := range ys {
+		rs[i] = x.v
+	}
+	return rs
 }
 
 func funcSignificand(v float64) float64 {
