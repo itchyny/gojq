@@ -157,6 +157,7 @@ func init() {
 		"setpath":        argFunc2(funcSetpath),
 		"delpaths":       argFunc1(funcDelpaths),
 		"getpath":        argFunc1(funcGetpath),
+		"bsearch":        argFunc1(funcBsearch),
 		"gmtime":         argFunc0(funcGmtime),
 		"localtime":      argFunc0(funcLocaltime),
 		"mktime":         argFunc0(funcMktime),
@@ -1168,6 +1169,20 @@ func funcGetpath(v, p interface{}) interface{} {
 		}
 	}
 	return v
+}
+
+func funcBsearch(v, t interface{}) interface{} {
+	vs, ok := v.([]interface{})
+	if !ok {
+		return &funcTypeError{"bsearch", v}
+	}
+	i := sort.Search(len(vs), func(i int) bool {
+		return compare(vs[i], t) >= 0
+	})
+	if i < len(vs) && compare(vs[i], t) == 0 {
+		return i
+	}
+	return -i - 1
 }
 
 func funcGmtime(v interface{}) interface{} {
