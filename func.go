@@ -165,7 +165,7 @@ func init() {
 		"strflocaltime":  argFunc1(funcStrflocaltime),
 		"strptime":       argFunc1(funcStrptime),
 		"now":            argFunc0(funcNow),
-		"_match_impl":    argFunc3(funcMatchImpl),
+		"_match":         argFunc3(funcMatch),
 		"error":          {argcount0 | argcount1, funcError},
 		"halt":           argFunc0(funcHalt),
 		"halt_error":     {argcount0 | argcount1, funcHaltError},
@@ -1329,7 +1329,7 @@ func funcNow(interface{}) interface{} {
 	return float64(t.Unix()) + float64(t.Nanosecond())/1e9
 }
 
-func funcMatchImpl(v, re, fs, testing interface{}) interface{} {
+func funcMatch(v, re, fs, testing interface{}) interface{} {
 	var flags string
 	if fs != nil {
 		v, ok := fs.(string)
