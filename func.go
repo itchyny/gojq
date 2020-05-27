@@ -1065,7 +1065,11 @@ func updatePaths(v interface{}, path []interface{}, w interface{}, delpaths bool
 		case []interface{}:
 			y, _ := toInt(x)
 			l := len(uu)
-			if y >= len(uu) && !delpaths {
+			var copied bool
+			if copied = y >= l; copied {
+				if delpaths {
+					return v, nil
+				}
 				l = y + 1
 				if l > 0x3ffffff {
 					return nil, &arrayLengthTooLargeError{l}
@@ -1073,22 +1077,23 @@ func updatePaths(v interface{}, path []interface{}, w interface{}, delpaths bool
 				ys := make([]interface{}, l)
 				copy(ys, uu)
 				uu = ys
-			} else if y < -len(uu) {
+			} else if y < -l {
 				if delpaths {
 					return v, nil
 				}
 				return nil, &funcTypeError{v: y}
 			} else if y < 0 {
-				y = len(uu) + y
-			}
-			if y >= len(uu) {
-				return v, nil
+				y += l
 			}
 			u, err := updatePaths(uu[y], path[1:], w, delpaths)
 			if err != nil {
 				return nil, err
 			}
-			vs := make([]interface{}, len(uu))
+			if copied {
+				uu[y] = u
+				return uu, nil
+			}
+			vs := make([]interface{}, l)
 			copy(vs, uu)
 			vs[y] = u
 			return vs, nil
