@@ -32,6 +32,14 @@ func (err *iteratorError) Error() string {
 	return fmt.Sprintf("cannot iterate over: %s", typeErrorPreview(err.v))
 }
 
+type arrayLengthTooLargeError struct {
+	v interface{}
+}
+
+func (err *arrayLengthTooLargeError) Error() string {
+	return fmt.Sprintf("array length too large: %s", previewValue(err.v))
+}
+
 type objectKeyNotStringError struct {
 	v interface{}
 }

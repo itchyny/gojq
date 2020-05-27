@@ -1067,6 +1067,9 @@ func updatePaths(v interface{}, path []interface{}, w interface{}, delpaths bool
 			l := len(uu)
 			if y >= len(uu) && !delpaths {
 				l = y + 1
+				if l > 0x3ffffff {
+					return nil, &arrayLengthTooLargeError{l}
+				}
 				ys := make([]interface{}, l)
 				copy(ys, uu)
 				uu = ys

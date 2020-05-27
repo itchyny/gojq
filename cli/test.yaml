@@ -3228,6 +3228,13 @@
   expected: |
     {"bar":42,"foo":42}
 
+- name: assignment operator array length limit error
+  args:
+    - '.[100000000] = 1'
+  input: '[]'
+  error: |
+    array length too large: 100000001
+
 - name: modify operator
   args:
     - -c
