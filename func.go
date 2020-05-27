@@ -991,9 +991,18 @@ func funcIsnormal(v interface{}) interface{} {
 }
 
 func funcSetpath(v, p, w interface{}) interface{} {
-	return updatePaths("setpath", clone(v), p, func(interface{}) interface{} {
-		return w
-	})
+	path, ok := p.([]interface{})
+	if !ok {
+		return &funcTypeError{"setpath", p}
+	}
+	var err error
+	if v, err = updatePaths(v, path, w, false); err != nil {
+		if err, ok := err.(*funcTypeError); ok {
+			err.name = "setpath"
+		}
+		return err
+	}
+	return v
 }
 
 func funcDelpaths(v, p interface{}) interface{} {
@@ -1001,152 +1010,165 @@ func funcDelpaths(v, p interface{}) interface{} {
 	if !ok {
 		return &funcTypeError{"delpaths", p}
 	}
-	for _, path := range paths {
-		v = updatePaths("delpaths", clone(v), path, func(interface{}) interface{} {
-			return struct{}{}
-		})
-		if _, ok := v.(error); ok {
-			return v
+	var empty struct{}
+	var err error
+	for _, p := range paths {
+		path, ok := p.([]interface{})
+		if !ok {
+			return &funcTypeError{"delpaths", p}
+		}
+		if v, err = updatePaths(v, path, empty, true); err != nil {
+			return err
 		}
 	}
 	return deleteEmpty(v)
 }
 
-func updatePaths(name string, v, p interface{}, f func(interface{}) interface{}) interface{} {
-	keys, ok := p.([]interface{})
-	if !ok {
-		return &funcTypeError{name, p}
+func updatePaths(v interface{}, path []interface{}, w interface{}, delpaths bool) (interface{}, error) {
+	if len(path) == 0 {
+		return w, nil
 	}
-	if len(keys) == 0 {
-		return f(v)
-	}
-	u := v
-	g := func(w interface{}) interface{} { v = w; return w }
-loop:
-	for i, x := range keys {
-		switch x := x.(type) {
-		case string:
-			if u == nil {
-				if name == "delpaths" {
-					break loop
-				}
-				u = g(make(map[string]interface{}))
+	switch x := path[0].(type) {
+	case string:
+		if v == nil {
+			if delpaths {
+				return v, nil
 			}
-			switch uu := u.(type) {
-			case map[string]interface{}:
-				if _, ok := uu[x]; !ok && name == "delpaths" {
-					break loop
-				}
-				if i < len(keys)-1 {
-					u = uu[x]
-					g = func(w interface{}) interface{} { uu[x] = w; return w }
-				} else {
-					uu[x] = f(uu[x])
-				}
-			default:
-				return &expectedObjectError{u}
+			v = make(map[string]interface{})
+		}
+		switch uu := v.(type) {
+		case map[string]interface{}:
+			if _, ok := uu[x]; !ok && delpaths {
+				return v, nil
 			}
-		case int, float64, *big.Int:
-			if u == nil {
-				u = g([]interface{}{})
+			u, err := updatePaths(uu[x], path[1:], w, delpaths)
+			if err != nil {
+				return nil, err
 			}
+			vs := make(map[string]interface{}, len(uu))
+			for k, v := range uu {
+				vs[k] = v
+			}
+			vs[x] = u
+			return vs, nil
+		default:
+			return nil, &expectedObjectError{v}
+		}
+	case int, float64, *big.Int:
+		if v == nil {
+			if delpaths {
+				return v, nil
+			}
+			v = []interface{}{}
+		}
+		switch uu := v.(type) {
+		case []interface{}:
 			y, _ := toInt(x)
-			switch uu := u.(type) {
-			case []interface{}:
-				l := len(uu)
-				if y >= len(uu) && name == "setpath" {
-					l = y + 1
-				} else if y < -len(uu) {
-					if name == "delpaths" {
-						break loop
-					}
-					return &funcTypeError{name, y}
-				} else if y < 0 {
-					y = len(uu) + y
-				}
+			l := len(uu)
+			if y >= len(uu) && !delpaths {
+				l = y + 1
 				ys := make([]interface{}, l)
 				copy(ys, uu)
 				uu = ys
-				g(uu)
-				if y >= len(uu) {
-					break loop
+			} else if y < -len(uu) {
+				if delpaths {
+					return v, nil
 				}
-				if i < len(keys)-1 {
-					u = uu[y]
-					g = func(w interface{}) interface{} { uu[y] = w; return w }
-				} else {
-					uu[y] = f(uu[y])
-				}
-			default:
-				return &expectedArrayError{u}
+				return nil, &funcTypeError{v: y}
+			} else if y < 0 {
+				y = len(uu) + y
 			}
-		case map[string]interface{}:
-			if len(x) == 0 {
-				switch u.(type) {
-				case []interface{}:
-					return &arrayIndexNotNumberError{x}
-				default:
-					return &objectKeyNotStringError{x}
-				}
+			if y >= len(uu) {
+				return v, nil
 			}
-			if u == nil {
-				u = g([]interface{}{})
+			u, err := updatePaths(uu[y], path[1:], w, delpaths)
+			if err != nil {
+				return nil, err
 			}
-			switch uu := u.(type) {
-			case []interface{}:
-				var start, end int
-				if x, ok := toInt(x["start"]); ok {
-					x := toIndex(uu, x)
-					if x > len(uu) || x == -1 {
-						start = len(uu)
-					} else if x == -2 {
-						start = 0
-					} else {
-						start = x
-					}
-				}
-				if x, ok := toInt(x["end"]); ok {
-					x := toIndex(uu, x)
-					if x < start {
-						end = start
-					} else {
-						end = x
-					}
-				} else {
-					end = len(uu)
-				}
-				if i < len(keys)-1 {
-					u = uu[start]
-					g = func(w interface{}) interface{} { uu[start] = w; return w }
-				} else if name == "delpaths" {
-					for y := start; y < end; y++ {
-						uu[y] = f(nil)
-					}
-				} else {
-					switch v := f(nil).(type) {
-					case []interface{}:
-						vv := make([]interface{}, start+len(v)+len(uu)-end)
-						copy(vv, uu[:start])
-						copy(vv[start:], v)
-						copy(vv[start+len(v):], uu[end:])
-						g(vv)
-					default:
-						return &expectedArrayError{v}
-					}
-				}
-			default:
-				return &expectedArrayError{u}
-			}
+			vs := make([]interface{}, len(uu))
+			copy(vs, uu)
+			vs[y] = u
+			return vs, nil
 		default:
-			switch u.(type) {
+			return nil, &expectedArrayError{v}
+		}
+	case map[string]interface{}:
+		if len(x) == 0 {
+			switch v.(type) {
 			case []interface{}:
-				return &arrayIndexNotNumberError{x}
+				return nil, &arrayIndexNotNumberError{x}
 			default:
-				return &objectKeyNotStringError{x}
+				return nil, &objectKeyNotStringError{x}
 			}
 		}
+		if v == nil {
+			v = []interface{}{}
+		}
+		switch uu := v.(type) {
+		case []interface{}:
+			var start, end int
+			if x, ok := toInt(x["start"]); ok {
+				x := toIndex(uu, x)
+				if x > len(uu) || x == -1 {
+					start = len(uu)
+				} else if x == -2 {
+					start = 0
+				} else {
+					start = x
+				}
+			}
+			if x, ok := toInt(x["end"]); ok {
+				x := toIndex(uu, x)
+				if x < start {
+					end = start
+				} else {
+					end = x
+				}
+			} else {
+				end = len(uu)
+			}
+			if len(path) > 1 {
+				u, err := updatePaths(uu[start], path[1:], w, delpaths)
+				if err != nil {
+					return nil, err
+				}
+				vs := make([]interface{}, len(uu))
+				copy(vs, uu)
+				vs[start] = u
+				return vs, nil
+			}
+			if delpaths {
+				if start >= end {
+					return uu, nil
+				}
+				vs := make([]interface{}, len(uu))
+				copy(vs, uu)
+				for y := start; y < end; y++ {
+					vs[y] = w
+				}
+				return vs, nil
+			}
+			switch v := w.(type) {
+			case []interface{}:
+				vs := make([]interface{}, start+len(v)+len(uu)-end)
+				copy(vs, uu[:start])
+				copy(vs[start:], v)
+				copy(vs[start+len(v):], uu[end:])
+				return vs, nil
+			default:
+				return nil, &expectedArrayError{v}
+			}
+		default:
+			return nil, &expectedArrayError{v}
+		}
+	default:
+		switch v.(type) {
+		case []interface{}:
+			return nil, &arrayIndexNotNumberError{x}
+		default:
+			return nil, &objectKeyNotStringError{x}
+		}
 	}
-	return v
 }
 
 func funcGetpath(v, p interface{}) interface{} {
