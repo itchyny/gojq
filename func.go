@@ -325,6 +325,20 @@ func funcHas(v, x interface{}) interface{} {
 }
 
 func funcAdd(v interface{}) interface{} {
+	if vs, ok := v.(map[string]interface{}); ok {
+		xs := make([]string, len(vs))
+		var i int
+		for k := range vs {
+			xs[i] = k
+			i++
+		}
+		sort.Strings(xs)
+		us := make([]interface{}, len(vs))
+		for i, x := range xs {
+			us[i] = vs[x]
+		}
+		v = us
+	}
 	vs, ok := v.([]interface{})
 	if !ok {
 		return &funcTypeError{"add", v}
