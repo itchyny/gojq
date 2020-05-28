@@ -895,6 +895,14 @@
   expected: |
     [null,6,"abc",[3,4,5,6],{"a":3,"b":2}]
 
+- name: add function error
+  args:
+    - -c
+    - 'add'
+  input: '[{}, [], {}]'
+  error: |
+    cannot add: object ({}) and array ([])
+
 - name: flatten/0 function
   args:
     - -c

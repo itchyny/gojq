@@ -51,6 +51,7 @@ func init() {
 		"utf8bytelength": argFunc0(funcUtf8ByteLength),
 		"keys":           argFunc0(funcKeys),
 		"has":            argFunc1(funcHas),
+		"add":            argFunc0(funcAdd),
 		"tonumber":       argFunc0(funcToNumber),
 		"tostring":       argFunc0(funcToString),
 		"type":           argFunc0(funcType),
@@ -321,6 +322,49 @@ func funcHas(v, x interface{}) interface{} {
 	default:
 		return &hasKeyTypeError{v, x}
 	}
+}
+
+func funcAdd(v interface{}) interface{} {
+	vs, ok := v.([]interface{})
+	if !ok {
+		return &funcTypeError{"add", v}
+	}
+	v = nil
+	for _, x := range vs {
+		switch y := x.(type) {
+		case map[string]interface{}:
+			switch w := v.(type) {
+			case nil:
+				m := make(map[string]interface{})
+				for k, e := range y {
+					m[k] = e
+				}
+				v = m
+				continue
+			case map[string]interface{}:
+				for k, e := range y {
+					w[k] = e
+				}
+				continue
+			}
+		case []interface{}:
+			switch w := v.(type) {
+			case nil:
+				s := make([]interface{}, len(y))
+				copy(s, y)
+				v = s
+				continue
+			case []interface{}:
+				v = append(w, y...)
+				continue
+			}
+		}
+		v = funcOpAdd(nil, v, x)
+		if err, ok := v.(error); ok {
+			return err
+		}
+	}
+	return v
 }
 
 var numberPattern = regexp.MustCompile("^[-+]?" + numberPatternStr + "$")
