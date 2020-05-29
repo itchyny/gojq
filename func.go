@@ -1068,6 +1068,9 @@ func funcDelpaths(v, p interface{}) interface{} {
 	if !ok {
 		return &funcTypeError{"delpaths", p}
 	}
+	// Fills the paths with an empty value and then delete them. We cannot delete
+	// in each loop because array indices should not change. For example,
+	//   jq -n "[0, 1, 2, 3] | delpaths([[1], [2]])" #=> [0, 3].
 	var empty struct{}
 	var err error
 	for _, p := range paths {
