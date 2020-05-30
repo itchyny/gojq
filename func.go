@@ -932,93 +932,74 @@ func funcMinMaxBy(vs, xs []interface{}, isMin bool) interface{} {
 	return vs[j]
 }
 
+type sortItem struct {
+	value, key interface{}
+}
+
 func funcSortBy(v, x interface{}) interface{} {
-	vs, ok := v.([]interface{})
-	if !ok {
-		return &expectedArrayError{v}
+	items, err := sortItems(v, x)
+	if err != nil {
+		return err
 	}
-	xs, ok := x.([]interface{})
-	if !ok {
-		return &expectedArrayError{x}
-	}
-	if len(vs) != len(xs) {
-		panic("length mismatch in sort_by")
-	}
-	type Y struct{ x, v interface{} }
-	ys := make([]*Y, len(vs))
-	for i, v := range vs {
-		ys[i] = &Y{xs[i], v}
-	}
-	sort.SliceStable(ys, func(i, j int) bool {
-		return compare(ys[i].x, ys[j].x) < 0
-	})
-	rs := make([]interface{}, len(vs))
-	for i, x := range ys {
-		rs[i] = x.v
+	rs := make([]interface{}, len(items))
+	for i, x := range items {
+		rs[i] = x.value
 	}
 	return rs
 }
 
 func funcGroupBy(v, x interface{}) interface{} {
-	vs, ok := v.([]interface{})
-	if !ok {
-		return &expectedArrayError{v}
+	items, err := sortItems(v, x)
+	if err != nil {
+		return err
 	}
-	xs, ok := x.([]interface{})
-	if !ok {
-		return &expectedArrayError{x}
-	}
-	if len(vs) != len(xs) {
-		panic("length mismatch in group_by")
-	}
-	type Y struct{ x, v interface{} }
-	ys := make([]*Y, len(vs))
-	for i, v := range vs {
-		ys[i] = &Y{xs[i], v}
-	}
-	sort.SliceStable(ys, func(i, j int) bool {
-		return compare(ys[i].x, ys[j].x) < 0
-	})
-	var ss []interface{}
+	var rs []interface{}
 	var last interface{}
-	for i, r := range ys {
-		if i == 0 || compare(last, r.x) != 0 {
-			ss, last = append(ss, []interface{}{r.v}), r.x
+	for i, r := range items {
+		if i == 0 || compare(last, r.key) != 0 {
+			rs, last = append(rs, []interface{}{r.value}), r.key
 		} else {
-			ss[len(ss)-1] = append(ss[len(ss)-1].([]interface{}), r.v)
+			rs[len(rs)-1] = append(rs[len(rs)-1].([]interface{}), r.value)
 		}
 	}
-	return ss
+	return rs
 }
 
 func funcUniqueBy(v, x interface{}) interface{} {
+	items, err := sortItems(v, x)
+	if err != nil {
+		return err
+	}
+	var rs []interface{}
+	var last interface{}
+	for i, r := range items {
+		if i == 0 || compare(last, r.key) != 0 {
+			rs, last = append(rs, r.value), r.key
+		}
+	}
+	return rs
+}
+
+func sortItems(v, x interface{}) ([]*sortItem, error) {
 	vs, ok := v.([]interface{})
 	if !ok {
-		return &expectedArrayError{v}
+		return nil, &expectedArrayError{v}
 	}
 	xs, ok := x.([]interface{})
 	if !ok {
-		return &expectedArrayError{x}
+		return nil, &expectedArrayError{x}
 	}
 	if len(vs) != len(xs) {
-		panic("length mismatch in unique_by")
+		panic("length mismatch")
 	}
-	type Y struct{ x, v interface{} }
-	ys := make([]*Y, len(vs))
+	items := make([]*sortItem, len(vs))
 	for i, v := range vs {
-		ys[i] = &Y{xs[i], v}
+		items[i] = &sortItem{v, xs[i]}
 	}
-	sort.SliceStable(ys, func(i, j int) bool {
-		return compare(ys[i].x, ys[j].x) < 0
+	sort.SliceStable(items, func(i, j int) bool {
+		return compare(items[i].key, items[j].key) < 0
 	})
-	var ss []interface{}
-	var last interface{}
-	for i, r := range ys {
-		if i == 0 || compare(last, r.x) != 0 {
-			ss, last = append(ss, r.v), r.x
-		}
-	}
-	return ss
+	return items, nil
 }
 
 func funcSignificand(v float64) float64 {
