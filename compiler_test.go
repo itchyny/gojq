@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"reflect"
+	"testing"
 	"time"
 
 	"github.com/itchyny/gojq"
@@ -100,4 +102,28 @@ func ExampleCode_RunWithContext() {
 
 	// Output:
 	// context deadline exceeded
+}
+
+func Test_CodeCompileArray(t *testing.T) {
+	query, err := gojq.Parse("[1,2,3]")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	code, err := gojq.Compile(query)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	if got, expected := reflect.ValueOf(code).Elem().FieldByName("codes").Len(), 3; expected != got {
+		t.Errorf("expected: %v, got: %v", expected, got)
+	}
+	iter := code.Run(nil)
+	for {
+		got, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if expected := []interface{}{1, 2, 3}; !reflect.DeepEqual(got, expected) {
+			t.Errorf("expected: %v, got: %v", expected, got)
+		}
+	}
 }

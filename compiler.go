@@ -1132,9 +1132,13 @@ func (c *compiler) compileArray(e *Array) error {
 	c.append(&code{op: oppush, v: []interface{}{}})
 	arr := c.newVariable()
 	c.append(&code{op: opstore, v: arr})
-	defer c.lazy(func() *code {
-		return &code{op: opfork, v: c.pc() - 2}
-	})()
+	pc := len(c.codes)
+	c.append(&code{op: opnop})
+	defer func() {
+		if pc < len(c.codes) {
+			c.codes[pc] = &code{op: opfork, v: c.pc() - 2}
+		}
+	}()
 	defer c.newScopeDepth()()
 	if err := c.compileQuery(e.Query); err != nil {
 		return err
@@ -1143,6 +1147,24 @@ func (c *compiler) compileArray(e *Array) error {
 	c.append(&code{op: opbacktrack})
 	c.append(&code{op: oppop})
 	c.append(&code{op: opload, v: arr})
+	if len(e.Query.Commas) != 1 || 3*len(e.Query.Commas[0].Filters) != len(c.codes)-pc-3 {
+		return nil
+	}
+	// optimize constant arrays
+	l := len(e.Query.Commas[0].Filters)
+	for i := 0; i < l; i++ {
+		if (i > 0 && c.codes[pc+i].op != opfork) ||
+			c.codes[pc+i*2+l].op != opconst ||
+			(i < l-1 && c.codes[pc+i*2+l+1].op != opjump) {
+			return nil
+		}
+	}
+	v := make([]interface{}, l)
+	for i := 0; i < l; i++ {
+		v[i] = c.codes[pc+i*2+l].v
+	}
+	c.codes[pc-2] = &code{op: opconst, v: v}
+	c.codes = c.codes[:pc-1]
 	return nil
 }
 
