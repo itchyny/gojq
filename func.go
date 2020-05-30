@@ -86,6 +86,7 @@ func init() {
 		"_less":          argFunc2(funcOpLt),
 		"_greatereq":     argFunc2(funcOpGe),
 		"_lesseq":        argFunc2(funcOpLe),
+		"_min_by":        argFunc1(funcMinBy),
 		"_sort_by":       argFunc1(funcSortBy),
 		"_group_by":      argFunc1(funcGroupBy),
 		"sin":            mathFunc("sin", math.Sin),
@@ -884,6 +885,31 @@ func toIndex(a []interface{}, i int) int {
 
 func funcBreak(x interface{}) interface{} {
 	return &breakError{x.(string)}
+}
+
+func funcMinBy(v, x interface{}) interface{} {
+	vs, ok := v.([]interface{})
+	if !ok {
+		return &expectedArrayError{v}
+	}
+	xs, ok := x.([]interface{})
+	if !ok {
+		return &expectedArrayError{x}
+	}
+	if len(vs) != len(xs) {
+		panic("length mismatch in min_by")
+	}
+	if len(vs) == 0 {
+		return nil
+	}
+	var i, j int
+	x = xs[0]
+	for i++; i < len(xs); i++ {
+		if compare(x, xs[i]) > 0 {
+			j, x = i, xs[i]
+		}
+	}
+	return vs[j]
 }
 
 func funcSortBy(v, x interface{}) interface{} {

@@ -41,7 +41,7 @@ def flatten($x):
   else _flatten($x) end;
 def flatten: _flatten(-1);
 def min: min_by(.);
-def min_by(f): reduce .[1:][] as $x (.[0]; if (.|f) > ($x|f) then $x end);
+def min_by(f): _min_by(map([f]));
 def max: max_by(.);
 def max_by(f): reduce .[1:][] as $x (.[0]; if (.|f) <= ($x|f) then $x end);
 def sort: sort_by(.);
