@@ -90,6 +90,7 @@ func init() {
 		"_max_by":        argFunc1(funcMaxBy),
 		"_sort_by":       argFunc1(funcSortBy),
 		"_group_by":      argFunc1(funcGroupBy),
+		"_unique_by":     argFunc1(funcUniqueBy),
 		"sin":            mathFunc("sin", math.Sin),
 		"cos":            mathFunc("cos", math.Cos),
 		"tan":            mathFunc("tan", math.Tan),
@@ -985,6 +986,36 @@ func funcGroupBy(v, x interface{}) interface{} {
 			ss, last = append(ss, []interface{}{r.v}), r.x
 		} else {
 			ss[len(ss)-1] = append(ss[len(ss)-1].([]interface{}), r.v)
+		}
+	}
+	return ss
+}
+
+func funcUniqueBy(v, x interface{}) interface{} {
+	vs, ok := v.([]interface{})
+	if !ok {
+		return &expectedArrayError{v}
+	}
+	xs, ok := x.([]interface{})
+	if !ok {
+		return &expectedArrayError{x}
+	}
+	if len(vs) != len(xs) {
+		panic("length mismatch in unique_by")
+	}
+	type Y struct{ x, v interface{} }
+	ys := make([]*Y, len(vs))
+	for i, v := range vs {
+		ys[i] = &Y{xs[i], v}
+	}
+	sort.SliceStable(ys, func(i, j int) bool {
+		return compare(ys[i].x, ys[j].x) < 0
+	})
+	var ss []interface{}
+	var last interface{}
+	for i, r := range ys {
+		if i == 0 || compare(last, r.x) != 0 {
+			ss, last = append(ss, r.v), r.x
 		}
 	}
 	return ss

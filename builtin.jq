@@ -48,7 +48,7 @@ def sort: sort_by(.);
 def sort_by(f): _sort_by(map([f]));
 def group_by(f): _group_by(map([f]));
 def unique: unique_by(.);
-def unique_by(f): group_by(f) | map(.[0]);
+def unique_by(f): _unique_by(map([f]));
 
 def arrays: select(type == "array");
 def objects: select(type == "object");
