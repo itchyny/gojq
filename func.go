@@ -87,6 +87,7 @@ func init() {
 		"_greatereq":     argFunc2(funcOpGe),
 		"_lesseq":        argFunc2(funcOpLe),
 		"_min_by":        argFunc1(funcMinBy),
+		"_max_by":        argFunc1(funcMaxBy),
 		"_sort_by":       argFunc1(funcSortBy),
 		"_group_by":      argFunc1(funcGroupBy),
 		"sin":            mathFunc("sin", math.Sin),
@@ -899,13 +900,31 @@ func funcMinBy(v, x interface{}) interface{} {
 	if len(vs) != len(xs) {
 		panic("length mismatch in min_by")
 	}
+	return funcMinMaxBy(vs, xs, true)
+}
+
+func funcMaxBy(v, x interface{}) interface{} {
+	vs, ok := v.([]interface{})
+	if !ok {
+		return &expectedArrayError{v}
+	}
+	xs, ok := x.([]interface{})
+	if !ok {
+		return &expectedArrayError{x}
+	}
+	if len(vs) != len(xs) {
+		panic("length mismatch in max_by")
+	}
+	return funcMinMaxBy(vs, xs, false)
+}
+
+func funcMinMaxBy(vs, xs []interface{}, isMin bool) interface{} {
 	if len(vs) == 0 {
 		return nil
 	}
-	var i, j int
-	x = xs[0]
+	i, j, x := 0, 0, xs[0]
 	for i++; i < len(xs); i++ {
-		if compare(x, xs[i]) > 0 {
+		if (compare(x, xs[i]) > 0) == isMin {
 			j, x = i, xs[i]
 		}
 	}
