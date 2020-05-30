@@ -47,7 +47,7 @@ def max_by(f): _max_by(map([f]));
 def sort: sort_by(.);
 def sort_by(f): _sort_by(map([f]));
 def group_by(f): _group_by(map([f]));
-def unique: group_by(.) | map(.[0]);
+def unique: unique_by(.);
 def unique_by(f): group_by(f) | map(.[0]);
 
 def arrays: select(type == "array");
