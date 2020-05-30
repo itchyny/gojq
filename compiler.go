@@ -112,7 +112,12 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 			}
 		}
 	}
-	return c.compile(q)
+	code, err := c.compile(q)
+	if err != nil {
+		return nil, err
+	}
+	c.optimizeJumps()
+	return code, nil
 }
 
 var varNameRe = regexp.MustCompile(`^\$[a-zA-Z_][a-zA-Z0-9_]*$`)
@@ -134,7 +139,6 @@ func (c *compiler) compile(q *Query) (*Code, error) {
 		return nil, err
 	}
 	c.append(&code{op: opret})
-	c.optimizeJumps()
 	return &Code{
 		variables: c.variables,
 		codes:     c.codes,
