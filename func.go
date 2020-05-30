@@ -1188,10 +1188,10 @@ func updatePaths(v interface{}, path []interface{}, w interface{}, delpaths bool
 				if delpaths {
 					return v, nil
 				}
-				l = y + 1
-				if l > 0x3ffffff {
-					return nil, &arrayLengthTooLargeError{l}
+				if y > 0x3ffffff {
+					return nil, &arrayIndexTooLargeError{y}
 				}
+				l = y + 1
 				ys := make([]interface{}, l)
 				copy(ys, uu)
 				uu = ys
