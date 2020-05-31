@@ -91,21 +91,17 @@ func deleteEmpty(v interface{}) interface{} {
 		}
 		return v
 	case []interface{}:
-		u := v
-		var copied bool
-		for i, w := range v {
-			if w == struct{}{} {
-				if !copied {
-					u, copied = make([]interface{}, i, len(v)), true
-					copy(u, v)
-				}
-			} else if copied {
-				u = append(u, deleteEmpty(w))
-			} else {
-				u[i] = deleteEmpty(w)
+		var j int
+		for _, w := range v {
+			if w != struct{}{} {
+				v[j] = deleteEmpty(w)
+				j++
 			}
 		}
-		return u
+		for i := j; i < len(v); i++ {
+			v[i] = nil
+		}
+		return v[:j]
 	default:
 		return v
 	}
