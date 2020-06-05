@@ -1156,6 +1156,13 @@
     ["ab\u0000cd","b\u0000cd",true]
     ["ab\u0000cd","b\u0000cd",true]
 
+- name: contains function error
+  args:
+    - 'nan | contains([nan])'
+  input: '0'
+  error: |
+    cannot check contains([null]): number (null)
+
 - name: indices function for array
   args:
     - 'indices(1), indices([]), indices([1,2]), indices([3,4,5])'

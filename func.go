@@ -554,10 +554,7 @@ func implode(v []interface{}) interface{} {
 func funcToJSON(v interface{}) interface{} {
 	s, err := encodeJSON(v)
 	if err != nil {
-		s, err = encodeJSON(normalizeValues(v))
-		if err != nil {
-			return err
-		}
+		return err
 	}
 	return s
 }
@@ -566,9 +563,11 @@ func encodeJSON(v interface{}) (string, error) {
 	buf := new(bytes.Buffer)
 	enc := json.NewEncoder(buf)
 	enc.SetEscapeHTML(false)
-	err := enc.Encode(v)
-	if err != nil {
-		return "", err
+	if err := enc.Encode(v); err != nil {
+		buf.Reset()
+		if err = enc.Encode(normalizeValues(v)); err != nil {
+			return "", err
+		}
 	}
 	s := buf.String()
 	return s[:len(s)-1], nil // trim last newline character
