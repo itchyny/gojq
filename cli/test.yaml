@@ -522,6 +522,15 @@
   expected: |
     {}
 
+- name: negate in object value
+  args:
+    - '{ foo: -128 }'
+  input: 0
+  expected: |
+    {
+      "foo": -128
+    }
+
 - name: iterator in object
   args:
     - -c

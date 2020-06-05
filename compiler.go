@@ -1067,12 +1067,31 @@ func (c *compiler) compileObject(e *Object) error {
 	defer c.newScopeDepth()()
 	v := c.newVariable()
 	c.append(&code{op: opstore, v: v})
+	pc := len(c.codes)
 	for _, kv := range e.KeyVals {
 		if err := c.compileObjectKeyVal(v, kv); err != nil {
 			return err
 		}
 	}
 	c.append(&code{op: opobject, v: len(e.KeyVals)})
+	// optimize constant objects
+	l := len(e.KeyVals)
+	if pc+l*3+1 != len(c.codes) {
+		return nil
+	}
+	for i := 0; i < l; i++ {
+		if c.codes[pc+i*3].op != oppush ||
+			c.codes[pc+i*3+1].op != opload ||
+			c.codes[pc+i*3+2].op != opconst {
+			return nil
+		}
+	}
+	w := make(map[string]interface{}, l)
+	for i := 0; i < l; i++ {
+		w[c.codes[pc+i*3].v.(string)] = c.codes[pc+i*3+2].v
+	}
+	c.codes[pc-1] = &code{op: opconst, v: w}
+	c.codes = c.codes[:pc]
 	return nil
 }
 

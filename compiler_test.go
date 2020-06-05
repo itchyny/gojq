@@ -104,8 +104,8 @@ func ExampleCode_RunWithContext() {
 	// context deadline exceeded
 }
 
-func Test_CodeCompileArray(t *testing.T) {
-	query, err := gojq.Parse("[1,2,3]")
+func Test_CodeCompileOptimizeConstants(t *testing.T) {
+	query, err := gojq.Parse("[1,{foo:2},[3]]")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -122,7 +122,9 @@ func Test_CodeCompileArray(t *testing.T) {
 		if !ok {
 			break
 		}
-		if expected := []interface{}{1, 2, 3}; !reflect.DeepEqual(got, expected) {
+		if expected := []interface{}{
+			1, map[string]interface{}{"foo": 2}, []interface{}{3},
+		}; !reflect.DeepEqual(got, expected) {
 			t.Errorf("expected: %v, got: %v", expected, got)
 		}
 	}
