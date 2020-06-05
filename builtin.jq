@@ -63,7 +63,6 @@ def values: select(. != null);
 def scalars: select(type |. != "array" and . != "object");
 def leaf_paths: paths(scalars);
 
-def reverse: [.[length - 1 - range(0;length)]];
 def indices($x):
   if type == "array" and ($x|type) == "array" then .[$x]
   elif type == "array" then .[[$x]]

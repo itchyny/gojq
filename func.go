@@ -55,6 +55,7 @@ func init() {
 		"tonumber":       argFunc0(funcToNumber),
 		"tostring":       argFunc0(funcToString),
 		"type":           argFunc0(funcType),
+		"reverse":        argFunc0(funcReverse),
 		"contains":       argFunc1(funcContains),
 		"explode":        argFunc0(funcExplode),
 		"implode":        argFunc0(funcImplode),
@@ -409,6 +410,18 @@ func funcToString(v interface{}) interface{} {
 
 func funcType(v interface{}) interface{} {
 	return typeof(v)
+}
+
+func funcReverse(v interface{}) interface{} {
+	vs, ok := v.([]interface{})
+	if !ok {
+		return &expectedArrayError{v}
+	}
+	ws := make([]interface{}, len(vs))
+	for i, v := range vs {
+		ws[len(ws)-i-1] = v
+	}
+	return ws
 }
 
 func funcContains(v, x interface{}) interface{} {
