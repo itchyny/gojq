@@ -1257,23 +1257,15 @@ func updatePaths(v interface{}, path []interface{}, w interface{}, delpaths bool
 			}
 			if x, ok := toInt(x["end"]); ok {
 				x := toIndex(uu, x)
-				if x < start {
+				if x == -1 {
+					end = len(uu)
+				} else if x < start {
 					end = start
 				} else {
 					end = x
 				}
 			} else {
 				end = len(uu)
-			}
-			if len(path) > 1 {
-				u, err := updatePaths(uu[start], path[1:], w, delpaths)
-				if err != nil {
-					return nil, err
-				}
-				vs := make([]interface{}, len(uu))
-				copy(vs, uu)
-				vs[start] = u
-				return vs, nil
 			}
 			if delpaths {
 				if start >= end {
@@ -1285,6 +1277,13 @@ func updatePaths(v interface{}, path []interface{}, w interface{}, delpaths bool
 					vs[y] = w
 				}
 				return vs, nil
+			}
+			if len(path) > 1 {
+				u, err := updatePaths(uu[start:end], path[1:], w, delpaths)
+				if err != nil {
+					return nil, err
+				}
+				w = u
 			}
 			switch v := w.(type) {
 			case []interface{}:
