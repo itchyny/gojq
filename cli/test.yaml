@@ -3175,13 +3175,14 @@
 - name: del function
   args:
     - -c
-    - 'del(.), del(empty), del((.foo,.bar,.baz) | .[2,3,0]), del(.foo[0], .bar[0], .foo, .baz.bar[0].x)'
+    - 'del(.), del(empty), del((.foo,.bar,.baz) | .[2,3,0]), del(.foo[0], .bar[0], .foo, .baz.bar[0].x), del(.foo[1:][:3][1:], .bar[:2][1:])'
   input: '{"foo": [0,1,2,3,4], "bar": [0,1]}'
   expected: |
     null
     {"bar":[0,1],"foo":[0,1,2,3,4]}
     {"bar":[1],"foo":[1,4]}
     {"bar":[1]}
+    {"bar":[0],"foo":[0,1,4]}
 
 - name: del function with slice
   args:

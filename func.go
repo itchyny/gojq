@@ -1271,6 +1271,21 @@ func updatePaths(v interface{}, path []interface{}, w interface{}, delpaths bool
 				if start >= end {
 					return uu, nil
 				}
+				if len(path) > 1 {
+					u, err := updatePaths(uu[start:end], path[1:], w, delpaths)
+					if err != nil {
+						return nil, err
+					}
+					switch us := u.(type) {
+					case []interface{}:
+						vs := make([]interface{}, len(uu))
+						copy(vs, uu)
+						copy(vs[start:end], us)
+						return vs, nil
+					default:
+						return nil, &expectedArrayError{u}
+					}
+				}
 				vs := make([]interface{}, len(uu))
 				copy(vs, uu)
 				for y := start; y < end; y++ {
