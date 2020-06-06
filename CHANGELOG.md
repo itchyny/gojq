@@ -1,4 +1,12 @@
 # Changelog
+## [v0.10.3](https://github.com/itchyny/gojq/compare/v0.10.2..v0.10.3) (2020-06-06)
+* implement `add`, `unique_by`, `max_by`, `min_by`, `reverse` by internal
+  functions for performance and reducing the binary size
+* improve performance of `setpath`, `delpaths` functions
+* fix assignment against nested slicing (`[1,2,3] | .[1:][:1] = [5]`)
+* limit the array index of assignment operator
+* optimize constant arrays and objects
+
 ## [v0.10.2](https://github.com/itchyny/gojq/compare/v0.10.1..v0.10.2) (2020-05-24)
 * implement `sort_by`, `group_by`, `bsearch` by internal functions for performance
   and reducing the binary size
