@@ -4830,8 +4830,8 @@
   expected: |
     foo:
             baz:
-                  - hello
-                  - world
+                    - hello
+                    - world
 
 - name: yaml output with indent option error
   args:

@@ -3,11 +3,11 @@ module github.com/itchyny/gojq
 go 1.14
 
 require (
-	github.com/alecthomas/participle v0.4.4
+	github.com/alecthomas/participle v0.5.0
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
 	github.com/fatih/color v1.9.0
 	github.com/hokaccha/go-prettyjson v0.0.0-20190818114111-108c894c2c0e
-	github.com/itchyny/astgen-go v0.0.0-20200116103543-aaa595cf980e
+	github.com/itchyny/astgen-go v0.0.0-20200519013840-cf3ea398f645
 	github.com/itchyny/go-flags v1.5.0
 	github.com/jehiah/go-strftime v0.0.0-20171201141054-1d33003b3869 // indirect
 	github.com/lestrrat-go/strftime v1.0.1
@@ -18,6 +18,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/stretchr/testify v1.5.0
 	github.com/tebeka/strftime v0.1.3 // indirect
-	golang.org/x/sys v0.0.0-20200331124033-c3d80250170d // indirect
-	gopkg.in/yaml.v3 v3.0.0-20200506231410-2ff61e1afc86
+	golang.org/x/sys v0.0.0-20200602225109-6fdc65e7d980 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20200605160147-a5ece683394c
 )
