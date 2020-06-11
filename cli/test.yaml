@@ -3318,6 +3318,39 @@
   expected: |
     [[1,-1],[3,-3],[5,-5],[7,-7],[9,-9]]
 
+- name: modify operator with optional operator
+  args:
+    - -c
+    - '.foo |= .?'
+  input: '{"foo": 42}'
+  expected: |
+    {"foo":42}
+
+- name: modify operator with try catch
+  args:
+    - -c
+    - '. |= try . catch .'
+  input: 1
+  expected: |
+    1
+
+- name: modify operator with try catch
+  args:
+    - -c
+    - '.foo |= (fromjson? // "x")'
+  input: |
+    {"foo": 42}
+    {"foo": "42"}
+    {"foo": "a"}
+    {"foo": "true"}
+    {"foo": "[{}]"}
+  expected: |
+    {"foo":"x"}
+    {"foo":42}
+    {"foo":"x"}
+    {"foo":true}
+    {"foo":[{}]}
+
 - name: update operators
   args:
     - -c

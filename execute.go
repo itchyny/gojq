@@ -86,7 +86,7 @@ loop:
 					break loop
 				}
 				if code.op == opforkopt {
-					if env.backtrack <= code.v.(int) {
+					if pc < env.backtrack && env.backtrack < code.v.(int) { // ref: compileTry
 						env.pop()
 						if er, ok := err.(*exitCodeError); ok {
 							env.push(er.value)
