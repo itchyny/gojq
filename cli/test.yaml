@@ -2654,6 +2654,18 @@
   expected: |
     [1,5,1,4,1,4]
 
+- name: first/1 function with optional operator
+  args:
+    - 'first(.), first(.?), first(.,.), first(.?,.), first(.,.?), first(.?,.?)'
+  input: 'null'
+  expected: |
+    null
+    null
+    null
+    null
+    null
+    null
+
 - name: limit/2 function
   args:
     - -c
