@@ -136,9 +136,9 @@ func (env *env) debugState(pc int, backtrack bool) {
 
 func formatOp(c opcode, backtrack bool) string {
 	if backtrack {
-		return c.String() + " <backtrack>" + strings.Repeat(" ", 10-len(c.String()))
+		return c.String() + " <backtrack>" + strings.Repeat(" ", 13-len(c.String()))
 	}
-	return c.String() + strings.Repeat(" ", 22-len(c.String()))
+	return c.String() + strings.Repeat(" ", 25-len(c.String()))
 }
 
 func (env *env) debugForks(pc int, op string) {
@@ -158,7 +158,7 @@ func (env *env) debugForks(pc int, op string) {
 			buf.WriteByte('>')
 		}
 	}
-	fmt.Fprintf(debugOut, "\t-\t%s%s%d\t|\t%s\n", op, strings.Repeat(" ", 19), pc, buf.String())
+	fmt.Fprintf(debugOut, "\t-\t%s%s%d\t|\t%s\n", op, strings.Repeat(" ", 22), pc, buf.String())
 }
 
 func debugOperand(c *code) string {
