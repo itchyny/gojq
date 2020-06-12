@@ -18,7 +18,8 @@ const (
 	opobject
 	opappend
 	opfork
-	opforkopt
+	opforktrybegin
+	opforktryend
 	opforkalt
 	opforklabel
 	opbacktrack
@@ -59,8 +60,10 @@ func (op opcode) String() string {
 		return "append"
 	case opfork:
 		return "fork"
-	case opforkopt:
-		return "forkopt"
+	case opforktrybegin:
+		return "forktrybegin"
+	case opforktryend:
+		return "forktryend"
 	case opforkalt:
 		return "forkalt"
 	case opforklabel:

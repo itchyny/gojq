@@ -78,31 +78,47 @@ loop:
 			} else {
 				env.pushfork(code.op, pc)
 			}
-		case opforkopt:
-			fallthrough
-		case opforkalt:
+		case opforktrybegin:
 			if backtrack {
 				if err == nil {
 					break loop
 				}
-				if code.op == opforkopt {
-					if pc < env.backtrack && env.backtrack < code.v.(int) { // ref: compileTry
-						env.pop()
-						if er, ok := err.(*exitCodeError); ok {
-							env.push(er.value)
-							if er.halt {
-								break loop
-							}
-							if er.value == nil {
-								backtrack, err = true, nil
-								break loop
-							}
-						} else {
-							env.push(err.Error())
-						}
-					} else {
+				switch er := err.(type) {
+				case *tryEndError:
+					err = er.err
+					break loop
+				case *exitCodeError:
+					env.pop()
+					env.push(er.value)
+					if er.halt {
 						break loop
 					}
+					if er.value == nil {
+						backtrack, err = true, nil
+						break loop
+					}
+				default:
+					env.pop()
+					env.push(err.Error())
+				}
+				pc, backtrack, err = code.v.(int), false, nil
+				goto loop
+			} else {
+				env.pushfork(code.op, pc)
+			}
+		case opforktryend:
+			if backtrack {
+				if err != nil {
+					err = &tryEndError{err}
+				}
+				break loop
+			} else {
+				env.pushfork(code.op, pc)
+			}
+		case opforkalt:
+			if backtrack {
+				if err == nil {
+					break loop
 				}
 				pc, backtrack, err = code.v.(int), false, nil
 				goto loop

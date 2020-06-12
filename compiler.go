@@ -665,18 +665,19 @@ func (c *compiler) compileIf(e *If) error {
 
 func (c *compiler) compileTry(e *Try) error {
 	c.appendCodeInfo(e)
-	setforkopt := c.lazy(func() *code {
-		return &code{op: opforkopt, v: c.pc()}
+	setforktrybegin := c.lazy(func() *code {
+		return &code{op: opforktrybegin, v: c.pc()}
 	})
 	f := c.newScopeDepth()
 	if err := c.compileQuery(e.Body); err != nil {
 		return err
 	}
 	f()
+	c.append(&code{op: opforktryend})
 	defer c.lazy(func() *code {
 		return &code{op: opjump, v: c.pc()}
 	})()
-	setforkopt()
+	setforktrybegin()
 	if e.Catch != nil {
 		defer c.newScopeDepth()()
 		return c.compileTerm(e.Catch)

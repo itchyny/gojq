@@ -240,6 +240,14 @@ func (err *stringQueryError) QueryParseError() (string, string, string, error) {
 	return "query in string interpolation", "<string>", err.s, err.err
 }
 
+type tryEndError struct {
+	err error
+}
+
+func (err *tryEndError) Error() string {
+	return err.err.Error()
+}
+
 type invalidPathError struct {
 	v interface{}
 }

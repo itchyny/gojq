@@ -2041,6 +2041,14 @@
       "utf8bytelength cannot be applied to: boolean (false)"
     ]
 
+- name: try catch
+  args:
+    - 'def f: fromjson; try {} | f catch ., 1'
+  input: 0
+  expected: |
+    "fromjson cannot be applied to: object ({})"
+    1
+
 - name: try precedence
   args:
     - '1 + try 2 catch 3 + 4'
