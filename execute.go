@@ -20,9 +20,8 @@ func (env *env) execute(bc *Code, v interface{}, vars ...interface{}) Iter {
 func (env *env) Next() (interface{}, bool) {
 	var err error
 	pc, callpc, index := env.pc, len(env.codes)-1, -1
-	backtrack := env.backtrack > 0
-	hasCtx := env.ctx != nil
-	defer func() { env.pc, env.backtrack = pc, pc }()
+	backtrack, hasCtx := env.backtrack, env.ctx != nil
+	defer func() { env.pc, env.backtrack = pc, true }()
 loop:
 	for ; pc < len(env.codes); pc++ {
 		env.debugState(pc, backtrack)
@@ -289,9 +288,6 @@ loop:
 		}
 	}
 	if len(env.forks) > 0 {
-		if !backtrack {
-			env.backtrack = pc
-		}
 		pc, backtrack = env.popfork().pc, true
 		goto loop
 	}
