@@ -3192,6 +3192,14 @@
   expected: |
     [2,4,6]
 
+- name: map_values function with optional operator
+  args:
+    - -c
+    - 'map_values(tonumber? // .)'
+  input: '{"x": "1", "y": "1.5", "z": "z"}'
+  expected: |
+    {"x":1,"y":1.5,"z":"z"}
+
 - name: del function
   args:
     - -c
