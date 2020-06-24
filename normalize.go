@@ -31,6 +31,10 @@ func normalizeNumbers(v interface{}) interface{} {
 			return int(v.Int64())
 		}
 		return v
+	case int64:
+		return int(v)
+	case int32:
+		return int(v)
 	case map[string]interface{}:
 		u := make(map[string]interface{}, len(v))
 		for k, v := range v {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"testing"
 	"time"
 
 	"github.com/itchyny/gojq"
@@ -56,4 +57,24 @@ func ExampleQuery_RunWithContext() {
 
 	// Output:
 	// context deadline exceeded
+}
+
+func Test_Query_Run_int_types(t *testing.T) {
+	query, err := gojq.Parse(".[] > 1")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	iter := query.Run([]interface{}{int64(10), int32(10)})
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if err, ok := v.(error); ok {
+			log.Fatalln(err)
+		}
+		if expected := true; expected != v {
+			t.Errorf("expected: %v, got: %v", expected, v)
+		}
+	}
 }
