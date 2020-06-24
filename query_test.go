@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"testing"
 	"time"
 
@@ -59,12 +60,17 @@ func ExampleQuery_RunWithContext() {
 	// context deadline exceeded
 }
 
-func Test_Query_Run_int_types(t *testing.T) {
+func Test_Query_Run_numeric_types(t *testing.T) {
 	query, err := gojq.Parse(".[] > 1")
 	if err != nil {
 		log.Fatalln(err)
 	}
-	iter := query.Run([]interface{}{int64(10), int32(10)})
+	iter := query.Run([]interface{}{
+		int64(2), int32(2), int16(2), int8(2),
+		uint64(2), uint32(2), uint16(2), uint8(2),
+		^uint(0), uint64(math.MaxUint64),
+		float64(2.0), float32(2.0),
+	})
 	for {
 		v, ok := iter.Next()
 		if !ok {
