@@ -440,6 +440,7 @@ func funcContains(v, x interface{}) interface{} {
 	}
 	return binopTypeSwitch(v, x,
 		func(l, r int) interface{} { return l == r },
+		func(l, r int64) interface{} { return l == r },
 		func(l, r float64) interface{} { return l == r },
 		func(l, r *big.Int) interface{} { return l.Cmp(r) == 0 },
 		func(l, r string) interface{} { return strings.Contains(l, r) },

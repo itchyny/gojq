@@ -14,6 +14,16 @@ func compare(l, r interface{}) int {
 				return 1
 			}
 		},
+		func(l int64, r int64) interface{} {
+			switch {
+			case l < r:
+				return -1
+			case l == r:
+				return 0
+			default:
+				return 1
+			}
+		},
 		func(l, r float64) interface{} {
 			switch {
 			case l < r:
@@ -88,7 +98,7 @@ func getTypeOrdNum(v interface{}) int {
 			return 2
 		}
 		return 1
-	case int, float64, *big.Int:
+	case int, int64, float64, *big.Int:
 		return 3
 	case string:
 		return 4
