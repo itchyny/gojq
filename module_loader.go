@@ -1,21 +1,27 @@
-package cli
+package gojq
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
-
-	"github.com/itchyny/gojq"
 )
 
 type moduleLoader struct {
 	paths []string
 }
 
-func (l *moduleLoader) LoadInitModules() ([]*gojq.Module, error) {
-	var ms []*gojq.Module
+// NewModuleLoader creates a new ModuleLoader reading local modules in the paths.
+func NewModuleLoader(paths []string) ModuleLoader {
+	return &moduleLoader{paths}
+}
+
+func (l *moduleLoader) LoadInitModules() ([]*Module, error) {
+	var ms []*Module
 	for _, path := range l.paths {
 		if filepath.Base(path) != ".jq" {
 			continue
@@ -43,11 +49,11 @@ func (l *moduleLoader) LoadInitModules() ([]*gojq.Module, error) {
 	return ms, nil
 }
 
-func (l *moduleLoader) LoadModule(string) (*gojq.Module, error) {
-	panic("moduleLoader#LoadModule: unreachable")
+func (l *moduleLoader) LoadModule(string) (*Module, error) {
+	panic("LocalModuleLoader#LoadModule: unreachable")
 }
 
-func (l *moduleLoader) LoadModuleWithMeta(name string, meta map[string]interface{}) (*gojq.Module, error) {
+func (l *moduleLoader) LoadModuleWithMeta(name string, meta map[string]interface{}) (*Module, error) {
 	path, err := l.lookupModule(name, ".jq", meta)
 	if err != nil {
 		return nil, err
@@ -68,7 +74,25 @@ func (l *moduleLoader) LoadJSONWithMeta(name string, meta map[string]interface{}
 	if err != nil {
 		return nil, err
 	}
-	return slurpFile(path)
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	var vals []interface{}
+	var buf bytes.Buffer
+	dec := json.NewDecoder(io.TeeReader(f, &buf))
+	for {
+		var val interface{}
+		if err := dec.Decode(&val); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, &jsonParseError{path, buf.String(), err}
+		}
+		vals = append(vals, val)
+	}
+	return vals, nil
 }
 
 func (l *moduleLoader) lookupModule(name, extension string, meta map[string]interface{}) (string, error) {
@@ -90,9 +114,8 @@ func (l *moduleLoader) lookupModule(name, extension string, meta map[string]inte
 }
 
 // This is a dirty hack to implement the "search" field.
-// Note that gojq package should not depend on the filesystem.
-func parseModule(path, cnt string) (*gojq.Module, error) {
-	m, err := gojq.ParseModule(cnt)
+func parseModule(path, cnt string) (*Module, error) {
+	m, err := ParseModule(cnt)
 	if err != nil {
 		return nil, err
 	}
@@ -102,9 +125,9 @@ func parseModule(path, cnt string) (*gojq.Module, error) {
 		}
 		i.Meta.KeyVals = append(
 			i.Meta.KeyVals,
-			gojq.ConstObjectKeyVal{
+			ConstObjectKeyVal{
 				Key: "$$path",
-				Val: &gojq.ConstTerm{Str: strconv.Quote(path)},
+				Val: &ConstTerm{Str: strconv.Quote(path)},
 			},
 		)
 	}

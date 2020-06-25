@@ -4,6 +4,7 @@ package gojq
 type CompilerOption func(*compiler)
 
 // WithModuleLoader is a compiler option for module loader.
+// If you want to load modules from the filesystem, use NewModuleLoader.
 func WithModuleLoader(moduleLoader ModuleLoader) CompilerOption {
 	return func(c *compiler) {
 		c.moduleLoader = moduleLoader

@@ -264,6 +264,32 @@ func (err *getpathError) Error() string {
 	return fmt.Sprintf("cannot getpath with %s against: %s", previewValue(err.path), typeErrorPreview(err.v))
 }
 
+type queryParseError struct {
+	typ, fname, contents string
+	err                  error
+}
+
+func (err *queryParseError) QueryParseError() (string, string, string, error) {
+	return err.typ, err.fname, err.contents, err.err
+}
+
+func (err *queryParseError) Error() string {
+	return fmt.Sprintf("invalid %s: %s: %s", err.typ, err.fname, err.err)
+}
+
+type jsonParseError struct {
+	fname, contents string
+	err             error
+}
+
+func (err *jsonParseError) JSONParseError() (string, string, error) {
+	return err.fname, err.contents, err.err
+}
+
+func (err *jsonParseError) Error() string {
+	return fmt.Sprintf("invalid json: %s: %s", err.fname, err.err)
+}
+
 func typeErrorPreview(v interface{}) string {
 	p := preview(v)
 	if p != "" {
