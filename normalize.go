@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"math"
 	"math/big"
-	"reflect"
 	"strings"
 )
 
@@ -66,17 +65,15 @@ func normalizeNumbers(v interface{}) interface{} {
 	case float32:
 		return float64(v)
 	case map[string]interface{}:
-		u := make(map[string]interface{}, len(v))
-		for k, v := range v {
-			u[k] = normalizeNumbers(v)
+		for k, x := range v {
+			v[k] = normalizeNumbers(x)
 		}
-		return u
+		return v
 	case []interface{}:
-		u := make([]interface{}, len(v))
-		for i, v := range v {
-			u[i] = normalizeNumbers(v)
+		for i, x := range v {
+			v[i] = normalizeNumbers(x)
 		}
-		return u
+		return v
 	default:
 		return v
 	}
@@ -139,8 +136,4 @@ func deleteEmpty(v interface{}) interface{} {
 	default:
 		return v
 	}
-}
-
-func deepEqual(x, y interface{}) bool {
-	return reflect.DeepEqual(normalizeNumbers(x), normalizeNumbers(y))
 }
