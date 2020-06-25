@@ -1777,6 +1777,14 @@
   expected: |
     [2,4]
 
+- name: subtract arrays
+  args:
+    - -c
+    - '. as $x | [$x-$x] - [0]'
+  input: '10000000000000'
+  expected: |
+    []
+
 - name: add object
   args:
     - -c
