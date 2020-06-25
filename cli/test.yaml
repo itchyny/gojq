@@ -5214,7 +5214,7 @@
     - 'import "4" as $x; $x'
   input: 0
   error: |
-    invalid json: testdata/4.json
+    compile error: invalid json: testdata/4.json
           bar
           ^  invalid character 'b' looking for beginning of value
   exit_code: 3

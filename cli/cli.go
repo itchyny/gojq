@@ -199,7 +199,7 @@ Synopsis:
 	iter := cli.createInputIter(args)
 	defer iter.Close()
 	code, err := gojq.Compile(query,
-		gojq.WithModuleLoader(&moduleLoader{modulePaths}),
+		gojq.WithModuleLoader(gojq.NewModuleLoader(modulePaths)),
 		gojq.WithEnvironLoader(os.Environ),
 		gojq.WithVariables(cli.argnames),
 		gojq.WithInputIter(iter),
@@ -209,7 +209,16 @@ Synopsis:
 			QueryParseError() (string, string, string, error)
 		}); ok {
 			typ, name, query, err := err.QueryParseError()
-			return &queryParseError{typ, fname + ":" + name, query, err}
+			if _, err := os.Stat(name); os.IsNotExist(err) {
+				name = fname + ":" + name
+			}
+			return &queryParseError{typ, name, query, err}
+		}
+		if err, ok := err.(interface {
+			JSONParseError() (string, string, error)
+		}); ok {
+			fname, query, err := err.JSONParseError()
+			return &compileError{&jsonParseError{fname, query, err}}
 		}
 		return &compileError{err}
 	}
