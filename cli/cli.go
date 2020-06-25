@@ -217,8 +217,8 @@ Synopsis:
 		if err, ok := err.(interface {
 			JSONParseError() (string, string, error)
 		}); ok {
-			fname, query, err := err.JSONParseError()
-			return &compileError{&jsonParseError{fname, query, err}}
+			fname, contents, err := err.JSONParseError()
+			return &compileError{&jsonParseError{fname, contents, err}}
 		}
 		return &compileError{err}
 	}
