@@ -1648,7 +1648,9 @@ func toInt(x interface{}) (int, bool) {
 		return int(x), true
 	case *big.Int:
 		if x.IsInt64() {
-			return int(x.Int64()), true
+			if i := x.Int64(); minInt <= i && i <= maxInt {
+				return int(i), true
+			}
 		}
 		if x.Sign() > 0 {
 			return maxInt, true

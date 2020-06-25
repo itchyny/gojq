@@ -11,7 +11,7 @@ import (
 func normalizeNumbers(v interface{}) interface{} {
 	switch v := v.(type) {
 	case json.Number:
-		if i, err := v.Int64(); err == nil {
+		if i, err := v.Int64(); err == nil && minInt <= i && i <= maxInt {
 			return int(i)
 		}
 		if strings.ContainsAny(string(v), ".eE") {
@@ -28,10 +28,15 @@ func normalizeNumbers(v interface{}) interface{} {
 		return math.MaxFloat64
 	case *big.Int:
 		if v.IsInt64() {
-			return int(v.Int64())
+			if i := v.Int64(); minInt <= i && i <= maxInt {
+				return int(i)
+			}
 		}
 		return v
 	case int64:
+		if v > int64(maxInt) {
+			return new(big.Int).SetUint64(uint64(v))
+		}
 		return int(v)
 	case int32:
 		return int(v)
@@ -50,6 +55,9 @@ func normalizeNumbers(v interface{}) interface{} {
 		}
 		return int(v)
 	case uint32:
+		if v > uint32(maxHalfInt) {
+			return new(big.Int).SetUint64(uint64(v))
+		}
 		return int(v)
 	case uint16:
 		return int(v)
