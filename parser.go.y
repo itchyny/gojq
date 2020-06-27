@@ -10,7 +10,7 @@ package gojq
 
 %type<query> program query
 %type<term> term
-%token <token> tokIdent
+%token <token> tokIdent tokNumber tokInvalid
 %token tokRecurse
 
 %right '|'
@@ -55,6 +55,10 @@ term
         default:
             $$ = &Term{Func: &Func{Name: $1}}
         }
+    }
+    | tokNumber
+    {
+        $$ = &Term{Number: $1}
     }
 
 %%

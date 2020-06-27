@@ -26,19 +26,43 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 		return eof
 	}
 	ch := l.next()
-	if isIdent(ch, false) {
+	switch {
+	case isIdent(ch, false):
 		l.token = string(l.source[l.offset-1 : l.scanIdent()])
 		lval.token = l.token
 		return tokIdent
+	case isNumber(ch):
+		i := l.offset - 1
+		j := l.scanNumber(numberStateLead)
+		if j < 0 {
+			l.token = string(l.source[i:-j])
+			return tokInvalid
+		}
+		l.token = string(l.source[i:j])
+		lval.token = l.token
+		return tokNumber
 	}
 	switch ch {
 	case '.':
-		if l.peek() == '.' {
+		ch := l.peek()
+		switch {
+		case ch == '.':
 			l.offset++
 			l.token = ".."
 			return tokRecurse
+		case isNumber(ch):
+			i := l.offset - 1
+			j := l.scanNumber(numberStateFloat)
+			if j < 0 {
+				l.token = string(l.source[i:-j])
+				return tokInvalid
+			}
+			l.token = string(l.source[i:j])
+			lval.token = l.token
+			return tokNumber
+		default:
+			return '.'
 		}
-		return '.'
 	default:
 		return int(ch)
 	}
@@ -68,6 +92,61 @@ func (l *lexer) scanIdent() int {
 	return l.offset
 }
 
+const (
+	numberStateLead = iota
+	numberStateFloat
+	numberStateExpLead
+	numberStateExp
+)
+
+func (l *lexer) scanNumber(state int) int {
+	for {
+		switch state {
+		case numberStateLead, numberStateFloat:
+			if ch := l.peek(); isNumber(ch) {
+				l.offset++
+			} else {
+				switch ch {
+				case '.':
+					if state != numberStateLead {
+						return l.offset
+					}
+					l.offset++
+					state = numberStateFloat
+				case 'e', 'E':
+					l.offset++
+					switch l.peek() {
+					case '-', '+':
+						l.offset++
+					}
+					state = numberStateExpLead
+				default:
+					if isIdent(ch, false) {
+						l.offset++
+						return -l.offset
+					}
+					return l.offset
+				}
+			}
+		case numberStateExpLead, numberStateExp:
+			if ch := l.peek(); !isNumber(ch) {
+				if isIdent(ch, false) {
+					l.offset++
+					return -l.offset
+				}
+				if state == numberStateExpLead && len(l.source) == l.offset {
+					return -l.offset
+				}
+				return l.offset
+			}
+			l.offset++
+			state = numberStateExp
+		default:
+			panic(state)
+		}
+	}
+}
+
 type parseError struct {
 	offset    int
 	token     string
@@ -76,13 +155,13 @@ type parseError struct {
 
 func (err *parseError) Error() string {
 	var message string
-	switch err.tokenType {
-	case eof:
+	switch {
+	case err.tokenType == eof:
 		message = "<EOF>"
-	case tokIdent, tokRecurse:
+	case err.tokenType > 0xff:
 		message = strconv.Quote(err.token)
 	default:
-		message = fmt.Sprintf(`"%c"`, err.tokenType)
+		message = fmt.Sprintf(`"%c"`, rune(err.tokenType))
 	}
 	return fmt.Sprintf("unexpected token:%d:%s", err.offset, message)
 }
