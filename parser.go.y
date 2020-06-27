@@ -5,6 +5,7 @@ package gojq
 %union {
   query *Query
   term  *Term
+  index *Index
   args  []*Query
   ifelifs []IfElif
   object []ObjectKeyVal
@@ -15,6 +16,7 @@ package gojq
 
 %type<query> program query ifelse
 %type<term> term trycatch
+%type<index> index
 %type<args> args
 %type<ifelifs> ifelifs
 %type<object> object
@@ -55,9 +57,9 @@ term
     {
         $$ = &Term{Recurse: true}
     }
-    | tokIndex
+    | index
     {
-        $$ = &Term{Index: &Index{Name: $1}}
+        $$ = &Term{Index: $1}
     }
     | tokIdent
     {
@@ -115,6 +117,28 @@ term
     | tokTry query trycatch
     {
         $$ = &Term{Try: &Try{$2, $3}}
+    }
+
+index
+    : tokIndex
+    {
+        $$ = &Index{Name: $1}
+    }
+    | '.' '[' query ']'
+    {
+        $$ = &Index{Start: $3}
+    }
+    | '.' '[' query ':' ']'
+    {
+        $$ = &Index{Start: $3, IsSlice: true}
+    }
+    | '.' '[' ':' query ']'
+    {
+        $$ = &Index{End: $4}
+    }
+    | '.' '[' query ':' query ']'
+    {
+        $$ = &Index{Start: $3, IsSlice: true, End: $5}
     }
 
 args
