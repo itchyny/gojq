@@ -14,7 +14,7 @@ package gojq
 }
 
 %type<query> program query ifelse
-%type<term> term
+%type<term> term trycatch
 %type<args> args
 %type<ifelifs> ifelifs
 %type<object> object
@@ -22,6 +22,7 @@ package gojq
 %type<objectval> objectval
 %token<token> tokIdent tokIndex tokNumber tokInvalid
 %token<token> tokIf tokThen tokElif tokElse tokEnd
+%token<token> tokTry tokCatch
 %token tokRecurse
 
 %right '|'
@@ -107,6 +108,10 @@ term
     {
         $$ = &Term{If: &If{$2, $4, $5, $6}}
     }
+    | tokTry query trycatch
+    {
+        $$ = &Term{Try: &Try{$2, $3}}
+    }
 
 args
     : query
@@ -132,6 +137,15 @@ ifelse
     {
     }
     | tokElse query
+    {
+        $$ = $2
+    }
+
+trycatch
+    :
+    {
+    }
+    | tokCatch term
     {
         $$ = $2
     }

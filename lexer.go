@@ -21,11 +21,13 @@ func newLexer(src string) *lexer {
 const eof = -1
 
 var keywords = map[string]int{
-	"if":   tokIf,
-	"then": tokThen,
-	"elif": tokElif,
-	"else": tokElse,
-	"end":  tokEnd,
+	"if":    tokIf,
+	"then":  tokThen,
+	"elif":  tokElif,
+	"else":  tokElse,
+	"end":   tokEnd,
+	"try":   tokTry,
+	"catch": tokCatch,
 }
 
 func (l *lexer) Lex(lval *yySymType) (tokenType int) {
