@@ -361,6 +361,10 @@ objectkeyval
     {
         $$ = &ObjectKeyVal{Key: $1, Val: $3}
     }
+    | tokString ':' objectval
+    {
+        $$ = &ObjectKeyVal{KeyString: $1, Val: $3}
+    }
     | '(' query ')' ':' objectval
     {
         $$ = &ObjectKeyVal{Query: $2, Val: $5}
@@ -368,6 +372,10 @@ objectkeyval
     | tokIdent
     {
         $$ = &ObjectKeyVal{KeyOnly: &$1}
+    }
+    | tokString
+    {
+        $$ = &ObjectKeyVal{KeyOnlyString: $1}
     }
 
 objectval
