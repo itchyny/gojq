@@ -4,12 +4,12 @@ import (
 	"strings"
 
 	"github.com/alecthomas/participle"
-	"github.com/alecthomas/participle/lexer"
+	plexer "github.com/alecthomas/participle/lexer"
 )
 
 //go:generate go run _tools/gen_string.go -o string.go
 var parserOptions = []participle.Option{
-	participle.Lexer(lexer.Must(lexer.Regexp(`(\s+|#[^\n]*)` +
+	participle.Lexer(plexer.Must(plexer.Regexp(`(\s+|#[^\n]*)` +
 		`|(?P<Keyword>(?:import|include|null|true|false|if|then|elif|else|end|or|and|as|try|catch|reduce|foreach|label|break)\b)` +
 		`|(?P<ModuleIdent>\$?[a-zA-Z_][a-zA-Z0-9_]*::[a-zA-Z_][a-zA-Z0-9_]*)` +
 		`|(?P<Ident>[a-zA-Z_][a-zA-Z0-9_]*)` +
@@ -33,6 +33,9 @@ var parser = participle.MustBuild(&Query{}, parserOptions...)
 // Parse parses a query.
 func Parse(src string) (*Query, error) {
 	var query Query
+	if q, err := parse(src); err == nil {
+		return q, nil
+	}
 	if err := parser.ParseString(src, &query); err != nil {
 		if strings.TrimSpace(src) != "" {
 			return nil, err
@@ -55,4 +58,12 @@ func ParseModule(src string) (*Module, error) {
 		}
 	}
 	return &module, nil
+}
+
+func parse(src string) (*Query, error) {
+	l := newLexer(src)
+	if yyParse(l) > 0 {
+		return nil, l.err
+	}
+	return l.result, nil
 }
