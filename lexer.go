@@ -20,12 +20,24 @@ func (l *lexer) Lex(lval *yySymType) int {
 		return eof
 	}
 	ch := l.source[l.offset]
+	l.offset++
 	switch ch {
 	case '.':
+		if l.peek() == '.' {
+			l.offset++
+			return tokRecurse
+		}
 		return '.'
 	default:
-		return eof
+		return int(ch)
 	}
+}
+
+func (l *lexer) peek() byte {
+	if len(l.source) == l.offset {
+		return 0
+	}
+	return l.source[l.offset]
 }
 
 func (l *lexer) Error(e string) {

@@ -9,6 +9,7 @@ package gojq
 
 %type<query> program query
 %type<term> term
+%token tokRecurse
 
 %%
 
@@ -29,6 +30,10 @@ term
     : '.'
     {
         $$ = &Term{Identity: true}
+    }
+    | tokRecurse
+    {
+        $$ = &Term{Recurse: true}
     }
 
 %%
