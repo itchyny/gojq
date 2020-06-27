@@ -5,7 +5,7 @@ package gojq
 %union {
   query *Query
   term  *Term
-  index *Index
+  suffix *Suffix
   args  []*Query
   ifelifs []IfElif
   object []ObjectKeyVal
@@ -16,7 +16,7 @@ package gojq
 
 %type<query> program query ifelse
 %type<term> term trycatch
-%type<index> index
+%type<suffix> suffix
 %type<args> args
 %type<ifelifs> ifelifs
 %type<object> object
@@ -57,9 +57,17 @@ term
     {
         $$ = &Term{Recurse: true}
     }
-    | index
+    | tokIndex
     {
-        $$ = &Term{Index: $1}
+        $$ = &Term{Index: &Index{Name: $1}}
+    }
+    | '.' suffix
+    {
+        if $2.Iter {
+            $$ = &Term{Identity: true, SuffixList: []*Suffix{$2}}
+        } else {
+            $$ = &Term{Index: $2.SuffixIndex.toIndex()}
+        }
     }
     | tokIdent
     {
@@ -118,27 +126,43 @@ term
     {
         $$ = &Term{Try: &Try{$2, $3}}
     }
+    | term tokIndex
+    {
+        $1.SuffixList = append($1.SuffixList, &Suffix{Index: &Index{Name: $2}})
+    }
+    | term suffix
+    {
+        $1.SuffixList = append($1.SuffixList, $2)
+    }
+    | term '?'
+    {
+        $1.SuffixList = append($1.SuffixList, &Suffix{Optional: true})
+    }
+    | term '.' suffix
+    {
+        $1.SuffixList = append($1.SuffixList, $3)
+    }
 
-index
-    : tokIndex
+suffix
+    : '[' ']'
     {
-        $$ = &Index{Name: $1}
+        $$ = &Suffix{Iter: true}
     }
-    | '.' '[' query ']'
+    | '[' query ']'
     {
-        $$ = &Index{Start: $3}
+        $$ = &Suffix{SuffixIndex: &SuffixIndex{Start: $2}}
     }
-    | '.' '[' query ':' ']'
+    | '[' query ':' ']'
     {
-        $$ = &Index{Start: $3, IsSlice: true}
+        $$ = &Suffix{SuffixIndex: &SuffixIndex{Start: $2, IsSlice: true}}
     }
-    | '.' '[' ':' query ']'
+    | '[' ':' query ']'
     {
-        $$ = &Index{End: $4}
+        $$ = &Suffix{SuffixIndex: &SuffixIndex{End: $3}}
     }
-    | '.' '[' query ':' query ']'
+    | '[' query ':' query ']'
     {
-        $$ = &Index{Start: $3, IsSlice: true, End: $5}
+        $$ = &Suffix{SuffixIndex: &SuffixIndex{Start: $2, IsSlice: true, End: $4}}
     }
 
 args
