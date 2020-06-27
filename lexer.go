@@ -36,7 +36,10 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 	if len(l.source) == l.offset {
 		return eof
 	}
-	ch := l.next()
+	ch, iseof := l.next()
+	if iseof {
+		return eof
+	}
 	switch {
 	case isIdent(ch, false):
 		l.token = string(l.source[l.offset-1 : l.scanIdent()])
@@ -98,12 +101,15 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 	}
 }
 
-func (l *lexer) next() byte {
+func (l *lexer) next() (byte, bool) {
 	for {
 		ch := l.source[l.offset]
 		l.offset++
 		if !isWhite(ch) {
-			return ch
+			return ch, false
+		}
+		if len(l.source) == l.offset {
+			return 0, true
 		}
 	}
 }
