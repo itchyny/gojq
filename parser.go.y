@@ -13,6 +13,8 @@ package gojq
 %token <token> tokIdent
 %token tokRecurse
 
+%right '|'
+
 %%
 
 program
@@ -26,6 +28,10 @@ query
     : term
     {
         $$ = $1.toQuery()
+    }
+    | query '|' query
+    {
+        $1.Commas = append($1.Commas, $3.Commas...)
     }
 
 term
