@@ -93,6 +93,16 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 		l.token = string(l.source[l.offset-1 : l.scanIdent()])
 		lval.token = l.token
 		return tokVariable
+	case '/':
+		switch l.peek() {
+		case '/':
+			l.offset++
+			l.token = "//"
+			lval.operator = OpAlt
+			return tokAltOp
+		default:
+			return int(ch)
+		}
 	case '=':
 		switch l.peek() {
 		case '=':

@@ -4,6 +4,8 @@ package gojq
 
 %union {
   query *Query
+  alt *Alt
+  expr *Expr
   logic *Logic
   andexpr *AndExpr
   compare *Compare
@@ -21,6 +23,8 @@ package gojq
 }
 
 %type<query> program query ifelse
+%type<alt> alt
+%type<expr> expr
 %type<logic> logic
 %type<andexpr> andexpr
 %type<compare> compare
@@ -33,13 +37,14 @@ package gojq
 %type<object> object
 %type<objectkeyval> objectkeyval
 %type<objectval> objectval
-%token<operator> tokOrOp tokAndOp tokCompareOp
+%token<operator> tokAltOp tokOrOp tokAndOp tokCompareOp
 %token<token> tokIdent tokVariable tokIndex tokNumber tokInvalid
 %token<token> tokIf tokThen tokElif tokElse tokEnd
 %token<token> tokTry tokCatch
 %token tokRecurse
 
 %right '|'
+%right tokAltOp
 %left tokOrOp
 %left tokAndOp
 %nonassoc tokCompareOp
@@ -56,13 +61,29 @@ program
     }
 
 query
-    : logic
+    : alt
     {
         $$ = $1.toQuery()
     }
     | query '|' query
     {
         $1.Commas = append($1.Commas, $3.Commas...)
+    }
+
+alt
+    : expr
+    {
+        $$ = &Alt{Left: $1}
+    }
+    | alt tokAltOp expr
+    {
+        $1.Right = append($1.Right, AltRight{$2, $3})
+    }
+
+expr
+    : logic
+    {
+        $$ = &Expr{Logic: $1}
     }
 
 logic
