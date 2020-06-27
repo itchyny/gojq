@@ -26,6 +26,7 @@ var keywords = map[string]int{
 	"or":    tokOrOp,
 	"and":   tokAndOp,
 	"def":   tokDef,
+	"as":    tokAs,
 	"if":    tokIf,
 	"then":  tokThen,
 	"elif":  tokElif,
@@ -100,6 +101,15 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 			l.token = "|="
 			lval.operator = OpModify
 			return tokUpdateOp
+		}
+	case '?':
+		if l.peek() == '/' {
+			l.offset++
+			if l.peek() == '/' {
+				l.offset++
+				l.token = "?//"
+				return tokDestAltOp
+			}
 		}
 	case '+':
 		if l.peek() == '=' {

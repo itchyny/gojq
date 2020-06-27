@@ -9,6 +9,10 @@ package gojq
   filter *Filter
   alt *Alt
   expr *Expr
+  patterns []*Pattern
+  pattern *Pattern
+  objectpatterns []PatternObject
+  objectpattern PatternObject
   logic *Logic
   andexpr *AndExpr
   compare *Compare
@@ -33,6 +37,10 @@ package gojq
 %type<filter> filter
 %type<alt> alt
 %type<expr> expr
+%type<patterns> bindpatterns arraypatterns
+%type<objectpatterns> objectpatterns
+%type<objectpattern> objectpattern
+%type<pattern> pattern
 %type<logic> logic
 %type<andexpr> andexpr
 %type<compare> compare
@@ -45,8 +53,8 @@ package gojq
 %type<object> object
 %type<objectkeyval> objectkeyval
 %type<objectval> objectval
-%token<operator> tokAltOp tokUpdateOp tokOrOp tokAndOp tokCompareOp
-%token<token> tokDef
+%token<operator> tokAltOp tokUpdateOp tokDestAltOp tokOrOp tokAndOp tokCompareOp
+%token<token> tokDef tokAs
 %token<token> tokIdent tokVariable tokIndex tokNumber tokString tokFormat tokInvalid
 %token<token> tokIf tokThen tokElif tokElse tokEnd
 %token<token> tokTry tokCatch
@@ -148,6 +156,76 @@ expr
     | logic tokUpdateOp alt
     {
         $$ = &Expr{Logic: $1, UpdateOp: $2, Update: $3}
+    }
+    | logic tokAs bindpatterns '|' query
+    {
+        $$ = &Expr{Logic: $1, Bind: &Bind{$3, $5}}
+    }
+
+bindpatterns
+    : pattern
+    {
+        $$ = []*Pattern{$1}
+    }
+    | bindpatterns tokDestAltOp pattern
+    {
+        $$ = append($1, $3)
+    }
+
+pattern
+    : tokVariable
+    {
+        $$ = &Pattern{Name: $1}
+    }
+    | '[' arraypatterns ']'
+    {
+        $$ = &Pattern{Array: $2}
+    }
+    | '{' objectpatterns '}'
+    {
+        $$ = &Pattern{Object: $2}
+    }
+
+arraypatterns
+    : pattern
+    {
+        $$ = []*Pattern{$1}
+    }
+    | arraypatterns ',' pattern
+    {
+        $$ = append($1, $3)
+    }
+
+objectpatterns
+    : objectpattern
+    {
+        $$ = []PatternObject{$1}
+    }
+    | objectpatterns ',' objectpattern
+    {
+        $$ = append($1, $3)
+    }
+
+objectpattern
+    : tokIdent ':' pattern
+    {
+        $$ = PatternObject{Key: $1, Val: $3}
+    }
+    | tokVariable ':' pattern
+    {
+        $$ = PatternObject{Key: $1, Val: $3}
+    }
+    | tokString ':' pattern
+    {
+        $$ = PatternObject{KeyString: $1, Val: $3}
+    }
+    | '(' query ')' ':' pattern
+    {
+        $$ = PatternObject{Query: $2, Val: $5}
+    }
+    | tokVariable
+    {
+        $$ = PatternObject{KeyOnly: $1}
     }
 
 logic
@@ -413,6 +491,10 @@ objectkeyval
         $$ = &ObjectKeyVal{Query: $2, Val: $5}
     }
     | tokIdent
+    {
+        $$ = &ObjectKeyVal{KeyOnly: &$1}
+    }
+    | tokVariable
     {
         $$ = &ObjectKeyVal{KeyOnly: &$1}
     }
