@@ -20,6 +20,14 @@ func newLexer(src string) *lexer {
 
 const eof = -1
 
+var keywords = map[string]int{
+	"if":   tokIf,
+	"then": tokThen,
+	"elif": tokElif,
+	"else": tokElse,
+	"end":  tokEnd,
+}
+
 func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 	defer func() { l.tokenType = tokenType }()
 	if len(l.source) == l.offset {
@@ -30,6 +38,9 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 	case isIdent(ch, false):
 		l.token = string(l.source[l.offset-1 : l.scanIdent()])
 		lval.token = l.token
+		if tok, ok := keywords[l.token]; ok {
+			return tok
+		}
 		return tokIdent
 	case isNumber(ch):
 		i := l.offset - 1

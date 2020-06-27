@@ -6,19 +6,22 @@ package gojq
   query *Query
   term  *Term
   args  []*Query
+  ifelifs []IfElif
   object []ObjectKeyVal
   objectkeyval *ObjectKeyVal
   objectval *ObjectVal
   token string
 }
 
-%type<query> program query
+%type<query> program query ifelse
 %type<term> term
 %type<args> args
+%type<ifelifs> ifelifs
 %type<object> object
 %type<objectkeyval> objectkeyval
 %type<objectval> objectval
-%token <token> tokIdent tokIndex tokNumber tokInvalid
+%token<token> tokIdent tokIndex tokNumber tokInvalid
+%token<token> tokIf tokThen tokElif tokElse tokEnd
 %token tokRecurse
 
 %right '|'
@@ -100,6 +103,10 @@ term
     {
         $$ = &Term{Array: &Array{}}
     }
+    | tokIf query tokThen query ifelifs ifelse tokEnd
+    {
+        $$ = &Term{If: &If{$2, $4, $5, $6}}
+    }
 
 args
     : query
@@ -109,6 +116,24 @@ args
     | args ';' query
     {
         $$ = append($1, $3)
+    }
+
+ifelifs
+    :
+    {
+    }
+    | tokElif query tokThen query ifelifs
+    {
+        $$ = append([]IfElif{IfElif{$2, $4}}, $5...)
+    }
+
+ifelse
+    :
+    {
+    }
+    | tokElse query
+    {
+        $$ = $2
     }
 
 object
