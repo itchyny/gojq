@@ -27,6 +27,8 @@ var keywords = map[string]int{
 	"and":     tokAndOp,
 	"def":     tokDef,
 	"as":      tokAs,
+	"label":   tokLabel,
+	"break":   tokBreak,
 	"if":      tokIf,
 	"then":    tokThen,
 	"elif":    tokElif,

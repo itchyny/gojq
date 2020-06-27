@@ -54,7 +54,7 @@ package gojq
 %type<objectkeyval> objectkeyval
 %type<objectval> objectval
 %token<operator> tokAltOp tokUpdateOp tokDestAltOp tokOrOp tokAndOp tokCompareOp
-%token<token> tokDef tokAs
+%token<token> tokDef tokAs tokLabel tokBreak
 %token<token> tokIdent tokVariable tokIndex tokNumber tokString tokFormat tokInvalid
 %token<token> tokIf tokThen tokElif tokElse tokEnd
 %token<token> tokTry tokCatch tokReduce tokForeach
@@ -160,6 +160,10 @@ expr
     | logic tokAs bindpatterns '|' query
     {
         $$ = &Expr{Logic: $1, Bind: &Bind{$3, $5}}
+    }
+    | tokLabel tokVariable '|' query
+    {
+        $$ = &Expr{Label: &Label{$2, $4}}
     }
 
 bindpatterns
@@ -395,6 +399,10 @@ term
     | tokForeach term tokAs pattern '(' query ';' query ';' query ')'
     {
         $$ = &Term{Foreach: &Foreach{$2, $4, $6, $8, $10}}
+    }
+    | tokBreak tokVariable
+    {
+        $$ = &Term{Break: $2}
     }
     | term tokIndex
     {
