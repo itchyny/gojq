@@ -6,12 +6,18 @@ package gojq
   query *Query
   term  *Term
   args  []*Query
+  object []ObjectKeyVal
+  objectkeyval *ObjectKeyVal
+  objectval *ObjectVal
   token string
 }
 
 %type<query> program query
 %type<term> term
 %type<args> args
+%type<object> object
+%type<objectkeyval> objectkeyval
+%type<objectval> objectval
 %token <token> tokIdent tokIndex tokNumber tokInvalid
 %token tokRecurse
 
@@ -82,6 +88,10 @@ term
     {
         $$ = &Term{Unary: &Unary{OpAdd, $2}}
     }
+    | '{' object '}'
+    {
+        $$ = &Term{Object: &Object{$2}}
+    }
     | '[' query ']'
     {
         $$ = &Term{Array: &Array{$2}}
@@ -99,6 +109,43 @@ args
     | args ';' query
     {
         $$ = append($1, $3)
+    }
+
+object
+    :
+    {
+    }
+    | objectkeyval
+    {
+        $$ = []ObjectKeyVal{*$1}
+    }
+    | objectkeyval ',' object
+    {
+        $$ = append([]ObjectKeyVal{*$1}, $3...)
+    }
+
+objectkeyval
+    : tokIdent ':' objectval
+    {
+        $$ = &ObjectKeyVal{Key: $1, Val: $3}
+    }
+    | '(' query ')' ':' objectval
+    {
+        $$ = &ObjectKeyVal{Query: $2, Val: $5}
+    }
+    | tokIdent
+    {
+        $$ = &ObjectKeyVal{KeyOnly: &$1}
+    }
+
+objectval
+    : term
+    {
+        $$ = &ObjectVal{[]*Alt{$1.toFilter().Alt}}
+    }
+    | term '|' objectval
+    {
+        $$ = &ObjectVal{append([]*Alt{$1.toFilter().Alt}, $3.Alts...)}
     }
 
 %%
