@@ -10,7 +10,7 @@ package gojq
 
 %type<query> program query
 %type<term> term
-%token <token> tokIdent tokNumber tokInvalid
+%token <token> tokIdent tokIndex tokNumber tokInvalid
 %token tokRecurse
 
 %right '|'
@@ -42,6 +42,10 @@ term
     | tokRecurse
     {
         $$ = &Term{Recurse: true}
+    }
+    | tokIndex
+    {
+        $$ = &Term{Index: &Index{Name: $1}}
     }
     | tokIdent
     {

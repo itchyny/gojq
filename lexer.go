@@ -50,6 +50,10 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 			l.offset++
 			l.token = ".."
 			return tokRecurse
+		case isIdent(ch, false):
+			l.token = string(l.source[l.offset-1 : l.scanIdent()])
+			lval.token = l.token
+			return tokIndex
 		case isNumber(ch):
 			i := l.offset - 1
 			j := l.scanNumber(numberStateFloat)
@@ -180,7 +184,9 @@ func isWhite(ch byte) bool {
 }
 
 func isIdent(ch byte, tail bool) bool {
-	return 'a' <= ch && ch <= 'z' || ch == '_' || tail && isNumber(ch)
+	return 'a' <= ch && ch <= 'z' ||
+		'A' <= ch && ch <= 'Z' || ch == '_' ||
+		tail && isNumber(ch)
 }
 
 func isNumber(ch byte) bool {
