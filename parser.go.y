@@ -57,7 +57,7 @@ package gojq
 %token<token> tokDef tokAs
 %token<token> tokIdent tokVariable tokIndex tokNumber tokString tokFormat tokInvalid
 %token<token> tokIf tokThen tokElif tokElse tokEnd
-%token<token> tokTry tokCatch
+%token<token> tokTry tokCatch tokReduce
 %token tokRecurse
 
 %right '|'
@@ -383,6 +383,10 @@ term
     | tokTry query trycatch
     {
         $$ = &Term{Try: &Try{$2, $3}}
+    }
+    | tokReduce term tokAs pattern '(' query ';' query ')'
+    {
+        $$ = &Term{Reduce: &Reduce{$2, $4, $6, $8}}
     }
     | term tokIndex
     {
