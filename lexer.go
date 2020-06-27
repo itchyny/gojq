@@ -19,8 +19,7 @@ func (l *lexer) Lex(lval *yySymType) int {
 	if len(l.source) == l.offset {
 		return eof
 	}
-	ch := l.source[l.offset]
-	l.offset++
+	ch := l.next()
 	if isIdent(ch, false) {
 		lval.token = string(l.source[l.offset-1 : l.scanIdent()])
 		return tokIdent
@@ -34,6 +33,16 @@ func (l *lexer) Lex(lval *yySymType) int {
 		return '.'
 	default:
 		return int(ch)
+	}
+}
+
+func (l *lexer) next() byte {
+	for {
+		ch := l.source[l.offset]
+		l.offset++
+		if !isWhite(ch) {
+			return ch
+		}
 	}
 }
 
@@ -53,6 +62,15 @@ func (l *lexer) scanIdent() int {
 
 func (l *lexer) Error(e string) {
 	l.err = fmt.Errorf("unexpected token")
+}
+
+func isWhite(ch byte) bool {
+	switch ch {
+	case '\t', '\n', '\r', ' ':
+		return true
+	default:
+		return false
+	}
 }
 
 func isIdent(ch byte, tail bool) bool {
