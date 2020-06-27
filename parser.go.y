@@ -190,6 +190,10 @@ term
             $$ = &Term{Index: $2.SuffixIndex.toIndex()}
         }
     }
+    | '.' tokString
+    {
+        $$ = &Term{Index: &Index{Str: $2}}
+    }
     | tokIdent
     {
         switch $1 {
@@ -266,6 +270,10 @@ term
     | term '.' suffix
     {
         $1.SuffixList = append($1.SuffixList, $3)
+    }
+    | term '.' tokString
+    {
+        $1.SuffixList = append($1.SuffixList, &Suffix{Index: &Index{Str: $3}})
     }
 
 suffix
