@@ -4,6 +4,8 @@ package gojq
 
 %union {
   query *Query
+  comma *Comma
+  filter *Filter
   alt *Alt
   expr *Expr
   logic *Logic
@@ -23,6 +25,8 @@ package gojq
 }
 
 %type<query> program query ifelse
+%type<comma> comma
+%type<filter> filter
 %type<alt> alt
 %type<expr> expr
 %type<logic> logic
@@ -44,6 +48,7 @@ package gojq
 %token tokRecurse
 
 %right '|'
+%left ','
 %right tokAltOp
 %left tokOrOp
 %left tokAndOp
@@ -61,13 +66,29 @@ program
     }
 
 query
-    : alt
+    : comma
     {
-        $$ = $1.toQuery()
+        $$ = &Query{Commas: []*Comma{$1}}
     }
     | query '|' query
     {
         $1.Commas = append($1.Commas, $3.Commas...)
+    }
+
+comma
+    : filter
+    {
+        $$ = &Comma{Filters: []*Filter{$1}}
+    }
+    | comma ',' filter
+    {
+        $1.Filters = append($1.Filters, $3)
+    }
+
+filter
+    : alt
+    {
+        $$ = &Filter{Alt: $1}
     }
 
 alt
