@@ -1,12 +1,17 @@
 package gojq
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 type lexer struct {
-	source []byte
-	offset int
-	result *Query
-	err    error
+	source    []byte
+	offset    int
+	result    *Query
+	token     string
+	tokenType int
+	err       error
 }
 
 func newLexer(src string) *lexer {
@@ -15,19 +20,22 @@ func newLexer(src string) *lexer {
 
 const eof = -1
 
-func (l *lexer) Lex(lval *yySymType) int {
+func (l *lexer) Lex(lval *yySymType) (tokenType int) {
+	defer func() { l.tokenType = tokenType }()
 	if len(l.source) == l.offset {
 		return eof
 	}
 	ch := l.next()
 	if isIdent(ch, false) {
-		lval.token = string(l.source[l.offset-1 : l.scanIdent()])
+		l.token = string(l.source[l.offset-1 : l.scanIdent()])
+		lval.token = l.token
 		return tokIdent
 	}
 	switch ch {
 	case '.':
 		if l.peek() == '.' {
 			l.offset++
+			l.token = ".."
 			return tokRecurse
 		}
 		return '.'
@@ -60,8 +68,27 @@ func (l *lexer) scanIdent() int {
 	return l.offset
 }
 
+type parseError struct {
+	offset    int
+	token     string
+	tokenType int
+}
+
+func (err *parseError) Error() string {
+	var message string
+	switch err.tokenType {
+	case eof:
+		message = "<EOF>"
+	case tokIdent, tokRecurse:
+		message = strconv.Quote(err.token)
+	default:
+		message = fmt.Sprintf(`"%c"`, err.tokenType)
+	}
+	return fmt.Sprintf("unexpected token:%d:%s", err.offset, message)
+}
+
 func (l *lexer) Error(e string) {
-	l.err = fmt.Errorf("unexpected token")
+	l.err = &parseError{l.offset, l.token, l.tokenType}
 }
 
 func isWhite(ch byte) bool {
