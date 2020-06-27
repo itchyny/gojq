@@ -4,6 +4,7 @@ package gojq
 
 %union {
   query *Query
+  arith *Arith
   factor *Factor
   term  *Term
   suffix *Suffix
@@ -16,6 +17,7 @@ package gojq
 }
 
 %type<query> program query ifelse
+%type<arith> arith
 %type<factor> factor
 %type<term> term trycatch
 %type<suffix> suffix
@@ -30,6 +32,7 @@ package gojq
 %token tokRecurse
 
 %right '|'
+%left '+' '-'
 %left '*' '/' '%'
 
 %%
@@ -42,13 +45,27 @@ program
     }
 
 query
-    : factor
+    : arith
     {
         $$ = $1.toQuery()
     }
     | query '|' query
     {
         $1.Commas = append($1.Commas, $3.Commas...)
+    }
+
+arith
+    : factor
+    {
+        $$ = &Arith{Left: $1}
+    }
+    | arith '+' factor
+    {
+        $1.Right = append($1.Right, ArithRight{OpAdd, $3})
+    }
+    | arith '-' factor
+    {
+        $1.Right = append($1.Right, ArithRight{OpSub, $3})
     }
 
 factor
