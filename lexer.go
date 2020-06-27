@@ -23,18 +23,19 @@ func newLexer(src string) *lexer {
 const eof = -1
 
 var keywords = map[string]int{
-	"or":     tokOrOp,
-	"and":    tokAndOp,
-	"def":    tokDef,
-	"as":     tokAs,
-	"if":     tokIf,
-	"then":   tokThen,
-	"elif":   tokElif,
-	"else":   tokElse,
-	"end":    tokEnd,
-	"try":    tokTry,
-	"catch":  tokCatch,
-	"reduce": tokReduce,
+	"or":      tokOrOp,
+	"and":     tokAndOp,
+	"def":     tokDef,
+	"as":      tokAs,
+	"if":      tokIf,
+	"then":    tokThen,
+	"elif":    tokElif,
+	"else":    tokElse,
+	"end":     tokEnd,
+	"try":     tokTry,
+	"catch":   tokCatch,
+	"reduce":  tokReduce,
+	"foreach": tokForeach,
 }
 
 func (l *lexer) Lex(lval *yySymType) (tokenType int) {
