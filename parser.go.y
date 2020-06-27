@@ -68,6 +68,14 @@ term
     {
         $$ = &Term{Query: $2}
     }
+    | '-' term
+    {
+        $$ = &Term{Unary: &Unary{OpSub, $2}}
+    }
+    | '+' term
+    {
+        $$ = &Term{Unary: &Unary{OpAdd, $2}}
+    }
     | '[' query ']'
     {
         $$ = &Term{Array: &Array{$2}}
