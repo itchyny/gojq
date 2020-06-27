@@ -64,5 +64,13 @@ term
     {
         $$ = &Term{Query: $2}
     }
+    | '[' query ']'
+    {
+        $$ = &Term{Array: &Array{$2}}
+    }
+    | '[' ']'
+    {
+        $$ = &Term{Array: &Array{}}
+    }
 
 %%
