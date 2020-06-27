@@ -3,6 +3,7 @@ package gojq
 import (
 	"fmt"
 	"strconv"
+	"unicode/utf8"
 )
 
 type lexer struct {
@@ -88,6 +89,11 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 		lval.token = l.token
 		return tokVariable
 	default:
+		if ch < utf8.RuneSelf {
+			return int(ch)
+		}
+		r, _ := utf8.DecodeRune(l.source[l.offset-1:])
+		l.token = string(r)
 		return int(ch)
 	}
 }
@@ -182,7 +188,7 @@ func (err *parseError) Error() string {
 	switch {
 	case err.tokenType == eof:
 		message = "<EOF>"
-	case err.tokenType > 0xff:
+	case err.tokenType >= utf8.RuneSelf:
 		message = strconv.Quote(err.token)
 	default:
 		message = fmt.Sprintf(`"%c"`, rune(err.tokenType))
