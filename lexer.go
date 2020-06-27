@@ -2,6 +2,7 @@ package gojq
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"unicode/utf8"
 )
@@ -143,6 +144,14 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 		l.token = "<"
 		lval.operator = OpLt
 		return tokCompareOp
+	case '"':
+		i := l.offset - 1
+		if !l.scanString() {
+			return int(ch)
+		}
+		l.token = string(l.source[i:l.offset])
+		lval.token = l.token
+		return tokString
 	default:
 		if ch < utf8.RuneSelf {
 			return int(ch)
@@ -233,6 +242,17 @@ func (l *lexer) scanNumber(state int) int {
 			panic(state)
 		}
 	}
+}
+
+var stringPattern = regexp.MustCompile("^" + stringPatternStr)
+
+func (l *lexer) scanString() bool {
+	loc := stringPattern.FindIndex(l.source[l.offset-1:])
+	if loc == nil {
+		return false
+	}
+	l.offset += loc[1] - loc[0] - 1
+	return true
 }
 
 type parseError struct {
