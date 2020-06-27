@@ -4,6 +4,7 @@ package gojq
 
 %union {
   query *Query
+  factor *Factor
   term  *Term
   suffix *Suffix
   args  []*Query
@@ -15,6 +16,7 @@ package gojq
 }
 
 %type<query> program query ifelse
+%type<factor> factor
 %type<term> term trycatch
 %type<suffix> suffix
 %type<args> args
@@ -28,6 +30,7 @@ package gojq
 %token tokRecurse
 
 %right '|'
+%left '*' '/' '%'
 
 %%
 
@@ -39,13 +42,31 @@ program
     }
 
 query
-    : term
+    : factor
     {
         $$ = $1.toQuery()
     }
     | query '|' query
     {
         $1.Commas = append($1.Commas, $3.Commas...)
+    }
+
+factor
+    : term
+    {
+        $$ = &Factor{Left: $1}
+    }
+    | factor '*' term
+    {
+        $1.Right = append($1.Right, FactorRight{OpMul, $3})
+    }
+    | factor '/' term
+    {
+        $1.Right = append($1.Right, FactorRight{OpDiv, $3})
+    }
+    | factor '%' term
+    {
+        $1.Right = append($1.Right, FactorRight{OpMod, $3})
     }
 
 term
