@@ -22,6 +22,8 @@ func newLexer(src string) *lexer {
 const eof = -1
 
 var keywords = map[string]int{
+	"or":    tokOrOp,
+	"and":   tokAndOp,
 	"if":    tokIf,
 	"then":  tokThen,
 	"elif":  tokElif,
