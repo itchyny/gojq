@@ -93,13 +93,59 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 			lval.token = l.token
 			return tokVariable
 		}
+	case '|':
+		if l.peek() == '=' {
+			l.offset++
+			l.token = "|="
+			lval.operator = OpModify
+			return tokUpdateOp
+		}
+	case '+':
+		if l.peek() == '=' {
+			l.offset++
+			l.token = "+="
+			lval.operator = OpUpdateAdd
+			return tokUpdateOp
+		}
+	case '-':
+		if l.peek() == '=' {
+			l.offset++
+			l.token = "-="
+			lval.operator = OpUpdateSub
+			return tokUpdateOp
+		}
+	case '*':
+		if l.peek() == '=' {
+			l.offset++
+			l.token = "*="
+			lval.operator = OpUpdateMul
+			return tokUpdateOp
+		}
 	case '/':
 		switch l.peek() {
+		case '=':
+			l.offset++
+			l.token = "/="
+			lval.operator = OpUpdateDiv
+			return tokUpdateOp
 		case '/':
 			l.offset++
+			if l.peek() == '=' {
+				l.offset++
+				l.token = "//="
+				lval.operator = OpUpdateAlt
+				return tokUpdateOp
+			}
 			l.token = "//"
 			lval.operator = OpAlt
 			return tokAltOp
+		}
+	case '%':
+		if l.peek() == '=' {
+			l.offset++
+			l.token = "%="
+			lval.operator = OpUpdateMod
+			return tokUpdateOp
 		}
 	case '=':
 		if l.peek() == '=' {
@@ -108,6 +154,9 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 			lval.operator = OpEq
 			return tokCompareOp
 		}
+		l.token = "="
+		lval.operator = OpAssign
+		return tokUpdateOp
 	case '!':
 		if l.peek() == '=' {
 			l.offset++

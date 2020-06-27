@@ -41,7 +41,7 @@ package gojq
 %type<object> object
 %type<objectkeyval> objectkeyval
 %type<objectval> objectval
-%token<operator> tokAltOp tokOrOp tokAndOp tokCompareOp
+%token<operator> tokAltOp tokUpdateOp tokOrOp tokAndOp tokCompareOp
 %token<token> tokIdent tokVariable tokIndex tokNumber tokString tokFormat tokInvalid
 %token<token> tokIf tokThen tokElif tokElse tokEnd
 %token<token> tokTry tokCatch
@@ -50,6 +50,7 @@ package gojq
 %right '|'
 %left ','
 %right tokAltOp
+%nonassoc tokUpdateOp
 %left tokOrOp
 %left tokAndOp
 %nonassoc tokCompareOp
@@ -105,6 +106,10 @@ expr
     : logic
     {
         $$ = &Expr{Logic: $1}
+    }
+    | logic tokUpdateOp alt
+    {
+        $$ = &Expr{Logic: $1, UpdateOp: $2, Update: $3}
     }
 
 logic
