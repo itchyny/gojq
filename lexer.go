@@ -80,6 +80,13 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 		default:
 			return '.'
 		}
+	case '$':
+		if !isIdent(l.peek(), false) {
+			return int(ch)
+		}
+		l.token = string(l.source[l.offset-1 : l.scanIdent()])
+		lval.token = l.token
+		return tokVariable
 	default:
 		return int(ch)
 	}

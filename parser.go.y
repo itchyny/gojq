@@ -20,7 +20,7 @@ package gojq
 %type<object> object
 %type<objectkeyval> objectkeyval
 %type<objectval> objectval
-%token<token> tokIdent tokIndex tokNumber tokInvalid
+%token<token> tokIdent tokVariable tokIndex tokNumber tokInvalid
 %token<token> tokIf tokThen tokElif tokElse tokEnd
 %token<token> tokTry tokCatch
 %token tokRecurse
@@ -75,6 +75,10 @@ term
     | tokIdent '(' args ')'
     {
         $$ = &Term{Func: &Func{Name: $1, Args: $3}}
+    }
+    | tokVariable
+    {
+        $$ = &Term{Func: &Func{Name: $1}}
     }
     | tokNumber
     {
