@@ -60,5 +60,9 @@ term
     {
         $$ = &Term{Number: $1}
     }
+    | '(' query ')'
+    {
+        $$ = &Term{Query: $2}
+    }
 
 %%
