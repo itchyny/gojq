@@ -91,6 +91,46 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 		l.token = string(l.source[l.offset-1 : l.scanIdent()])
 		lval.token = l.token
 		return tokVariable
+	case '=':
+		switch l.peek() {
+		case '=':
+			l.offset++
+			l.token = "=="
+			lval.operator = OpEq
+			return tokCompareOp
+		default:
+			return int(ch)
+		}
+	case '!':
+		switch l.peek() {
+		case '=':
+			l.offset++
+			l.token = "!="
+			lval.operator = OpNe
+			return tokCompareOp
+		default:
+			return int(ch)
+		}
+	case '>':
+		if l.peek() == '=' {
+			l.offset++
+			l.token = ">="
+			lval.operator = OpGe
+			return tokCompareOp
+		}
+		l.token = ">"
+		lval.operator = OpGt
+		return tokCompareOp
+	case '<':
+		if l.peek() == '=' {
+			l.offset++
+			l.token = "<="
+			lval.operator = OpLe
+			return tokCompareOp
+		}
+		l.token = "<"
+		lval.operator = OpLt
+		return tokCompareOp
 	default:
 		if ch < utf8.RuneSelf {
 			return int(ch)

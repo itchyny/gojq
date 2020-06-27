@@ -4,6 +4,7 @@ package gojq
 
 %union {
   query *Query
+  compare *Compare
   arith *Arith
   factor *Factor
   term  *Term
@@ -13,10 +14,12 @@ package gojq
   object []ObjectKeyVal
   objectkeyval *ObjectKeyVal
   objectval *ObjectVal
+  operator Operator
   token string
 }
 
 %type<query> program query ifelse
+%type<compare> compare
 %type<arith> arith
 %type<factor> factor
 %type<term> term trycatch
@@ -26,12 +29,14 @@ package gojq
 %type<object> object
 %type<objectkeyval> objectkeyval
 %type<objectval> objectval
+%token<operator> tokCompareOp
 %token<token> tokIdent tokVariable tokIndex tokNumber tokInvalid
 %token<token> tokIf tokThen tokElif tokElse tokEnd
 %token<token> tokTry tokCatch
 %token tokRecurse
 
 %right '|'
+%nonassoc tokCompareOp
 %left '+' '-'
 %left '*' '/' '%'
 
@@ -45,13 +50,23 @@ program
     }
 
 query
-    : arith
+    : compare
     {
         $$ = $1.toQuery()
     }
     | query '|' query
     {
         $1.Commas = append($1.Commas, $3.Commas...)
+    }
+
+compare
+    : arith
+    {
+        $$ = &Compare{Left: $1}
+    }
+    | arith tokCompareOp arith
+    {
+        $$ = &Compare{Left: $1, Right: &CompareRight{$2, $3}}
     }
 
 arith
