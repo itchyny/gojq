@@ -5,11 +5,13 @@ package gojq
 %union {
   query *Query
   term  *Term
+  args  []*Query
   token string
 }
 
 %type<query> program query
 %type<term> term
+%type<args> args
 %token <token> tokIdent tokIndex tokNumber tokInvalid
 %token tokRecurse
 
@@ -60,6 +62,10 @@ term
             $$ = &Term{Func: &Func{Name: $1}}
         }
     }
+    | tokIdent '(' args ')'
+    {
+        $$ = &Term{Func: &Func{Name: $1, Args: $3}}
+    }
     | tokNumber
     {
         $$ = &Term{Number: $1}
@@ -83,6 +89,16 @@ term
     | '[' ']'
     {
         $$ = &Term{Array: &Array{}}
+    }
+
+args
+    : query
+    {
+        $$ = []*Query{$1}
+    }
+    | args ';' query
+    {
+        $$ = append($1, $3)
     }
 
 %%
