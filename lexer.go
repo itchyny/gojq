@@ -25,6 +25,8 @@ const eof = -1
 var keywords = map[string]int{
 	"or":      tokOrOp,
 	"and":     tokAndOp,
+	"import":  tokImport,
+	"include": tokInclude,
 	"def":     tokDef,
 	"as":      tokAs,
 	"label":   tokLabel,

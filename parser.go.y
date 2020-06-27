@@ -3,6 +3,7 @@ package gojq
 %}
 
 %union {
+  imports []*Import
   funcdef *FuncDef
   query *Query
   comma *Comma
@@ -30,6 +31,7 @@ package gojq
   token string
 }
 
+%type<imports> imports
 %type<funcdef> funcdef
 %type<tokens> funcdefargs
 %type<query> program query ifelse
@@ -53,8 +55,9 @@ package gojq
 %type<object> object
 %type<objectkeyval> objectkeyval
 %type<objectval> objectval
+%type<token> tokIdentVariable
 %token<operator> tokAltOp tokUpdateOp tokDestAltOp tokOrOp tokAndOp tokCompareOp
-%token<token> tokDef tokAs tokLabel tokBreak
+%token<token> tokImport tokInclude tokDef tokAs tokLabel tokBreak
 %token<token> tokIdent tokVariable tokIndex tokNumber tokString tokFormat tokInvalid
 %token<token> tokIf tokThen tokElif tokElse tokEnd
 %token<token> tokTry tokCatch tokReduce tokForeach
@@ -79,6 +82,19 @@ program
         yylex.(*lexer).result = $$
     }
 
+imports
+    :
+    {
+    }
+    | tokImport tokString tokAs tokIdentVariable ';' imports
+    {
+        $$ = append([]*Import{&Import{ImportPath: $2, ImportAlias: $4}}, $6...)
+    }
+    | tokInclude tokString ';' imports
+    {
+        $$ = append([]*Import{&Import{IncludePath: $2}}, $4...)
+    }
+
 funcdef
     : tokDef tokIdent ':' query ';'
     {
@@ -90,11 +106,7 @@ funcdef
     }
 
 funcdefargs
-    : tokIdent
-    {
-        $$ = []string{$1}
-    }
-    | tokVariable
+    : tokIdentVariable
     {
         $$ = []string{$1}
     }
@@ -107,6 +119,16 @@ funcdefargs
         $$ = append($1, $3)
     }
 
+tokIdentVariable
+    : tokIdent
+    {
+        $$ = $1
+    }
+    | tokVariable
+    {
+        $$ = $1
+    }
+
 query
     : comma
     {
@@ -115,6 +137,11 @@ query
     | query '|' query
     {
         $1.Commas = append($1.Commas, $3.Commas...)
+    }
+    | imports query
+    {
+        $2.Imports = $1
+        $$ = $2
     }
 
 comma
