@@ -3,6 +3,7 @@ package gojq
 %}
 
 %union {
+  funcdef *FuncDef
   query *Query
   comma *Comma
   filter *Filter
@@ -21,9 +22,12 @@ package gojq
   objectkeyval *ObjectKeyVal
   objectval *ObjectVal
   operator Operator
+  tokens []string
   token string
 }
 
+%type<funcdef> funcdef
+%type<tokens> funcdefargs
 %type<query> program query ifelse
 %type<comma> comma
 %type<filter> filter
@@ -42,6 +46,7 @@ package gojq
 %type<objectkeyval> objectkeyval
 %type<objectval> objectval
 %token<operator> tokAltOp tokUpdateOp tokOrOp tokAndOp tokCompareOp
+%token<token> tokDef
 %token<token> tokIdent tokVariable tokIndex tokNumber tokString tokFormat tokInvalid
 %token<token> tokIf tokThen tokElif tokElse tokEnd
 %token<token> tokTry tokCatch
@@ -64,6 +69,34 @@ program
     {
         $$ = $1
         yylex.(*lexer).result = $$
+    }
+
+funcdef
+    : tokDef tokIdent ':' query ';'
+    {
+        $$ = &FuncDef{Name: $2, Body: $4}
+    }
+    | tokDef tokIdent '(' funcdefargs ')' ':' query ';'
+    {
+        $$ = &FuncDef{$2, $4, $7}
+    }
+
+funcdefargs
+    : tokIdent
+    {
+        $$ = []string{$1}
+    }
+    | tokVariable
+    {
+        $$ = []string{$1}
+    }
+    | funcdefargs ';' tokIdent
+    {
+        $$ = append($1, $3)
+    }
+    | funcdefargs ';' tokVariable
+    {
+        $$ = append($1, $3)
     }
 
 query
@@ -90,6 +123,11 @@ filter
     : alt
     {
         $$ = &Filter{Alt: $1}
+    }
+    | funcdef filter
+    {
+        $2.FuncDefs = append([]*FuncDef{$1}, $2.FuncDefs...)
+        $$ = $2
     }
 
 alt
