@@ -29,6 +29,12 @@ package gojq
   operator Operator
   tokens []string
   token string
+  constterm *ConstTerm
+  constobject *ConstObject
+  constobjectkeyvals []ConstObjectKeyVal
+  constobjectkeyval *ConstObjectKeyVal
+  constarray *ConstArray
+  constarrayelems []*ConstTerm
 }
 
 %type<imports> imports
@@ -55,6 +61,12 @@ package gojq
 %type<object> object
 %type<objectkeyval> objectkeyval
 %type<objectval> objectval
+%type<constterm> constterm
+%type<constobject> constobject metaopt
+%type<constobjectkeyvals> constobjectkeyvals
+%type<constobjectkeyval> constobjectkeyval
+%type<constarray> constarray
+%type<constarrayelems> constarrayelems
 %type<token> tokIdentVariable
 %token<operator> tokAltOp tokUpdateOp tokDestAltOp tokOrOp tokAndOp tokCompareOp
 %token<token> tokImport tokInclude tokDef tokAs tokLabel tokBreak
@@ -86,13 +98,22 @@ imports
     :
     {
     }
-    | tokImport tokString tokAs tokIdentVariable ';' imports
+    | tokImport tokString tokAs tokIdentVariable metaopt ';' imports
     {
-        $$ = append([]*Import{&Import{ImportPath: $2, ImportAlias: $4}}, $6...)
+        $$ = append([]*Import{&Import{ImportPath: $2, ImportAlias: $4, Meta: $5}}, $7...)
     }
-    | tokInclude tokString ';' imports
+    | tokInclude tokString metaopt ';' imports
     {
-        $$ = append([]*Import{&Import{IncludePath: $2}}, $4...)
+        $$ = append([]*Import{&Import{IncludePath: $2, Meta: $3}}, $5...)
+    }
+
+metaopt
+    :
+    {
+    }
+    | constobject
+    {
+        $$ = $1
     }
 
 funcdef
@@ -558,6 +579,73 @@ objectval
     | term '|' objectval
     {
         $$ = &ObjectVal{append([]*Alt{$1.toFilter().Alt}, $3.Alts...)}
+    }
+
+constterm
+    : constobject
+    {
+        $$ = &ConstTerm{Object: $1}
+    }
+    | constarray
+    {
+        $$ = &ConstTerm{Array: $1}
+    }
+    | tokNumber
+    {
+        $$ = &ConstTerm{Number: $1}
+    }
+    | tokString
+    {
+        $$ = &ConstTerm{Str: $1}
+    }
+
+constobject
+    : '{' constobjectkeyvals '}'
+    {
+        $$ = &ConstObject{$2}
+    }
+
+constobjectkeyvals
+    :
+    {
+    }
+    | constobjectkeyval
+    {
+        $$ = []ConstObjectKeyVal{*$1}
+    }
+    | constobjectkeyval ',' constobjectkeyvals
+    {
+        $$ = append([]ConstObjectKeyVal{*$1}, $3...)
+    }
+
+constobjectkeyval
+    : tokIdent ':' constterm
+    {
+        $$ = &ConstObjectKeyVal{Key: $1, Val: $3}
+    }
+    | tokString ':' constterm
+    {
+        $$ = &ConstObjectKeyVal{KeyString: $1, Val: $3}
+    }
+
+constarray
+    : '[' ']'
+    {
+        $$ = &ConstArray{}
+    }
+    | '[' constarrayelems ']'
+    {
+        $$ = &ConstArray{$2}
+    }
+
+constarrayelems
+    : constterm
+    {
+        $$ = []*ConstTerm{$1}
+    }
+    | constarrayelems ',' constterm
+    {
+        $$ = append($1, $3)
     }
 
 %%
