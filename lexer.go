@@ -88,12 +88,11 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 			return '.'
 		}
 	case '$':
-		if !isIdent(l.peek(), false) {
-			return int(ch)
+		if isIdent(l.peek(), false) {
+			l.token = string(l.source[l.offset-1 : l.scanIdent()])
+			lval.token = l.token
+			return tokVariable
 		}
-		l.token = string(l.source[l.offset-1 : l.scanIdent()])
-		lval.token = l.token
-		return tokVariable
 	case '/':
 		switch l.peek() {
 		case '/':
@@ -101,28 +100,20 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 			l.token = "//"
 			lval.operator = OpAlt
 			return tokAltOp
-		default:
-			return int(ch)
 		}
 	case '=':
-		switch l.peek() {
-		case '=':
+		if l.peek() == '=' {
 			l.offset++
 			l.token = "=="
 			lval.operator = OpEq
 			return tokCompareOp
-		default:
-			return int(ch)
 		}
 	case '!':
-		switch l.peek() {
-		case '=':
+		if l.peek() == '=' {
 			l.offset++
 			l.token = "!="
 			lval.operator = OpNe
 			return tokCompareOp
-		default:
-			return int(ch)
 		}
 	case '>':
 		if l.peek() == '=' {
@@ -145,28 +136,25 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 		lval.operator = OpLt
 		return tokCompareOp
 	case '@':
-		if !isIdent(l.peek(), false) {
-			return int(ch)
+		if isIdent(l.peek(), false) {
+			l.token = string(l.source[l.offset-1 : l.scanIdent()])
+			lval.token = l.token
+			return tokFormat
 		}
-		l.token = string(l.source[l.offset-1 : l.scanIdent()])
-		lval.token = l.token
-		return tokFormat
 	case '"':
 		i := l.offset - 1
-		if !l.scanString() {
-			return int(ch)
+		if l.scanString() {
+			l.token = string(l.source[i:l.offset])
+			lval.token = l.token
+			return tokString
 		}
-		l.token = string(l.source[i:l.offset])
-		lval.token = l.token
-		return tokString
 	default:
-		if ch < utf8.RuneSelf {
-			return int(ch)
+		if ch >= utf8.RuneSelf {
+			r, _ := utf8.DecodeRune(l.source[l.offset-1:])
+			l.token = string(r)
 		}
-		r, _ := utf8.DecodeRune(l.source[l.offset-1:])
-		l.token = string(r)
-		return int(ch)
 	}
+	return int(ch)
 }
 
 func (l *lexer) next() (byte, bool) {
