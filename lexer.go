@@ -144,6 +144,13 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 		l.token = "<"
 		lval.operator = OpLt
 		return tokCompareOp
+	case '@':
+		if !isIdent(l.peek(), false) {
+			return int(ch)
+		}
+		l.token = string(l.source[l.offset-1 : l.scanIdent()])
+		lval.token = l.token
+		return tokFormat
 	case '"':
 		i := l.offset - 1
 		if !l.scanString() {

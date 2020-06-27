@@ -42,7 +42,7 @@ package gojq
 %type<objectkeyval> objectkeyval
 %type<objectval> objectval
 %token<operator> tokAltOp tokOrOp tokAndOp tokCompareOp
-%token<token> tokIdent tokVariable tokIndex tokNumber tokString tokInvalid
+%token<token> tokIdent tokVariable tokIndex tokNumber tokString tokFormat tokInvalid
 %token<token> tokIf tokThen tokElif tokElse tokEnd
 %token<token> tokTry tokCatch
 %token tokRecurse
@@ -218,6 +218,14 @@ term
     | tokNumber
     {
         $$ = &Term{Number: $1}
+    }
+    | tokFormat
+    {
+        $$ = &Term{Format: $1}
+    }
+    | tokFormat tokString
+    {
+        $$ = &Term{Format: $1, FormatStr: $2}
     }
     | tokString
     {
