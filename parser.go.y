@@ -3,52 +3,16 @@ package gojq
 %}
 
 %union {
-  query *Query
-  importstmt *Import
-  funcdef *FuncDef
-  patterns []*Pattern
-  pattern *Pattern
-  objectpatterns []PatternObject
-  objectpattern *PatternObject
-  term  *Term
-  suffix *Suffix
-  args  []*Query
-  ifelifs []IfElif
-  object []ObjectKeyVal
-  objectkeyval *ObjectKeyVal
-  objectval *ObjectVal
+  value    interface{}
+  token    string
   operator Operator
-  tokens []string
-  token string
-  constterm *ConstTerm
-  constobject *ConstObject
-  constobjectkeyvals []ConstObjectKeyVal
-  constobjectkeyval *ConstObjectKeyVal
-  constarray *ConstArray
-  constarrayelems []*ConstTerm
 }
 
-%type<query> program program1 program2 query ifelse
-%type<importstmt> import
-%type<funcdef> funcdef
-%type<tokens> funcdefargs
-%type<patterns> bindpatterns arraypatterns
-%type<objectpatterns> objectpatterns
-%type<objectpattern> objectpattern
-%type<pattern> pattern
-%type<term> term trycatch
-%type<suffix> suffix
-%type<args> args
-%type<ifelifs> ifelifs
-%type<object> object
-%type<objectkeyval> objectkeyval
-%type<objectval> objectval
-%type<constterm> constterm
-%type<constobject> moduleheader constobject metaopt
-%type<constobjectkeyvals> constobjectkeyvals
-%type<constobjectkeyval> constobjectkeyval
-%type<constarray> constarray
-%type<constarrayelems> constarrayelems
+%type<value> program moduleheader program1 import metaopt program2 funcdef funcdefargs query
+%type<value> bindpatterns pattern arraypatterns objectpatterns objectpattern
+%type<value> term suffix args ifelifs ifelse trycatch
+%type<value> object objectkeyval objectval
+%type<value> constterm constobject constobjectkeyvals constobjectkeyval constarray constarrayelems
 %type<token> tokIdentVariable tokIdentModuleIdent tokVariableModuleVariable tokKeyword objectkey
 %token<operator> tokAltOp tokUpdateOp tokDestAltOp tokOrOp tokAndOp tokCompareOp
 %token<token> tokModule tokImport tokInclude tokDef tokAs tokLabel tokBreak
@@ -74,14 +38,14 @@ package gojq
 program
     : moduleheader program1
     {
-        $2.Meta = $1
-        yylex.(*lexer).result = $2
+        $2.(*Query).Meta = $1.(*ConstObject)
+        yylex.(*lexer).result = $2.(*Query)
     }
 
 moduleheader
     :
     {
-        $$ = nil
+        $$ = (*ConstObject)(nil)
     }
     | tokModule constobject ';'
     {
@@ -91,7 +55,7 @@ moduleheader
 program1
     : import program1
     {
-        $2.Imports = append([]*Import{$1}, $2.Imports...)
+        $2.(*Query).Imports = append([]*Import{$1.(*Import)}, $2.(*Query).Imports...)
         $$ = $2
     }
     | program2
@@ -102,17 +66,17 @@ program1
 import
     : tokImport tokString tokAs tokIdentVariable metaopt ';'
     {
-        $$ = &Import{ImportPath: $2, ImportAlias: $4, Meta: $5}
+        $$ = &Import{ImportPath: $2, ImportAlias: $4, Meta: $5.(*ConstObject)}
     }
     | tokInclude tokString metaopt ';'
     {
-        $$ = &Import{IncludePath: $2, Meta: $3}
+        $$ = &Import{IncludePath: $2, Meta: $3.(*ConstObject)}
     }
 
 metaopt
     :
     {
-        $$ = nil
+        $$ = (*ConstObject)(nil)
     }
     | constobject
     {
@@ -126,7 +90,7 @@ program2
     }
     | funcdef program2
     {
-        $2.FuncDefs = append([]*FuncDef{$1}, $2.FuncDefs...)
+        $2.(*Query).FuncDefs = append([]*FuncDef{$1.(*FuncDef)}, $2.(*Query).FuncDefs...)
         $$ = $2
     }
     | query
@@ -137,11 +101,11 @@ program2
 funcdef
     : tokDef tokIdent ':' query ';'
     {
-        $$ = &FuncDef{Name: $2, Body: $4}
+        $$ = &FuncDef{Name: $2, Body: $4.(*Query)}
     }
     | tokDef tokIdent '(' funcdefargs ')' ':' query ';'
     {
-        $$ = &FuncDef{$2, $4, $7}
+        $$ = &FuncDef{$2, $4.([]string), $7.(*Query)}
     }
 
 funcdefargs
@@ -151,11 +115,11 @@ funcdefargs
     }
     | funcdefargs ';' tokIdent
     {
-        $$ = append($1, $3)
+        $$ = append($1.([]string), $3)
     }
     | funcdefargs ';' tokVariable
     {
-        $$ = append($1, $3)
+        $$ = append($1.([]string), $3)
     }
 
 tokIdentVariable
@@ -165,78 +129,78 @@ tokIdentVariable
 query
     : funcdef query
     {
-        $2.FuncDefs = append([]*FuncDef{$1}, $2.FuncDefs...)
+        $2.(*Query).FuncDefs = append([]*FuncDef{$1.(*FuncDef)}, $2.(*Query).FuncDefs...)
         $$ = $2
     }
     | query '|' query
     {
-        $$ = &Query{Left: $1, Op: OpPipe, Right: $3}
+        $$ = &Query{Left: $1.(*Query), Op: OpPipe, Right: $3.(*Query)}
     }
     | term tokAs bindpatterns '|' query
     {
-        $$ = &Query{Term: $1, Bind: &Bind{$3, $5}}
+        $$ = &Query{Term: $1.(*Term), Bind: &Bind{$3.([]*Pattern), $5.(*Query)}}
     }
     | tokLabel tokVariable '|' query
     {
-        $$ = &Query{Term: &Term{Label: &Label{$2, $4}}}
+        $$ = &Query{Term: &Term{Label: &Label{$2, $4.(*Query)}}}
     }
     | query ',' query
     {
-        $$ = &Query{Left: $1, Op: OpComma, Right: $3}
+        $$ = &Query{Left: $1.(*Query), Op: OpComma, Right: $3.(*Query)}
     }
     | query tokAltOp query
     {
-        $$ = &Query{Left: $1, Op: $2, Right: $3}
+        $$ = &Query{Left: $1.(*Query), Op: $2, Right: $3.(*Query)}
     }
     | query tokUpdateOp query
     {
-        $$ = &Query{Left: $1, Op: $2, Right: $3}
+        $$ = &Query{Left: $1.(*Query), Op: $2, Right: $3.(*Query)}
     }
     | query tokOrOp query
     {
-        $$ = &Query{Left: $1, Op: OpOr, Right: $3}
+        $$ = &Query{Left: $1.(*Query), Op: OpOr, Right: $3.(*Query)}
     }
     | query tokAndOp query
     {
-        $$ = &Query{Left: $1, Op: OpAnd, Right: $3}
+        $$ = &Query{Left: $1.(*Query), Op: OpAnd, Right: $3.(*Query)}
     }
     | query tokCompareOp query
     {
-        $$ = &Query{Left: $1, Op: $2, Right: $3}
+        $$ = &Query{Left: $1.(*Query), Op: $2, Right: $3.(*Query)}
     }
     | query '+' query
     {
-        $$ = &Query{Left: $1, Op: OpAdd, Right: $3}
+        $$ = &Query{Left: $1.(*Query), Op: OpAdd, Right: $3.(*Query)}
     }
     | query '-' query
     {
-        $$ = &Query{Left: $1, Op: OpSub, Right: $3}
+        $$ = &Query{Left: $1.(*Query), Op: OpSub, Right: $3.(*Query)}
     }
     | query '*' query
     {
-        $$ = &Query{Left: $1, Op: OpMul, Right: $3}
+        $$ = &Query{Left: $1.(*Query), Op: OpMul, Right: $3.(*Query)}
     }
     | query '/' query
     {
-        $$ = &Query{Left: $1, Op: OpDiv, Right: $3}
+        $$ = &Query{Left: $1.(*Query), Op: OpDiv, Right: $3.(*Query)}
     }
     | query '%' query
     {
-        $$ = &Query{Left: $1, Op: OpMod, Right: $3}
+        $$ = &Query{Left: $1.(*Query), Op: OpMod, Right: $3.(*Query)}
     }
     | term
     {
-        $$ = &Query{Term: $1}
+        $$ = &Query{Term: $1.(*Term)}
     }
 
 bindpatterns
     : pattern
     {
-        $$ = []*Pattern{$1}
+        $$ = []*Pattern{$1.(*Pattern)}
     }
     | bindpatterns tokDestAltOp pattern
     {
-        $$ = append($1, $3)
+        $$ = append($1.([]*Pattern), $3.(*Pattern))
     }
 
 pattern
@@ -246,45 +210,45 @@ pattern
     }
     | '[' arraypatterns ']'
     {
-        $$ = &Pattern{Array: $2}
+        $$ = &Pattern{Array: $2.([]*Pattern)}
     }
     | '{' objectpatterns '}'
     {
-        $$ = &Pattern{Object: $2}
+        $$ = &Pattern{Object: $2.([]PatternObject)}
     }
 
 arraypatterns
     : pattern
     {
-        $$ = []*Pattern{$1}
+        $$ = []*Pattern{$1.(*Pattern)}
     }
     | arraypatterns ',' pattern
     {
-        $$ = append($1, $3)
+        $$ = append($1.([]*Pattern), $3.(*Pattern))
     }
 
 objectpatterns
     : objectpattern
     {
-        $$ = []PatternObject{*$1}
+        $$ = []PatternObject{*$1.(*PatternObject)}
     }
     | objectpatterns ',' objectpattern
     {
-        $$ = append($1, *$3)
+        $$ = append($1.([]PatternObject), *$3.(*PatternObject))
     }
 
 objectpattern
     : objectkey ':' pattern
     {
-        $$ = &PatternObject{Key: $1, Val: $3}
+        $$ = &PatternObject{Key: $1, Val: $3.(*Pattern)}
     }
     | tokString ':' pattern
     {
-        $$ = &PatternObject{KeyString: $1, Val: $3}
+        $$ = &PatternObject{KeyString: $1, Val: $3.(*Pattern)}
     }
     | '(' query ')' ':' pattern
     {
-        $$ = &PatternObject{Query: $2, Val: $5}
+        $$ = &PatternObject{Query: $2.(*Query), Val: $5.(*Pattern)}
     }
     | tokVariable
     {
@@ -306,10 +270,10 @@ term
     }
     | '.' suffix
     {
-        if $2.Iter {
-            $$ = &Term{Identity: true, SuffixList: []*Suffix{$2}}
+        if $2.(*Suffix).Iter {
+            $$ = &Term{Identity: true, SuffixList: []*Suffix{$2.(*Suffix)}}
         } else {
-            $$ = &Term{Index: $2.SuffixIndex.toIndex()}
+            $$ = &Term{Index: $2.(*Suffix).SuffixIndex.toIndex()}
         }
     }
     | '.' tokString
@@ -334,7 +298,7 @@ term
     }
     | tokIdentModuleIdent '(' args ')'
     {
-        $$ = &Term{Func: &Func{Name: $1, Args: $3}}
+        $$ = &Term{Func: &Func{Name: $1, Args: $3.([]*Query)}}
     }
     | tokVariableModuleVariable
     {
@@ -358,23 +322,23 @@ term
     }
     | '(' query ')'
     {
-        $$ = &Term{Query: $2}
+        $$ = &Term{Query: $2.(*Query)}
     }
     | '-' term
     {
-        $$ = &Term{Unary: &Unary{OpSub, $2}}
+        $$ = &Term{Unary: &Unary{OpSub, $2.(*Term)}}
     }
     | '+' term
     {
-        $$ = &Term{Unary: &Unary{OpAdd, $2}}
+        $$ = &Term{Unary: &Unary{OpAdd, $2.(*Term)}}
     }
     | '{' object '}'
     {
-        $$ = &Term{Object: &Object{$2}}
+        $$ = &Term{Object: &Object{$2.([]ObjectKeyVal)}}
     }
     | '[' query ']'
     {
-        $$ = &Term{Array: &Array{$2}}
+        $$ = &Term{Array: &Array{$2.(*Query)}}
     }
     | '[' ']'
     {
@@ -382,23 +346,23 @@ term
     }
     | tokIf query tokThen query ifelifs ifelse tokEnd
     {
-        $$ = &Term{If: &If{$2, $4, $5, $6}}
+        $$ = &Term{If: &If{$2.(*Query), $4.(*Query), $5.([]IfElif), $6.(*Query)}}
     }
     | tokTry query trycatch
     {
-        $$ = &Term{Try: &Try{$2, $3}}
+        $$ = &Term{Try: &Try{$2.(*Query), $3.(*Term)}}
     }
     | tokReduce term tokAs pattern '(' query ';' query ')'
     {
-        $$ = &Term{Reduce: &Reduce{$2, $4, $6, $8}}
+        $$ = &Term{Reduce: &Reduce{$2.(*Term), $4.(*Pattern), $6.(*Query), $8.(*Query)}}
     }
     | tokForeach term tokAs pattern '(' query ';' query ')'
     {
-        $$ = &Term{Foreach: &Foreach{$2, $4, $6, $8, nil}}
+        $$ = &Term{Foreach: &Foreach{$2.(*Term), $4.(*Pattern), $6.(*Query), $8.(*Query), nil}}
     }
     | tokForeach term tokAs pattern '(' query ';' query ';' query ')'
     {
-        $$ = &Term{Foreach: &Foreach{$2, $4, $6, $8, $10}}
+        $$ = &Term{Foreach: &Foreach{$2.(*Term), $4.(*Pattern), $6.(*Query), $8.(*Query), $10.(*Query)}}
     }
     | tokBreak tokVariable
     {
@@ -406,23 +370,23 @@ term
     }
     | term tokIndex
     {
-        $1.SuffixList = append($1.SuffixList, &Suffix{Index: &Index{Name: $2}})
+        $1.(*Term).SuffixList = append($1.(*Term).SuffixList, &Suffix{Index: &Index{Name: $2}})
     }
     | term suffix
     {
-        $1.SuffixList = append($1.SuffixList, $2)
+        $1.(*Term).SuffixList = append($1.(*Term).SuffixList, $2.(*Suffix))
     }
     | term '?'
     {
-        $1.SuffixList = append($1.SuffixList, &Suffix{Optional: true})
+        $1.(*Term).SuffixList = append($1.(*Term).SuffixList, &Suffix{Optional: true})
     }
     | term '.' suffix
     {
-        $1.SuffixList = append($1.SuffixList, $3)
+        $1.(*Term).SuffixList = append($1.(*Term).SuffixList, $3.(*Suffix))
     }
     | term '.' tokString
     {
-        $1.SuffixList = append($1.SuffixList, &Suffix{Index: &Index{Str: $3}})
+        $1.(*Term).SuffixList = append($1.(*Term).SuffixList, &Suffix{Index: &Index{Str: $3}})
     }
 
 tokIdentModuleIdent
@@ -452,45 +416,45 @@ suffix
     }
     | '[' query ']'
     {
-        $$ = &Suffix{SuffixIndex: &SuffixIndex{Start: $2}}
+        $$ = &Suffix{SuffixIndex: &SuffixIndex{Start: $2.(*Query)}}
     }
     | '[' query ':' ']'
     {
-        $$ = &Suffix{SuffixIndex: &SuffixIndex{Start: $2, IsSlice: true}}
+        $$ = &Suffix{SuffixIndex: &SuffixIndex{Start: $2.(*Query), IsSlice: true}}
     }
     | '[' ':' query ']'
     {
-        $$ = &Suffix{SuffixIndex: &SuffixIndex{End: $3}}
+        $$ = &Suffix{SuffixIndex: &SuffixIndex{End: $3.(*Query)}}
     }
     | '[' query ':' query ']'
     {
-        $$ = &Suffix{SuffixIndex: &SuffixIndex{Start: $2, IsSlice: true, End: $4}}
+        $$ = &Suffix{SuffixIndex: &SuffixIndex{Start: $2.(*Query), IsSlice: true, End: $4.(*Query)}}
     }
 
 args
     : query
     {
-        $$ = []*Query{$1}
+        $$ = []*Query{$1.(*Query)}
     }
     | args ';' query
     {
-        $$ = append($1, $3)
+        $$ = append($1.([]*Query), $3.(*Query))
     }
 
 ifelifs
     :
     {
-        $$ = nil
+        $$ = []IfElif(nil)
     }
     | tokElif query tokThen query ifelifs
     {
-        $$ = append([]IfElif{IfElif{$2, $4}}, $5...)
+        $$ = append([]IfElif{IfElif{$2.(*Query), $4.(*Query)}}, $5.([]IfElif)...)
     }
 
 ifelse
     :
     {
-        $$ = nil
+        $$ = (*Query)(nil)
     }
     | tokElse query
     {
@@ -500,7 +464,7 @@ ifelse
 trycatch
     :
     {
-        $$ = nil
+        $$ = (*Term)(nil)
     }
     | tokCatch term
     {
@@ -510,29 +474,29 @@ trycatch
 object
     :
     {
-        $$ = nil
+        $$ = []ObjectKeyVal(nil)
     }
     | objectkeyval
     {
-        $$ = []ObjectKeyVal{*$1}
+        $$ = []ObjectKeyVal{*$1.(*ObjectKeyVal)}
     }
     | objectkeyval ',' object
     {
-        $$ = append([]ObjectKeyVal{*$1}, $3...)
+        $$ = append([]ObjectKeyVal{*$1.(*ObjectKeyVal)}, $3.([]ObjectKeyVal)...)
     }
 
 objectkeyval
     : objectkey ':' objectval
     {
-        $$ = &ObjectKeyVal{Key: $1, Val: $3}
+        $$ = &ObjectKeyVal{Key: $1, Val: $3.(*ObjectVal)}
     }
     | tokString ':' objectval
     {
-        $$ = &ObjectKeyVal{KeyString: $1, Val: $3}
+        $$ = &ObjectKeyVal{KeyString: $1, Val: $3.(*ObjectVal)}
     }
     | '(' query ')' ':' objectval
     {
-        $$ = &ObjectKeyVal{Query: $2, Val: $5}
+        $$ = &ObjectKeyVal{Query: $2.(*Query), Val: $5.(*ObjectVal)}
     }
     | objectkey
     {
@@ -551,21 +515,21 @@ objectkey
 objectval
     : term
     {
-        $$ = &ObjectVal{[]*Query{&Query{Term: $1}}}
+        $$ = &ObjectVal{[]*Query{&Query{Term: $1.(*Term)}}}
     }
     | term '|' objectval
     {
-        $$ = &ObjectVal{append([]*Query{&Query{Term: $1}}, $3.Queries...)}
+        $$ = &ObjectVal{append([]*Query{&Query{Term: $1.(*Term)}}, $3.(*ObjectVal).Queries...)}
     }
 
 constterm
     : constobject
     {
-        $$ = &ConstTerm{Object: $1}
+        $$ = &ConstTerm{Object: $1.(*ConstObject)}
     }
     | constarray
     {
-        $$ = &ConstTerm{Array: $1}
+        $$ = &ConstTerm{Array: $1.(*ConstArray)}
     }
     | tokNumber
     {
@@ -591,35 +555,35 @@ constterm
 constobject
     : '{' constobjectkeyvals '}'
     {
-        $$ = &ConstObject{$2}
+        $$ = &ConstObject{$2.([]ConstObjectKeyVal)}
     }
 
 constobjectkeyvals
     :
     {
-        $$ = nil
+        $$ = []ConstObjectKeyVal(nil)
     }
     | constobjectkeyval
     {
-        $$ = []ConstObjectKeyVal{*$1}
+        $$ = []ConstObjectKeyVal{*$1.(*ConstObjectKeyVal)}
     }
     | constobjectkeyval ',' constobjectkeyvals
     {
-        $$ = append([]ConstObjectKeyVal{*$1}, $3...)
+        $$ = append([]ConstObjectKeyVal{*$1.(*ConstObjectKeyVal)}, $3.([]ConstObjectKeyVal)...)
     }
 
 constobjectkeyval
     : tokIdent ':' constterm
     {
-        $$ = &ConstObjectKeyVal{Key: $1, Val: $3}
+        $$ = &ConstObjectKeyVal{Key: $1, Val: $3.(*ConstTerm)}
     }
     | tokKeyword ':' constterm
     {
-        $$ = &ConstObjectKeyVal{Key: $1, Val: $3}
+        $$ = &ConstObjectKeyVal{Key: $1, Val: $3.(*ConstTerm)}
     }
     | tokString ':' constterm
     {
-        $$ = &ConstObjectKeyVal{KeyString: $1, Val: $3}
+        $$ = &ConstObjectKeyVal{KeyString: $1, Val: $3.(*ConstTerm)}
     }
 
 constarray
@@ -629,17 +593,17 @@ constarray
     }
     | '[' constarrayelems ']'
     {
-        $$ = &ConstArray{$2}
+        $$ = &ConstArray{$2.([]*ConstTerm)}
     }
 
 constarrayelems
     : constterm
     {
-        $$ = []*ConstTerm{$1}
+        $$ = []*ConstTerm{$1.(*ConstTerm)}
     }
     | constarrayelems ',' constterm
     {
-        $$ = append($1, $3)
+        $$ = append($1.([]*ConstTerm), $3.(*ConstTerm))
     }
 
 tokKeyword
