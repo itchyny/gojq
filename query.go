@@ -108,10 +108,10 @@ func (e *Query) countCommaQueries() int {
 
 // Import ...
 type Import struct {
-	ImportPath  string       `( "import" @String`
-	ImportAlias string       `  "as" ( @Ident | @Variable )`
-	IncludePath string       `| "include" @String )`
-	Meta        *ConstObject `@@? ";"`
+	ImportPath  string
+	ImportAlias string
+	IncludePath string
+	Meta        *ConstObject
 }
 
 func (e *Import) String() string {
@@ -134,9 +134,9 @@ func (e *Import) String() string {
 
 // FuncDef ...
 type FuncDef struct {
-	Name string   `"def" @Ident`
-	Args []string `("(" ( @Ident | @Variable ) (";" ( @Ident | @Variable ))* ")")? ":"`
-	Body *Query   `@@ ";"`
+	Name string
+	Args []string
+	Body *Query
 }
 
 func (e *FuncDef) String() string {
@@ -163,8 +163,8 @@ func (e *FuncDef) Minify() {
 
 // Bind ...
 type Bind struct {
-	Patterns []*Pattern `"as" @@ ("?//" @@)*`
-	Body     *Query     `"|" @@`
+	Patterns []*Pattern
+	Body     *Query
 }
 
 func (e *Bind) String() string {
@@ -186,28 +186,28 @@ func (e *Bind) minify() {
 
 // Term ...
 type Term struct {
-	Index      *Index    `( @@`
-	Identity   bool      `| @"."`
-	Recurse    bool      `| @".."`
-	Null       bool      `| @"null"`
-	True       bool      `| @"true"`
-	False      bool      `| @"false"`
-	Func       *Func     `| @@`
-	Object     *Object   `| @@`
-	Array      *Array    `| @@`
-	Number     string    `| @Number`
-	Unary      *Unary    `| @@`
-	Format     string    `| ( @Format`
-	FormatStr  string    `    @String? )`
-	Str        string    `| @String`
-	RawStr     string    `| @" "` // never matches, used in compiler
-	If         *If       `| @@`
-	Try        *Try      `| @@`
-	Reduce     *Reduce   `| @@`
-	Foreach    *Foreach  `| @@`
-	Break      string    `| "break" @Variable`
-	Query      *Query    `| "(" @@ ")" )`
-	SuffixList []*Suffix `@@*`
+	Index      *Index
+	Identity   bool
+	Recurse    bool
+	Null       bool
+	True       bool
+	False      bool
+	Func       *Func
+	Object     *Object
+	Array      *Array
+	Number     string
+	Unary      *Unary
+	Format     string
+	FormatStr  string
+	Str        string
+	RawStr     string
+	If         *If
+	Try        *Try
+	Reduce     *Reduce
+	Foreach    *Foreach
+	Break      string
+	Query      *Query
+	SuffixList []*Suffix
 }
 
 func (e *Term) String() string {
@@ -329,8 +329,8 @@ func (e *Term) toIndices() []interface{} {
 
 // Unary ...
 type Unary struct {
-	Op   Operator `@("+" | "-")`
-	Term *Term    `@@`
+	Op   Operator
+	Term *Term
 }
 
 func (e *Unary) String() string {
@@ -343,9 +343,9 @@ func (e *Unary) minify() {
 
 // Pattern ...
 type Pattern struct {
-	Name   string          `  @Variable`
-	Array  []*Pattern      `| "[" @@ ("," @@)* "]"`
-	Object []PatternObject `| "{" @@ ("," @@)* "}"`
+	Name   string
+	Array  []*Pattern
+	Object []PatternObject
 }
 
 func (e *Pattern) String() string {
@@ -376,11 +376,11 @@ func (e *Pattern) String() string {
 
 // PatternObject ...
 type PatternObject struct {
-	Key       string   `( ( @Ident | @Variable | @Keyword )`
-	KeyString string   `  | @String`
-	Query     *Query   `  | "(" @@ ")" ) ":"`
-	Val       *Pattern `@@`
-	KeyOnly   string   `| @Variable`
+	Key       string
+	KeyString string
+	Query     *Query
+	Val       *Pattern
+	KeyOnly   string
 }
 
 func (e *PatternObject) String() string {
@@ -404,11 +404,11 @@ func (e *PatternObject) String() string {
 
 // Index ...
 type Index struct {
-	Name    string `@Index`
-	Str     string `| "." ( @String`
-	Start   *Query `| "[" ( @@`
-	IsSlice bool   `( @":"`
-	End     *Query `@@? )? | ":" @@ ) "]" )`
+	Name    string
+	Str     string
+	Start   *Query
+	IsSlice bool
+	End     *Query
 }
 
 func (e *Index) String() string {
@@ -457,8 +457,8 @@ func (e *Index) toIndices() []interface{} {
 
 // Func ...
 type Func struct {
-	Name string   `( @Ident | @Variable | @ModuleIdent )`
-	Args []*Query `( "(" @@ (";" @@)* ")" )?`
+	Name string
+	Args []*Query
 }
 
 func (e *Func) String() string {
@@ -492,7 +492,7 @@ func (e *Func) toFunc() string {
 
 // Object ...
 type Object struct {
-	KeyVals []ObjectKeyVal `"{" (@@ ("," @@)* ","?)? "}"`
+	KeyVals []ObjectKeyVal
 }
 
 func (e *Object) String() string {
@@ -519,12 +519,12 @@ func (e *Object) minify() {
 
 // ObjectKeyVal ...
 type ObjectKeyVal struct {
-	Key           string     `( ( ( @Ident | @Variable | @Keyword )`
-	KeyString     string     `  | @String )`
-	Query         *Query     `| "(" @@ ")" ) ":"`
-	Val           *ObjectVal `@@`
-	KeyOnly       *string    `| @Ident | @Variable`
-	KeyOnlyString string     `| @String`
+	Key           string
+	KeyString     string
+	Query         *Query
+	Val           *ObjectVal
+	KeyOnly       *string
+	KeyOnlyString string
 }
 
 func (e *ObjectKeyVal) String() string {
@@ -559,7 +559,7 @@ func (e *ObjectKeyVal) minify() {
 
 // ObjectVal ...
 type ObjectVal struct {
-	Queries []*Query `@@ ("|" @@)*`
+	Queries []*Query
 }
 
 func (e *ObjectVal) String() string {
@@ -581,7 +581,7 @@ func (e *ObjectVal) minify() {
 
 // Array ...
 type Array struct {
-	Query *Query `"[" @@? "]"`
+	Query *Query
 }
 
 func (e *Array) String() string {
@@ -599,10 +599,10 @@ func (e *Array) minify() {
 
 // Suffix ...
 type Suffix struct {
-	Index       *Index       `  @@`
-	SuffixIndex *SuffixIndex `| @@`
-	Iter        bool         `| @("[" "]")`
-	Optional    bool         `| @"?"`
+	Index       *Index
+	SuffixIndex *SuffixIndex
+	Iter        bool
+	Optional    bool
 }
 
 func (e *Suffix) String() string {
@@ -648,9 +648,9 @@ func (e *Suffix) toIndices() []interface{} {
 
 // SuffixIndex ...
 type SuffixIndex struct {
-	Start   *Query `"[" ( @@`
-	IsSlice bool   `( @":"`
-	End     *Query `@@? )? | ":" @@ ) "]"`
+	Start   *Query
+	IsSlice bool
+	End     *Query
 }
 
 func (e *SuffixIndex) String() string {
@@ -676,10 +676,10 @@ func (e *SuffixIndex) toIndex() *Index {
 
 // If ...
 type If struct {
-	Cond *Query   `"if" @@`
-	Then *Query   `"then" @@`
-	Elif []IfElif `@@*`
-	Else *Query   `("else" @@)? "end"`
+	Cond *Query
+	Then *Query
+	Elif []IfElif
+	Else *Query
 }
 
 func (e *If) String() string {
@@ -708,8 +708,8 @@ func (e *If) minify() {
 
 // IfElif ...
 type IfElif struct {
-	Cond *Query `"elif" @@`
-	Then *Query `"then" @@`
+	Cond *Query
+	Then *Query
 }
 
 func (e *IfElif) String() string {
@@ -723,8 +723,8 @@ func (e *IfElif) minify() {
 
 // Try ...
 type Try struct {
-	Body  *Query `"try" @@`
-	Catch *Term  `("catch" @@)?`
+	Body  *Query
+	Catch *Term
 }
 
 func (e *Try) String() string {
@@ -745,10 +745,10 @@ func (e *Try) minify() {
 
 // Reduce ...
 type Reduce struct {
-	Term    *Term    `"reduce" @@`
-	Pattern *Pattern `"as" @@`
-	Start   *Query   `"(" @@`
-	Update  *Query   `";" @@ ")"`
+	Term    *Term
+	Pattern *Pattern
+	Start   *Query
+	Update  *Query
 }
 
 func (e *Reduce) String() string {
@@ -763,11 +763,11 @@ func (e *Reduce) minify() {
 
 // Foreach ...
 type Foreach struct {
-	Term    *Term    `"foreach" @@`
-	Pattern *Pattern `"as" @@`
-	Start   *Query   `"(" @@`
-	Update  *Query   `";" @@`
-	Extract *Query   `(";" @@)? ")"`
+	Term    *Term
+	Pattern *Pattern
+	Start   *Query
+	Update  *Query
+	Extract *Query
 }
 
 func (e *Foreach) String() string {
@@ -791,8 +791,8 @@ func (e *Foreach) minify() {
 
 // Label ...
 type Label struct {
-	Ident string `"label" @Variable`
-	Body  *Query `"|" @@`
+	Ident string
+	Body  *Query
 }
 
 func (e *Label) String() string {
@@ -805,13 +805,13 @@ func (e *Label) minify() {
 
 // ConstTerm ...
 type ConstTerm struct {
-	Object *ConstObject `  @@`
-	Array  *ConstArray  `| @@`
-	Number string       `| @Number`
-	Str    string       `| @String`
-	Null   bool         `| @"null"`
-	True   bool         `| @"true"`
-	False  bool         `| @"false"`
+	Object *ConstObject
+	Array  *ConstArray
+	Number string
+	Str    string
+	Null   bool
+	True   bool
+	False  bool
 }
 
 func (e *ConstTerm) String() string {
@@ -855,7 +855,7 @@ func (e *ConstTerm) toValue() interface{} {
 
 // ConstObject ...
 type ConstObject struct {
-	KeyVals []ConstObjectKeyVal `"{" (@@ ("," @@)* ","?)? "}"`
+	KeyVals []ConstObjectKeyVal
 }
 
 func (e *ConstObject) String() string {
@@ -892,9 +892,9 @@ func (e *ConstObject) ToValue() map[string]interface{} {
 
 // ConstObjectKeyVal ...
 type ConstObjectKeyVal struct {
-	Key       string     `( @Ident | @Keyword`
-	KeyString string     `| @String ) ":"`
-	Val       *ConstTerm `@@`
+	Key       string
+	KeyString string
+	Val       *ConstTerm
 }
 
 func (e *ConstObjectKeyVal) String() string {
@@ -911,7 +911,7 @@ func (e *ConstObjectKeyVal) String() string {
 
 // ConstArray ...
 type ConstArray struct {
-	Elems []*ConstTerm `"[" (@@ ("," @@)*)? "]"`
+	Elems []*ConstTerm
 }
 
 func (e *ConstArray) String() string {
