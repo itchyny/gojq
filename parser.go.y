@@ -74,6 +74,7 @@ package gojq
 %type<token> tokIdentVariable tokIdentModuleIdent tokVariableModuleVariable
 %token<operator> tokAltOp tokUpdateOp tokDestAltOp tokOrOp tokAndOp tokCompareOp
 %token<token> tokModule tokImport tokInclude tokDef tokAs tokLabel tokBreak
+%token<token> tokNull tokTrue tokFalse
 %token<token> tokIdent tokVariable tokModuleIdent tokModuleVariable
 %token<token> tokIndex tokNumber tokString tokFormat tokInvalid
 %token<token> tokIf tokThen tokElif tokElse tokEnd
@@ -403,18 +404,21 @@ term
     {
         $$ = &Term{Index: &Index{Str: $2}}
     }
+    | tokNull
+    {
+        $$ = &Term{Null: true}
+    }
+    | tokTrue
+    {
+        $$ = &Term{True: true}
+    }
+    | tokFalse
+    {
+        $$ = &Term{False: true}
+    }
     | tokIdentModuleIdent
     {
-        switch $1 {
-        case "null":
-            $$ = &Term{Null: true}
-        case "true":
-            $$ = &Term{True: true}
-        case "false":
-            $$ = &Term{False: true}
-        default:
-            $$ = &Term{Func: &Func{Name: $1}}
-        }
+        $$ = &Term{Func: &Func{Name: $1}}
     }
     | tokIdentModuleIdent '(' args ')'
     {
@@ -657,6 +661,18 @@ constterm
     | tokString
     {
         $$ = &ConstTerm{Str: $1}
+    }
+    | tokNull
+    {
+        $$ = &ConstTerm{Null: true}
+    }
+    | tokTrue
+    {
+        $$ = &ConstTerm{True: true}
+    }
+    | tokFalse
+    {
+        $$ = &ConstTerm{False: true}
     }
 
 constobject
