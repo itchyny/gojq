@@ -100,6 +100,7 @@ module
 moduleheader
     :
     {
+        $$ = nil
     }
     | tokModule constobject ';'
     {
@@ -109,6 +110,7 @@ moduleheader
 imports
     :
     {
+        $$ = nil
     }
     | tokImport tokString tokAs tokIdentVariable metaopt ';' imports
     {
@@ -122,6 +124,7 @@ imports
 metaopt
     :
     {
+        $$ = nil
     }
     | constobject
     {
@@ -131,6 +134,7 @@ metaopt
 funcdefs
     :
     {
+        $$ = nil
     }
     | funcdef funcdefs
     {
@@ -539,6 +543,7 @@ args
 ifelifs
     :
     {
+        $$ = nil
     }
     | tokElif query tokThen query ifelifs
     {
@@ -548,6 +553,7 @@ ifelifs
 ifelse
     :
     {
+        $$ = nil
     }
     | tokElse query
     {
@@ -557,6 +563,7 @@ ifelse
 trycatch
     :
     {
+        $$ = nil
     }
     | tokCatch term
     {
@@ -566,6 +573,7 @@ trycatch
 object
     :
     {
+        $$ = nil
     }
     | objectkeyval
     {
@@ -639,6 +647,7 @@ constobject
 constobjectkeyvals
     :
     {
+        $$ = nil
     }
     | constobjectkeyval
     {
