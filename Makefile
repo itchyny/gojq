@@ -10,18 +10,18 @@ export GO111MODULE=on
 all: clean build
 
 .PHONY: build
-build: parse.go builtin.go string.go
+build: parser.go builtin.go string.go
 	go build -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
 
 .PHONY: build-debug
-build-debug: parse.go builtin.go string.go
+build-debug: parser.go builtin.go string.go
 	go build -tags debug -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
 
-builtin.go string.go: builtin.jq parse.go parser.go.y parser.go query.go operator.go _tools/*
+builtin.go string.go: builtin.jq parser.go.y parser.go query.go operator.go _tools/*
 	GOOS= GOARCH= go generate
 
 .SUFFIXES:
-parse.go: parser.go.y lexer.go $(GOBIN)/goyacc
+parser.go: parser.go.y lexer.go $(GOBIN)/goyacc
 	goyacc -o $@ $<
 
 $(GOBIN)/goyacc:
