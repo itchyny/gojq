@@ -33,8 +33,10 @@ var parser = participle.MustBuild(&Query{}, parserOptions...)
 // Parse parses a query.
 func Parse(src string) (*Query, error) {
 	var query Query
-	if q, err := parse(src); err == nil {
-		return q, nil
+	if m, err := parse(src); err == nil {
+		m.Query.Imports = m.Imports
+		m.Query.Commas[0].Filters[0].FuncDefs = m.FuncDefs
+		return m.Query, nil
 	}
 	if err := parser.ParseString(src, &query); err != nil {
 		if strings.TrimSpace(src) != "" {
@@ -60,7 +62,7 @@ func ParseModule(src string) (*Module, error) {
 	return &module, nil
 }
 
-func parse(src string) (*Query, error) {
+func parse(src string) (*Module, error) {
 	l := newLexer(src)
 	if yyParse(l) > 0 {
 		return nil, l.err

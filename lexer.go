@@ -10,7 +10,7 @@ import (
 type lexer struct {
 	source    []byte
 	offset    int
-	result    *Query
+	result    *Module
 	token     string
 	tokenType int
 	err       error
@@ -25,6 +25,7 @@ const eof = -1
 var keywords = map[string]int{
 	"or":      tokOrOp,
 	"and":     tokAndOp,
+	"module":  tokModule,
 	"import":  tokImport,
 	"include": tokInclude,
 	"def":     tokDef,

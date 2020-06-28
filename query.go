@@ -13,6 +13,7 @@ type Module struct {
 	Meta     *ConstObject `( "module" @@ ";" )?`
 	Imports  []*Import    `@@*`
 	FuncDefs []*FuncDef   `@@*`
+	Query    *Query       `@@?`
 }
 
 func (e *Module) String() string {

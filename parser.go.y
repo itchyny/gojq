@@ -3,7 +3,9 @@ package gojq
 %}
 
 %union {
+  module *Module
   imports []*Import
+  funcdefs []*FuncDef
   funcdef *FuncDef
   query *Query
   comma *Comma
@@ -37,10 +39,12 @@ package gojq
   constarrayelems []*ConstTerm
 }
 
+%type<module> module
 %type<imports> imports
+%type<funcdefs> funcdefs
 %type<funcdef> funcdef
 %type<tokens> funcdefargs
-%type<query> program query ifelse
+%type<query> modulebody query ifelse
 %type<comma> comma
 %type<filter> filter
 %type<alt> alt
@@ -62,14 +66,14 @@ package gojq
 %type<objectkeyval> objectkeyval
 %type<objectval> objectval
 %type<constterm> constterm
-%type<constobject> constobject metaopt
+%type<constobject> moduleheader constobject metaopt
 %type<constobjectkeyvals> constobjectkeyvals
 %type<constobjectkeyval> constobjectkeyval
 %type<constarray> constarray
 %type<constarrayelems> constarrayelems
 %type<token> tokIdentVariable
 %token<operator> tokAltOp tokUpdateOp tokDestAltOp tokOrOp tokAndOp tokCompareOp
-%token<token> tokImport tokInclude tokDef tokAs tokLabel tokBreak
+%token<token> tokModule tokImport tokInclude tokDef tokAs tokLabel tokBreak
 %token<token> tokIdent tokVariable tokIndex tokNumber tokString tokFormat tokInvalid
 %token<token> tokIf tokThen tokElif tokElse tokEnd
 %token<token> tokTry tokCatch tokReduce tokForeach
@@ -87,11 +91,19 @@ package gojq
 
 %%
 
-program
-    : query
+module
+    : moduleheader imports funcdefs modulebody
     {
-        $$ = $1
-        yylex.(*lexer).result = $$
+        yylex.(*lexer).result = &Module{$1, $2, $3, $4}
+    }
+
+moduleheader
+    :
+    {
+    }
+    | tokModule constobject ';'
+    {
+        $$ = $2;
     }
 
 imports
@@ -114,6 +126,15 @@ metaopt
     | constobject
     {
         $$ = $1
+    }
+
+funcdefs
+    :
+    {
+    }
+    | funcdef funcdefs
+    {
+        $$ = append([]*FuncDef{$1}, $2...)
     }
 
 funcdef
@@ -146,6 +167,16 @@ tokIdentVariable
         $$ = $1
     }
     | tokVariable
+    {
+        $$ = $1
+    }
+
+modulebody
+    :
+    {
+        $$ = (&Term{Identity: true}).toQuery()
+    }
+    | query
     {
         $$ = $1
     }
