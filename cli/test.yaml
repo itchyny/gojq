@@ -2527,7 +2527,7 @@
 
 - name: binding variable scope in object
   args:
-    - '. as $x | {bar: .foo as $x | $x} | $x'
+    - '. as $x | {bar: (.foo as $x | $x)} | $x'
   input: '{"foo": "bar"}'
   expected: |
     {
@@ -2596,7 +2596,7 @@
 
 - name: binding variable scope error in object
   args:
-    - '{x: . as $i | $i} | $i'
+    - '{x: (. as $i | $i)} | $i'
   input: 0
   error: |
     variable not defined: $i
@@ -3432,6 +3432,16 @@
     {"bar":2,"foo":2}
     {"foo":1}
     {"foo":2}
+
+- name: update operators does not associate
+  args:
+    - '. += 1 -= 2'
+  input: '1'
+  error: |
+    invalid query: . += 1 -= 2
+        . += 1 -= 2
+               ^  unexpected token "-="
+  exit_code: 3
 
 - name: error/0 function
   args:

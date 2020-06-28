@@ -344,16 +344,12 @@ func getArgsOrder(args []string) []int {
 }
 
 func (c *compiler) compileQuery(e *Query) error {
-	for _, e := range e.Commas {
-		if err := c.compileComma(e); err != nil {
+	for _, fd := range e.FuncDefs {
+		if err := c.compileFuncDef(fd, false); err != nil {
 			return err
 		}
 	}
-	return nil
-}
-
-func (c *compiler) compileComma(e *Comma) error {
-	if e.Func != "" { // ref: Term#toFunc
+	if e.Func != "" {
 		switch e.Func {
 		case ".":
 			return c.compileTerm(&Term{Identity: true})
@@ -368,42 +364,86 @@ func (c *compiler) compileComma(e *Comma) error {
 		default:
 			return c.compileFunc(&Func{Name: e.Func})
 		}
-	} else if len(e.Filters) == 1 {
-		return c.compileFilter(e.Filters[0])
+	} else if e.Term != nil {
+		if e.Bind != nil {
+			c.append(&code{op: opdup})
+			c.append(&code{op: opexpbegin})
+			if err := c.compileTerm(e.Term); err != nil {
+				return err
+			}
+			return c.compileBind(e.Bind)
+		}
+		return c.compileTerm(e.Term)
+	} else if e.Label != nil {
+		return c.compileLabel(e.Label)
 	}
+	switch e.Op {
+	case OpPipe:
+		if err := c.compileQuery(e.Left); err != nil {
+			return err
+		}
+		return c.compileQuery(e.Right)
+	case OpComma:
+		return c.compileComma(e.Left, e.Right)
+	case OpAlt:
+		return c.compileAlt(e.Left, e.Right)
+	case OpAssign, OpModify, OpUpdateAdd, OpUpdateSub,
+		OpUpdateMul, OpUpdateDiv, OpUpdateMod, OpUpdateAlt:
+		return c.compileQueryUpdate(e.Left, e.Right, e.Op)
+	case OpOr:
+		return c.compileIf(
+			&If{
+				Cond: e.Left,
+				Then: &Query{Term: &Term{True: true}},
+				Else: &Query{Term: &Term{If: &If{
+					Cond: e.Right,
+					Then: &Query{Term: &Term{True: true}},
+					Else: &Query{Term: &Term{False: true}},
+				}}},
+			},
+		)
+	case OpAnd:
+		return c.compileIf(
+			&If{
+				Cond: e.Left,
+				Then: &Query{Term: &Term{If: &If{
+					Cond: e.Right,
+					Then: &Query{Term: &Term{True: true}},
+					Else: &Query{Term: &Term{False: true}},
+				}}},
+				Else: &Query{Term: &Term{False: true}},
+			},
+		)
+	default:
+		return c.compileCall(
+			e.Op.getFunc(),
+			[]*Query{e.Left, e.Right},
+		)
+	}
+}
+
+func (c *compiler) compileComma(l, r *Query) error {
 	setfork := c.lazy(func() *code {
 		return &code{op: opfork, v: c.pc() + 1}
 	})
-	if err := c.compileComma(&Comma{Filters: e.Filters[:len(e.Filters)-1]}); err != nil {
+	if err := c.compileQuery(l); err != nil {
 		return err
 	}
 	setfork()
 	defer c.lazy(func() *code {
 		return &code{op: opjump, v: c.pc()}
 	})()
-	return c.compileFilter(e.Filters[len(e.Filters)-1])
+	return c.compileQuery(r)
 }
 
-func (c *compiler) compileFilter(e *Filter) error {
-	for _, fd := range e.FuncDefs {
-		if err := c.compileFuncDef(fd, false); err != nil {
-			return err
-		}
-	}
-	return c.compileAlt(e.Alt)
-}
-
-func (c *compiler) compileAlt(e *Alt) error {
-	if len(e.Right) == 0 {
-		return c.compileExpr(e.Left)
-	}
+func (c *compiler) compileAlt(l, r *Query) error {
 	c.append(&code{op: oppush, v: false})
 	found := c.newVariable()
 	c.append(&code{op: opstore, v: found})
 	setfork := c.lazy(func() *code {
 		return &code{op: opfork, v: c.pc()} // opload found
 	})
-	if err := c.compileExpr(e.Left); err != nil {
+	if err := c.compileQuery(l); err != nil {
 		return err
 	}
 	c.append(&code{op: opdup})
@@ -420,42 +460,19 @@ func (c *compiler) compileAlt(e *Alt) error {
 	c.append(&code{op: opjumpifnot, v: c.pc() + 3})
 	c.append(&code{op: opbacktrack}) // if found, backtrack
 	c.append(&code{op: oppop})
-	return c.compileAlt(&Alt{e.Right[0].Right, e.Right[1:]})
+	return c.compileQuery(r)
 }
 
-func (c *compiler) compileExpr(e *Expr) (err error) {
-	if e.Update != nil {
-		return c.compileExprUpdate(e)
-	} else if e.Bind != nil {
-		c.append(&code{op: opdup})
-		c.append(&code{op: opexpbegin})
-		defer func() {
-			if err == nil {
-				err = c.compileBind(e.Bind)
-			}
-		}()
-	}
-	if e.Logic != nil {
-		return c.compileLogic(e.Logic)
-	} else if e.Label != nil {
-		return c.compileLabel(e.Label)
-	} else {
-		return fmt.Errorf("invalid expr: %s", e)
-	}
-}
-
-func (c *compiler) compileExprUpdate(e *Expr) (err error) {
-	t := *e // clone without changing e
-	(&t).Update = nil
-	switch e.UpdateOp {
+func (c *compiler) compileQueryUpdate(l, r *Query, op Operator) (err error) {
+	switch op {
 	case OpAssign:
 		// .foo.bar = f => setpath(["foo", "bar"]; f)
-		if xs := t.toIndices(); xs != nil {
+		if xs := l.toIndices(); xs != nil {
 			// ref: compileCall
 			v := c.newVariable()
 			c.append(&code{op: opstore, v: v})
 			c.append(&code{op: opload, v: v})
-			if err := c.compileAlt(e.Update); err != nil {
+			if err := c.compileQuery(r); err != nil {
 				return err
 			}
 			c.append(&code{op: oppush, v: xs})
@@ -467,17 +484,14 @@ func (c *compiler) compileExprUpdate(e *Expr) (err error) {
 	case OpModify:
 		return c.compileFunc(
 			&Func{
-				Name: e.UpdateOp.getFunc(),
-				Args: []*Query{
-					t.toQuery(),
-					e.Update.toQuery(),
-				},
+				Name: op.getFunc(),
+				Args: []*Query{l, r},
 			},
 		)
 	default:
 		name := "$%0"
 		c.append(&code{op: opdup})
-		if err := c.compileAlt(e.Update); err != nil {
+		if err := c.compileQuery(r); err != nil {
 			return err
 		}
 		c.append(&code{op: opstore, v: c.pushVariable(name)})
@@ -485,14 +499,14 @@ func (c *compiler) compileExprUpdate(e *Expr) (err error) {
 			&Func{
 				Name: "_modify",
 				Args: []*Query{
-					t.toQuery(),
-					(&Term{Func: &Func{
-						Name: e.UpdateOp.getFunc(),
+					l,
+					&Query{Term: &Term{Func: &Func{
+						Name: op.getFunc(),
 						Args: []*Query{
-							(&Term{Identity: true}).toQuery(),
-							(&Term{Func: &Func{Name: name}}).toQuery(),
-						},
-					}}).toQuery(),
+							&Query{Term: &Term{Identity: true}},
+							&Query{Func: name}},
+					},
+					}},
 				},
 			},
 		)
@@ -534,7 +548,7 @@ func (c *compiler) compileBind(b *Bind) error {
 		c.codes[len(c.codes)-2] = c.codes[len(c.codes)-1]
 		c.codes = c.codes[:len(c.codes)-1]
 	} else {
-		c.append(&code{op: opexpend}) // ref: compileExpr
+		c.append(&code{op: opexpend}) // ref: compileQuery
 	}
 	return c.compileQuery(b.Body)
 }
@@ -612,23 +626,6 @@ func (c *compiler) compilePattern(p *Pattern) ([][2]int, error) {
 	} else {
 		return nil, fmt.Errorf("invalid pattern: %s", p)
 	}
-}
-
-func (c *compiler) compileLogic(e *Logic) error {
-	if len(e.Right) == 0 {
-		return c.compileAndExpr(e.Left)
-	}
-	return c.compileIf(
-		&If{
-			Cond: (&Logic{e.Left, e.Right[:len(e.Right)-1]}).toQuery(),
-			Then: (&Term{True: true}).toQuery(),
-			Else: (&Term{If: &If{
-				Cond: e.Right[len(e.Right)-1].Right.toQuery(),
-				Then: (&Term{True: true}).toQuery(),
-				Else: (&Term{False: true}).toQuery(),
-			}}).toQuery(),
-		},
-	)
 }
 
 func (c *compiler) compileIf(e *If) error {
@@ -759,61 +756,6 @@ func (c *compiler) compileLabel(e *Label) error {
 	return c.compileQuery(e.Body)
 }
 
-func (c *compiler) compileAndExpr(e *AndExpr) error {
-	if len(e.Right) == 0 {
-		return c.compileCompare(e.Left)
-	}
-	return c.compileIf(
-		&If{
-			Cond: (&AndExpr{e.Left, e.Right[:len(e.Right)-1]}).toQuery(),
-			Then: (&Term{If: &If{
-				Cond: e.Right[len(e.Right)-1].Right.toQuery(),
-				Then: (&Term{True: true}).toQuery(),
-				Else: (&Term{False: true}).toQuery(),
-			}}).toQuery(),
-			Else: (&Term{False: true}).toQuery(),
-		},
-	)
-}
-
-func (c *compiler) compileCompare(e *Compare) error {
-	if e.Right == nil {
-		return c.compileArith(e.Left)
-	}
-	return c.compileCall(
-		e.Right.Op.getFunc(),
-		[]*Query{e.Left.toQuery(), e.Right.Right.toQuery()},
-	)
-}
-
-func (c *compiler) compileArith(e *Arith) error {
-	if len(e.Right) == 0 {
-		return c.compileFactor(e.Left)
-	}
-	r := e.Right[len(e.Right)-1]
-	return c.compileCall(
-		r.Op.getFunc(),
-		[]*Query{
-			(&Arith{e.Left, e.Right[:len(e.Right)-1]}).toQuery(),
-			r.Right.toQuery(),
-		},
-	)
-}
-
-func (c *compiler) compileFactor(e *Factor) error {
-	if len(e.Right) == 0 {
-		return c.compileTerm(e.Left)
-	}
-	r := e.Right[len(e.Right)-1]
-	return c.compileCall(
-		r.Op.getFunc(),
-		[]*Query{
-			(&Factor{e.Left, e.Right[:len(e.Right)-1]}).toQuery(),
-			r.Right.toQuery(),
-		},
-	)
-}
-
 func (c *compiler) compileTerm(e *Term) (err error) {
 	if len(e.SuffixList) > 0 {
 		s := e.SuffixList[len(e.SuffixList)-1]
@@ -880,25 +822,25 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 func (c *compiler) compileIndex(e *Term, x *Index) error {
 	c.appendCodeInfo(x)
 	if x.Name != "" {
-		return c.compileCall("_index", []*Query{e.toQuery(), (&Term{RawStr: x.Name[1:]}).toQuery()})
+		return c.compileCall("_index", []*Query{&Query{Term: e}, &Query{Term: &Term{RawStr: x.Name[1:]}}})
 	}
 	if x.Str != "" {
 		q, err := c.stringToQuery(x.Str, nil)
 		if err != nil {
 			return err
 		}
-		return c.compileCall("_index", []*Query{e.toQuery(), q})
+		return c.compileCall("_index", []*Query{&Query{Term: e}, q})
 	}
 	if x.Start != nil {
 		if x.IsSlice {
 			if x.End != nil {
-				return c.compileCall("_slice", []*Query{e.toQuery(), x.End, x.Start})
+				return c.compileCall("_slice", []*Query{&Query{Term: e}, x.End, x.Start})
 			}
-			return c.compileCall("_slice", []*Query{e.toQuery(), (&Term{Null: true}).toQuery(), x.Start})
+			return c.compileCall("_slice", []*Query{&Query{Term: e}, &Query{Term: &Term{Null: true}}, x.Start})
 		}
-		return c.compileCall("_index", []*Query{e.toQuery(), x.Start})
+		return c.compileCall("_index", []*Query{&Query{Term: e}, x.Start})
 	}
-	return c.compileCall("_slice", []*Query{e.toQuery(), x.End, (&Term{Null: true}).toQuery()})
+	return c.compileCall("_slice", []*Query{&Query{Term: e}, x.End, &Query{Term: &Term{Null: true}}})
 }
 
 func (c *compiler) compileFunc(e *Func) error {
@@ -1144,8 +1086,8 @@ func (c *compiler) compileObjectKeyVal(v [2]int, kv ObjectKeyVal) error {
 }
 
 func (c *compiler) compileObjectVal(e *ObjectVal) error {
-	for _, e := range e.Alts {
-		if err := c.compileAlt(e); err != nil {
+	for _, e := range e.Queries {
+		if err := c.compileQuery(e); err != nil {
 			return err
 		}
 	}
@@ -1176,11 +1118,14 @@ func (c *compiler) compileArray(e *Array) error {
 	c.append(&code{op: opbacktrack})
 	c.append(&code{op: oppop})
 	c.append(&code{op: opload, v: arr})
-	if len(e.Query.Commas) != 1 || 3*len(e.Query.Commas[0].Filters) != len(c.codes)-pc-3 {
+	if e.Query.Op == OpPipe {
 		return nil
 	}
 	// optimize constant arrays
-	l := len(e.Query.Commas[0].Filters)
+	l := e.Query.countCommaQueries()
+	if 3*l != len(c.codes)-pc-3 {
+		return nil
+	}
 	for i := 0; i < l; i++ {
 		if (i > 0 && c.codes[pc+i].op != opfork) ||
 			c.codes[pc+i*2+l].op != opconst ||
@@ -1274,8 +1219,8 @@ func (c *compiler) stringToQuery(s string, f *Func) (*Query, error) {
 	x := s[1 : len(s)-1]
 	var runeTmp [utf8.UTFMax]byte
 	buf := make([]byte, 0, 3*len(x)/2)
-	var xs []*Filter
-	var es []*Expr
+	var xs []*Query
+	var es []*Query
 	var cnt int
 	for len(x) > 0 {
 		r, multibyte, ss, err := strconv.UnquoteChar(x, '"')
@@ -1295,16 +1240,15 @@ func (c *compiler) stringToQuery(s string, f *Func) (*Query, error) {
 			}
 			x = x[i:]
 			if len(buf) > 0 {
-				xs = append(xs, (&Term{RawStr: string(buf)}).toFilter())
+				xs = append(xs, &Query{Term: &Term{RawStr: string(buf)}})
 				buf = buf[:0]
 			}
-			q.Commas = append(q.Commas, (&Term{Func: f}).toQuery().Commas...)
 			name := fmt.Sprintf("$%%%d", cnt)
-			es = append(es, &Expr{
-				Logic: (&Term{Query: q}).toLogic(),
-				Bind:  &Bind{Patterns: []*Pattern{{Name: name}}},
+			es = append(es, &Query{
+				Term: &Term{Query: &Query{Left: q, Op: OpPipe, Right: &Query{Term: &Term{Func: f}}}},
+				Bind: &Bind{Patterns: []*Pattern{{Name: name}}},
 			})
-			xs = append(xs, (&Term{Func: &Func{Name: name}}).toFilter())
+			xs = append(xs, &Query{Term: &Term{Func: &Func{Name: name}}})
 			cnt++
 			continue
 		}
@@ -1317,19 +1261,25 @@ func (c *compiler) stringToQuery(s string, f *Func) (*Query, error) {
 		}
 	}
 	if len(xs) == 0 {
-		return (&Term{RawStr: string(buf)}).toQuery(), nil
+		return &Query{Term: &Term{RawStr: string(buf)}}, nil
 	}
 	if len(buf) > 0 {
-		xs = append(xs, (&Term{RawStr: string(buf)}).toFilter())
+		xs = append(xs, &Query{Term: &Term{RawStr: string(buf)}})
 	}
-	q := (&Term{Array: &Array{&Query{Commas: []*Comma{&Comma{Filters: xs}}}}}).toQuery()
-	q.Commas = append(q.Commas, (&Term{
-		Func: &Func{
+	e := xs[0]
+	for i := 1; i < len(xs); i++ {
+		e = &Query{Left: e, Op: OpComma, Right: xs[i]}
+	}
+	q := &Query{
+		Left: &Query{Term: &Term{Array: &Array{e}}},
+		Op:   OpPipe,
+		Right: &Query{Term: &Term{Func: &Func{
 			Name: "join",
-			Args: []*Query{(&Term{Str: `""`}).toQuery()},
-		}}).toQuery().Commas...)
+			Args: []*Query{&Query{Term: &Term{Str: `""`}}},
+		}}},
+	}
 	for _, e := range es {
-		e.Bind.Body, q = q, e.toQuery()
+		e.Bind.Body, q = q, e
 	}
 	c.appendCodeInfo(q)
 	return q, nil
@@ -1357,7 +1307,7 @@ func (c *compiler) compileTermSuffix(e *Term, s *Suffix) error {
 				return c.compileTermSuffix(u, s)
 			}
 		}
-		return c.compileTry(&Try{Body: e.toQuery()})
+		return c.compileTry(&Try{Body: &Query{Term: e}})
 	} else {
 		return fmt.Errorf("invalid suffix: %s", s)
 	}

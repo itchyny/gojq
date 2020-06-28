@@ -5,22 +5,14 @@ package gojq
 %union {
   module *Module
   imports []*Import
+  importstmt *Import
   funcdefs []*FuncDef
   funcdef *FuncDef
   query *Query
-  comma *Comma
-  filter *Filter
-  alt *Alt
-  expr *Expr
   patterns []*Pattern
   pattern *Pattern
   objectpatterns []PatternObject
   objectpattern PatternObject
-  logic *Logic
-  andexpr *AndExpr
-  compare *Compare
-  arith *Arith
-  factor *Factor
   term  *Term
   suffix *Suffix
   args  []*Query
@@ -41,23 +33,15 @@ package gojq
 
 %type<module> module
 %type<imports> imports
+%type<importstmt> import
 %type<funcdefs> funcdefs
 %type<funcdef> funcdef
 %type<tokens> funcdefargs
 %type<query> modulebody query ifelse
-%type<comma> comma
-%type<filter> filter
-%type<alt> alt
-%type<expr> expr
 %type<patterns> bindpatterns arraypatterns
 %type<objectpatterns> objectpatterns
 %type<objectpattern> objectpattern
 %type<pattern> pattern
-%type<logic> logic
-%type<andexpr> andexpr
-%type<compare> compare
-%type<arith> arith
-%type<factor> factor
 %type<term> term trycatch
 %type<suffix> suffix
 %type<args> args
@@ -114,13 +98,19 @@ imports
     {
         $$ = nil
     }
-    | tokImport tokString tokAs tokIdentVariable metaopt ';' imports
+    | import imports
     {
-        $$ = append([]*Import{&Import{ImportPath: $2, ImportAlias: $4, Meta: $5}}, $7...)
+        $$ = append([]*Import{$1}, $2...)
     }
-    | tokInclude tokString metaopt ';' imports
+
+import
+    : tokImport tokString tokAs tokIdentVariable metaopt ';'
     {
-        $$ = append([]*Import{&Import{IncludePath: $2, Meta: $3}}, $5...)
+        $$ = &Import{ImportPath: $2, ImportAlias: $4, Meta: $5}
+    }
+    | tokInclude tokString metaopt ';'
+    {
+        $$ = &Import{IncludePath: $2, Meta: $3}
     }
 
 metaopt
@@ -174,7 +164,7 @@ tokIdentVariable
 modulebody
     :
     {
-        $$ = (&Term{Identity: true}).toQuery()
+        $$ = &Query{Term: &Term{Identity: true}}
     }
     | query
     {
@@ -182,67 +172,75 @@ modulebody
     }
 
 query
-    : comma
+    : import query
     {
-        $$ = &Query{Commas: []*Comma{$1}}
-    }
-    | query '|' query
-    {
-        $1.Commas = append($1.Commas, $3.Commas...)
-    }
-    | imports query
-    {
-        $2.Imports = $1
+        $2.Imports = append([]*Import{$1}, $2.Imports...)
         $$ = $2
     }
-
-comma
-    : filter
-    {
-        $$ = &Comma{Filters: []*Filter{$1}}
-    }
-    | comma ',' filter
-    {
-        $1.Filters = append($1.Filters, $3)
-    }
-
-filter
-    : alt
-    {
-        $$ = &Filter{Alt: $1}
-    }
-    | funcdef filter
+    | funcdef query
     {
         $2.FuncDefs = append([]*FuncDef{$1}, $2.FuncDefs...)
         $$ = $2
     }
-
-alt
-    : expr
+    | query '|' query
     {
-        $$ = &Alt{Left: $1}
+        $$ = &Query{Left: $1, Op: OpPipe, Right: $3}
     }
-    | alt tokAltOp expr
+    | term tokAs bindpatterns '|' query
     {
-        $1.Right = append($1.Right, AltRight{$2, $3})
-    }
-
-expr
-    : logic
-    {
-        $$ = &Expr{Logic: $1}
-    }
-    | logic tokUpdateOp alt
-    {
-        $$ = &Expr{Logic: $1, UpdateOp: $2, Update: $3}
-    }
-    | logic tokAs bindpatterns '|' query
-    {
-        $$ = &Expr{Logic: $1, Bind: &Bind{$3, $5}}
+        $$ = &Query{Term: $1, Bind: &Bind{$3, $5}}
     }
     | tokLabel tokVariable '|' query
     {
-        $$ = &Expr{Label: &Label{$2, $4}}
+        $$ = &Query{Label: &Label{$2, $4}}
+    }
+    | query ',' query
+    {
+        $$ = &Query{Left: $1, Op: OpComma, Right: $3}
+    }
+    | query tokAltOp query
+    {
+        $$ = &Query{Left: $1, Op: $2, Right: $3}
+    }
+    | query tokUpdateOp query
+    {
+        $$ = &Query{Left: $1, Op: $2, Right: $3}
+    }
+    | query tokOrOp query
+    {
+        $$ = &Query{Left: $1, Op: OpOr, Right: $3}
+    }
+    | query tokAndOp query
+    {
+        $$ = &Query{Left: $1, Op: OpAnd, Right: $3}
+    }
+    | query tokCompareOp query
+    {
+        $$ = &Query{Left: $1, Op: $2, Right: $3}
+    }
+    | query '+' query
+    {
+        $$ = &Query{Left: $1, Op: OpAdd, Right: $3}
+    }
+    | query '-' query
+    {
+        $$ = &Query{Left: $1, Op: OpSub, Right: $3}
+    }
+    | query '*' query
+    {
+        $$ = &Query{Left: $1, Op: OpMul, Right: $3}
+    }
+    | query '/' query
+    {
+        $$ = &Query{Left: $1, Op: OpDiv, Right: $3}
+    }
+    | query '%' query
+    {
+        $$ = &Query{Left: $1, Op: OpMod, Right: $3}
+    }
+    | term
+    {
+        $$ = &Query{Term: $1}
     }
 
 bindpatterns
@@ -305,68 +303,6 @@ objectpattern
     | tokVariable
     {
         $$ = PatternObject{KeyOnly: $1}
-    }
-
-logic
-    : andexpr
-    {
-        $$ = &Logic{Left: $1}
-    }
-    | logic tokOrOp andexpr
-    {
-        $1.Right = append($1.Right, LogicRight{$2, $3})
-    }
-
-andexpr
-    : compare
-    {
-        $$ = &AndExpr{Left: $1}
-    }
-    | andexpr tokAndOp compare
-    {
-        $1.Right = append($1.Right, AndExprRight{$2, $3})
-    }
-
-compare
-    : arith
-    {
-        $$ = &Compare{Left: $1}
-    }
-    | arith tokCompareOp arith
-    {
-        $$ = &Compare{Left: $1, Right: &CompareRight{$2, $3}}
-    }
-
-arith
-    : factor
-    {
-        $$ = &Arith{Left: $1}
-    }
-    | arith '+' factor
-    {
-        $1.Right = append($1.Right, ArithRight{OpAdd, $3})
-    }
-    | arith '-' factor
-    {
-        $1.Right = append($1.Right, ArithRight{OpSub, $3})
-    }
-
-factor
-    : term
-    {
-        $$ = &Factor{Left: $1}
-    }
-    | factor '*' term
-    {
-        $1.Right = append($1.Right, FactorRight{OpMul, $3})
-    }
-    | factor '/' term
-    {
-        $1.Right = append($1.Right, FactorRight{OpDiv, $3})
-    }
-    | factor '%' term
-    {
-        $1.Right = append($1.Right, FactorRight{OpMod, $3})
     }
 
 term
@@ -627,13 +563,13 @@ objectkey
     | tokKeyword {}
 
 objectval
-    : alt
+    : term
     {
-        $$ = &ObjectVal{[]*Alt{$1}}
+        $$ = &ObjectVal{[]*Query{&Query{Term: $1}}}
     }
-    | alt '|' objectval
+    | term '|' objectval
     {
-        $$ = &ObjectVal{append([]*Alt{$1}, $3.Alts...)}
+        $$ = &ObjectVal{append([]*Query{&Query{Term: $1}}, $3.Queries...)}
     }
 
 constterm

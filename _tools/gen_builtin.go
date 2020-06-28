@@ -88,7 +88,7 @@ func printCompositeLit(out io.Writer, t *ast.CompositeLit) error {
 			return err
 		}
 		str := kvBuf.String()
-		for op := gojq.OpAdd; op <= gojq.OpUpdateAlt; op++ {
+		for op := gojq.OpPipe; op <= gojq.OpUpdateAlt; op++ {
 			r := regexp.MustCompile(fmt.Sprintf(`\b((?:Update)?Op): %d\b`, op))
 			str = r.ReplaceAllString(str, fmt.Sprintf("$1: %#v", op))
 		}

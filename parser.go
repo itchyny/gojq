@@ -11,7 +11,7 @@ func Parse(src string) (*Query, error) {
 		return nil, err
 	}
 	m.Query.Imports = m.Imports
-	m.Query.Commas[0].Filters[0].FuncDefs = m.FuncDefs
+	m.Query.FuncDefs = m.FuncDefs
 	return m.Query, nil
 }
 

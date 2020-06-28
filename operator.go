@@ -12,7 +12,9 @@ type Operator int
 
 // Operators ...
 const (
-	OpAdd Operator = iota
+	OpPipe Operator = iota + 1
+	OpComma
+	OpAdd
 	OpSub
 	OpMul
 	OpDiv
@@ -37,6 +39,8 @@ const (
 )
 
 var operatorMap = map[string]Operator{
+	"|":   OpPipe,
+	",":   OpComma,
 	"+":   OpAdd,
 	"-":   OpSub,
 	"*":   OpMul,
@@ -64,6 +68,10 @@ var operatorMap = map[string]Operator{
 // String implements Stringer.
 func (op Operator) String() string {
 	switch op {
+	case OpPipe:
+		return "|"
+	case OpComma:
+		return ","
 	case OpAdd:
 		return "+"
 	case OpSub:
@@ -116,6 +124,10 @@ func (op Operator) String() string {
 // GoString implements GoStringer.
 func (op Operator) GoString() string {
 	switch op {
+	case OpPipe:
+		return "OpPipe"
+	case OpComma:
+		return "OpComma"
 	case OpAdd:
 		return "OpAdd"
 	case OpSub:
@@ -167,6 +179,10 @@ func (op Operator) GoString() string {
 
 func (op Operator) getFunc() string {
 	switch op {
+	case OpPipe:
+		panic("unreachable")
+	case OpComma:
+		panic("unreachable")
 	case OpAdd:
 		return "_add"
 	case OpSub:
