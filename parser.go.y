@@ -71,7 +71,7 @@ package gojq
 %type<constobjectkeyval> constobjectkeyval
 %type<constarray> constarray
 %type<constarrayelems> constarrayelems
-%type<token> tokIdentVariable tokIdentModuleIdent tokVariableModuleVariable
+%type<token> tokIdentVariable tokIdentModuleIdent tokVariableModuleVariable tokKeyword objectkey
 %token<operator> tokAltOp tokUpdateOp tokDestAltOp tokOrOp tokAndOp tokCompareOp
 %token<token> tokModule tokImport tokInclude tokDef tokAs tokLabel tokBreak
 %token<token> tokNull tokTrue tokFalse
@@ -168,14 +168,8 @@ funcdefargs
     }
 
 tokIdentVariable
-    : tokIdent
-    {
-        $$ = $1
-    }
-    | tokVariable
-    {
-        $$ = $1
-    }
+    : tokIdent {}
+    | tokVariable {}
 
 modulebody
     :
@@ -296,11 +290,7 @@ objectpatterns
     }
 
 objectpattern
-    : tokIdent ':' pattern
-    {
-        $$ = PatternObject{Key: $1, Val: $3}
-    }
-    | tokVariable ':' pattern
+    : objectkey ':' pattern
     {
         $$ = PatternObject{Key: $1, Val: $3}
     }
@@ -610,7 +600,7 @@ object
     }
 
 objectkeyval
-    : tokIdent ':' objectval
+    : objectkey ':' objectval
     {
         $$ = &ObjectKeyVal{Key: $1, Val: $3}
     }
@@ -622,11 +612,7 @@ objectkeyval
     {
         $$ = &ObjectKeyVal{Query: $2, Val: $5}
     }
-    | tokIdent
-    {
-        $$ = &ObjectKeyVal{KeyOnly: &$1}
-    }
-    | tokVariable
+    | objectkey
     {
         $$ = &ObjectKeyVal{KeyOnly: &$1}
     }
@@ -634,6 +620,11 @@ objectkeyval
     {
         $$ = &ObjectKeyVal{KeyOnlyString: $1}
     }
+
+objectkey
+    : tokIdent {}
+    | tokVariable {}
+    | tokKeyword {}
 
 objectval
     : term
@@ -700,6 +691,10 @@ constobjectkeyval
     {
         $$ = &ConstObjectKeyVal{Key: $1, Val: $3}
     }
+    | tokKeyword ':' constterm
+    {
+        $$ = &ConstObjectKeyVal{Key: $1, Val: $3}
+    }
     | tokString ':' constterm
     {
         $$ = &ConstObjectKeyVal{KeyString: $1, Val: $3}
@@ -724,5 +719,28 @@ constarrayelems
     {
         $$ = append($1, $3)
     }
+
+tokKeyword
+    : tokOrOp {}
+    | tokAndOp {}
+    | tokModule {}
+    | tokImport {}
+    | tokInclude {}
+    | tokDef {}
+    | tokAs {}
+    | tokLabel {}
+    | tokBreak {}
+    | tokNull {}
+    | tokTrue {}
+    | tokFalse {}
+    | tokIf {}
+    | tokThen {}
+    | tokElif {}
+    | tokElse {}
+    | tokEnd {}
+    | tokTry {}
+    | tokCatch {}
+    | tokReduce {}
+    | tokForeach {}
 
 %%

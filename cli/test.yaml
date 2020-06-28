@@ -502,6 +502,18 @@
       "foo": 1
     }
 
+- name: object construction with keyword
+  args:
+    - '{as, and, null, module}'
+  input: '{"and": 1, "as": 2, "module": 3, "null": 4}'
+  expected: |
+    {
+      "and": 1,
+      "as": 2,
+      "module": 3,
+      "null": 4
+    }
+
 - name: object construction pipe in value
   args:
     - '{ "bar": { "baz": . } | . | select(true) }'
