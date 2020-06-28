@@ -2231,7 +2231,7 @@
   error: |
     invalid query: label foo | .
         label foo | .
-              ^  unexpected token "foo" (expected <variable>)
+              ^  unexpected token "foo"
   exit_code: 3
 
 - name: label not defined error for break syntax
@@ -2248,7 +2248,7 @@
   error: |
     invalid query: label $x | break x
         label $x | break x
-                         ^  unexpected token "x" (expected <variable>)
+                         ^  unexpected token "x"
   exit_code: 3
 
 - name: string interpolation
@@ -2303,7 +2303,7 @@
   error: |
     invalid query in string interpolation: 1 +
         1 +
-           ^  unexpected token "<EOF>"
+           ^  unexpected token <EOF>
   exit_code: 3
 
 - name: tojson function
@@ -2374,7 +2374,7 @@
   error: |
     invalid query: .foo as foo | {$bar}
         .foo as foo | {$bar}
-                ^  unexpected token "foo" (expected <variable> | "[" | "{")
+                ^  unexpected token "foo"
   exit_code: 3
 
 - name: variable name not found error
@@ -4978,7 +4978,7 @@
   error: |
     invalid query: .abc[
         .abc[
-             ^  unexpected token "<EOF>" (expected "]")
+             ^  unexpected token <EOF>
   exit_code: 3
 
 - name: invalid query
@@ -4988,7 +4988,7 @@
   error: |
     invalid query: [ .[] | { .id } ]
         [ .[] | { .id } ]
-              ^  unexpected token "|" (expected "]")
+                  ^  unexpected token ".id"
   exit_code: 3
 
 - name: invalid query
@@ -4998,7 +4998,37 @@
   error: |
     invalid query: if 0then. else. end
         if 0then. else. end
-           ^  invalid token '0'
+           ^  invalid token "0t"
+  exit_code: 3
+
+- name: invalid query
+  args:
+    - '.foo & .bar'
+  input: '{}'
+  error: |
+    invalid query: .foo & .bar
+        .foo & .bar
+             ^  unexpected token "&"
+  exit_code: 3
+
+- name: invalid query
+  args:
+    - 'foo☆'
+  input: '{}'
+  error: |
+    invalid query: foo☆
+        foo☆
+           ^  unexpected token "☆"
+  exit_code: 3
+
+- name: invalid query
+  args:
+    - "{\n[]}"
+  input: '{}'
+  error: |
+    invalid query: <arg>:2
+        2 | []}
+            ^  unexpected token "["
   exit_code: 3
 
 - name: invalid multiple line query
@@ -5012,7 +5042,17 @@
   error: |
     invalid query: <arg>:3
         3 |   | { id } }
-                       ^  unexpected token "}" (expected "]")
+                       ^  unexpected token "}"
+  exit_code: 3
+
+- name: invalid multiple line query in dos format newline
+  args:
+    - -f
+    - testdata/10.jq
+  error: |
+    invalid query: testdata/10.jq:3
+        3 | bar ]
+                ^  unexpected token "]"
   exit_code: 3
 
 - name: invalid query in file
@@ -5022,7 +5062,7 @@
   error: |
     invalid query: testdata/2.jq:3
         3 |   bar, []
-                   ^  unexpected token "[" (expected "}")
+                   ^  unexpected token "["
   exit_code: 3
 
 - name: query file not found
@@ -5270,7 +5310,7 @@
   error: |
     invalid query in module: testdata/7.jq:1
         1 | def f: 1 +
-                     ^  unexpected token "+" (expected ";")
+                      ^  unexpected token <EOF>
   exit_code: 3
 
 - name: module directive

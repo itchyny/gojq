@@ -93,6 +93,48 @@ func (err *queryParseError) Error() string {
 				strings.Repeat(" ", 3+pos.Column+len(prefix))+"^", er.Message())
 			return s.String()
 		}
+	} else if er, ok := err.err.(interface{ Token() (string, int) }); ok {
+		_, offset := er.Token()
+		var ss strings.Builder
+		var i, j int
+		var cr bool
+		line, total := 1, len(err.contents)
+		for _, r := range toValidUTF8(err.contents) {
+			if i+len(string(r)) < offset {
+				j += runewidth.RuneWidth(r)
+			}
+			i += len(string(r))
+			if r == '\n' || r == '\r' {
+				cr = r == '\r'
+				if i == int(offset) {
+					j++
+					break
+				} else if i > int(offset) {
+					break
+				} else if i < total {
+					j = 0
+					if !cr || r == '\n' {
+						line++
+					}
+					ss.Reset()
+				}
+			} else {
+				cr = false
+				ss.WriteRune(r)
+			}
+		}
+		var prefix, fname string
+		if !strings.ContainsAny(err.contents, "\n\r") && strings.HasPrefix(err.fname, "<arg>") {
+			fname = err.contents
+		} else {
+			fname = fmt.Sprintf("%s:%d", err.fname, line)
+			prefix = fmt.Sprintf("%d | ", line)
+		}
+		fmt.Fprintf(&s, "invalid %s: %s\n", err.typ, fname)
+		fmt.Fprintf(
+			&s, "    %s%s\n    %s  %s", prefix, ss.String(),
+			strings.Repeat(" ", j+len(prefix))+"^", er)
+		return s.String()
 	}
 	fmt.Fprintf(&s, "invalid %s: %s: %s", err.typ, err.fname, err.err)
 	return s.String()

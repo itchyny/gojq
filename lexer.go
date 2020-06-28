@@ -49,10 +49,12 @@ var keywords = map[string]int{
 func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 	defer func() { l.tokenType = tokenType }()
 	if len(l.source) == l.offset {
+		l.token = ""
 		return eof
 	}
 	ch, iseof := l.next()
 	if iseof {
+		l.token = ""
 		return eof
 	}
 	switch {
@@ -232,6 +234,7 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 		if ch >= utf8.RuneSelf {
 			r, _ := utf8.DecodeRune(l.source[l.offset-1:])
 			l.token = string(r)
+			l.offset += len(l.token)
 		}
 	}
 	return int(ch)
@@ -368,19 +371,36 @@ type parseError struct {
 
 func (err *parseError) Error() string {
 	var message string
+	prefix := "unexpected"
 	switch {
 	case err.tokenType == eof:
 		message = "<EOF>"
+	case err.tokenType == tokInvalid:
+		prefix = "invalid"
+		fallthrough
 	case err.tokenType >= utf8.RuneSelf:
 		message = strconv.Quote(err.token)
 	default:
-		message = fmt.Sprintf(`"%c"`, rune(err.tokenType))
+		message = strconv.Quote(string(err.tokenType))
 	}
-	return fmt.Sprintf("unexpected token:%d:%s", err.offset, message)
+	return fmt.Sprintf("%s token %s", prefix, message)
+}
+
+func (err *parseError) Token() (string, int) {
+	return err.token, err.offset
 }
 
 func (l *lexer) Error(e string) {
-	l.err = &parseError{l.offset, l.token, l.tokenType}
+	offset, token := l.offset, l.token
+	switch {
+	case l.tokenType == eof:
+		offset++
+	case l.tokenType >= utf8.RuneSelf:
+		offset -= len(token) - 1
+	default:
+		token = fmt.Sprintf("%c", l.tokenType)
+	}
+	l.err = &parseError{offset, token, l.tokenType}
 }
 
 func isWhite(ch byte) bool {
