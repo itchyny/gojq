@@ -1130,6 +1130,11 @@ func (c *compiler) compileObjectKeyVal(v [2]int, kv ObjectKeyVal) error {
 			if err := c.compileString(kv.KeyString); err != nil {
 				return err
 			}
+		} else if kv.Key[0] == '$' {
+			c.append(&code{op: opload, v: v})
+			if err := c.compileFunc(&Func{Name: kv.Key}); err != nil {
+				return err
+			}
 		} else {
 			c.append(&code{op: oppush, v: kv.Key})
 		}

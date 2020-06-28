@@ -600,6 +600,17 @@
   error: |
     expected an object but got: number (10)
 
+- name: variable in object key
+  args:
+    - '. as [$x, $y, $z] | {$x: 1, $y: 2, $z: 3}'
+  input: '["a", "b", "c"]'
+  expected: |
+    {
+      "a": 1,
+      "b": 2,
+      "c": 3
+    }
+
 - name: pipe in object key
   args:
     - '{ (.foo|.bar): .foo.bar }'
