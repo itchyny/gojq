@@ -71,10 +71,11 @@ package gojq
 %type<constobjectkeyval> constobjectkeyval
 %type<constarray> constarray
 %type<constarrayelems> constarrayelems
-%type<token> tokIdentVariable
+%type<token> tokIdentVariable tokIdentModuleIdent tokVariableModuleVariable
 %token<operator> tokAltOp tokUpdateOp tokDestAltOp tokOrOp tokAndOp tokCompareOp
 %token<token> tokModule tokImport tokInclude tokDef tokAs tokLabel tokBreak
-%token<token> tokIdent tokVariable tokIndex tokNumber tokString tokFormat tokInvalid
+%token<token> tokIdent tokVariable tokModuleIdent tokModuleVariable
+%token<token> tokIndex tokNumber tokString tokFormat tokInvalid
 %token<token> tokIf tokThen tokElif tokElse tokEnd
 %token<token> tokTry tokCatch tokReduce tokForeach
 %token tokRecurse
@@ -402,7 +403,7 @@ term
     {
         $$ = &Term{Index: &Index{Str: $2}}
     }
-    | tokIdent
+    | tokIdentModuleIdent
     {
         switch $1 {
         case "null":
@@ -415,11 +416,11 @@ term
             $$ = &Term{Func: &Func{Name: $1}}
         }
     }
-    | tokIdent '(' args ')'
+    | tokIdentModuleIdent '(' args ')'
     {
         $$ = &Term{Func: &Func{Name: $1, Args: $3}}
     }
-    | tokVariable
+    | tokVariableModuleVariable
     {
         $$ = &Term{Func: &Func{Name: $1}}
     }
@@ -506,6 +507,26 @@ term
     | term '.' tokString
     {
         $1.SuffixList = append($1.SuffixList, &Suffix{Index: &Index{Str: $3}})
+    }
+
+tokIdentModuleIdent
+    : tokIdent
+    {
+        $$ = $1
+    }
+    | tokModuleIdent
+    {
+        $$ = $1
+    }
+
+tokVariableModuleVariable
+    : tokVariable
+    {
+        $$ = $1
+    }
+    | tokModuleVariable
+    {
+        $$ = $1
     }
 
 suffix

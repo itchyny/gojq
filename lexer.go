@@ -54,8 +54,13 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 	}
 	switch {
 	case isIdent(ch, false):
-		l.token = string(l.source[l.offset-1 : l.scanIdent()])
+		i := l.offset - 1
+		j, isModule := l.scanIdentOrModule()
+		l.token = string(l.source[i:j])
 		lval.token = l.token
+		if isModule {
+			return tokModuleIdent
+		}
 		if tok, ok := keywords[l.token]; ok {
 			return tok
 		}
@@ -98,8 +103,13 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 		}
 	case '$':
 		if isIdent(l.peek(), false) {
-			l.token = string(l.source[l.offset-1 : l.scanIdent()])
+			i := l.offset - 1
+			j, isModule := l.scanIdentOrModule()
+			l.token = string(l.source[i:j])
 			lval.token = l.token
+			if isModule {
+				return tokModuleVariable
+			}
 			return tokVariable
 		}
 	case '|':
@@ -258,6 +268,27 @@ func (l *lexer) scanIdent() int {
 		l.offset++
 	}
 	return l.offset
+}
+
+func (l *lexer) scanIdentOrModule() (int, bool) {
+	index := l.scanIdent()
+	var isModule bool
+	if l.peek() == ':' {
+		l.offset++
+		if l.peek() == ':' {
+			l.offset++
+			if isIdent(l.peek(), false) {
+				l.offset++
+				index = l.scanIdent()
+				isModule = true
+			} else {
+				l.offset -= 2
+			}
+		} else {
+			l.offset--
+		}
+	}
+	return index, isModule
 }
 
 const (
