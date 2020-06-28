@@ -9,6 +9,13 @@
   expected: |
     128
 
+- name: comment only query
+  args :
+    - '# comment'
+  input: '128'
+  expected: |
+    128
+
 - name: number
   args:
     - '.'
