@@ -8,88 +8,9 @@ import (
 	"strings"
 )
 
-// Module ...
-type Module struct {
-	Meta     *ConstObject `( "module" @@ ";" )?`
-	Imports  []*Import    `@@*`
-	FuncDefs []*FuncDef   `@@*`
-	Query    *Query       `@@?`
-}
-
-func (e *Module) String() string {
-	var s strings.Builder
-	if e.Meta != nil {
-		fmt.Fprintf(&s, "module %s;\n", e.Meta)
-	}
-	for _, i := range e.Imports {
-		fmt.Fprint(&s, i)
-	}
-	for i, fd := range e.FuncDefs {
-		if i > 0 {
-			s.WriteByte(' ')
-		}
-		fmt.Fprint(&s, fd)
-	}
-	return s.String()
-}
-
-// Import ...
-type Import struct {
-	ImportPath  string       `( "import" @String`
-	ImportAlias string       `  "as" ( @Ident | @Variable )`
-	IncludePath string       `| "include" @String )`
-	Meta        *ConstObject `@@? ";"`
-}
-
-func (e *Import) String() string {
-	var s strings.Builder
-	if e.ImportPath != "" {
-		s.WriteString("import ")
-		s.WriteString(e.ImportPath)
-		s.WriteString(" as ")
-		s.WriteString(e.ImportAlias)
-	} else {
-		s.WriteString("include ")
-		s.WriteString(e.IncludePath)
-	}
-	if e.Meta != nil {
-		fmt.Fprintf(&s, " %s", e.Meta)
-	}
-	s.WriteString(";\n")
-	return s.String()
-}
-
-// FuncDef ...
-type FuncDef struct {
-	Name string   `"def" @Ident`
-	Args []string `("(" ( @Ident | @Variable ) (";" ( @Ident | @Variable ))* ")")? ":"`
-	Body *Query   `@@ ";"`
-}
-
-func (e *FuncDef) String() string {
-	var s strings.Builder
-	fmt.Fprintf(&s, "def %s", e.Name)
-	if len(e.Args) > 0 {
-		s.WriteByte('(')
-		for i, e := range e.Args {
-			if i > 0 {
-				s.WriteString("; ")
-			}
-			fmt.Fprint(&s, e)
-		}
-		s.WriteByte(')')
-	}
-	fmt.Fprintf(&s, ": %s;", e.Body)
-	return s.String()
-}
-
-// Minify ...
-func (e *FuncDef) Minify() {
-	e.Body.minify()
-}
-
 // Query ...
 type Query struct {
+	Meta     *ConstObject
 	Imports  []*Import
 	FuncDefs []*FuncDef
 	Term     *Term
@@ -117,6 +38,9 @@ func (e *Query) RunWithContext(ctx context.Context, v interface{}) Iter {
 
 func (e *Query) String() string {
 	var s strings.Builder
+	if e.Meta != nil {
+		fmt.Fprintf(&s, "module %s;\n", e.Meta)
+	}
 	for _, im := range e.Imports {
 		fmt.Fprint(&s, im)
 	}
@@ -180,6 +104,61 @@ func (e *Query) countCommaQueries() int {
 		return e.Left.countCommaQueries() + e.Right.countCommaQueries()
 	}
 	return 1
+}
+
+// Import ...
+type Import struct {
+	ImportPath  string       `( "import" @String`
+	ImportAlias string       `  "as" ( @Ident | @Variable )`
+	IncludePath string       `| "include" @String )`
+	Meta        *ConstObject `@@? ";"`
+}
+
+func (e *Import) String() string {
+	var s strings.Builder
+	if e.ImportPath != "" {
+		s.WriteString("import ")
+		s.WriteString(e.ImportPath)
+		s.WriteString(" as ")
+		s.WriteString(e.ImportAlias)
+	} else {
+		s.WriteString("include ")
+		s.WriteString(e.IncludePath)
+	}
+	if e.Meta != nil {
+		fmt.Fprintf(&s, " %s", e.Meta)
+	}
+	s.WriteString(";\n")
+	return s.String()
+}
+
+// FuncDef ...
+type FuncDef struct {
+	Name string   `"def" @Ident`
+	Args []string `("(" ( @Ident | @Variable ) (";" ( @Ident | @Variable ))* ")")? ":"`
+	Body *Query   `@@ ";"`
+}
+
+func (e *FuncDef) String() string {
+	var s strings.Builder
+	fmt.Fprintf(&s, "def %s", e.Name)
+	if len(e.Args) > 0 {
+		s.WriteByte('(')
+		for i, e := range e.Args {
+			if i > 0 {
+				s.WriteString("; ")
+			}
+			fmt.Fprint(&s, e)
+		}
+		s.WriteByte(')')
+	}
+	fmt.Fprintf(&s, ": %s;", e.Body)
+	return s.String()
+}
+
+// Minify ...
+func (e *FuncDef) Minify() {
+	e.Body.minify()
 }
 
 // Bind ...

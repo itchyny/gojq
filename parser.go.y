@@ -3,12 +3,9 @@ package gojq
 %}
 
 %union {
-  module *Module
-  imports []*Import
-  importstmt *Import
-  funcdefs []*FuncDef
-  funcdef *FuncDef
   query *Query
+  importstmt *Import
+  funcdef *FuncDef
   patterns []*Pattern
   pattern *Pattern
   objectpatterns []PatternObject
@@ -31,13 +28,10 @@ package gojq
   constarrayelems []*ConstTerm
 }
 
-%type<module> module
-%type<imports> imports
+%type<query> program program1 program2 query ifelse
 %type<importstmt> import
-%type<funcdefs> funcdefs
 %type<funcdef> funcdef
 %type<tokens> funcdefargs
-%type<query> modulebody query ifelse
 %type<patterns> bindpatterns arraypatterns
 %type<objectpatterns> objectpatterns
 %type<objectpattern> objectpattern
@@ -77,10 +71,11 @@ package gojq
 
 %%
 
-module
-    : moduleheader imports funcdefs modulebody
+program
+    : moduleheader program1
     {
-        yylex.(*lexer).result = &Module{$1, $2, $3, $4}
+        $2.Meta = $1
+        yylex.(*lexer).result = $2
     }
 
 moduleheader
@@ -93,14 +88,15 @@ moduleheader
         $$ = $2;
     }
 
-imports
-    :
+program1
+    : import program1
     {
-        $$ = nil
+        $2.Imports = append([]*Import{$1}, $2.Imports...)
+        $$ = $2
     }
-    | import imports
+    | program2
     {
-        $$ = append([]*Import{$1}, $2...)
+        $$ = $1
     }
 
 import
@@ -123,14 +119,19 @@ metaopt
         $$ = $1
     }
 
-funcdefs
+program2
     :
     {
-        $$ = nil
+        $$ = &Query{Term: &Term{Identity: true}}
     }
-    | funcdef funcdefs
+    | funcdef program2
     {
-        $$ = append([]*FuncDef{$1}, $2...)
+        $2.FuncDefs = append([]*FuncDef{$1}, $2.FuncDefs...)
+        $$ = $2
+    }
+    | query
+    {
+        $$ = $1
     }
 
 funcdef
@@ -161,23 +162,8 @@ tokIdentVariable
     : tokIdent {}
     | tokVariable {}
 
-modulebody
-    :
-    {
-        $$ = &Query{Term: &Term{Identity: true}}
-    }
-    | query
-    {
-        $$ = $1
-    }
-
 query
-    : import query
-    {
-        $2.Imports = append([]*Import{$1}, $2.Imports...)
-        $$ = $2
-    }
-    | funcdef query
+    : funcdef query
     {
         $2.FuncDefs = append([]*FuncDef{$1}, $2.FuncDefs...)
         $$ = $2

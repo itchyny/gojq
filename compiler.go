@@ -54,9 +54,9 @@ func (c *Code) RunWithContext(ctx context.Context, v interface{}, values ...inte
 
 // ModuleLoader is an interface for loading modules.
 type ModuleLoader interface {
-	LoadModule(string) (*Module, error)
-	// (optional) LoadModuleWithMeta(string, map[string]interface{}) (*Module, error)
-	// (optional) LoadInitModules() ([]*Module, error)
+	LoadModule(string) (*Query, error)
+	// (optional) LoadModuleWithMeta(string, map[string]interface{}) (*Query, error)
+	// (optional) LoadInitModules() ([]*Query, error)
 	// (optional) LoadJSON(string) (interface{}, error)
 	// (optional) LoadJSONWithMeta(string, map[string]interface{}) (interface{}, error)
 }
@@ -99,14 +99,14 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 	})()
 	if c.moduleLoader != nil {
 		if moduleLoader, ok := c.moduleLoader.(interface {
-			LoadInitModules() ([]*Module, error)
+			LoadInitModules() ([]*Query, error)
 		}); ok {
-			ms, err := moduleLoader.LoadInitModules()
+			qs, err := moduleLoader.LoadInitModules()
 			if err != nil {
 				return nil, err
 			}
-			for _, m := range ms {
-				if err := c.compileModule(m, ""); err != nil {
+			for _, q := range qs {
+				if err := c.compileModule(q, ""); err != nil {
 					return nil, err
 				}
 			}
@@ -183,27 +183,27 @@ func (c *compiler) compileImport(i *Import) error {
 		c.append(&code{op: opstore, v: c.pushVariable(alias + "::" + alias[1:])})
 		return nil
 	}
-	var m *Module
+	var q *Query
 	if moduleLoader, ok := c.moduleLoader.(interface {
-		LoadModuleWithMeta(string, map[string]interface{}) (*Module, error)
+		LoadModuleWithMeta(string, map[string]interface{}) (*Query, error)
 	}); ok {
-		if m, err = moduleLoader.LoadModuleWithMeta(path, i.Meta.ToValue()); err != nil {
+		if q, err = moduleLoader.LoadModuleWithMeta(path, i.Meta.ToValue()); err != nil {
 			return err
 		}
-	} else if m, err = c.moduleLoader.LoadModule(path); err != nil {
+	} else if q, err = c.moduleLoader.LoadModule(path); err != nil {
 		return err
 	}
 	c.appendCodeInfo("module " + path)
 	defer c.appendCodeInfo("end of module " + path)
-	return c.compileModule(m, alias)
+	return c.compileModule(q, alias)
 }
 
-func (c *compiler) compileModule(m *Module, alias string) error {
+func (c *compiler) compileModule(q *Query, alias string) error {
 	cc := &compiler{
 		moduleLoader: c.moduleLoader, environLoader: c.environLoader, variables: c.variables, inputIter: c.inputIter,
 		codeoffset: c.pc(), scopes: c.scopes, scopecnt: c.scopecnt}
 	defer cc.newScopeDepth()()
-	bs, err := cc.compileModuleInternal(m)
+	bs, err := cc.compileModuleInternal(q)
 	if err != nil {
 		return err
 	}
@@ -219,13 +219,13 @@ func (c *compiler) compileModule(m *Module, alias string) error {
 	return nil
 }
 
-func (c *compiler) compileModuleInternal(m *Module) (*Code, error) {
-	for _, i := range m.Imports {
+func (c *compiler) compileModuleInternal(q *Query) (*Code, error) {
+	for _, i := range q.Imports {
 		if err := c.compileImport(i); err != nil {
 			return nil, err
 		}
 	}
-	for _, fd := range m.FuncDefs {
+	for _, fd := range q.FuncDefs {
 		if err := c.compileFuncDef(fd, false); err != nil {
 			return nil, err
 		}
@@ -955,23 +955,23 @@ func (c *compiler) funcModulemeta(v interface{}, _ []interface{}) interface{} {
 	if c.moduleLoader == nil {
 		return fmt.Errorf("cannot load module: %q", s)
 	}
-	var m *Module
+	var q *Query
 	var err error
 	if moduleLoader, ok := c.moduleLoader.(interface {
-		LoadModuleWithMeta(string, map[string]interface{}) (*Module, error)
+		LoadModuleWithMeta(string, map[string]interface{}) (*Query, error)
 	}); ok {
-		if m, err = moduleLoader.LoadModuleWithMeta(s, nil); err != nil {
+		if q, err = moduleLoader.LoadModuleWithMeta(s, nil); err != nil {
 			return err
 		}
-	} else if m, err = c.moduleLoader.LoadModule(s); err != nil {
+	} else if q, err = c.moduleLoader.LoadModule(s); err != nil {
 		return err
 	}
-	meta := m.Meta.ToValue()
+	meta := q.Meta.ToValue()
 	if meta == nil {
 		meta = make(map[string]interface{})
 	}
 	var deps []interface{}
-	for _, i := range m.Imports {
+	for _, i := range q.Imports {
 		v := i.Meta.ToValue()
 		if v == nil {
 			v = make(map[string]interface{})

@@ -5340,6 +5340,13 @@
   expected: |
     6
 
+- name: module in query
+  args:
+    - -n
+    - 'module {}; .'
+  expected: |
+    null
+
 - name: modulemeta function
   args:
     - -c

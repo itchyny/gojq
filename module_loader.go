@@ -20,8 +20,8 @@ func NewModuleLoader(paths []string) ModuleLoader {
 	return &moduleLoader{paths}
 }
 
-func (l *moduleLoader) LoadInitModules() ([]*Module, error) {
-	var ms []*Module
+func (l *moduleLoader) LoadInitModules() ([]*Query, error) {
+	var qs []*Query
 	for _, path := range l.paths {
 		if filepath.Base(path) != ".jq" {
 			continue
@@ -40,20 +40,20 @@ func (l *moduleLoader) LoadInitModules() ([]*Module, error) {
 		if err != nil {
 			return nil, err
 		}
-		m, err := parseModule(path, string(cnt))
+		q, err := parseModule(path, string(cnt))
 		if err != nil {
 			return nil, &queryParseError{"query in module", path, string(cnt), err}
 		}
-		ms = append(ms, m)
+		qs = append(qs, q)
 	}
-	return ms, nil
+	return qs, nil
 }
 
-func (l *moduleLoader) LoadModule(string) (*Module, error) {
+func (l *moduleLoader) LoadModule(string) (*Query, error) {
 	panic("LocalModuleLoader#LoadModule: unreachable")
 }
 
-func (l *moduleLoader) LoadModuleWithMeta(name string, meta map[string]interface{}) (*Module, error) {
+func (l *moduleLoader) LoadModuleWithMeta(name string, meta map[string]interface{}) (*Query, error) {
 	path, err := l.lookupModule(name, ".jq", meta)
 	if err != nil {
 		return nil, err
@@ -62,11 +62,11 @@ func (l *moduleLoader) LoadModuleWithMeta(name string, meta map[string]interface
 	if err != nil {
 		return nil, err
 	}
-	m, err := parseModule(path, string(cnt))
+	q, err := parseModule(path, string(cnt))
 	if err != nil {
 		return nil, &queryParseError{"query in module", path, string(cnt), err}
 	}
-	return m, nil
+	return q, nil
 }
 
 func (l *moduleLoader) LoadJSONWithMeta(name string, meta map[string]interface{}) (interface{}, error) {
@@ -114,12 +114,12 @@ func (l *moduleLoader) lookupModule(name, extension string, meta map[string]inte
 }
 
 // This is a dirty hack to implement the "search" field.
-func parseModule(path, cnt string) (*Module, error) {
-	m, err := ParseModule(cnt)
+func parseModule(path, cnt string) (*Query, error) {
+	q, err := Parse(cnt)
 	if err != nil {
 		return nil, err
 	}
-	for _, i := range m.Imports {
+	for _, i := range q.Imports {
 		if i.Meta == nil {
 			continue
 		}
@@ -131,7 +131,7 @@ func parseModule(path, cnt string) (*Module, error) {
 			},
 		)
 	}
-	return m, nil
+	return q, nil
 }
 
 func searchPath(meta map[string]interface{}) string {

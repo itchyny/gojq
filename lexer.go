@@ -10,7 +10,7 @@ import (
 type lexer struct {
 	source    []byte
 	offset    int
-	result    *Module
+	result    *Query
 	token     string
 	tokenType int
 	err       error
