@@ -228,10 +228,19 @@ func (l *lexer) next() (byte, bool) {
 	for {
 		ch := l.source[l.offset]
 		l.offset++
-		if !isWhite(ch) {
+		if ch == '#' {
+			if len(l.source) == l.offset {
+				return 0, true
+			}
+			for !isNewLine(l.source[l.offset]) {
+				l.offset++
+				if len(l.source) == l.offset {
+					return 0, true
+				}
+			}
+		} else if !isWhite(ch) {
 			return ch, false
-		}
-		if len(l.source) == l.offset {
+		} else if len(l.source) == l.offset {
 			return 0, true
 		}
 	}
@@ -357,4 +366,13 @@ func isIdent(ch byte, tail bool) bool {
 
 func isNumber(ch byte) bool {
 	return '0' <= ch && ch <= '9'
+}
+
+func isNewLine(ch byte) bool {
+	switch ch {
+	case '\n', '\r':
+		return true
+	default:
+		return false
+	}
 }
