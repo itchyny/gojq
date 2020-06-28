@@ -9,7 +9,7 @@ package gojq
   patterns []*Pattern
   pattern *Pattern
   objectpatterns []PatternObject
-  objectpattern PatternObject
+  objectpattern *PatternObject
   term  *Term
   suffix *Suffix
   args  []*Query
@@ -266,29 +266,29 @@ arraypatterns
 objectpatterns
     : objectpattern
     {
-        $$ = []PatternObject{$1}
+        $$ = []PatternObject{*$1}
     }
     | objectpatterns ',' objectpattern
     {
-        $$ = append($1, $3)
+        $$ = append($1, *$3)
     }
 
 objectpattern
     : objectkey ':' pattern
     {
-        $$ = PatternObject{Key: $1, Val: $3}
+        $$ = &PatternObject{Key: $1, Val: $3}
     }
     | tokString ':' pattern
     {
-        $$ = PatternObject{KeyString: $1, Val: $3}
+        $$ = &PatternObject{KeyString: $1, Val: $3}
     }
     | '(' query ')' ':' pattern
     {
-        $$ = PatternObject{Query: $2, Val: $5}
+        $$ = &PatternObject{Query: $2, Val: $5}
     }
     | tokVariable
     {
-        $$ = PatternObject{KeyOnly: $1}
+        $$ = &PatternObject{KeyOnly: $1}
     }
 
 term
