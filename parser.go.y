@@ -627,13 +627,13 @@ objectkey
     | tokKeyword {}
 
 objectval
-    : term
+    : alt
     {
-        $$ = &ObjectVal{[]*Alt{$1.toFilter().Alt}}
+        $$ = &ObjectVal{[]*Alt{$1}}
     }
-    | term '|' objectval
+    | alt '|' objectval
     {
-        $$ = &ObjectVal{append([]*Alt{$1.toFilter().Alt}, $3.Alts...)}
+        $$ = &ObjectVal{append([]*Alt{$1}, $3.Alts...)}
     }
 
 constterm
