@@ -18,7 +18,6 @@ type Query struct {
 	Op       Operator
 	Right    *Query
 	Bind     *Bind
-	Label    *Label
 	Func     string
 }
 
@@ -62,8 +61,6 @@ func (e *Query) String() string {
 		}
 	} else if e.Right != nil {
 		fmt.Fprintf(&s, "%s %s %s", e.Left, e.Op, e.Right)
-	} else if e.Label != nil {
-		fmt.Fprint(&s, e.Label)
 	}
 	return s.String()
 }
@@ -87,8 +84,6 @@ func (e *Query) minify() {
 	} else if e.Right != nil {
 		e.Left.minify()
 		e.Right.minify()
-	} else if e.Label != nil {
-		e.Label.minify()
 	}
 }
 
@@ -205,6 +200,7 @@ type Term struct {
 	Try        *Try
 	Reduce     *Reduce
 	Foreach    *Foreach
+	Label      *Label
 	Break      string
 	Query      *Query
 	SuffixList []*Suffix
@@ -246,6 +242,8 @@ func (e *Term) String() string {
 		fmt.Fprint(&s, e.Reduce)
 	} else if e.Foreach != nil {
 		fmt.Fprint(&s, e.Foreach)
+	} else if e.Label != nil {
+		fmt.Fprint(&s, e.Label)
 	} else if e.Break != "" {
 		fmt.Fprintf(&s, "break %s", e.Break)
 	} else if e.Query != nil {
@@ -276,6 +274,8 @@ func (e *Term) minify() {
 		e.Reduce.minify()
 	} else if e.Foreach != nil {
 		e.Foreach.minify()
+	} else if e.Label != nil {
+		e.Label.minify()
 	} else if e.Query != nil {
 		e.Query.minify()
 	}

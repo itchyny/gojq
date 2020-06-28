@@ -178,7 +178,7 @@ query
     }
     | tokLabel tokVariable '|' query
     {
-        $$ = &Query{Label: &Label{$2, $4}}
+        $$ = &Query{Term: &Term{Label: &Label{$2, $4}}}
     }
     | query ',' query
     {

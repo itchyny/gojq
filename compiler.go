@@ -374,8 +374,6 @@ func (c *compiler) compileQuery(e *Query) error {
 			return c.compileBind(e.Bind)
 		}
 		return c.compileTerm(e.Term)
-	} else if e.Label != nil {
-		return c.compileLabel(e.Label)
 	}
 	switch e.Op {
 	case OpPipe:
@@ -808,6 +806,8 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 		return c.compileReduce(e.Reduce)
 	} else if e.Foreach != nil {
 		return c.compileForeach(e.Foreach)
+	} else if e.Label != nil {
+		return c.compileLabel(e.Label)
 	} else if e.Break != "" {
 		c.append(&code{op: opconst, v: e.Break})
 		return c.compileCall("_break", nil)
