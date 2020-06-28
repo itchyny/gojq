@@ -2,8 +2,6 @@ package gojq
 
 //go:generate go run _tools/gen_string.go -o string.go
 
-const numberPatternStr = `(?:\d*\.)?\d+(?:[eE][-+]?\d+)?\b`
-
 // Parse parses a query.
 func Parse(src string) (*Query, error) {
 	m, err := parse(src)
