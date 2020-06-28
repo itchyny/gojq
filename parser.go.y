@@ -124,11 +124,7 @@ funcdefargs
     {
         $$ = []string{$1}
     }
-    | funcdefargs ';' tokIdent
-    {
-        $$ = append($1.([]string), $3)
-    }
-    | funcdefargs ';' tokVariable
+    | funcdefargs ';' tokIdentVariable
     {
         $$ = append($1.([]string), $3)
     }
