@@ -6,7 +6,6 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/alecthomas/participle"
 	"github.com/mattn/go-runewidth"
 )
 
@@ -76,24 +75,7 @@ type queryParseError struct {
 
 func (err *queryParseError) Error() string {
 	var s strings.Builder
-	if er, ok := err.err.(participle.Error); ok {
-		lines := strings.Split(err.contents, "\n")
-		pos := er.Token().Pos
-		if 0 < pos.Line && pos.Line <= len(lines) {
-			var prefix, fname string
-			if len(lines) <= 1 && strings.HasPrefix(err.fname, "<arg>") {
-				fname = err.contents
-			} else {
-				fname = fmt.Sprintf("%s:%d", err.fname, pos.Line)
-				prefix = fmt.Sprintf("%d | ", pos.Line)
-			}
-			fmt.Fprintf(&s, "invalid %s: %s\n", err.typ, fname)
-			fmt.Fprintf(
-				&s, "    %s%s\n%s  %s", prefix, lines[pos.Line-1],
-				strings.Repeat(" ", 3+pos.Column+len(prefix))+"^", er.Message())
-			return s.String()
-		}
-	} else if er, ok := err.err.(interface{ Token() (string, int) }); ok {
+	if er, ok := err.err.(interface{ Token() (string, int) }); ok {
 		_, offset := er.Token()
 		var ss strings.Builder
 		var i, j int

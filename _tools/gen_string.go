@@ -40,7 +40,7 @@ func main() {
 	)
 }
 
-// Since participle does not support nested lexers, define the String token by
+// Since the current parser does not support nested lexers, define the String token by
 // a regular expression. This implementation is of course very ugly and
 // incomplete, but should work in most situations.
 func stringPattern(n int) string {

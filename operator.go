@@ -61,16 +61,6 @@ var operatorMap = map[string]Operator{
 	"//=": OpUpdateAlt,
 }
 
-// Capture implements  participle.Capture.
-func (op *Operator) Capture(s []string) error {
-	var ok bool
-	*op, ok = operatorMap[s[0]]
-	if !ok {
-		panic("operator: " + s[0])
-	}
-	return nil
-}
-
 // String implements Stringer.
 func (op Operator) String() string {
 	switch op {
