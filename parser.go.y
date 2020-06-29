@@ -32,8 +32,9 @@ func Parse(src string) (*Query, error) {
 %token<token> tokIndex tokNumber tokString tokFormat tokInvalid
 %token<token> tokIf tokThen tokElif tokElse tokEnd
 %token<token> tokTry tokCatch tokReduce tokForeach
-%token tokRecurse
+%token tokRecurse tokFuncDefPost tokTermPost tokEmptyCatch
 
+%nonassoc tokFuncDefPost tokTermPost tokEmptyCatch
 %right '|'
 %left ','
 %right tokAltOp
@@ -43,6 +44,8 @@ func Parse(src string) (*Query, error) {
 %nonassoc tokCompareOp
 %left '+' '-'
 %left '*' '/' '%'
+%nonassoc tokAs tokIndex '.' '?'
+%nonassoc '[' tokTry tokCatch
 
 %%
 
@@ -134,7 +137,7 @@ tokIdentVariable
     | tokVariable {}
 
 query
-    : funcdef query
+    : funcdef query %prec tokFuncDefPost
     {
         $2.(*Query).FuncDefs = append([]*FuncDef{$1.(*FuncDef)}, $2.(*Query).FuncDefs...)
         $$ = $2
@@ -195,7 +198,7 @@ query
     {
         $$ = &Query{Left: $1.(*Query), Op: OpMod, Right: $3.(*Query)}
     }
-    | term
+    | term %prec tokTermPost
     {
         $$ = &Query{Term: $1.(*Term)}
     }
@@ -469,7 +472,7 @@ ifelse
     }
 
 trycatch
-    :
+    : %prec tokEmptyCatch
     {
         $$ = (*Term)(nil)
     }
