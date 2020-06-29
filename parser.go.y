@@ -19,7 +19,7 @@ func Parse(src string) (*Query, error) {
   operator Operator
 }
 
-%type<value> program moduleheader program1 import metaopt program2 funcdef funcdefargs query
+%type<value> program moduleheader programbody imports import metaopt funcdefs funcdef funcdefargs query
 %type<value> bindpatterns pattern arraypatterns objectpatterns objectpattern
 %type<value> term suffix args ifelifs ifelse trycatch
 %type<value> object objectkeyval objectval
@@ -50,31 +50,41 @@ func Parse(src string) (*Query, error) {
 %%
 
 program
-    : moduleheader program1
+    : moduleheader programbody
     {
-        $2.(*Query).Meta = $1.(*ConstObject)
+        if $1 != nil { $2.(*Query).Meta = $1.(*ConstObject) }
         yylex.(*lexer).result = $2.(*Query)
     }
 
 moduleheader
     :
     {
-        $$ = (*ConstObject)(nil)
+        $$ = nil
     }
     | tokModule constobject ';'
     {
         $$ = $2;
     }
 
-program1
-    : import program1
+programbody
+    : imports funcdefs
     {
-        $2.(*Query).Imports = append([]*Import{$1.(*Import)}, $2.(*Query).Imports...)
+        $$ = &Query{Imports: $1.([]*Import), FuncDefs: $2.([]*FuncDef), Term: &Term{Identity: true}}
+    }
+    | imports query
+    {
+        if $1 != nil { $2.(*Query).Imports = $1.([]*Import) }
         $$ = $2
     }
-    | program2
+
+imports
+    :
     {
-        $$ = $1
+        $$ = []*Import(nil)
+    }
+    | import imports
+    {
+        $$ = append([]*Import{$1.(*Import)}, $2.([]*Import)...)
     }
 
 import
@@ -97,19 +107,14 @@ metaopt
         $$ = $1
     }
 
-program2
+funcdefs
     :
     {
-        $$ = &Query{Term: &Term{Identity: true}}
+        $$ = []*FuncDef(nil)
     }
-    | funcdef program2
+    | funcdef funcdefs
     {
-        $2.(*Query).FuncDefs = append([]*FuncDef{$1.(*FuncDef)}, $2.(*Query).FuncDefs...)
-        $$ = $2
-    }
-    | query
-    {
-        $$ = $1
+        $$ = append([]*FuncDef{$1.(*FuncDef)}, $2.([]*FuncDef)...)
     }
 
 funcdef
