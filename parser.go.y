@@ -221,7 +221,7 @@ pattern
     }
     | '{' objectpatterns '}'
     {
-        $$ = &Pattern{Object: $2.([]PatternObject)}
+        $$ = &Pattern{Object: $2.([]*PatternObject)}
     }
 
 arraypatterns
@@ -237,11 +237,11 @@ arraypatterns
 objectpatterns
     : objectpattern
     {
-        $$ = []PatternObject{*$1.(*PatternObject)}
+        $$ = []*PatternObject{$1.(*PatternObject)}
     }
     | objectpatterns ',' objectpattern
     {
-        $$ = append($1.([]PatternObject), *$3.(*PatternObject))
+        $$ = append($1.([]*PatternObject), $3.(*PatternObject))
     }
 
 objectpattern
@@ -341,7 +341,7 @@ term
     }
     | '{' object '}'
     {
-        $$ = &Term{Object: &Object{$2.([]ObjectKeyVal)}}
+        $$ = &Term{Object: &Object{$2.([]*ObjectKeyVal)}}
     }
     | '[' query ']'
     {
@@ -353,7 +353,7 @@ term
     }
     | tokIf query tokThen query ifelifs ifelse tokEnd
     {
-        $$ = &Term{If: &If{$2.(*Query), $4.(*Query), $5.([]IfElif), $6.(*Query)}}
+        $$ = &Term{If: &If{$2.(*Query), $4.(*Query), $5.([]*IfElif), $6.(*Query)}}
     }
     | tokTry query trycatch
     {
@@ -451,11 +451,11 @@ args
 ifelifs
     :
     {
-        $$ = []IfElif(nil)
+        $$ = []*IfElif(nil)
     }
     | tokElif query tokThen query ifelifs
     {
-        $$ = append([]IfElif{IfElif{$2.(*Query), $4.(*Query)}}, $5.([]IfElif)...)
+        $$ = append([]*IfElif{&IfElif{$2.(*Query), $4.(*Query)}}, $5.([]*IfElif)...)
     }
 
 ifelse
@@ -481,15 +481,15 @@ trycatch
 object
     :
     {
-        $$ = []ObjectKeyVal(nil)
+        $$ = []*ObjectKeyVal(nil)
     }
     | objectkeyval
     {
-        $$ = []ObjectKeyVal{*$1.(*ObjectKeyVal)}
+        $$ = []*ObjectKeyVal{$1.(*ObjectKeyVal)}
     }
     | objectkeyval ',' object
     {
-        $$ = append([]ObjectKeyVal{*$1.(*ObjectKeyVal)}, $3.([]ObjectKeyVal)...)
+        $$ = append([]*ObjectKeyVal{$1.(*ObjectKeyVal)}, $3.([]*ObjectKeyVal)...)
     }
 
 objectkeyval
@@ -562,21 +562,21 @@ constterm
 constobject
     : '{' constobjectkeyvals '}'
     {
-        $$ = &ConstObject{$2.([]ConstObjectKeyVal)}
+        $$ = &ConstObject{$2.([]*ConstObjectKeyVal)}
     }
 
 constobjectkeyvals
     :
     {
-        $$ = []ConstObjectKeyVal(nil)
+        $$ = []*ConstObjectKeyVal(nil)
     }
     | constobjectkeyval
     {
-        $$ = []ConstObjectKeyVal{*$1.(*ConstObjectKeyVal)}
+        $$ = []*ConstObjectKeyVal{$1.(*ConstObjectKeyVal)}
     }
     | constobjectkeyval ',' constobjectkeyvals
     {
-        $$ = append([]ConstObjectKeyVal{*$1.(*ConstObjectKeyVal)}, $3.([]ConstObjectKeyVal)...)
+        $$ = append([]*ConstObjectKeyVal{$1.(*ConstObjectKeyVal)}, $3.([]*ConstObjectKeyVal)...)
     }
 
 constobjectkeyval

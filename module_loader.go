@@ -125,7 +125,7 @@ func parseModule(path, cnt string) (*Query, error) {
 		}
 		i.Meta.KeyVals = append(
 			i.Meta.KeyVals,
-			ConstObjectKeyVal{
+			&ConstObjectKeyVal{
 				Key: "$$path",
 				Val: &ConstTerm{Str: strconv.Quote(path)},
 			},

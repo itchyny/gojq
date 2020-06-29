@@ -345,7 +345,7 @@ func (e *Unary) minify() {
 type Pattern struct {
 	Name   string
 	Array  []*Pattern
-	Object []PatternObject
+	Object []*PatternObject
 }
 
 func (e *Pattern) String() string {
@@ -367,7 +367,7 @@ func (e *Pattern) String() string {
 			if i > 0 {
 				s.WriteString(", ")
 			}
-			fmt.Fprint(&s, &e)
+			fmt.Fprint(&s, e)
 		}
 		s.WriteRune('}')
 	}
@@ -492,7 +492,7 @@ func (e *Func) toFunc() string {
 
 // Object ...
 type Object struct {
-	KeyVals []ObjectKeyVal
+	KeyVals []*ObjectKeyVal
 }
 
 func (e *Object) String() string {
@@ -505,7 +505,7 @@ func (e *Object) String() string {
 		if i > 0 {
 			s.WriteString(", ")
 		}
-		fmt.Fprint(&s, &kv)
+		fmt.Fprint(&s, kv)
 	}
 	s.WriteString(" }")
 	return s.String()
@@ -678,7 +678,7 @@ func (e *SuffixIndex) toIndex() *Index {
 type If struct {
 	Cond *Query
 	Then *Query
-	Elif []IfElif
+	Elif []*IfElif
 	Else *Query
 }
 
@@ -686,7 +686,7 @@ func (e *If) String() string {
 	var s strings.Builder
 	fmt.Fprintf(&s, "if %s then %s", e.Cond, e.Then)
 	for _, e := range e.Elif {
-		fmt.Fprintf(&s, " %s", &e)
+		fmt.Fprintf(&s, " %s", e)
 	}
 	if e.Else != nil {
 		fmt.Fprintf(&s, " else %s", e.Else)
@@ -855,7 +855,7 @@ func (e *ConstTerm) toValue() interface{} {
 
 // ConstObject ...
 type ConstObject struct {
-	KeyVals []ConstObjectKeyVal
+	KeyVals []*ConstObjectKeyVal
 }
 
 func (e *ConstObject) String() string {
@@ -868,7 +868,7 @@ func (e *ConstObject) String() string {
 		if i > 0 {
 			s.WriteString(", ")
 		}
-		fmt.Fprint(&s, &kv)
+		fmt.Fprint(&s, kv)
 	}
 	s.WriteString(" }")
 	return s.String()

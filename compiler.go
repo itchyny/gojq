@@ -1038,7 +1038,7 @@ func (c *compiler) compileObject(e *Object) error {
 	return nil
 }
 
-func (c *compiler) compileObjectKeyVal(v [2]int, kv ObjectKeyVal) error {
+func (c *compiler) compileObjectKeyVal(v [2]int, kv *ObjectKeyVal) error {
 	if kv.KeyOnly != nil {
 		if (*kv.KeyOnly)[0] == '$' {
 			c.append(&code{op: oppush, v: (*kv.KeyOnly)[1:]})
