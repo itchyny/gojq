@@ -84,7 +84,7 @@ imports
     }
     | import imports
     {
-        $$ = append([]*Import{$1.(*Import)}, $2.([]*Import)...)
+        $$ = prependImport($2.([]*Import), $1.(*Import))
     }
 
 import
@@ -114,7 +114,7 @@ funcdefs
     }
     | funcdef funcdefs
     {
-        $$ = append([]*FuncDef{$1.(*FuncDef)}, $2.([]*FuncDef)...)
+        $$ = prependFuncDef($2.([]*FuncDef), $1.(*FuncDef))
     }
 
 funcdef
@@ -144,7 +144,7 @@ tokIdentVariable
 query
     : funcdef query %prec tokFuncDefPost
     {
-        $2.(*Query).FuncDefs = append([]*FuncDef{$1.(*FuncDef)}, $2.(*Query).FuncDefs...)
+        $2.(*Query).FuncDefs = prependFuncDef($2.(*Query).FuncDefs, $1.(*FuncDef))
         $$ = $2
     }
     | query '|' query
@@ -463,7 +463,7 @@ ifelifs
     }
     | tokElif query tokThen query ifelifs
     {
-        $$ = append([]*IfElif{&IfElif{$2.(*Query), $4.(*Query)}}, $5.([]*IfElif)...)
+        $$ = prependIfElif($5.([]*IfElif), &IfElif{$2.(*Query), $4.(*Query)})
     }
 
 ifelse
@@ -497,7 +497,7 @@ object
     }
     | objectkeyval ',' object
     {
-        $$ = append([]*ObjectKeyVal{$1.(*ObjectKeyVal)}, $3.([]*ObjectKeyVal)...)
+        $$ = prependObjectKeyVal($3.([]*ObjectKeyVal), $1.(*ObjectKeyVal))
     }
 
 objectkeyval
@@ -534,7 +534,7 @@ objectval
     }
     | term '|' objectval
     {
-        $$ = &ObjectVal{append([]*Query{&Query{Term: $1.(*Term)}}, $3.(*ObjectVal).Queries...)}
+        $$ = &ObjectVal{prependQuery($3.(*ObjectVal).Queries, &Query{Term: $1.(*Term)})}
     }
 
 constterm
@@ -584,7 +584,7 @@ constobjectkeyvals
     }
     | constobjectkeyval ',' constobjectkeyvals
     {
-        $$ = append([]*ConstObjectKeyVal{$1.(*ConstObjectKeyVal)}, $3.([]*ConstObjectKeyVal)...)
+        $$ = prependConstObjectKeyVal($3.([]*ConstObjectKeyVal), $1.(*ConstObjectKeyVal))
     }
 
 constobjectkeyval
