@@ -1288,8 +1288,6 @@ func (c *compiler) stringToQuery(s string, f *Func) (*Query, error) {
 func (c *compiler) compileTermSuffix(e *Term, s *Suffix) error {
 	if s.Index != nil {
 		return c.compileIndex(e, s.Index)
-	} else if s.SuffixIndex != nil {
-		return c.compileIndex(e, s.SuffixIndex.toIndex())
 	} else if s.Iter {
 		if err := c.compileTerm(e); err != nil {
 			return err

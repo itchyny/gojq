@@ -280,7 +280,7 @@ term
         if $2.(*Suffix).Iter {
             $$ = &Term{Identity: true, SuffixList: []*Suffix{$2.(*Suffix)}}
         } else {
-            $$ = &Term{Index: $2.(*Suffix).SuffixIndex.toIndex()}
+            $$ = &Term{Index: $2.(*Suffix).Index}
         }
     }
     | '.' tokString
@@ -423,19 +423,19 @@ suffix
     }
     | '[' query ']'
     {
-        $$ = &Suffix{SuffixIndex: &SuffixIndex{Start: $2.(*Query)}}
+        $$ = &Suffix{Index: &Index{Start: $2.(*Query)}}
     }
     | '[' query ':' ']'
     {
-        $$ = &Suffix{SuffixIndex: &SuffixIndex{Start: $2.(*Query), IsSlice: true}}
+        $$ = &Suffix{Index: &Index{Start: $2.(*Query), IsSlice: true}}
     }
     | '[' ':' query ']'
     {
-        $$ = &Suffix{SuffixIndex: &SuffixIndex{End: $3.(*Query)}}
+        $$ = &Suffix{Index: &Index{End: $3.(*Query)}}
     }
     | '[' query ':' query ']'
     {
-        $$ = &Suffix{SuffixIndex: &SuffixIndex{Start: $2.(*Query), IsSlice: true, End: $4.(*Query)}}
+        $$ = &Suffix{Index: &Index{Start: $2.(*Query), IsSlice: true, End: $4.(*Query)}}
     }
 
 args

@@ -599,18 +599,15 @@ func (e *Array) minify() {
 
 // Suffix ...
 type Suffix struct {
-	Index       *Index
-	SuffixIndex *SuffixIndex
-	Iter        bool
-	Optional    bool
+	Index    *Index
+	Iter     bool
+	Optional bool
 }
 
 func (e *Suffix) String() string {
 	var s strings.Builder
 	if e.Index != nil {
 		fmt.Fprint(&s, e.Index)
-	} else if e.SuffixIndex != nil {
-		fmt.Fprint(&s, e.SuffixIndex)
 	} else if e.Iter {
 		s.WriteString("[]")
 	} else if e.Optional {
@@ -622,16 +619,12 @@ func (e *Suffix) String() string {
 func (e *Suffix) minify() {
 	if e.Index != nil {
 		e.Index.minify()
-	} else if e.SuffixIndex != nil {
-		e.SuffixIndex.minify()
 	}
 }
 
 func (e *Suffix) toTerm() (*Term, bool) {
 	if e.Index != nil {
 		return &Term{Index: e.Index}, true
-	} else if e.SuffixIndex != nil {
-		return &Term{Index: e.SuffixIndex.toIndex()}, true
 	} else if e.Iter {
 		return &Term{Identity: true, SuffixList: []*Suffix{{Iter: true}}}, true
 	} else {
@@ -644,34 +637,6 @@ func (e *Suffix) toIndices() []interface{} {
 		return nil
 	}
 	return e.Index.toIndices()
-}
-
-// SuffixIndex ...
-type SuffixIndex struct {
-	Start   *Query
-	IsSlice bool
-	End     *Query
-}
-
-func (e *SuffixIndex) String() string {
-	return e.toIndex().String()[1:]
-}
-
-func (e *SuffixIndex) minify() {
-	if e.Start != nil {
-		e.Start.minify()
-	}
-	if e.End != nil {
-		e.End.minify()
-	}
-}
-
-func (e *SuffixIndex) toIndex() *Index {
-	return &Index{
-		Start:   e.Start,
-		IsSlice: e.IsSlice,
-		End:     e.End,
-	}
 }
 
 // If ...
