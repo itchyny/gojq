@@ -426,10 +426,10 @@ type Index struct {
 
 func (e *Index) String() string {
 	var s strings.Builder
+	s.WriteByte('.')
 	if e.Name != "" {
 		s.WriteString(e.Name)
 	} else {
-		s.WriteByte('.')
 		if e.Str != nil {
 			fmt.Fprint(&s, e.Str)
 		} else {
@@ -465,7 +465,7 @@ func (e *Index) toIndices() []interface{} {
 	if e.Name == "" {
 		return nil
 	}
-	return []interface{}{e.Name[1:]}
+	return []interface{}{e.Name}
 }
 
 // Func ...

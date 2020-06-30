@@ -821,7 +821,7 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 func (c *compiler) compileIndex(e *Term, x *Index) error {
 	c.appendCodeInfo(x)
 	if x.Name != "" {
-		return c.compileCall("_index", []*Query{&Query{Term: e}, &Query{Term: &Term{RawStr: x.Name[1:]}}})
+		return c.compileCall("_index", []*Query{&Query{Term: e}, &Query{Term: &Term{RawStr: x.Name}}})
 	}
 	if x.Str != nil {
 		return c.compileCall("_index", []*Query{&Query{Term: e}, &Query{Term: &Term{Str: x.Str}}})
@@ -1042,7 +1042,7 @@ func (c *compiler) compileObjectKeyVal(v [2]int, kv *ObjectKeyVal) error {
 		}
 		c.append(&code{op: oppush, v: kv.KeyOnly})
 		c.append(&code{op: opload, v: v})
-		return c.compileIndex(&Term{Identity: true}, &Index{Name: "." + kv.KeyOnly})
+		return c.compileIndex(&Term{Identity: true}, &Index{Name: kv.KeyOnly})
 	} else if kv.KeyOnlyString != nil {
 		c.append(&code{op: opload, v: v})
 		if err := c.compileString(kv.KeyOnlyString, nil); err != nil {

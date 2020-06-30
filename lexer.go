@@ -100,7 +100,7 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 			return tokRecurse
 		case isIdent(ch, false):
 			l.token = string(l.source[l.offset-1 : l.scanIdent()])
-			lval.token = l.token
+			lval.token = l.token[1:]
 			return tokIndex
 		case isNumber(ch):
 			i := l.offset - 1
