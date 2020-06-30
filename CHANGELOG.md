@@ -1,4 +1,11 @@
 # Changelog
+## [v0.10.4](https://github.com/itchyny/gojq/compare/v0.10.3..v0.10.4) (2020-06-30)
+* implement variable in object key (`. as $x | { $x: 1 }`)
+* fix modify operator (`|=`) with `try` `catch` expression
+* fix optional operator (`?`) with alternative operator (`//`) in `map_values` function
+* fix normalizing numeric types for library users
+* export `gojq.NewModuleLoader` function for library users
+
 ## [v0.10.3](https://github.com/itchyny/gojq/compare/v0.10.2..v0.10.3) (2020-06-06)
 * implement `add`, `unique_by`, `max_by`, `min_by`, `reverse` by internal
   functions for performance and reducing the binary size
