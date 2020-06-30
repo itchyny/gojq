@@ -9,7 +9,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"unicode/utf8"
 )
 
 type compiler struct {
@@ -792,9 +791,9 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 	} else if e.Unary != nil {
 		return c.compileUnary(e.Unary)
 	} else if e.Format != "" {
-		return c.compileFormat(e.Format, e.FormatStr)
-	} else if e.Str != "" {
-		return c.compileString(e.Str)
+		return c.compileFormat(e.Format, e.Str)
+	} else if e.Str != nil {
+		return c.compileString(e.Str, nil)
 	} else if e.RawStr != "" {
 		c.append(&code{op: opconst, v: e.RawStr})
 		return nil
@@ -824,12 +823,8 @@ func (c *compiler) compileIndex(e *Term, x *Index) error {
 	if x.Name != "" {
 		return c.compileCall("_index", []*Query{&Query{Term: e}, &Query{Term: &Term{RawStr: x.Name[1:]}}})
 	}
-	if x.Str != "" {
-		q, err := c.stringToQuery(x.Str, nil)
-		if err != nil {
-			return err
-		}
-		return c.compileCall("_index", []*Query{&Query{Term: e}, q})
+	if x.Str != nil {
+		return c.compileCall("_index", []*Query{&Query{Term: e}, &Query{Term: &Term{Str: x.Str}}})
 	}
 	if x.Start != nil {
 		if x.IsSlice {
@@ -1039,18 +1034,18 @@ func (c *compiler) compileObject(e *Object) error {
 }
 
 func (c *compiler) compileObjectKeyVal(v [2]int, kv *ObjectKeyVal) error {
-	if kv.KeyOnly != nil {
-		if (*kv.KeyOnly)[0] == '$' {
-			c.append(&code{op: oppush, v: (*kv.KeyOnly)[1:]})
+	if kv.KeyOnly != "" {
+		if kv.KeyOnly[0] == '$' {
+			c.append(&code{op: oppush, v: kv.KeyOnly[1:]})
 			c.append(&code{op: opload, v: v})
-			return c.compileFunc(&Func{Name: *kv.KeyOnly})
+			return c.compileFunc(&Func{Name: kv.KeyOnly})
 		}
-		c.append(&code{op: oppush, v: *kv.KeyOnly})
+		c.append(&code{op: oppush, v: kv.KeyOnly})
 		c.append(&code{op: opload, v: v})
-		return c.compileIndex(&Term{Identity: true}, &Index{Name: "." + *kv.KeyOnly})
-	} else if kv.KeyOnlyString != "" {
+		return c.compileIndex(&Term{Identity: true}, &Index{Name: "." + kv.KeyOnly})
+	} else if kv.KeyOnlyString != nil {
 		c.append(&code{op: opload, v: v})
-		if err := c.compileString(kv.KeyOnlyString); err != nil {
+		if err := c.compileString(kv.KeyOnlyString, nil); err != nil {
 			return err
 		}
 		c.append(&code{op: opdup})
@@ -1067,9 +1062,9 @@ func (c *compiler) compileObjectKeyVal(v [2]int, kv *ObjectKeyVal) error {
 				return err
 			}
 			f()
-		} else if kv.KeyString != "" {
+		} else if kv.KeyString != nil {
 			c.append(&code{op: opload, v: v})
-			if err := c.compileString(kv.KeyString); err != nil {
+			if err := c.compileString(kv.KeyString, nil); err != nil {
 				return err
 			}
 		} else if kv.Key[0] == '$' {
@@ -1157,16 +1152,12 @@ func (c *compiler) compileUnary(e *Unary) error {
 	}
 }
 
-func (c *compiler) compileFormat(fmt, str string) error {
+func (c *compiler) compileFormat(fmt string, str *String) error {
 	if f := formatToFunc(fmt); f != nil {
-		if str == "" {
+		if str == nil {
 			return c.compileFunc(f)
 		}
-		q, err := c.stringToQuery(str, f)
-		if err != nil {
-			return err
-		}
-		return c.compileQuery(q)
+		return c.compileString(str, f)
 	}
 	return &formatNotFoundError{fmt}
 }
@@ -1196,93 +1187,30 @@ func formatToFunc(fmt string) *Func {
 	}
 }
 
-func (c *compiler) compileString(s string) error {
-	if !strings.Contains(s, "\\(") {
-		s, err := strconv.Unquote(s)
-		if err == nil {
-			c.append(&code{op: opconst, v: s})
-			return nil
+func (c *compiler) compileString(s *String, f *Func) error {
+	if s.Str != "" {
+		str, err := strconv.Unquote(s.Str)
+		if err != nil {
+			return fmt.Errorf("%s: %s", s.Str, err)
 		}
+		c.append(&code{op: opconst, v: str})
+		return nil
 	}
-	q, err := c.stringToQuery(s, nil)
-	if err != nil {
-		return err
-	}
-	return c.compileQuery(q)
-}
-
-func (c *compiler) stringToQuery(s string, f *Func) (*Query, error) {
 	if f == nil {
 		f = &Func{Name: "tostring"}
 	}
-	// ref: strconv.Unquote
-	x := s[1 : len(s)-1]
-	var runeTmp [utf8.UTFMax]byte
-	buf := make([]byte, 0, 3*len(x)/2)
-	var xs []*Query
-	var es []*Query
-	var cnt int
-	for len(x) > 0 {
-		r, multibyte, ss, err := strconv.UnquoteChar(x, '"')
-		if err != nil {
-			if !strings.HasPrefix(x, "\\(") {
-				return nil, err
-			}
-			match := queryInStringPattern.FindString(x)
-			i := len([]byte(match))
-			if i == 0 {
-				return nil, &stringLiteralError{s}
-			}
-			t := x[2 : i-1]
-			q, err := Parse(t)
-			if err != nil {
-				return nil, &stringQueryError{t, err}
-			}
-			x = x[i:]
-			if len(buf) > 0 {
-				xs = append(xs, &Query{Term: &Term{RawStr: string(buf)}})
-				buf = buf[:0]
-			}
-			name := fmt.Sprintf("$%%%d", cnt)
-			es = append(es, &Query{
-				Term: &Term{Query: &Query{Left: q, Op: OpPipe, Right: &Query{Term: &Term{Func: f}}}},
-				Bind: &Bind{Patterns: []*Pattern{{Name: name}}},
-			})
-			xs = append(xs, &Query{Term: &Term{Func: &Func{Name: name}}})
-			cnt++
-			continue
+	e := s.Queries[0]
+	if e.Term.Str == nil {
+		e = &Query{Left: e, Op: OpPipe, Right: &Query{Term: &Term{Func: f}}}
+	}
+	for i := 1; i < len(s.Queries); i++ {
+		x := s.Queries[i]
+		if x.Term.Str == nil {
+			x = &Query{Left: x, Op: OpPipe, Right: &Query{Term: &Term{Func: f}}}
 		}
-		x = ss
-		if r < utf8.RuneSelf || !multibyte {
-			buf = append(buf, byte(r))
-		} else {
-			n := utf8.EncodeRune(runeTmp[:], r)
-			buf = append(buf, runeTmp[:n]...)
-		}
+		e = &Query{Left: e, Op: OpAdd, Right: x}
 	}
-	if len(xs) == 0 {
-		return &Query{Term: &Term{RawStr: string(buf)}}, nil
-	}
-	if len(buf) > 0 {
-		xs = append(xs, &Query{Term: &Term{RawStr: string(buf)}})
-	}
-	e := xs[0]
-	for i := 1; i < len(xs); i++ {
-		e = &Query{Left: e, Op: OpComma, Right: xs[i]}
-	}
-	q := &Query{
-		Left: &Query{Term: &Term{Array: &Array{e}}},
-		Op:   OpPipe,
-		Right: &Query{Term: &Term{Func: &Func{
-			Name: "join",
-			Args: []*Query{&Query{Term: &Term{Str: `""`}}},
-		}}},
-	}
-	for _, e := range es {
-		e.Bind.Body, q = q, e
-	}
-	c.appendCodeInfo(q)
-	return q, nil
+	return c.compileQuery(e)
 }
 
 func (c *compiler) compileTermSuffix(e *Term, s *Suffix) error {

@@ -2,7 +2,6 @@ package gojq
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 	"unicode/utf8"
 )
@@ -13,11 +12,13 @@ type lexer struct {
 	result    *Query
 	token     string
 	tokenType int
+	inString  bool
+	parens    []int
 	err       error
 }
 
 func newLexer(src string) *lexer {
-	return &lexer{source: []byte(src)}
+	return &lexer{source: []byte(src), parens: []int{0}}
 }
 
 const eof = -1
@@ -51,6 +52,14 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 	if len(l.source) == l.offset {
 		l.token = ""
 		return eof
+	}
+	if l.inString {
+		i := l.offset
+		if tok, _ := l.scanString(); tok > 0 {
+			l.token = string(l.source[i:l.offset])
+			lval.token = l.token
+			return tok
+		}
 	}
 	ch, iseof := l.next()
 	if iseof {
@@ -225,10 +234,22 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 		}
 	case '"':
 		i := l.offset - 1
-		if l.scanString() {
+		if tok, ok := l.scanString(); ok {
 			l.token = string(l.source[i:l.offset])
 			lval.token = l.token
-			return tokString
+			return tok
+		}
+	case '(':
+		l.parens[len(l.parens)-1]++
+	case ')':
+		if len(l.parens) > 1 && l.parens[len(l.parens)-1] == 0 {
+			l.parens = l.parens[:len(l.parens)-1]
+			l.token = ")"
+			l.inString = true
+			return tokStringQueryEnd
+		}
+		if l.parens[len(l.parens)-1] > 0 {
+			l.parens[len(l.parens)-1]--
 		}
 	default:
 		if ch >= utf8.RuneSelf {
@@ -352,15 +373,54 @@ func (l *lexer) scanNumber(state int) int {
 	}
 }
 
-var stringPattern = regexp.MustCompile("^" + stringPatternStr)
-
-func (l *lexer) scanString() bool {
-	loc := stringPattern.FindIndex(l.source[l.offset-1:])
-	if loc == nil {
-		return false
+func (l *lexer) scanString() (int, bool) {
+	var quote bool
+	for i, m := l.offset, len(l.source); i < m; i++ {
+		ch := l.source[i]
+		switch ch {
+		case '\\':
+			quote = !quote
+		case '"':
+			if !quote {
+				if !l.inString {
+					l.offset = i + 1
+					return tokString, true
+				}
+				if i > l.offset {
+					l.offset = i
+					return tokString, true
+				}
+				l.inString = false
+				l.offset = i + 1
+				return tokStringEnd, true
+			}
+			quote = false
+		case '(':
+			if quote {
+				if l.inString {
+					if i > l.offset+1 {
+						l.offset = i - 1
+						return tokString, true
+					}
+					l.offset = i + 1
+					l.inString = false
+					l.parens = append(l.parens, 0)
+					return tokStringQueryStart, true
+				}
+				l.inString = true
+				return tokStringStart, true
+			}
+		default:
+			if quote {
+				if !('a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' ||
+					'0' <= ch && ch <= '9' || ch == '\'' || ch == '"') {
+					return eof, false
+				}
+				quote = false
+			}
+		}
 	}
-	l.offset += loc[1] - loc[0] - 1
-	return true
+	return eof, false
 }
 
 type parseError struct {

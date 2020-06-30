@@ -1,8 +1,6 @@
 %{
 package gojq
 
-//go:generate go run _tools/gen_string.go -o string.go
-
 // Parse parses a query.
 func Parse(src string) (*Query, error) {
 	l := newLexer(src)
@@ -21,7 +19,7 @@ func Parse(src string) (*Query, error) {
 
 %type<value> program moduleheader programbody imports import metaopt funcdefs funcdef funcdefargs query
 %type<value> bindpatterns pattern arraypatterns objectpatterns objectpattern
-%type<value> term suffix args ifelifs ifelse trycatch
+%type<value> term string stringparts suffix args ifelifs ifelse trycatch
 %type<value> object objectkeyval objectval
 %type<value> constterm constobject constobjectkeyvals constobjectkeyval constarray constarrayelems
 %type<token> tokIdentVariable tokIdentModuleIdent tokVariableModuleVariable tokKeyword objectkey
@@ -29,7 +27,8 @@ func Parse(src string) (*Query, error) {
 %token<token> tokModule tokImport tokInclude tokDef tokAs tokLabel tokBreak
 %token<token> tokNull tokTrue tokFalse
 %token<token> tokIdent tokVariable tokModuleIdent tokModuleVariable
-%token<token> tokIndex tokNumber tokString tokFormat tokInvalid
+%token<token> tokIndex tokNumber tokFormat tokInvalid
+%token<token> tokString tokStringStart tokStringQueryStart tokStringQueryEnd tokStringEnd
 %token<token> tokIf tokThen tokElif tokElse tokEnd
 %token<token> tokTry tokCatch tokReduce tokForeach
 %token tokRecurse tokFuncDefPost tokTermPost tokEmptyCatch
@@ -291,9 +290,9 @@ term
             $$ = &Term{Index: $2.(*Suffix).Index}
         }
     }
-    | '.' tokString
+    | '.' string
     {
-        $$ = &Term{Index: &Index{Str: $2}}
+        $$ = &Term{Index: &Index{Str: $2.(*String)}}
     }
     | tokNull
     {
@@ -327,13 +326,13 @@ term
     {
         $$ = &Term{Format: $1}
     }
-    | tokFormat tokString
+    | tokFormat string
     {
-        $$ = &Term{Format: $1, FormatStr: $2}
+        $$ = &Term{Format: $1, Str: $2.(*String)}
     }
-    | tokString
+    | string
     {
-        $$ = &Term{Str: $1}
+        $$ = &Term{Str: $1.(*String)}
     }
     | '(' query ')'
     {
@@ -399,9 +398,33 @@ term
     {
         $1.(*Term).SuffixList = append($1.(*Term).SuffixList, $3.(*Suffix))
     }
-    | term '.' tokString
+    | term '.' string
     {
-        $1.(*Term).SuffixList = append($1.(*Term).SuffixList, &Suffix{Index: &Index{Str: $3}})
+        $1.(*Term).SuffixList = append($1.(*Term).SuffixList, &Suffix{Index: &Index{Str: $3.(*String)}})
+    }
+
+string
+    : tokString
+    {
+        $$ = &String{Str: $1}
+    }
+    | tokStringStart stringparts tokStringEnd
+    {
+        $$ = &String{Queries: $2.([]*Query)}
+    }
+
+stringparts
+    :
+    {
+        $$ = []*Query{}
+    }
+    | stringparts tokString
+    {
+        $$ = append($1.([]*Query), &Query{Term: &Term{Str: &String{Str: "\"" + $2 + "\""}}})
+    }
+    | stringparts tokStringQueryStart query tokStringQueryEnd
+    {
+        $$ = append($1.([]*Query), &Query{Term: &Term{Query: $3.(*Query)}})
     }
 
 tokIdentModuleIdent
@@ -505,9 +528,9 @@ objectkeyval
     {
         $$ = &ObjectKeyVal{Key: $1, Val: $3.(*ObjectVal)}
     }
-    | tokString ':' objectval
+    | string ':' objectval
     {
-        $$ = &ObjectKeyVal{KeyString: $1, Val: $3.(*ObjectVal)}
+        $$ = &ObjectKeyVal{KeyString: $1.(*String), Val: $3.(*ObjectVal)}
     }
     | '(' query ')' ':' objectval
     {
@@ -515,11 +538,11 @@ objectkeyval
     }
     | objectkey
     {
-        $$ = &ObjectKeyVal{KeyOnly: &$1}
+        $$ = &ObjectKeyVal{KeyOnly: $1}
     }
-    | tokString
+    | string
     {
-        $$ = &ObjectKeyVal{KeyOnlyString: $1}
+        $$ = &ObjectKeyVal{KeyOnlyString: $1.(*String)}
     }
 
 objectkey

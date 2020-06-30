@@ -2279,10 +2279,18 @@
 - name: string interpolation nested
   args:
     - -c
-    - '"\("(") \("x" + "\(1 + 2)") \(")")"'
+    - '" \("(") \("x" + "\(1 + 2)") \("\\") \("\("\\")") \(")") "'
   input: '0'
   expected: |
-    "( x3 )"
+    " ( x3 \\ \\ ) "
+
+- name: string interpolation nested deeply
+  args:
+    - -c
+    - '"\("\("\("\("\("\("\("\("\("\("\("\("\("\("\("\("\("\("\("\("\("\("\("\(1+2)")")")")")")")")")")")")")")")")")")")")")")")"'
+  input: '0'
+  expected: |
+    "3"
 
 - name: string interpolation multiple lines
   args:
@@ -2310,9 +2318,9 @@
     - '"\(1 +)"'
   input: '0'
   error: |
-    invalid query in string interpolation: 1 +
-        1 +
-           ^  unexpected token <EOF>
+    invalid query: "\(1 +)"
+        "\(1 +)"
+              ^  unexpected token ")"
   exit_code: 3
 
 - name: tojson function
@@ -4240,11 +4248,11 @@
 
 - name: format strings @html with string interpolation
   args:
-    - '@html "x\(.)x\(.+.)x"'
+    - '@html "x\(.)x\(.+.)x\("<>")x"'
   input: |
     ["<>"]
   expected: |
-    "x[&quot;&lt;&gt;&quot;]x[&quot;&lt;&gt;&quot;,&quot;&lt;&gt;&quot;]x"
+    "x[&quot;&lt;&gt;&quot;]x[&quot;&lt;&gt;&quot;,&quot;&lt;&gt;&quot;]x&lt;&gt;x"
 
 - name: format strings @uri
   args:

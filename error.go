@@ -227,19 +227,6 @@ func (err *stringLiteralError) Error() string {
 	return fmt.Sprintf("expected a string but got: %s", err.s)
 }
 
-type stringQueryError struct {
-	s   string
-	err error
-}
-
-func (err *stringQueryError) Error() string {
-	return fmt.Sprintf("invalid query in string interpolation %s: %s", err.s, err.err)
-}
-
-func (err *stringQueryError) QueryParseError() (string, string, string, error) {
-	return "query in string interpolation", "<string>", err.s, err.err
-}
-
 type tryEndError struct {
 	err error
 }

@@ -193,8 +193,7 @@ type Term struct {
 	Number     string
 	Unary      *Unary
 	Format     string
-	FormatStr  string
-	Str        string
+	Str        *String
 	RawStr     string
 	If         *If
 	Try        *Try
@@ -230,7 +229,13 @@ func (e *Term) String() string {
 		fmt.Fprint(&s, e.Number)
 	} else if e.Unary != nil {
 		fmt.Fprint(&s, e.Unary)
-	} else if e.Str != "" {
+	} else if e.Format != "" {
+		if e.Str == nil {
+			s.WriteString(e.Format)
+		} else {
+			fmt.Fprintf(&s, "%s %s", e.Format, e.Str)
+		}
+	} else if e.Str != nil {
 		fmt.Fprint(&s, e.Str)
 	} else if e.RawStr != "" {
 		fmt.Fprint(&s, strconv.Quote(e.RawStr))
@@ -266,6 +271,14 @@ func (e *Term) minify() {
 		e.Array.minify()
 	} else if e.Unary != nil {
 		e.Unary.minify()
+	} else if e.Str != nil {
+		if e.Format == "" && e.Str.Str != "" {
+			if str, _ := strconv.Unquote(e.Str.Str); str != "" {
+				e.RawStr, e.Str = str, nil
+			}
+		} else {
+			e.Str.minify()
+		}
 	} else if e.If != nil {
 		e.If.minify()
 	} else if e.Try != nil {
@@ -405,7 +418,7 @@ func (e *PatternObject) String() string {
 // Index ...
 type Index struct {
 	Name    string
-	Str     string
+	Str     *String
 	Start   *Query
 	IsSlice bool
 	End     *Query
@@ -417,8 +430,8 @@ func (e *Index) String() string {
 		s.WriteString(e.Name)
 	} else {
 		s.WriteByte('.')
-		if e.Str != "" {
-			s.WriteString(e.Str)
+		if e.Str != nil {
+			fmt.Fprint(&s, e.Str)
 		} else {
 			s.WriteByte('[')
 			if e.Start != nil {
@@ -490,6 +503,36 @@ func (e *Func) toFunc() string {
 	return e.Name
 }
 
+// String ...
+type String struct {
+	Str     string
+	Queries []*Query
+}
+
+func (e *String) String() string {
+	if e.Str != "" {
+		return e.Str
+	}
+	var s strings.Builder
+	s.WriteRune('"')
+	for _, e := range e.Queries {
+		if e.Term.Str == nil {
+			fmt.Fprintf(&s, "\\(%s)", e)
+		} else {
+			es := e.String()
+			fmt.Fprint(&s, es[1:len(es)-1])
+		}
+	}
+	s.WriteRune('"')
+	return s.String()
+}
+
+func (e *String) minify() {
+	for _, e := range e.Queries {
+		e.minify()
+	}
+}
+
 // Object ...
 type Object struct {
 	KeyVals []*ObjectKeyVal
@@ -520,30 +563,29 @@ func (e *Object) minify() {
 // ObjectKeyVal ...
 type ObjectKeyVal struct {
 	Key           string
-	KeyString     string
+	KeyString     *String
 	Query         *Query
 	Val           *ObjectVal
-	KeyOnly       *string
-	KeyOnlyString string
+	KeyOnly       string
+	KeyOnlyString *String
 }
 
 func (e *ObjectKeyVal) String() string {
 	var s strings.Builder
 	if e.Key != "" {
 		s.WriteString(e.Key)
-	} else if e.KeyString != "" {
-		s.WriteString(e.KeyString)
+	} else if e.KeyString != nil {
+		fmt.Fprint(&s, e.KeyString)
 	} else if e.Query != nil {
 		fmt.Fprintf(&s, "(%s)", e.Query)
 	}
 	if e.Val != nil {
 		fmt.Fprintf(&s, ": %s", e.Val)
 	}
-	if e.KeyOnly != nil {
-		s.WriteString(*e.KeyOnly)
-	}
-	if e.KeyOnlyString != "" {
-		s.WriteString(e.KeyOnlyString)
+	if e.KeyOnly != "" {
+		s.WriteString(e.KeyOnly)
+	} else if e.KeyOnlyString != nil {
+		fmt.Fprint(&s, e.KeyOnlyString)
 	}
 	return s.String()
 }

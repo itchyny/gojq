@@ -7,17 +7,17 @@ GOBIN ?= $(shell go env GOPATH)/bin
 export GO111MODULE=on
 
 .PHONY: all
-all: clean build
+all: build
 
 .PHONY: build
-build: parser.go builtin.go string.go
+build: parser.go builtin.go
 	go build -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
 
 .PHONY: build-debug
-build-debug: parser.go builtin.go string.go
+build-debug: parser.go builtin.go
 	go build -tags debug -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
 
-builtin.go string.go: builtin.jq parser.go.y parser.go query.go operator.go _tools/*
+builtin.go: builtin.jq parser.go.y parser.go query.go operator.go _tools/*
 	GOOS= GOARCH= go generate
 
 .SUFFIXES:
@@ -28,11 +28,11 @@ $(GOBIN)/goyacc:
 	@cd && go get golang.org/x/tools/cmd/goyacc
 
 .PHONY: install
-install: builtin.go string.go
+install: builtin.go
 	go install -ldflags=$(BUILD_LDFLAGS) ./...
 
 .PHONY: install-debug
-install-debug: builtin.go string.go
+install-debug: builtin.go
 	go install -tags debug -ldflags=$(BUILD_LDFLAGS) ./...
 
 .PHONY: show-version
