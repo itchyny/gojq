@@ -9,16 +9,16 @@ import (
 
 type moduleLoader struct{}
 
-func (*moduleLoader) LoadModule(name string) (*gojq.Module, error) {
+func (*moduleLoader) LoadModule(name string) (*gojq.Query, error) {
 	switch name {
 	case "module1":
-		return gojq.ParseModule(`
+		return gojq.Parse(`
 			module { name: "module1", test: 42 };
 			import "module2" as foo;
 			def f: foo::f;
 		`)
 	case "module2":
-		return gojq.ParseModule(`
+		return gojq.Parse(`
 			def f: .foo;
 		`)
 	}

@@ -17,11 +17,11 @@ func main() {
 		panic(err)
 	}
 	fds := make(map[string][]*gojq.FuncDef)
-	m, err := gojq.ParseModule(string(cnt))
+	q, err := gojq.Parse(string(cnt))
 	if err != nil {
 		panic(err)
 	}
-	for _, fd := range m.FuncDefs {
+	for _, fd := range q.FuncDefs {
 		name := fd.Name
 		if name[0] == '_' {
 			name = name[1:]
@@ -41,15 +41,15 @@ func main() {
 		for _, fd := range fds[n] {
 			fmt.Fprintf(&s, "%s ", fd)
 		}
-		m, err := gojq.ParseModule(s.String())
+		q, err := gojq.Parse(s.String())
 		if err != nil {
 			panic(err)
 		}
-		for _, fd := range m.FuncDefs {
+		for _, fd := range q.FuncDefs {
 			fd.Minify()
 		}
-		if !reflect.DeepEqual(m.FuncDefs, fds[n]) {
-			fmt.Printf("failed: %s: %s %s\n", n, m.FuncDefs, fds[n])
+		if !reflect.DeepEqual(q.FuncDefs, fds[n]) {
+			fmt.Printf("failed: %s: %s %s\n", n, q.FuncDefs, fds[n])
 			continue
 		}
 		fmt.Printf("ok: %s: %s\n", n, s.String())

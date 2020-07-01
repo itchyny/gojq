@@ -8,20 +8,40 @@ import (
 	"strings"
 )
 
-// Module ...
-type Module struct {
-	Meta     *ConstObject `( "module" @@ ";" )?`
-	Imports  []*Import    `@@*`
-	FuncDefs []*FuncDef   `@@*`
+// Query ...
+type Query struct {
+	Meta     *ConstObject
+	Imports  []*Import
+	FuncDefs []*FuncDef
+	Term     *Term
+	Left     *Query
+	Op       Operator
+	Right    *Query
+	Bind     *Bind
+	Func     string
 }
 
-func (e *Module) String() string {
+// Run query.
+func (e *Query) Run(v interface{}) Iter {
+	return e.RunWithContext(nil, v)
+}
+
+// RunWithContext query.
+func (e *Query) RunWithContext(ctx context.Context, v interface{}) Iter {
+	code, err := Compile(e)
+	if err != nil {
+		return unitIterator(err)
+	}
+	return code.RunWithContext(ctx, v)
+}
+
+func (e *Query) String() string {
 	var s strings.Builder
 	if e.Meta != nil {
 		fmt.Fprintf(&s, "module %s;\n", e.Meta)
 	}
-	for _, i := range e.Imports {
-		fmt.Fprint(&s, i)
+	for _, im := range e.Imports {
+		fmt.Fprint(&s, im)
 	}
 	for i, fd := range e.FuncDefs {
 		if i > 0 {
@@ -29,27 +49,76 @@ func (e *Module) String() string {
 		}
 		fmt.Fprint(&s, fd)
 	}
+	if len(e.FuncDefs) > 0 {
+		s.WriteByte(' ')
+	}
+	if e.Func != "" {
+		s.WriteString(e.Func)
+	} else if e.Term != nil {
+		fmt.Fprint(&s, e.Term)
+		if e.Bind != nil {
+			fmt.Fprint(&s, e.Bind)
+		}
+	} else if e.Right != nil {
+		if e.Op == OpComma {
+			fmt.Fprintf(&s, "%s, %s", e.Left, e.Right)
+		} else {
+			fmt.Fprintf(&s, "%s %s %s", e.Left, e.Op, e.Right)
+		}
+	}
 	return s.String()
+}
+
+func (e *Query) minify() {
+	for _, e := range e.FuncDefs {
+		e.Minify()
+	}
+	if e.Term != nil {
+		if e.Bind == nil {
+			if name := e.Term.toFunc(); name != "" {
+				e.Term = nil
+				e.Func = name
+			} else {
+				e.Term.minify()
+			}
+		} else {
+			e.Term.minify()
+			e.Bind.minify()
+		}
+	} else if e.Right != nil {
+		e.Left.minify()
+		e.Right.minify()
+	}
+}
+
+func (e *Query) toIndices() []interface{} {
+	if e.FuncDefs != nil || e.Right != nil || e.Bind != nil || e.Term == nil {
+		return nil
+	}
+	return e.Term.toIndices()
+}
+
+func (e *Query) countCommaQueries() int {
+	if e.Op == OpComma {
+		return e.Left.countCommaQueries() + e.Right.countCommaQueries()
+	}
+	return 1
 }
 
 // Import ...
 type Import struct {
-	ImportPath  string       `( "import" @String`
-	ImportAlias string       `  "as" ( @Ident | @Variable )`
-	IncludePath string       `| "include" @String )`
-	Meta        *ConstObject `@@? ";"`
+	ImportPath  string
+	ImportAlias string
+	IncludePath string
+	Meta        *ConstObject
 }
 
 func (e *Import) String() string {
 	var s strings.Builder
 	if e.ImportPath != "" {
-		s.WriteString("import ")
-		s.WriteString(e.ImportPath)
-		s.WriteString(" as ")
-		s.WriteString(e.ImportAlias)
+		fmt.Fprintf(&s, "import %q as %s", e.ImportPath, e.ImportAlias)
 	} else {
-		s.WriteString("include ")
-		s.WriteString(e.IncludePath)
+		fmt.Fprintf(&s, "include %q", e.IncludePath)
 	}
 	if e.Meta != nil {
 		fmt.Fprintf(&s, " %s", e.Meta)
@@ -60,9 +129,9 @@ func (e *Import) String() string {
 
 // FuncDef ...
 type FuncDef struct {
-	Name string   `"def" @Ident`
-	Args []string `("(" ( @Ident | @Variable ) (";" ( @Ident | @Variable ))* ")")? ":"`
-	Body *Query   `@@ ";"`
+	Name string
+	Args []string
+	Body *Query
 }
 
 func (e *FuncDef) String() string {
@@ -87,267 +156,10 @@ func (e *FuncDef) Minify() {
 	e.Body.minify()
 }
 
-// Query ...
-type Query struct {
-	Imports []*Import `@@*`
-	Commas  []*Comma  `@@ ("|" @@)*`
-}
-
-func (e *Query) String() string {
-	var s strings.Builder
-	for _, i := range e.Imports {
-		fmt.Fprint(&s, i)
-	}
-	for i, e := range e.Commas {
-		if i > 0 {
-			s.WriteString(" | ")
-		}
-		fmt.Fprint(&s, e)
-	}
-	return s.String()
-}
-
-func (e *Query) minify() {
-	for _, x := range e.Commas {
-		x.minify()
-	}
-}
-
-func (e *Query) toIndices() []interface{} {
-	var xs []interface{}
-	for _, e := range e.Commas {
-		x := e.toIndices()
-		if x == nil {
-			return nil
-		}
-		xs = append(xs, x...)
-	}
-	return xs
-}
-
-// Run query.
-func (e *Query) Run(v interface{}) Iter {
-	return e.RunWithContext(nil, v)
-}
-
-// RunWithContext query.
-func (e *Query) RunWithContext(ctx context.Context, v interface{}) Iter {
-	code, err := Compile(e)
-	if err != nil {
-		return unitIterator(err)
-	}
-	return code.RunWithContext(ctx, v)
-}
-
-// Comma ...
-type Comma struct {
-	Filters []*Filter `@@ ("," @@)*`
-	Func    string    `| @" "` // never matches, used in minifier
-}
-
-func (e *Comma) String() string {
-	if e.Func != "" {
-		return e.Func
-	}
-	var s strings.Builder
-	for i, e := range e.Filters {
-		if i > 0 {
-			s.WriteString(", ")
-		}
-		fmt.Fprint(&s, e)
-	}
-	return s.String()
-}
-
-func (e *Comma) minify() {
-	if len(e.Filters) == 1 {
-		if e.Func = e.Filters[0].toFunc(); e.Func != "" {
-			e.Filters = nil
-		}
-	}
-	for _, e := range e.Filters {
-		e.minify()
-	}
-}
-
-func (e *Comma) toQuery() *Query {
-	return &Query{Commas: []*Comma{e}}
-}
-
-func (e *Comma) toIndices() []interface{} {
-	if len(e.Filters) != 1 {
-		return nil
-	}
-	return e.Filters[0].toIndices()
-}
-
-// Filter ...
-type Filter struct {
-	FuncDefs []*FuncDef `@@*`
-	Alt      *Alt       `@@`
-}
-
-func (e *Filter) String() string {
-	var s strings.Builder
-	for i, fd := range e.FuncDefs {
-		if i > 0 {
-			s.WriteByte(' ')
-		}
-		fmt.Fprint(&s, fd)
-	}
-	if len(e.FuncDefs) > 0 {
-		s.WriteByte(' ')
-	}
-	fmt.Fprint(&s, e.Alt)
-	return s.String()
-}
-
-func (e *Filter) minify() {
-	for _, e := range e.FuncDefs {
-		e.Minify()
-	}
-	e.Alt.minify()
-}
-
-func (e *Filter) toQuery() *Query {
-	return (&Comma{Filters: []*Filter{e}}).toQuery()
-}
-
-func (e *Filter) toFunc() string {
-	if len(e.FuncDefs) != 0 {
-		return ""
-	}
-	return e.Alt.toFunc()
-}
-
-func (e *Filter) toIndices() []interface{} {
-	if len(e.FuncDefs) != 0 {
-		return nil
-	}
-	return e.Alt.toIndices()
-}
-
-// Alt ...
-type Alt struct {
-	Left  *Expr      `@@`
-	Right []AltRight `@@*`
-}
-
-func (e *Alt) String() string {
-	var s strings.Builder
-	fmt.Fprint(&s, e.Left)
-	for _, e := range e.Right {
-		fmt.Fprint(&s, e)
-	}
-	return s.String()
-}
-
-func (e *Alt) minify() {
-	e.Left.minify()
-	for _, e := range e.Right {
-		e.minify()
-	}
-}
-
-func (e *Alt) toQuery() *Query {
-	return (&Filter{Alt: e}).toQuery()
-}
-
-func (e *Alt) toFilter() *Filter {
-	return &Filter{Alt: e}
-}
-
-func (e *Alt) toFunc() string {
-	if len(e.Right) != 0 {
-		return ""
-	}
-	return e.Left.toFunc()
-}
-
-func (e *Alt) toIndices() []interface{} {
-	if len(e.Right) != 0 {
-		return nil
-	}
-	return e.Left.toIndices()
-}
-
-// AltRight ...
-type AltRight struct {
-	Op    Operator `@"//"`
-	Right *Expr    `@@`
-}
-
-func (e AltRight) String() string {
-	return fmt.Sprintf(" %s %s", e.Op, e.Right)
-}
-
-func (e *AltRight) minify() {
-	e.Right.minify()
-}
-
-// Expr ...
-type Expr struct {
-	Logic    *Logic   `@@`
-	UpdateOp Operator `( ( @UpdateOp | @UpdateAltOp )`
-	Update   *Alt     `  @@`
-	Bind     *Bind    `| @@ )?`
-	Label    *Label   `| @@`
-}
-
-func (e *Expr) String() string {
-	var s strings.Builder
-	if e.Logic != nil {
-		fmt.Fprint(&s, e.Logic)
-	}
-	if e.Update != nil {
-		fmt.Fprintf(&s, " %s %s", e.UpdateOp, e.Update)
-	} else if e.Bind != nil {
-		fmt.Fprint(&s, e.Bind)
-	} else if e.Label != nil {
-		fmt.Fprint(&s, e.Label)
-	}
-	return s.String()
-}
-
-func (e *Expr) minify() {
-	if e.Logic != nil {
-		e.Logic.minify()
-	}
-	if e.Update != nil {
-		e.Update.minify()
-	} else if e.Bind != nil {
-		e.Bind.minify()
-	} else if e.Label != nil {
-		e.Label.minify()
-	}
-}
-
-func (e *Expr) toQuery() *Query {
-	return (&Alt{Left: e}).toQuery()
-}
-
-func (e *Expr) toFilter() *Filter {
-	return (&Alt{Left: e}).toFilter()
-}
-
-func (e *Expr) toFunc() string {
-	if e.Update != nil || e.Bind != nil || e.Logic == nil {
-		return ""
-	}
-	return e.Logic.toFunc()
-}
-
-func (e *Expr) toIndices() []interface{} {
-	if e.Update != nil || e.Bind != nil || e.Logic == nil {
-		return nil
-	}
-	return e.Logic.toIndices()
-}
-
 // Bind ...
 type Bind struct {
-	Patterns []*Pattern `"as" @@ ("?//" @@)*`
-	Body     *Query     `"|" @@`
+	Patterns []*Pattern
+	Body     *Query
 }
 
 func (e *Bind) String() string {
@@ -359,7 +171,7 @@ func (e *Bind) String() string {
 			fmt.Fprintf(&s, "?// %s ", p)
 		}
 	}
-	fmt.Fprintf(&s, "| %s ", e.Body)
+	fmt.Fprintf(&s, "| %s", e.Body)
 	return s.String()
 }
 
@@ -367,336 +179,29 @@ func (e *Bind) minify() {
 	e.Body.minify()
 }
 
-// Logic ...
-type Logic struct {
-	Left  *AndExpr     `@@`
-	Right []LogicRight `@@*`
-}
-
-func (e *Logic) String() string {
-	var s strings.Builder
-	fmt.Fprint(&s, e.Left)
-	for _, e := range e.Right {
-		fmt.Fprint(&s, e)
-	}
-	return s.String()
-}
-
-func (e *Logic) minify() {
-	e.Left.minify()
-	for _, e := range e.Right {
-		e.minify()
-	}
-}
-
-func (e *Logic) toQuery() *Query {
-	return (&Expr{Logic: e}).toQuery()
-}
-
-func (e *Logic) toFilter() *Filter {
-	return (&Expr{Logic: e}).toFilter()
-}
-
-func (e *Logic) toFunc() string {
-	if len(e.Right) != 0 {
-		return ""
-	}
-	return e.Left.toFunc()
-}
-
-func (e *Logic) toIndices() []interface{} {
-	if len(e.Right) != 0 {
-		return nil
-	}
-	return e.Left.toIndices()
-}
-
-// LogicRight ...
-type LogicRight struct {
-	Op    Operator `@"or"`
-	Right *AndExpr `@@`
-}
-
-func (e LogicRight) String() string {
-	return fmt.Sprintf(" %s %s", e.Op, e.Right)
-}
-
-func (e *LogicRight) minify() {
-	e.Right.minify()
-}
-
-// AndExpr ...
-type AndExpr struct {
-	Left  *Compare       `@@`
-	Right []AndExprRight `@@*`
-}
-
-func (e *AndExpr) String() string {
-	var s strings.Builder
-	fmt.Fprint(&s, e.Left)
-	for _, e := range e.Right {
-		fmt.Fprint(&s, e)
-	}
-	return s.String()
-}
-
-func (e *AndExpr) minify() {
-	e.Left.minify()
-	for _, e := range e.Right {
-		e.minify()
-	}
-}
-
-func (e *AndExpr) toQuery() *Query {
-	return (&Logic{Left: e}).toQuery()
-}
-
-func (e *AndExpr) toFilter() *Filter {
-	return (&Logic{Left: e}).toFilter()
-}
-
-func (e *AndExpr) toLogic() *Logic {
-	return &Logic{Left: e}
-}
-
-func (e *AndExpr) toFunc() string {
-	if len(e.Right) != 0 {
-		return ""
-	}
-	return e.Left.toFunc()
-}
-
-func (e *AndExpr) toIndices() []interface{} {
-	if len(e.Right) != 0 {
-		return nil
-	}
-	return e.Left.toIndices()
-}
-
-// AndExprRight ...
-type AndExprRight struct {
-	Op    Operator `@"and"`
-	Right *Compare `@@`
-}
-
-func (e AndExprRight) String() string {
-	return fmt.Sprintf(" %s %s", e.Op, e.Right)
-}
-
-func (e *AndExprRight) minify() {
-	e.Right.minify()
-}
-
-// Compare ...
-type Compare struct {
-	Left  *Arith        `@@`
-	Right *CompareRight `@@?`
-}
-
-func (e *Compare) minify() {
-	e.Left.minify()
-	if e.Right != nil {
-		e.Right.minify()
-	}
-}
-
-func (e *Compare) toQuery() *Query {
-	return (&AndExpr{Left: e}).toQuery()
-}
-
-func (e *Compare) toFilter() *Filter {
-	return (&AndExpr{Left: e}).toFilter()
-}
-
-func (e *Compare) toLogic() *Logic {
-	return (&AndExpr{Left: e}).toLogic()
-}
-
-func (e *Compare) String() string {
-	var s strings.Builder
-	fmt.Fprint(&s, e.Left)
-	if e.Right != nil {
-		fmt.Fprint(&s, e.Right)
-	}
-	return s.String()
-}
-
-func (e *Compare) toFunc() string {
-	if e.Right != nil {
-		return ""
-	}
-	return e.Left.toFunc()
-}
-
-func (e *Compare) toIndices() []interface{} {
-	if e.Right != nil {
-		return nil
-	}
-	return e.Left.toIndices()
-}
-
-// CompareRight ...
-type CompareRight struct {
-	Op    Operator `@CompareOp`
-	Right *Arith   `@@`
-}
-
-func (e *CompareRight) String() string {
-	return fmt.Sprintf(" %s %s", e.Op, e.Right)
-}
-
-func (e *CompareRight) minify() {
-	e.Right.minify()
-}
-
-// Arith ...
-type Arith struct {
-	Left  *Factor      `@@`
-	Right []ArithRight `@@*`
-}
-
-func (e *Arith) String() string {
-	var s strings.Builder
-	fmt.Fprint(&s, e.Left)
-	for _, e := range e.Right {
-		fmt.Fprint(&s, e)
-	}
-	return s.String()
-}
-
-func (e *Arith) minify() {
-	e.Left.minify()
-	for _, e := range e.Right {
-		e.minify()
-	}
-}
-
-func (e *Arith) toQuery() *Query {
-	return (&Compare{Left: e}).toQuery()
-}
-
-func (e *Arith) toFilter() *Filter {
-	return (&Compare{Left: e}).toFilter()
-}
-
-func (e *Arith) toLogic() *Logic {
-	return (&Compare{Left: e}).toLogic()
-}
-
-func (e *Arith) toFunc() string {
-	if len(e.Right) != 0 {
-		return ""
-	}
-	return e.Left.toFunc()
-}
-
-func (e *Arith) toIndices() []interface{} {
-	if len(e.Right) != 0 {
-		return nil
-	}
-	return e.Left.toIndices()
-}
-
-// ArithRight ...
-type ArithRight struct {
-	Op    Operator `@("+" | "-")`
-	Right *Factor  `@@`
-}
-
-func (e ArithRight) String() string {
-	return fmt.Sprintf(" %s %s", e.Op, e.Right)
-}
-
-func (e *ArithRight) minify() {
-	e.Right.minify()
-}
-
-// Factor ...
-type Factor struct {
-	Left  *Term         `@@`
-	Right []FactorRight `@@*`
-}
-
-func (e *Factor) String() string {
-	var s strings.Builder
-	fmt.Fprint(&s, e.Left)
-	for _, e := range e.Right {
-		fmt.Fprint(&s, e)
-	}
-	return s.String()
-}
-
-func (e *Factor) minify() {
-	e.Left.minify()
-	for _, e := range e.Right {
-		e.minify()
-	}
-}
-
-func (e *Factor) toQuery() *Query {
-	return (&Arith{Left: e}).toQuery()
-}
-
-func (e *Factor) toFilter() *Filter {
-	return (&Arith{Left: e}).toFilter()
-}
-
-func (e *Factor) toLogic() *Logic {
-	return (&Arith{Left: e}).toLogic()
-}
-
-func (e *Factor) toFunc() string {
-	if len(e.Right) != 0 {
-		return ""
-	}
-	return e.Left.toFunc()
-}
-
-func (e *Factor) toIndices() []interface{} {
-	if len(e.Right) != 0 {
-		return nil
-	}
-	return e.Left.toIndices()
-}
-
-// FactorRight ...
-type FactorRight struct {
-	Op    Operator `@("*" | "/" | "%")`
-	Right *Term    `@@`
-}
-
-func (e FactorRight) String() string {
-	return fmt.Sprintf(" %s %s", e.Op, e.Right)
-}
-
-func (e *FactorRight) minify() {
-	e.Right.minify()
-}
-
 // Term ...
 type Term struct {
-	Index      *Index    `( @@`
-	Identity   bool      `| @"."`
-	Recurse    bool      `| @".."`
-	Null       bool      `| @"null"`
-	True       bool      `| @"true"`
-	False      bool      `| @"false"`
-	Func       *Func     `| @@`
-	Object     *Object   `| @@`
-	Array      *Array    `| @@`
-	Number     string    `| @Number`
-	Unary      *Unary    `| @@`
-	Format     string    `| ( @Format`
-	FormatStr  string    `    @String? )`
-	Str        string    `| @String`
-	RawStr     string    `| @" "` // never matches, used in compiler
-	If         *If       `| @@`
-	Try        *Try      `| @@`
-	Reduce     *Reduce   `| @@`
-	Foreach    *Foreach  `| @@`
-	Break      string    `| "break" @Variable`
-	Query      *Query    `| "(" @@ ")" )`
-	SuffixList []*Suffix `@@*`
+	Index      *Index
+	Identity   bool
+	Recurse    bool
+	Null       bool
+	True       bool
+	False      bool
+	Func       *Func
+	Object     *Object
+	Array      *Array
+	Number     string
+	Unary      *Unary
+	Format     string
+	Str        *String
+	If         *If
+	Try        *Try
+	Reduce     *Reduce
+	Foreach    *Foreach
+	Label      *Label
+	Break      string
+	Query      *Query
+	SuffixList []*Suffix
 }
 
 func (e *Term) String() string {
@@ -723,10 +228,14 @@ func (e *Term) String() string {
 		fmt.Fprint(&s, e.Number)
 	} else if e.Unary != nil {
 		fmt.Fprint(&s, e.Unary)
-	} else if e.Str != "" {
+	} else if e.Format != "" {
+		if e.Str == nil {
+			s.WriteString(e.Format)
+		} else {
+			fmt.Fprintf(&s, "%s %s", e.Format, e.Str)
+		}
+	} else if e.Str != nil {
 		fmt.Fprint(&s, e.Str)
-	} else if e.RawStr != "" {
-		fmt.Fprint(&s, strconv.Quote(e.RawStr))
 	} else if e.If != nil {
 		fmt.Fprint(&s, e.If)
 	} else if e.Try != nil {
@@ -735,6 +244,8 @@ func (e *Term) String() string {
 		fmt.Fprint(&s, e.Reduce)
 	} else if e.Foreach != nil {
 		fmt.Fprint(&s, e.Foreach)
+	} else if e.Label != nil {
+		fmt.Fprint(&s, e.Label)
 	} else if e.Break != "" {
 		fmt.Fprintf(&s, "break %s", e.Break)
 	} else if e.Query != nil {
@@ -757,6 +268,8 @@ func (e *Term) minify() {
 		e.Array.minify()
 	} else if e.Unary != nil {
 		e.Unary.minify()
+	} else if e.Str != nil {
+		e.Str.minify()
 	} else if e.If != nil {
 		e.If.minify()
 	} else if e.Try != nil {
@@ -765,6 +278,8 @@ func (e *Term) minify() {
 		e.Reduce.minify()
 	} else if e.Foreach != nil {
 		e.Foreach.minify()
+	} else if e.Label != nil {
+		e.Label.minify()
 	} else if e.Query != nil {
 		e.Query.minify()
 	}
@@ -773,23 +288,11 @@ func (e *Term) minify() {
 	}
 }
 
-func (e *Term) toQuery() *Query {
-	return (&Factor{Left: e}).toQuery()
-}
-
-func (e *Term) toFilter() *Filter {
-	return (&Factor{Left: e}).toFilter()
-}
-
-func (e *Term) toLogic() *Logic {
-	return (&Factor{Left: e}).toLogic()
-}
-
 func (e *Term) toFunc() string {
 	if len(e.SuffixList) != 0 {
 		return ""
 	}
-	// ref: compiler#compileComma
+	// ref: compiler#compileQuery
 	if e.Identity {
 		return "."
 	} else if e.Recurse {
@@ -830,8 +333,8 @@ func (e *Term) toIndices() []interface{} {
 
 // Unary ...
 type Unary struct {
-	Op   Operator `@("+" | "-")`
-	Term *Term    `@@`
+	Op   Operator
+	Term *Term
 }
 
 func (e *Unary) String() string {
@@ -844,9 +347,9 @@ func (e *Unary) minify() {
 
 // Pattern ...
 type Pattern struct {
-	Name   string          `  @Variable`
-	Array  []*Pattern      `| "[" @@ ("," @@)* "]"`
-	Object []PatternObject `| "{" @@ ("," @@)* "}"`
+	Name   string
+	Array  []*Pattern
+	Object []*PatternObject
 }
 
 func (e *Pattern) String() string {
@@ -868,7 +371,7 @@ func (e *Pattern) String() string {
 			if i > 0 {
 				s.WriteString(", ")
 			}
-			fmt.Fprint(&s, &e)
+			fmt.Fprint(&s, e)
 		}
 		s.WriteRune('}')
 	}
@@ -877,11 +380,11 @@ func (e *Pattern) String() string {
 
 // PatternObject ...
 type PatternObject struct {
-	Key       string   `( ( @Ident | @Variable | @Keyword )`
-	KeyString string   `  | @String`
-	Query     *Query   `  | "(" @@ ")" ) ":"`
-	Val       *Pattern `@@`
-	KeyOnly   string   `| @Variable`
+	Key       string
+	KeyString string
+	Query     *Query
+	Val       *Pattern
+	KeyOnly   string
 }
 
 func (e *PatternObject) String() string {
@@ -905,21 +408,21 @@ func (e *PatternObject) String() string {
 
 // Index ...
 type Index struct {
-	Name    string `@Index`
-	Str     string `| "." ( @String`
-	Start   *Query `| "[" ( @@`
-	IsSlice bool   `( @":"`
-	End     *Query `@@? )? | ":" @@ ) "]" )`
+	Name    string
+	Str     *String
+	Start   *Query
+	IsSlice bool
+	End     *Query
 }
 
 func (e *Index) String() string {
 	var s strings.Builder
+	s.WriteByte('.')
 	if e.Name != "" {
 		s.WriteString(e.Name)
 	} else {
-		s.WriteByte('.')
-		if e.Str != "" {
-			s.WriteString(e.Str)
+		if e.Str != nil {
+			fmt.Fprint(&s, e.Str)
 		} else {
 			s.WriteByte('[')
 			if e.Start != nil {
@@ -953,13 +456,13 @@ func (e *Index) toIndices() []interface{} {
 	if e.Name == "" {
 		return nil
 	}
-	return []interface{}{e.Name[1:]}
+	return []interface{}{e.Name}
 }
 
 // Func ...
 type Func struct {
-	Name string   `( @Ident | @Variable | @ModuleIdent )`
-	Args []*Query `( "(" @@ (";" @@)* ")" )?`
+	Name string
+	Args []*Query
 }
 
 func (e *Func) String() string {
@@ -991,9 +494,39 @@ func (e *Func) toFunc() string {
 	return e.Name
 }
 
+// String ...
+type String struct {
+	Str     string
+	Queries []*Query
+}
+
+func (e *String) String() string {
+	if e.Queries == nil {
+		return strconv.Quote(e.Str)
+	}
+	var s strings.Builder
+	s.WriteRune('"')
+	for _, e := range e.Queries {
+		if e.Term.Str == nil {
+			fmt.Fprintf(&s, "\\%s", e)
+		} else {
+			es := e.String()
+			fmt.Fprint(&s, es[1:len(es)-1])
+		}
+	}
+	s.WriteRune('"')
+	return s.String()
+}
+
+func (e *String) minify() {
+	for _, e := range e.Queries {
+		e.minify()
+	}
+}
+
 // Object ...
 type Object struct {
-	KeyVals []ObjectKeyVal `"{" (@@ ("," @@)* ","?)? "}"`
+	KeyVals []*ObjectKeyVal
 }
 
 func (e *Object) String() string {
@@ -1006,7 +539,7 @@ func (e *Object) String() string {
 		if i > 0 {
 			s.WriteString(", ")
 		}
-		fmt.Fprint(&s, &kv)
+		fmt.Fprint(&s, kv)
 	}
 	s.WriteString(" }")
 	return s.String()
@@ -1020,31 +553,30 @@ func (e *Object) minify() {
 
 // ObjectKeyVal ...
 type ObjectKeyVal struct {
-	Key           string     `( ( ( @Ident | @Variable | @Keyword )`
-	KeyString     string     `  | @String )`
-	Query         *Query     `| "(" @@ ")" ) ":"`
-	Val           *ObjectVal `@@`
-	KeyOnly       *string    `| @Ident | @Variable`
-	KeyOnlyString string     `| @String`
+	Key           string
+	KeyString     *String
+	Query         *Query
+	Val           *ObjectVal
+	KeyOnly       string
+	KeyOnlyString *String
 }
 
 func (e *ObjectKeyVal) String() string {
 	var s strings.Builder
 	if e.Key != "" {
 		s.WriteString(e.Key)
-	} else if e.KeyString != "" {
-		s.WriteString(e.KeyString)
+	} else if e.KeyString != nil {
+		fmt.Fprint(&s, e.KeyString)
 	} else if e.Query != nil {
 		fmt.Fprintf(&s, "(%s)", e.Query)
 	}
 	if e.Val != nil {
 		fmt.Fprintf(&s, ": %s", e.Val)
 	}
-	if e.KeyOnly != nil {
-		s.WriteString(*e.KeyOnly)
-	}
-	if e.KeyOnlyString != "" {
-		s.WriteString(e.KeyOnlyString)
+	if e.KeyOnly != "" {
+		s.WriteString(e.KeyOnly)
+	} else if e.KeyOnlyString != nil {
+		fmt.Fprint(&s, e.KeyOnlyString)
 	}
 	return s.String()
 }
@@ -1060,12 +592,12 @@ func (e *ObjectKeyVal) minify() {
 
 // ObjectVal ...
 type ObjectVal struct {
-	Alts []*Alt `@@ ("|" @@)*`
+	Queries []*Query
 }
 
 func (e *ObjectVal) String() string {
 	var s strings.Builder
-	for i, e := range e.Alts {
+	for i, e := range e.Queries {
 		if i > 0 {
 			s.WriteString(" | ")
 		}
@@ -1075,14 +607,14 @@ func (e *ObjectVal) String() string {
 }
 
 func (e *ObjectVal) minify() {
-	for _, e := range e.Alts {
+	for _, e := range e.Queries {
 		e.minify()
 	}
 }
 
 // Array ...
 type Array struct {
-	Query *Query `"[" @@? "]"`
+	Query *Query
 }
 
 func (e *Array) String() string {
@@ -1100,18 +632,19 @@ func (e *Array) minify() {
 
 // Suffix ...
 type Suffix struct {
-	Index       *Index       `  @@`
-	SuffixIndex *SuffixIndex `| @@`
-	Iter        bool         `| @("[" "]")`
-	Optional    bool         `| @"?"`
+	Index    *Index
+	Iter     bool
+	Optional bool
 }
 
 func (e *Suffix) String() string {
 	var s strings.Builder
 	if e.Index != nil {
-		fmt.Fprint(&s, e.Index)
-	} else if e.SuffixIndex != nil {
-		fmt.Fprint(&s, e.SuffixIndex)
+		if e.Index.Name != "" || e.Index.Str != nil {
+			fmt.Fprint(&s, e.Index)
+		} else {
+			s.WriteString(e.Index.String()[1:])
+		}
 	} else if e.Iter {
 		s.WriteString("[]")
 	} else if e.Optional {
@@ -1123,16 +656,12 @@ func (e *Suffix) String() string {
 func (e *Suffix) minify() {
 	if e.Index != nil {
 		e.Index.minify()
-	} else if e.SuffixIndex != nil {
-		e.SuffixIndex.minify()
 	}
 }
 
 func (e *Suffix) toTerm() (*Term, bool) {
 	if e.Index != nil {
 		return &Term{Index: e.Index}, true
-	} else if e.SuffixIndex != nil {
-		return &Term{Index: e.SuffixIndex.toIndex()}, true
 	} else if e.Iter {
 		return &Term{Identity: true, SuffixList: []*Suffix{{Iter: true}}}, true
 	} else {
@@ -1147,47 +676,19 @@ func (e *Suffix) toIndices() []interface{} {
 	return e.Index.toIndices()
 }
 
-// SuffixIndex ...
-type SuffixIndex struct {
-	Start   *Query `"[" ( @@`
-	IsSlice bool   `( @":"`
-	End     *Query `@@? )? | ":" @@ ) "]"`
-}
-
-func (e *SuffixIndex) String() string {
-	return e.toIndex().String()[1:]
-}
-
-func (e *SuffixIndex) minify() {
-	if e.Start != nil {
-		e.Start.minify()
-	}
-	if e.End != nil {
-		e.End.minify()
-	}
-}
-
-func (e *SuffixIndex) toIndex() *Index {
-	return &Index{
-		Start:   e.Start,
-		IsSlice: e.IsSlice,
-		End:     e.End,
-	}
-}
-
 // If ...
 type If struct {
-	Cond *Query   `"if" @@`
-	Then *Query   `"then" @@`
-	Elif []IfElif `@@*`
-	Else *Query   `("else" @@)? "end"`
+	Cond *Query
+	Then *Query
+	Elif []*IfElif
+	Else *Query
 }
 
 func (e *If) String() string {
 	var s strings.Builder
 	fmt.Fprintf(&s, "if %s then %s", e.Cond, e.Then)
 	for _, e := range e.Elif {
-		fmt.Fprintf(&s, " %s", &e)
+		fmt.Fprintf(&s, " %s", e)
 	}
 	if e.Else != nil {
 		fmt.Fprintf(&s, " else %s", e.Else)
@@ -1209,8 +710,8 @@ func (e *If) minify() {
 
 // IfElif ...
 type IfElif struct {
-	Cond *Query `"elif" @@`
-	Then *Query `"then" @@`
+	Cond *Query
+	Then *Query
 }
 
 func (e *IfElif) String() string {
@@ -1224,8 +725,8 @@ func (e *IfElif) minify() {
 
 // Try ...
 type Try struct {
-	Body  *Query `"try" @@`
-	Catch *Term  `("catch" @@)?`
+	Body  *Query
+	Catch *Term
 }
 
 func (e *Try) String() string {
@@ -1246,10 +747,10 @@ func (e *Try) minify() {
 
 // Reduce ...
 type Reduce struct {
-	Term    *Term    `"reduce" @@`
-	Pattern *Pattern `"as" @@`
-	Start   *Query   `"(" @@`
-	Update  *Query   `";" @@ ")"`
+	Term    *Term
+	Pattern *Pattern
+	Start   *Query
+	Update  *Query
 }
 
 func (e *Reduce) String() string {
@@ -1264,11 +765,11 @@ func (e *Reduce) minify() {
 
 // Foreach ...
 type Foreach struct {
-	Term    *Term    `"foreach" @@`
-	Pattern *Pattern `"as" @@`
-	Start   *Query   `"(" @@`
-	Update  *Query   `";" @@`
-	Extract *Query   `(";" @@)? ")"`
+	Term    *Term
+	Pattern *Pattern
+	Start   *Query
+	Update  *Query
+	Extract *Query
 }
 
 func (e *Foreach) String() string {
@@ -1292,8 +793,8 @@ func (e *Foreach) minify() {
 
 // Label ...
 type Label struct {
-	Ident string `"label" @Variable`
-	Body  *Query `"|" @@`
+	Ident string
+	Body  *Query
 }
 
 func (e *Label) String() string {
@@ -1306,13 +807,13 @@ func (e *Label) minify() {
 
 // ConstTerm ...
 type ConstTerm struct {
-	Object *ConstObject `  @@`
-	Array  *ConstArray  `| @@`
-	Number string       `| @Number`
-	Str    string       `| @String`
-	Null   bool         `| @"null"`
-	True   bool         `| @"true"`
-	False  bool         `| @"false"`
+	Object *ConstObject
+	Array  *ConstArray
+	Number string
+	Str    string
+	Null   bool
+	True   bool
+	False  bool
 }
 
 func (e *ConstTerm) String() string {
@@ -1324,7 +825,7 @@ func (e *ConstTerm) String() string {
 	} else if e.Number != "" {
 		fmt.Fprint(&s, e.Number)
 	} else if e.Str != "" {
-		fmt.Fprint(&s, e.Str)
+		fmt.Fprint(&s, strconv.Quote(e.Str))
 	} else if e.Null {
 		s.WriteString("null")
 	} else if e.True {
@@ -1342,21 +843,20 @@ func (e *ConstTerm) toValue() interface{} {
 		return e.Array.toValue()
 	} else if e.Number != "" {
 		return normalizeNumbers(json.Number(e.Number))
-	} else if e.Str != "" {
-		s, _ := strconv.Unquote(e.Str)
-		return s
+	} else if e.Null {
+		return nil
 	} else if e.True {
 		return true
 	} else if e.False {
 		return false
 	} else {
-		return nil
+		return e.Str
 	}
 }
 
 // ConstObject ...
 type ConstObject struct {
-	KeyVals []ConstObjectKeyVal `"{" (@@ ("," @@)* ","?)? "}"`
+	KeyVals []*ConstObjectKeyVal
 }
 
 func (e *ConstObject) String() string {
@@ -1369,7 +869,7 @@ func (e *ConstObject) String() string {
 		if i > 0 {
 			s.WriteString(", ")
 		}
-		fmt.Fprint(&s, &kv)
+		fmt.Fprint(&s, kv)
 	}
 	s.WriteString(" }")
 	return s.String()
@@ -1384,7 +884,7 @@ func (e *ConstObject) ToValue() map[string]interface{} {
 	for _, e := range e.KeyVals {
 		key := e.Key
 		if key == "" {
-			key, _ = strconv.Unquote(e.KeyString)
+			key = e.KeyString
 		}
 		v[key] = e.Val.toValue()
 	}
@@ -1393,9 +893,9 @@ func (e *ConstObject) ToValue() map[string]interface{} {
 
 // ConstObjectKeyVal ...
 type ConstObjectKeyVal struct {
-	Key       string     `( @Ident | @Keyword`
-	KeyString string     `| @String ) ":"`
-	Val       *ConstTerm `@@`
+	Key       string
+	KeyString string
+	Val       *ConstTerm
 }
 
 func (e *ConstObjectKeyVal) String() string {
@@ -1412,7 +912,7 @@ func (e *ConstObjectKeyVal) String() string {
 
 // ConstArray ...
 type ConstArray struct {
-	Elems []*ConstTerm `"[" (@@ ("," @@)*)? "]"`
+	Elems []*ConstTerm
 }
 
 func (e *ConstArray) String() string {

@@ -9,6 +9,13 @@
   expected: |
     128
 
+- name: comment only query
+  args :
+    - '# comment'
+  input: '128'
+  expected: |
+    128
+
 - name: number
   args:
     - '.'
@@ -22,6 +29,53 @@
   input: '"Hello, world!\n\t\uff06"'
   expected: |
     "Hello, world!\n\t＆"
+
+- name: string query
+  args:
+    - '" Hello, world! \n\t\uff10 "'
+  input: 0
+  expected: |
+    " Hello, world! \n\t０ "
+
+- name: string query error
+  args:
+    - '. + "foo'
+  input: 0
+  error: |
+    invalid query: . + "foo
+        . + "foo
+            ^  invalid token "foo
+  exit_code: 3
+
+- name: string query error
+  args:
+    - '"foo\,bar"'
+  input: 0
+  error: |
+    invalid query: "foo\,bar"
+        "foo\,bar"
+            ^  invalid token "\,"
+  exit_code: 3
+
+- name: string query error
+  args:
+    - '"\u "'
+  input: 0
+  error: |
+    invalid query: "\u "
+        "\u "
+        ^  invalid token "\u "
+  exit_code: 3
+
+- name: string query error
+  args:
+    - '"\(1) \x "'
+  input: 0
+  error: |
+    invalid query: "\(1) \x "
+        "\(1) \x "
+             ^  invalid token " \x "
+  exit_code: 3
 
 - name: object
   input: '{"foo": 128}'
@@ -500,6 +554,18 @@
     {
       "bar": 2,
       "foo": 1
+    }
+
+- name: object construction with keyword
+  args:
+    - '{as, and, null, module}'
+  input: '{"and": 1, "as": 2, "module": 3, "null": 4}'
+  expected: |
+    {
+      "and": 1,
+      "as": 2,
+      "module": 3,
+      "null": 4
     }
 
 - name: object construction pipe in value
@@ -1086,15 +1152,17 @@
 - name: tonumber function
   args:
     - 'map(tonumber)'
-  input: '["0", "12345", "-43210", "+42", "05", "1e-2", 3.14]'
+  input: '["0", "12345", "-43210", "+4.2", "05", "9.", "1e-2", "2.e-2", 3.14]'
   expected: |
     [
       0,
       12345,
       -43210,
-      42,
+      4.2,
       5,
+      9,
       0.01,
+      0.02,
       3.14
     ]
 
@@ -2219,7 +2287,7 @@
   error: |
     invalid query: label foo | .
         label foo | .
-              ^  unexpected token "foo" (expected <variable>)
+              ^  unexpected token "foo"
   exit_code: 3
 
 - name: label not defined error for break syntax
@@ -2236,7 +2304,7 @@
   error: |
     invalid query: label $x | break x
         label $x | break x
-                         ^  unexpected token "x" (expected <variable>)
+                         ^  unexpected token "x"
   exit_code: 3
 
 - name: string interpolation
@@ -2258,10 +2326,18 @@
 - name: string interpolation nested
   args:
     - -c
-    - '"\("(") \("x" + "\(1 + 2)") \(")")"'
+    - '" \("(") \("x" + "\(1 + 2)") \("\\") \("\("\\")") \(")") "'
   input: '0'
   expected: |
-    "( x3 )"
+    " ( x3 \\ \\ ) "
+
+- name: string interpolation nested deeply
+  args:
+    - -c
+    - '"\("\("\("\("\("\("\("\("\("\("\("\("\("\("\("\("\("\("\("\("\("\("\("\(1+2)")")")")")")")")")")")")")")")")")")")")")")")"'
+  input: '0'
+  expected: |
+    "3"
 
 - name: string interpolation multiple lines
   args:
@@ -2289,9 +2365,9 @@
     - '"\(1 +)"'
   input: '0'
   error: |
-    invalid query in string interpolation: 1 +
-        1 +
-           ^  unexpected token "<EOF>"
+    invalid query: "\(1 +)"
+        "\(1 +)"
+              ^  unexpected token ")"
   exit_code: 3
 
 - name: tojson function
@@ -2362,7 +2438,7 @@
   error: |
     invalid query: .foo as foo | {$bar}
         .foo as foo | {$bar}
-                ^  unexpected token "foo" (expected <variable> | "[" | "{")
+                ^  unexpected token "foo"
   exit_code: 3
 
 - name: variable name not found error
@@ -2515,7 +2591,7 @@
 
 - name: binding variable scope in object
   args:
-    - '. as $x | {bar: .foo as $x | $x} | $x'
+    - '. as $x | {bar: (.foo as $x | $x)} | $x'
   input: '{"foo": "bar"}'
   expected: |
     {
@@ -2584,7 +2660,7 @@
 
 - name: binding variable scope error in object
   args:
-    - '{x: . as $i | $i} | $i'
+    - '{x: (. as $i | $i)} | $i'
   input: 0
   error: |
     variable not defined: $i
@@ -3421,6 +3497,16 @@
     {"foo":1}
     {"foo":2}
 
+- name: update operators does not associate
+  args:
+    - '. += 1 -= 2'
+  input: '1'
+  error: |
+    invalid query: . += 1 -= 2
+        . += 1 -= 2
+               ^  unexpected token "-="
+  exit_code: 3
+
 - name: error/0 function
   args:
     - '.foo[] | error'
@@ -4209,11 +4295,11 @@
 
 - name: format strings @html with string interpolation
   args:
-    - '@html "x\(.)x\(.+.)x"'
+    - '@html "x\(.)x\(.+.)x\("<>")x"'
   input: |
     ["<>"]
   expected: |
-    "x[&quot;&lt;&gt;&quot;]x[&quot;&lt;&gt;&quot;,&quot;&lt;&gt;&quot;]x"
+    "x[&quot;&lt;&gt;&quot;]x[&quot;&lt;&gt;&quot;,&quot;&lt;&gt;&quot;]x&lt;&gt;x"
 
 - name: format strings @uri
   args:
@@ -4966,7 +5052,7 @@
   error: |
     invalid query: .abc[
         .abc[
-             ^  unexpected token "<EOF>" (expected "]")
+             ^  unexpected token <EOF>
   exit_code: 3
 
 - name: invalid query
@@ -4976,7 +5062,7 @@
   error: |
     invalid query: [ .[] | { .id } ]
         [ .[] | { .id } ]
-              ^  unexpected token "|" (expected "]")
+                  ^  unexpected token ".id"
   exit_code: 3
 
 - name: invalid query
@@ -4986,7 +5072,37 @@
   error: |
     invalid query: if 0then. else. end
         if 0then. else. end
-           ^  invalid token '0'
+           ^  invalid token "0t"
+  exit_code: 3
+
+- name: invalid query
+  args:
+    - '.foo & .bar'
+  input: '{}'
+  error: |
+    invalid query: .foo & .bar
+        .foo & .bar
+             ^  unexpected token "&"
+  exit_code: 3
+
+- name: invalid query
+  args:
+    - 'foo☆'
+  input: '{}'
+  error: |
+    invalid query: foo☆
+        foo☆
+           ^  unexpected token "☆"
+  exit_code: 3
+
+- name: invalid query
+  args:
+    - "{\n[]}"
+  input: '{}'
+  error: |
+    invalid query: <arg>:2
+        2 | []}
+            ^  unexpected token "["
   exit_code: 3
 
 - name: invalid multiple line query
@@ -5000,7 +5116,17 @@
   error: |
     invalid query: <arg>:3
         3 |   | { id } }
-                       ^  unexpected token "}" (expected "]")
+                       ^  unexpected token "}"
+  exit_code: 3
+
+- name: invalid multiple line query in dos format newline
+  args:
+    - -f
+    - testdata/10.jq
+  error: |
+    invalid query: testdata/10.jq:3
+        3 | bar ]
+                ^  unexpected token "]"
   exit_code: 3
 
 - name: invalid query in file
@@ -5010,7 +5136,7 @@
   error: |
     invalid query: testdata/2.jq:3
         3 |   bar, []
-                   ^  unexpected token "[" (expected "}")
+                   ^  unexpected token "["
   exit_code: 3
 
 - name: query file not found
@@ -5258,7 +5384,7 @@
   error: |
     invalid query in module: testdata/7.jq:1
         1 | def f: 1 +
-                     ^  unexpected token "+" (expected ";")
+                      ^  unexpected token <EOF>
   exit_code: 3
 
 - name: module directive
@@ -5270,6 +5396,13 @@
   input: 3
   expected: |
     6
+
+- name: module in query
+  args:
+    - -n
+    - 'module {}; .'
+  expected: |
+    null
 
 - name: modulemeta function
   args:
