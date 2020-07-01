@@ -28,7 +28,7 @@ func Parse(src string) (*Query, error) {
 %token<token> tokNull tokTrue tokFalse
 %token<token> tokIdent tokVariable tokModuleIdent tokModuleVariable
 %token<token> tokIndex tokNumber tokFormat tokInvalid
-%token<token> tokString tokStringStart tokStringQueryStart tokStringQueryEnd tokStringEnd
+%token<token> tokString tokStringStart tokStringQuery tokStringEnd
 %token<token> tokIf tokThen tokElif tokElse tokEnd
 %token<token> tokTry tokCatch tokReduce tokForeach
 %token tokRecurse tokFuncDefPost tokTermPost tokEmptyCatch
@@ -422,8 +422,9 @@ stringparts
     {
         $$ = append($1.([]*Query), &Query{Term: &Term{Str: &String{Str: "\"" + $2 + "\""}}})
     }
-    | stringparts tokStringQueryStart query tokStringQueryEnd
+    | stringparts tokStringQuery query ')'
     {
+        yylex.(*lexer).inString = true
         $$ = append($1.([]*Query), &Query{Term: &Term{Query: $3.(*Query)}})
     }
 

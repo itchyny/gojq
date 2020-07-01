@@ -13,12 +13,11 @@ type lexer struct {
 	token     string
 	tokenType int
 	inString  bool
-	parens    []int
 	err       error
 }
 
 func newLexer(src string) *lexer {
-	return &lexer{source: []byte(src), parens: []int{0}}
+	return &lexer{source: []byte(src)}
 }
 
 const eof = -1
@@ -239,18 +238,6 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 			lval.token = l.token
 			return tok
 		}
-	case '(':
-		l.parens[len(l.parens)-1]++
-	case ')':
-		if len(l.parens) > 1 && l.parens[len(l.parens)-1] == 0 {
-			l.parens = l.parens[:len(l.parens)-1]
-			l.token = ")"
-			l.inString = true
-			return tokStringQueryEnd
-		}
-		if l.parens[len(l.parens)-1] > 0 {
-			l.parens[len(l.parens)-1]--
-		}
 	default:
 		if ch >= utf8.RuneSelf {
 			r, _ := utf8.DecodeRune(l.source[l.offset-1:])
@@ -404,8 +391,7 @@ func (l *lexer) scanString() (int, bool) {
 					}
 					l.offset = i + 1
 					l.inString = false
-					l.parens = append(l.parens, 0)
-					return tokStringQueryStart, true
+					return tokStringQuery, true
 				}
 				l.inString = true
 				return tokStringStart, true
