@@ -60,7 +60,11 @@ func (e *Query) String() string {
 			fmt.Fprint(&s, e.Bind)
 		}
 	} else if e.Right != nil {
-		fmt.Fprintf(&s, "%s %s %s", e.Left, e.Op, e.Right)
+		if e.Op == OpComma {
+			fmt.Fprintf(&s, "%s, %s", e.Left, e.Right)
+		} else {
+			fmt.Fprintf(&s, "%s %s %s", e.Left, e.Op, e.Right)
+		}
 	}
 	return s.String()
 }
@@ -167,7 +171,7 @@ func (e *Bind) String() string {
 			fmt.Fprintf(&s, "?// %s ", p)
 		}
 	}
-	fmt.Fprintf(&s, "| %s ", e.Body)
+	fmt.Fprintf(&s, "| %s", e.Body)
 	return s.String()
 }
 
@@ -504,7 +508,7 @@ func (e *String) String() string {
 	s.WriteRune('"')
 	for _, e := range e.Queries {
 		if e.Term.Str == nil {
-			fmt.Fprintf(&s, "\\(%s)", e)
+			fmt.Fprintf(&s, "\\%s", e)
 		} else {
 			es := e.String()
 			fmt.Fprint(&s, es[1:len(es)-1])
@@ -636,7 +640,11 @@ type Suffix struct {
 func (e *Suffix) String() string {
 	var s strings.Builder
 	if e.Index != nil {
-		fmt.Fprint(&s, e.Index)
+		if e.Index.Name != "" || e.Index.Str != nil {
+			fmt.Fprint(&s, e.Index)
+		} else {
+			s.WriteString(e.Index.String()[1:])
+		}
 	} else if e.Iter {
 		s.WriteString("[]")
 	} else if e.Optional {
