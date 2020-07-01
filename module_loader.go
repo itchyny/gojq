@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strconv"
 )
 
 type moduleLoader struct {
@@ -127,7 +126,7 @@ func parseModule(path, cnt string) (*Query, error) {
 			i.Meta.KeyVals,
 			&ConstObjectKeyVal{
 				Key: "$$path",
-				Val: &ConstTerm{Str: strconv.Quote(path)},
+				Val: &ConstTerm{Str: path},
 			},
 		)
 	}

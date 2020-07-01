@@ -112,13 +112,9 @@ type Import struct {
 func (e *Import) String() string {
 	var s strings.Builder
 	if e.ImportPath != "" {
-		s.WriteString("import ")
-		s.WriteString(e.ImportPath)
-		s.WriteString(" as ")
-		s.WriteString(e.ImportAlias)
+		fmt.Fprintf(&s, "import %q as %s", e.ImportPath, e.ImportAlias)
 	} else {
-		s.WriteString("include ")
-		s.WriteString(e.IncludePath)
+		fmt.Fprintf(&s, "include %q", e.IncludePath)
 	}
 	if e.Meta != nil {
 		fmt.Fprintf(&s, " %s", e.Meta)
@@ -194,7 +190,6 @@ type Term struct {
 	Unary      *Unary
 	Format     string
 	Str        *String
-	RawStr     string
 	If         *If
 	Try        *Try
 	Reduce     *Reduce
@@ -237,8 +232,6 @@ func (e *Term) String() string {
 		}
 	} else if e.Str != nil {
 		fmt.Fprint(&s, e.Str)
-	} else if e.RawStr != "" {
-		fmt.Fprint(&s, strconv.Quote(e.RawStr))
 	} else if e.If != nil {
 		fmt.Fprint(&s, e.If)
 	} else if e.Try != nil {
@@ -272,13 +265,7 @@ func (e *Term) minify() {
 	} else if e.Unary != nil {
 		e.Unary.minify()
 	} else if e.Str != nil {
-		if e.Format == "" && e.Str.Str != "" {
-			if str, _ := strconv.Unquote(e.Str.Str); str != "" {
-				e.RawStr, e.Str = str, nil
-			}
-		} else {
-			e.Str.minify()
-		}
+		e.Str.minify()
 	} else if e.If != nil {
 		e.If.minify()
 	} else if e.Try != nil {
@@ -510,8 +497,8 @@ type String struct {
 }
 
 func (e *String) String() string {
-	if e.Str != "" {
-		return e.Str
+	if e.Queries == nil {
+		return strconv.Quote(e.Str)
 	}
 	var s strings.Builder
 	s.WriteRune('"')
@@ -830,7 +817,7 @@ func (e *ConstTerm) String() string {
 	} else if e.Number != "" {
 		fmt.Fprint(&s, e.Number)
 	} else if e.Str != "" {
-		fmt.Fprint(&s, e.Str)
+		fmt.Fprint(&s, strconv.Quote(e.Str))
 	} else if e.Null {
 		s.WriteString("null")
 	} else if e.True {
@@ -848,15 +835,14 @@ func (e *ConstTerm) toValue() interface{} {
 		return e.Array.toValue()
 	} else if e.Number != "" {
 		return normalizeNumbers(json.Number(e.Number))
-	} else if e.Str != "" {
-		s, _ := strconv.Unquote(e.Str)
-		return s
+	} else if e.Null {
+		return nil
 	} else if e.True {
 		return true
 	} else if e.False {
 		return false
 	} else {
-		return nil
+		return e.Str
 	}
 }
 
@@ -890,7 +876,7 @@ func (e *ConstObject) ToValue() map[string]interface{} {
 	for _, e := range e.KeyVals {
 		key := e.Key
 		if key == "" {
-			key, _ = strconv.Unquote(e.KeyString)
+			key = e.KeyString
 		}
 		v[key] = e.Val.toValue()
 	}

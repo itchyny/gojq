@@ -30,6 +30,53 @@
   expected: |
     "Hello, world!\n\t＆"
 
+- name: string query
+  args:
+    - '" Hello, world! \n\t\uff10 "'
+  input: 0
+  expected: |
+    " Hello, world! \n\t０ "
+
+- name: string query error
+  args:
+    - '. + "foo'
+  input: 0
+  error: |
+    invalid query: . + "foo
+        . + "foo
+            ^  invalid token "foo
+  exit_code: 3
+
+- name: string query error
+  args:
+    - '"foo\,bar"'
+  input: 0
+  error: |
+    invalid query: "foo\,bar"
+        "foo\,bar"
+            ^  invalid token "\,"
+  exit_code: 3
+
+- name: string query error
+  args:
+    - '"\u "'
+  input: 0
+  error: |
+    invalid query: "\u "
+        "\u "
+        ^  invalid token "\u "
+  exit_code: 3
+
+- name: string query error
+  args:
+    - '"\(1) \x "'
+  input: 0
+  error: |
+    invalid query: "\(1) \x "
+        "\(1) \x "
+             ^  invalid token " \x "
+  exit_code: 3
+
 - name: object
   input: '{"foo": 128}'
   expected: |

@@ -3,6 +3,7 @@ package gojq
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -53,12 +54,9 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 		return eof
 	}
 	if l.inString {
-		i := l.offset
-		if tok, _ := l.scanString(); tok > 0 {
-			l.token = string(l.source[i:l.offset])
-			lval.token = l.token
-			return tok
-		}
+		tok, str := l.scanString(l.offset)
+		lval.token = str
+		return tok
 	}
 	ch, iseof := l.next()
 	if iseof {
@@ -232,12 +230,9 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 			return tokFormat
 		}
 	case '"':
-		i := l.offset - 1
-		if tok, ok := l.scanString(); ok {
-			l.token = string(l.source[i:l.offset])
-			lval.token = l.token
-			return tok
-		}
+		tok, str := l.scanString(l.offset - 1)
+		lval.token = str
+		return tok
 	default:
 		if ch >= utf8.RuneSelf {
 			r, _ := utf8.DecodeRune(l.source[l.offset-1:])
@@ -360,7 +355,7 @@ func (l *lexer) scanNumber(state int) int {
 	}
 }
 
-func (l *lexer) scanString() (int, bool) {
+func (l *lexer) scanString(start int) (int, string) {
 	var quote bool
 	for i, m := l.offset, len(l.source); i < m; i++ {
 		ch := l.source[i]
@@ -371,15 +366,25 @@ func (l *lexer) scanString() (int, bool) {
 			if !quote {
 				if !l.inString {
 					l.offset = i + 1
-					return tokString, true
+					l.token = string(l.source[start:l.offset])
+					str, err := strconv.Unquote(l.token)
+					if err != nil {
+						return tokInvalid, ""
+					}
+					return tokString, str
 				}
 				if i > l.offset {
 					l.offset = i
-					return tokString, true
+					l.token = string(l.source[start:l.offset])
+					str, err := strconv.Unquote("\"" + l.token + "\"")
+					if err != nil {
+						return tokInvalid, ""
+					}
+					return tokString, str
 				}
 				l.inString = false
 				l.offset = i + 1
-				return tokStringEnd, true
+				return tokStringEnd, ""
 			}
 			quote = false
 		case '(':
@@ -387,26 +392,35 @@ func (l *lexer) scanString() (int, bool) {
 				if l.inString {
 					if i > l.offset+1 {
 						l.offset = i - 1
-						return tokString, true
+						l.token = string(l.source[start:l.offset])
+						str, err := strconv.Unquote("\"" + l.token + "\"")
+						if err != nil {
+							return tokInvalid, ""
+						}
+						return tokString, str
 					}
 					l.offset = i + 1
 					l.inString = false
-					return tokStringQuery, true
+					return tokStringQuery, ""
 				}
 				l.inString = true
-				return tokStringStart, true
+				return tokStringStart, ""
 			}
 		default:
 			if quote {
 				if !('a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' ||
 					'0' <= ch && ch <= '9' || ch == '\'' || ch == '"') {
-					return eof, false
+					l.offset = i + 1
+					l.token = string(l.source[l.offset-2 : l.offset])
+					return tokInvalid, ""
 				}
 				quote = false
 			}
 		}
 	}
-	return eof, false
+	l.offset = len(l.source)
+	l.token = string(l.source[start:l.offset])
+	return tokInvalid, ""
 }
 
 type parseError struct {
@@ -425,7 +439,11 @@ func (err *parseError) Error() string {
 		prefix = "invalid"
 		fallthrough
 	case err.tokenType >= utf8.RuneSelf:
-		message = strconv.Quote(err.token)
+		if strings.HasPrefix(err.token, "\"") {
+			message = err.token
+		} else {
+			message = "\"" + err.token + "\""
+		}
 	default:
 		message = strconv.Quote(string(err.tokenType))
 	}

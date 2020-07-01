@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 )
 
@@ -147,17 +146,14 @@ func (c *compiler) compile(q *Query) (*Code, error) {
 
 func (c *compiler) compileImport(i *Import) error {
 	var path, alias string
+	var err error
 	if i.ImportPath != "" {
 		path, alias = i.ImportPath, i.ImportAlias
 	} else {
 		path = i.IncludePath
 	}
 	if c.moduleLoader == nil {
-		return fmt.Errorf("cannot load module: %s", path)
-	}
-	path, err := strconv.Unquote(path)
-	if err != nil {
-		return err
+		return fmt.Errorf("cannot load module: %q", path)
 	}
 	if strings.HasPrefix(alias, "$") {
 		var vals interface{}
@@ -794,9 +790,6 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 		return c.compileFormat(e.Format, e.Str)
 	} else if e.Str != nil {
 		return c.compileString(e.Str, nil)
-	} else if e.RawStr != "" {
-		c.append(&code{op: opconst, v: e.RawStr})
-		return nil
 	} else if e.If != nil {
 		return c.compileIf(e.If)
 	} else if e.Try != nil {
@@ -821,7 +814,7 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 func (c *compiler) compileIndex(e *Term, x *Index) error {
 	c.appendCodeInfo(x)
 	if x.Name != "" {
-		return c.compileCall("_index", []*Query{&Query{Term: e}, &Query{Term: &Term{RawStr: x.Name}}})
+		return c.compileCall("_index", []*Query{&Query{Term: e}, &Query{Term: &Term{Str: &String{Str: x.Name}}}})
 	}
 	if x.Str != nil {
 		return c.compileCall("_index", []*Query{&Query{Term: e}, &Query{Term: &Term{Str: x.Str}}})
@@ -979,9 +972,9 @@ func (c *compiler) funcModulemeta(v interface{}, _ []interface{}) interface{} {
 			}
 		}
 		if i.ImportPath == "" {
-			v["relpath"], err = strconv.Unquote(i.IncludePath)
+			v["relpath"] = i.IncludePath
 		} else {
-			v["relpath"], err = strconv.Unquote(i.ImportPath)
+			v["relpath"] = i.ImportPath
 		}
 		if err != nil {
 			return err
@@ -1188,12 +1181,8 @@ func formatToFunc(fmt string) *Func {
 }
 
 func (c *compiler) compileString(s *String, f *Func) error {
-	if s.Str != "" {
-		str, err := strconv.Unquote(s.Str)
-		if err != nil {
-			return fmt.Errorf("%s: %s", s.Str, err)
-		}
-		c.append(&code{op: opconst, v: str})
+	if s.Queries == nil {
+		c.append(&code{op: opconst, v: s.Str})
 		return nil
 	}
 	if f == nil {

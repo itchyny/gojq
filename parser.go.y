@@ -420,7 +420,7 @@ stringparts
     }
     | stringparts tokString
     {
-        $$ = append($1.([]*Query), &Query{Term: &Term{Str: &String{Str: "\"" + $2 + "\""}}})
+        $$ = append($1.([]*Query), &Query{Term: &Term{Str: &String{Str: $2}}})
     }
     | stringparts tokStringQuery query ')'
     {
