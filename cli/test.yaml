@@ -5428,6 +5428,51 @@
   error: |
     module not found: "3"
 
+- name: eval function
+  args:
+    - -c
+    - 'eval(".x[]")'
+  input: '{"x": [1,2,3]}'
+  expected: |
+    1
+    2
+    3
+
+- name: eval function
+  args:
+    - -c
+    - 'eval([".", "..", ".x", ".x[]"][] | [tojson, .][])'
+  input: '{"x": [1,2,3]}'
+  expected: |
+    "."
+    {"x":[1,2,3]}
+    ".."
+    {"x":[1,2,3]}
+    [1,2,3]
+    1
+    2
+    3
+    ".x"
+    [1,2,3]
+    ".x[]"
+    1
+    2
+    3
+
+- name: eval function error
+  args:
+    - 'eval(.x)'
+  input: '{"x": 1}'
+  error: |
+    eval cannot be applied to: number (1)
+
+- name: eval function error
+  args:
+    - 'eval(".x | error")'
+  input: '{"x": 1}'
+  error: |
+    error: 1
+
 - name: arg option
   args:
     - --arg

@@ -31,6 +31,7 @@ const (
 	opscope
 	opret
 	opeach
+	opeval
 	opexpbegin
 	opexpend
 	oppathbegin
@@ -86,6 +87,8 @@ func (op opcode) String() string {
 		return "ret"
 	case opeach:
 		return "each"
+	case opeval:
+		return "eval"
 	case opexpbegin:
 		return "expbegin"
 	case opexpend:

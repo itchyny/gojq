@@ -920,6 +920,12 @@ func (c *compiler) compileFunc(e *Func) error {
 				nil,
 				false,
 			)
+		case "eval":
+			if err := c.compileCallInternal(nil, e.Args, nil, false); err != nil {
+				return err
+			}
+			c.codes[len(c.codes)-1] = &code{op: opeval}
+			return nil
 		default:
 			return c.compileCall(e.Name, e.Args)
 		}

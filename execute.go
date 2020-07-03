@@ -257,6 +257,40 @@ loop:
 					env.paths.push(xs[0])
 				}
 			}
+		case opeval:
+			if err != nil {
+				break loop
+			}
+			if backtrack {
+				backtrack = false
+				iter := env.pop().(Iter)
+				w, ok := iter.Next()
+				if !ok {
+					break loop
+				}
+				if er, ok := w.(error); ok {
+					err = er
+					break loop
+				}
+				env.push(iter)
+				env.pushfork(code.op, pc)
+				env.push(w)
+			} else {
+				x, arg := env.pop(), env.pop()
+				v, ok := arg.(string)
+				if !ok {
+					err = &funcTypeError{"eval", arg}
+					break loop
+				}
+				query, er := Parse(v)
+				if er != nil {
+					err = er
+					break loop
+				}
+				env.push(query.RunWithContext(env.ctx, x))
+				env.pushfork(code.op, pc)
+				break loop
+			}
 		case opexpbegin:
 			env.expdepth++
 		case opexpend:
