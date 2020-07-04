@@ -92,6 +92,10 @@ func printCompositeLit(out io.Writer, t *ast.CompositeLit) error {
 			r := regexp.MustCompile(fmt.Sprintf(`\b((?:Update)?Op): %d\b`, op))
 			str = r.ReplaceAllString(str, fmt.Sprintf("$1: %#v", op))
 		}
+		for termType := gojq.TermTypeIdentity; termType <= gojq.TermTypeQuery; termType++ {
+			r := regexp.MustCompile(fmt.Sprintf(`(Term{Type): %d\b`, termType))
+			str = r.ReplaceAllString(str, fmt.Sprintf("$1: %#v", termType))
+		}
 		out.Write([]byte(str))
 		out.Write([]byte(","))
 	}

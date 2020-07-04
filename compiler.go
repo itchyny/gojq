@@ -347,15 +347,15 @@ func (c *compiler) compileQuery(e *Query) error {
 	if e.Func != "" {
 		switch e.Func {
 		case ".":
-			return c.compileTerm(&Term{Identity: true})
+			return c.compileTerm(&Term{Type: TermTypeIdentity})
 		case "..":
-			return c.compileTerm(&Term{Recurse: true})
+			return c.compileTerm(&Term{Type: TermTypeRecurse})
 		case "null":
-			return c.compileTerm(&Term{Null: true})
+			return c.compileTerm(&Term{Type: TermTypeNull})
 		case "true":
-			return c.compileTerm(&Term{True: true})
+			return c.compileTerm(&Term{Type: TermTypeTrue})
 		case "false":
-			return c.compileTerm(&Term{False: true})
+			return c.compileTerm(&Term{Type: TermTypeFalse})
 		default:
 			return c.compileFunc(&Func{Name: e.Func})
 		}
@@ -387,11 +387,11 @@ func (c *compiler) compileQuery(e *Query) error {
 		return c.compileIf(
 			&If{
 				Cond: e.Left,
-				Then: &Query{Term: &Term{True: true}},
-				Else: &Query{Term: &Term{If: &If{
+				Then: &Query{Term: &Term{Type: TermTypeTrue}},
+				Else: &Query{Term: &Term{Type: TermTypeIf, If: &If{
 					Cond: e.Right,
-					Then: &Query{Term: &Term{True: true}},
-					Else: &Query{Term: &Term{False: true}},
+					Then: &Query{Term: &Term{Type: TermTypeTrue}},
+					Else: &Query{Term: &Term{Type: TermTypeFalse}},
 				}}},
 			},
 		)
@@ -399,12 +399,12 @@ func (c *compiler) compileQuery(e *Query) error {
 		return c.compileIf(
 			&If{
 				Cond: e.Left,
-				Then: &Query{Term: &Term{If: &If{
+				Then: &Query{Term: &Term{Type: TermTypeIf, If: &If{
 					Cond: e.Right,
-					Then: &Query{Term: &Term{True: true}},
-					Else: &Query{Term: &Term{False: true}},
+					Then: &Query{Term: &Term{Type: TermTypeTrue}},
+					Else: &Query{Term: &Term{Type: TermTypeFalse}},
 				}}},
-				Else: &Query{Term: &Term{False: true}},
+				Else: &Query{Term: &Term{Type: TermTypeFalse}},
 			},
 		)
 	default:
@@ -493,10 +493,10 @@ func (c *compiler) compileQueryUpdate(l, r *Query, op Operator) (err error) {
 				Name: "_modify",
 				Args: []*Query{
 					l,
-					&Query{Term: &Term{Func: &Func{
+					&Query{Term: &Term{Type: TermTypeFunc, Func: &Func{
 						Name: op.getFunc(),
 						Args: []*Query{
-							&Query{Term: &Term{Identity: true}},
+							&Query{Term: &Term{Type: TermTypeIdentity}},
 							&Query{Func: name}},
 					},
 					}},
@@ -756,57 +756,59 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 		(&t).SuffixList = t.SuffixList[:len(e.SuffixList)-1]
 		return c.compileTermSuffix(&t, s)
 	}
-	if e.Index != nil {
-		return c.compileIndex(&Term{Identity: true}, e.Index)
-	} else if e.Identity {
+	switch e.Type {
+	case TermTypeIdentity:
 		return nil
-	} else if e.Recurse {
+	case TermTypeRecurse:
 		return c.compileFunc(&Func{Name: "recurse"})
-	} else if e.Null {
+	case TermTypeNull:
 		c.append(&code{op: opconst, v: nil})
 		return nil
-	} else if e.True {
+	case TermTypeTrue:
 		c.append(&code{op: opconst, v: true})
 		return nil
-	} else if e.False {
+	case TermTypeFalse:
 		c.append(&code{op: opconst, v: false})
 		return nil
-	} else if e.Func != nil {
+	case TermTypeIndex:
+		return c.compileIndex(&Term{Type: TermTypeIdentity}, e.Index)
+	case TermTypeFunc:
 		return c.compileFunc(e.Func)
-	} else if e.Object != nil {
+	case TermTypeObject:
 		return c.compileObject(e.Object)
-	} else if e.Array != nil {
+	case TermTypeArray:
 		return c.compileArray(e.Array)
-	} else if e.Number != "" {
+	case TermTypeNumber:
 		v := normalizeNumbers(json.Number(e.Number))
 		if err, ok := v.(error); ok {
 			return err
 		}
 		c.append(&code{op: opconst, v: v})
 		return nil
-	} else if e.Unary != nil {
+	case TermTypeUnary:
 		return c.compileUnary(e.Unary)
-	} else if e.Format != "" {
+	case TermTypeFormat:
 		return c.compileFormat(e.Format, e.Str)
-	} else if e.Str != nil {
+	case TermTypeString:
 		return c.compileString(e.Str, nil)
-	} else if e.If != nil {
+	case TermTypeIf:
 		return c.compileIf(e.If)
-	} else if e.Try != nil {
+	case TermTypeTry:
 		return c.compileTry(e.Try)
-	} else if e.Reduce != nil {
+	case TermTypeReduce:
 		return c.compileReduce(e.Reduce)
-	} else if e.Foreach != nil {
+	case TermTypeForeach:
 		return c.compileForeach(e.Foreach)
-	} else if e.Label != nil {
+	case TermTypeLabel:
 		return c.compileLabel(e.Label)
-	} else if e.Break != "" {
+	case TermTypeBreak:
 		c.append(&code{op: opconst, v: e.Break})
 		return c.compileCall("_break", nil)
-	} else if e.Query != nil {
+	case TermTypeQuery:
+		e.Query.minify()
 		defer c.newScopeDepth()()
 		return c.compileQuery(e.Query)
-	} else {
+	default:
 		return fmt.Errorf("invalid term: %s", e)
 	}
 }
@@ -814,21 +816,21 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 func (c *compiler) compileIndex(e *Term, x *Index) error {
 	c.appendCodeInfo(x)
 	if x.Name != "" {
-		return c.compileCall("_index", []*Query{&Query{Term: e}, &Query{Term: &Term{Str: &String{Str: x.Name}}}})
+		return c.compileCall("_index", []*Query{&Query{Term: e}, &Query{Term: &Term{Type: TermTypeString, Str: &String{Str: x.Name}}}})
 	}
 	if x.Str != nil {
-		return c.compileCall("_index", []*Query{&Query{Term: e}, &Query{Term: &Term{Str: x.Str}}})
+		return c.compileCall("_index", []*Query{&Query{Term: e}, &Query{Term: &Term{Type: TermTypeString, Str: x.Str}}})
 	}
 	if x.Start != nil {
 		if x.IsSlice {
 			if x.End != nil {
 				return c.compileCall("_slice", []*Query{&Query{Term: e}, x.End, x.Start})
 			}
-			return c.compileCall("_slice", []*Query{&Query{Term: e}, &Query{Term: &Term{Null: true}}, x.Start})
+			return c.compileCall("_slice", []*Query{&Query{Term: e}, &Query{Term: &Term{Type: TermTypeNull}}, x.Start})
 		}
 		return c.compileCall("_index", []*Query{&Query{Term: e}, x.Start})
 	}
-	return c.compileCall("_slice", []*Query{&Query{Term: e}, x.End, &Query{Term: &Term{Null: true}}})
+	return c.compileCall("_slice", []*Query{&Query{Term: e}, x.End, &Query{Term: &Term{Type: TermTypeNull}}})
 }
 
 func (c *compiler) compileFunc(e *Func) error {
@@ -1035,7 +1037,7 @@ func (c *compiler) compileObjectKeyVal(v [2]int, kv *ObjectKeyVal) error {
 		}
 		c.append(&code{op: oppush, v: kv.KeyOnly})
 		c.append(&code{op: opload, v: v})
-		return c.compileIndex(&Term{Identity: true}, &Index{Name: kv.KeyOnly})
+		return c.compileIndex(&Term{Type: TermTypeIdentity}, &Index{Name: kv.KeyOnly})
 	} else if kv.KeyOnlyString != nil {
 		c.append(&code{op: opload, v: v})
 		if err := c.compileString(kv.KeyOnlyString, nil); err != nil {
@@ -1190,12 +1192,12 @@ func (c *compiler) compileString(s *String, f *Func) error {
 	}
 	e := s.Queries[0]
 	if e.Term.Str == nil {
-		e = &Query{Left: e, Op: OpPipe, Right: &Query{Term: &Term{Func: f}}}
+		e = &Query{Left: e, Op: OpPipe, Right: &Query{Term: &Term{Type: TermTypeFunc, Func: f}}}
 	}
 	for i := 1; i < len(s.Queries); i++ {
 		x := s.Queries[i]
 		if x.Term.Str == nil {
-			x = &Query{Left: x, Op: OpPipe, Right: &Query{Term: &Term{Func: f}}}
+			x = &Query{Left: x, Op: OpPipe, Right: &Query{Term: &Term{Type: TermTypeFunc, Func: f}}}
 		}
 		e = &Query{Left: e, Op: OpAdd, Right: x}
 	}

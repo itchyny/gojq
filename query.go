@@ -181,12 +181,8 @@ func (e *Bind) minify() {
 
 // Term ...
 type Term struct {
+	Type       TermType
 	Index      *Index
-	Identity   bool
-	Recurse    bool
-	Null       bool
-	True       bool
-	False      bool
 	Func       *Func
 	Object     *Object
 	Array      *Array
@@ -206,49 +202,50 @@ type Term struct {
 
 func (e *Term) String() string {
 	var s strings.Builder
-	if e.Index != nil {
-		fmt.Fprint(&s, e.Index)
-	} else if e.Identity {
+	switch e.Type {
+	case TermTypeIdentity:
 		s.WriteString(".")
-	} else if e.Recurse {
+	case TermTypeRecurse:
 		s.WriteString("..")
-	} else if e.Null {
+	case TermTypeNull:
 		s.WriteString("null")
-	} else if e.True {
+	case TermTypeTrue:
 		s.WriteString("true")
-	} else if e.False {
+	case TermTypeFalse:
 		s.WriteString("false")
-	} else if e.Func != nil {
+	case TermTypeIndex:
+		fmt.Fprint(&s, e.Index)
+	case TermTypeFunc:
 		fmt.Fprint(&s, e.Func)
-	} else if e.Object != nil {
+	case TermTypeObject:
 		fmt.Fprint(&s, e.Object)
-	} else if e.Array != nil {
+	case TermTypeArray:
 		fmt.Fprint(&s, e.Array)
-	} else if e.Number != "" {
+	case TermTypeNumber:
 		fmt.Fprint(&s, e.Number)
-	} else if e.Unary != nil {
+	case TermTypeUnary:
 		fmt.Fprint(&s, e.Unary)
-	} else if e.Format != "" {
+	case TermTypeFormat:
 		if e.Str == nil {
 			s.WriteString(e.Format)
 		} else {
 			fmt.Fprintf(&s, "%s %s", e.Format, e.Str)
 		}
-	} else if e.Str != nil {
+	case TermTypeString:
 		fmt.Fprint(&s, e.Str)
-	} else if e.If != nil {
+	case TermTypeIf:
 		fmt.Fprint(&s, e.If)
-	} else if e.Try != nil {
+	case TermTypeTry:
 		fmt.Fprint(&s, e.Try)
-	} else if e.Reduce != nil {
+	case TermTypeReduce:
 		fmt.Fprint(&s, e.Reduce)
-	} else if e.Foreach != nil {
+	case TermTypeForeach:
 		fmt.Fprint(&s, e.Foreach)
-	} else if e.Label != nil {
+	case TermTypeLabel:
 		fmt.Fprint(&s, e.Label)
-	} else if e.Break != "" {
+	case TermTypeBreak:
 		fmt.Fprintf(&s, "break %s", e.Break)
-	} else if e.Query != nil {
+	case TermTypeQuery:
 		fmt.Fprintf(&s, "(%s)", e.Query)
 	}
 	for _, e := range e.SuffixList {
@@ -258,29 +255,34 @@ func (e *Term) String() string {
 }
 
 func (e *Term) minify() {
-	if e.Index != nil {
+	switch e.Type {
+	case TermTypeIndex:
 		e.Index.minify()
-	} else if e.Func != nil {
+	case TermTypeFunc:
 		e.Func.minify()
-	} else if e.Object != nil {
+	case TermTypeObject:
 		e.Object.minify()
-	} else if e.Array != nil {
+	case TermTypeArray:
 		e.Array.minify()
-	} else if e.Unary != nil {
+	case TermTypeUnary:
 		e.Unary.minify()
-	} else if e.Str != nil {
+	case TermTypeFormat:
+		if e.Str != nil {
+			e.Str.minify()
+		}
+	case TermTypeString:
 		e.Str.minify()
-	} else if e.If != nil {
+	case TermTypeIf:
 		e.If.minify()
-	} else if e.Try != nil {
+	case TermTypeTry:
 		e.Try.minify()
-	} else if e.Reduce != nil {
+	case TermTypeReduce:
 		e.Reduce.minify()
-	} else if e.Foreach != nil {
+	case TermTypeForeach:
 		e.Foreach.minify()
-	} else if e.Label != nil {
+	case TermTypeLabel:
 		e.Label.minify()
-	} else if e.Query != nil {
+	case TermTypeQuery:
 		e.Query.minify()
 	}
 	for _, e := range e.SuffixList {
@@ -293,19 +295,20 @@ func (e *Term) toFunc() string {
 		return ""
 	}
 	// ref: compiler#compileQuery
-	if e.Identity {
+	switch e.Type {
+	case TermTypeIdentity:
 		return "."
-	} else if e.Recurse {
+	case TermTypeRecurse:
 		return ".."
-	} else if e.Null {
+	case TermTypeNull:
 		return "null"
-	} else if e.True {
+	case TermTypeTrue:
 		return "true"
-	} else if e.False {
+	case TermTypeFalse:
 		return "false"
-	} else if e.Func != nil {
+	case TermTypeFunc:
 		return e.Func.toFunc()
-	} else {
+	default:
 		return ""
 	}
 }
@@ -661,9 +664,9 @@ func (e *Suffix) minify() {
 
 func (e *Suffix) toTerm() (*Term, bool) {
 	if e.Index != nil {
-		return &Term{Index: e.Index}, true
+		return &Term{Type: TermTypeIndex, Index: e.Index}, true
 	} else if e.Iter {
-		return &Term{Identity: true, SuffixList: []*Suffix{{Iter: true}}}, true
+		return &Term{Type: TermTypeIdentity, SuffixList: []*Suffix{{Iter: true}}}, true
 	} else {
 		return nil, false
 	}

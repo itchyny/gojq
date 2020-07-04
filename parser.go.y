@@ -68,7 +68,7 @@ moduleheader
 programbody
     : imports funcdefs
     {
-        $$ = &Query{Imports: $1.([]*Import), FuncDefs: $2.([]*FuncDef), Term: &Term{Identity: true}}
+        $$ = &Query{Imports: $1.([]*Import), FuncDefs: $2.([]*FuncDef), Term: &Term{Type: TermTypeIdentity}}
     }
     | imports query
     {
@@ -156,7 +156,7 @@ query
     }
     | tokLabel tokVariable '|' query
     {
-        $$ = &Query{Term: &Term{Label: &Label{$2, $4.(*Query)}}}
+        $$ = &Query{Term: &Term{Type: TermTypeLabel, Label: &Label{$2, $4.(*Query)}}}
     }
     | query ',' query
     {
@@ -272,115 +272,115 @@ objectpattern
 term
     : '.'
     {
-        $$ = &Term{Identity: true}
+        $$ = &Term{Type: TermTypeIdentity}
     }
     | tokRecurse
     {
-        $$ = &Term{Recurse: true}
+        $$ = &Term{Type: TermTypeRecurse}
     }
     | tokIndex
     {
-        $$ = &Term{Index: &Index{Name: $1}}
+        $$ = &Term{Type: TermTypeIndex, Index: &Index{Name: $1}}
     }
     | '.' suffix
     {
         if $2.(*Suffix).Iter {
-            $$ = &Term{Identity: true, SuffixList: []*Suffix{$2.(*Suffix)}}
+            $$ = &Term{Type: TermTypeIdentity, SuffixList: []*Suffix{$2.(*Suffix)}}
         } else {
-            $$ = &Term{Index: $2.(*Suffix).Index}
+            $$ = &Term{Type: TermTypeIndex, Index: $2.(*Suffix).Index}
         }
     }
     | '.' string
     {
-        $$ = &Term{Index: &Index{Str: $2.(*String)}}
+        $$ = &Term{Type: TermTypeIndex, Index: &Index{Str: $2.(*String)}}
     }
     | tokNull
     {
-        $$ = &Term{Null: true}
+        $$ = &Term{Type: TermTypeNull}
     }
     | tokTrue
     {
-        $$ = &Term{True: true}
+        $$ = &Term{Type: TermTypeTrue}
     }
     | tokFalse
     {
-        $$ = &Term{False: true}
+        $$ = &Term{Type: TermTypeFalse}
     }
     | tokIdentModuleIdent
     {
-        $$ = &Term{Func: &Func{Name: $1}}
+        $$ = &Term{Type: TermTypeFunc, Func: &Func{Name: $1}}
     }
     | tokIdentModuleIdent '(' args ')'
     {
-        $$ = &Term{Func: &Func{Name: $1, Args: $3.([]*Query)}}
+        $$ = &Term{Type: TermTypeFunc, Func: &Func{Name: $1, Args: $3.([]*Query)}}
     }
     | tokVariableModuleVariable
     {
-        $$ = &Term{Func: &Func{Name: $1}}
+        $$ = &Term{Type: TermTypeFunc, Func: &Func{Name: $1}}
     }
     | tokNumber
     {
-        $$ = &Term{Number: $1}
+        $$ = &Term{Type: TermTypeNumber, Number: $1}
     }
     | tokFormat
     {
-        $$ = &Term{Format: $1}
+        $$ = &Term{Type: TermTypeFormat, Format: $1}
     }
     | tokFormat string
     {
-        $$ = &Term{Format: $1, Str: $2.(*String)}
+        $$ = &Term{Type: TermTypeFormat, Format: $1, Str: $2.(*String)}
     }
     | string
     {
-        $$ = &Term{Str: $1.(*String)}
+        $$ = &Term{Type: TermTypeString, Str: $1.(*String)}
     }
     | '(' query ')'
     {
-        $$ = &Term{Query: $2.(*Query)}
+        $$ = &Term{Type: TermTypeQuery, Query: $2.(*Query)}
     }
     | '-' term
     {
-        $$ = &Term{Unary: &Unary{OpSub, $2.(*Term)}}
+        $$ = &Term{Type: TermTypeUnary, Unary: &Unary{OpSub, $2.(*Term)}}
     }
     | '+' term
     {
-        $$ = &Term{Unary: &Unary{OpAdd, $2.(*Term)}}
+        $$ = &Term{Type: TermTypeUnary, Unary: &Unary{OpAdd, $2.(*Term)}}
     }
     | '{' object '}'
     {
-        $$ = &Term{Object: &Object{$2.([]*ObjectKeyVal)}}
+        $$ = &Term{Type: TermTypeObject, Object: &Object{$2.([]*ObjectKeyVal)}}
     }
     | '[' query ']'
     {
-        $$ = &Term{Array: &Array{$2.(*Query)}}
+        $$ = &Term{Type: TermTypeArray, Array: &Array{$2.(*Query)}}
     }
     | '[' ']'
     {
-        $$ = &Term{Array: &Array{}}
+        $$ = &Term{Type: TermTypeArray, Array: &Array{}}
     }
     | tokIf query tokThen query ifelifs ifelse tokEnd
     {
-        $$ = &Term{If: &If{$2.(*Query), $4.(*Query), $5.([]*IfElif), $6.(*Query)}}
+        $$ = &Term{Type: TermTypeIf, If: &If{$2.(*Query), $4.(*Query), $5.([]*IfElif), $6.(*Query)}}
     }
     | tokTry query trycatch
     {
-        $$ = &Term{Try: &Try{$2.(*Query), $3.(*Term)}}
+        $$ = &Term{Type: TermTypeTry, Try: &Try{$2.(*Query), $3.(*Term)}}
     }
     | tokReduce term tokAs pattern '(' query ';' query ')'
     {
-        $$ = &Term{Reduce: &Reduce{$2.(*Term), $4.(*Pattern), $6.(*Query), $8.(*Query)}}
+        $$ = &Term{Type: TermTypeReduce, Reduce: &Reduce{$2.(*Term), $4.(*Pattern), $6.(*Query), $8.(*Query)}}
     }
     | tokForeach term tokAs pattern '(' query ';' query ')'
     {
-        $$ = &Term{Foreach: &Foreach{$2.(*Term), $4.(*Pattern), $6.(*Query), $8.(*Query), nil}}
+        $$ = &Term{Type: TermTypeForeach, Foreach: &Foreach{$2.(*Term), $4.(*Pattern), $6.(*Query), $8.(*Query), nil}}
     }
     | tokForeach term tokAs pattern '(' query ';' query ';' query ')'
     {
-        $$ = &Term{Foreach: &Foreach{$2.(*Term), $4.(*Pattern), $6.(*Query), $8.(*Query), $10.(*Query)}}
+        $$ = &Term{Type: TermTypeForeach, Foreach: &Foreach{$2.(*Term), $4.(*Pattern), $6.(*Query), $8.(*Query), $10.(*Query)}}
     }
     | tokBreak tokVariable
     {
-        $$ = &Term{Break: $2}
+        $$ = &Term{Type: TermTypeBreak, Break: $2}
     }
     | term tokIndex
     {
@@ -420,12 +420,12 @@ stringparts
     }
     | stringparts tokString
     {
-        $$ = append($1.([]*Query), &Query{Term: &Term{Str: &String{Str: $2}}})
+        $$ = append($1.([]*Query), &Query{Term: &Term{Type: TermTypeString, Str: &String{Str: $2}}})
     }
     | stringparts tokStringQuery query ')'
     {
         yylex.(*lexer).inString = true
-        $$ = append($1.([]*Query), &Query{Term: &Term{Query: $3.(*Query)}})
+        $$ = append($1.([]*Query), &Query{Term: &Term{Type: TermTypeQuery, Query: $3.(*Query)}})
     }
 
 tokIdentModuleIdent
