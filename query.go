@@ -17,7 +17,6 @@ type Query struct {
 	Left     *Query
 	Op       Operator
 	Right    *Query
-	Bind     *Bind
 	Func     string
 }
 
@@ -56,9 +55,6 @@ func (e *Query) String() string {
 		s.WriteString(e.Func)
 	} else if e.Term != nil {
 		fmt.Fprint(&s, e.Term)
-		if e.Bind != nil {
-			fmt.Fprint(&s, e.Bind)
-		}
 	} else if e.Right != nil {
 		if e.Op == OpComma {
 			fmt.Fprintf(&s, "%s, %s", e.Left, e.Right)
@@ -74,16 +70,11 @@ func (e *Query) minify() {
 		e.Minify()
 	}
 	if e.Term != nil {
-		if e.Bind == nil {
-			if name := e.Term.toFunc(); name != "" {
-				e.Term = nil
-				e.Func = name
-			} else {
-				e.Term.minify()
-			}
+		if name := e.Term.toFunc(); name != "" {
+			e.Term = nil
+			e.Func = name
 		} else {
 			e.Term.minify()
-			e.Bind.minify()
 		}
 	} else if e.Right != nil {
 		e.Left.minify()
@@ -92,7 +83,7 @@ func (e *Query) minify() {
 }
 
 func (e *Query) toIndices() []interface{} {
-	if e.FuncDefs != nil || e.Right != nil || e.Bind != nil || e.Term == nil {
+	if e.FuncDefs != nil || e.Right != nil || e.Term == nil {
 		return nil
 	}
 	return e.Term.toIndices()
@@ -153,29 +144,6 @@ func (e *FuncDef) String() string {
 
 // Minify ...
 func (e *FuncDef) Minify() {
-	e.Body.minify()
-}
-
-// Bind ...
-type Bind struct {
-	Patterns []*Pattern
-	Body     *Query
-}
-
-func (e *Bind) String() string {
-	var s strings.Builder
-	for i, p := range e.Patterns {
-		if i == 0 {
-			fmt.Fprintf(&s, " as %s ", p)
-		} else {
-			fmt.Fprintf(&s, "?// %s ", p)
-		}
-	}
-	fmt.Fprintf(&s, "| %s", e.Body)
-	return s.String()
-}
-
-func (e *Bind) minify() {
 	e.Body.minify()
 }
 
@@ -638,6 +606,7 @@ type Suffix struct {
 	Index    *Index
 	Iter     bool
 	Optional bool
+	Bind     *Bind
 }
 
 func (e *Suffix) String() string {
@@ -652,6 +621,8 @@ func (e *Suffix) String() string {
 		s.WriteString("[]")
 	} else if e.Optional {
 		s.WriteString("?")
+	} else if e.Bind != nil {
+		fmt.Fprint(&s, e.Bind)
 	}
 	return s.String()
 }
@@ -659,6 +630,8 @@ func (e *Suffix) String() string {
 func (e *Suffix) minify() {
 	if e.Index != nil {
 		e.Index.minify()
+	} else if e.Bind != nil {
+		e.Bind.minify()
 	}
 }
 
@@ -677,6 +650,29 @@ func (e *Suffix) toIndices() []interface{} {
 		return nil
 	}
 	return e.Index.toIndices()
+}
+
+// Bind ...
+type Bind struct {
+	Patterns []*Pattern
+	Body     *Query
+}
+
+func (e *Bind) String() string {
+	var s strings.Builder
+	for i, p := range e.Patterns {
+		if i == 0 {
+			fmt.Fprintf(&s, " as %s ", p)
+		} else {
+			fmt.Fprintf(&s, "?// %s ", p)
+		}
+	}
+	fmt.Fprintf(&s, "| %s", e.Body)
+	return s.String()
+}
+
+func (e *Bind) minify() {
+	e.Body.minify()
 }
 
 // If ...

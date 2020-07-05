@@ -360,14 +360,6 @@ func (c *compiler) compileQuery(e *Query) error {
 			return c.compileFunc(&Func{Name: e.Func})
 		}
 	} else if e.Term != nil {
-		if e.Bind != nil {
-			c.append(&code{op: opdup})
-			c.append(&code{op: opexpbegin})
-			if err := c.compileTerm(e.Term); err != nil {
-				return err
-			}
-			return c.compileBind(e.Bind)
-		}
 		return c.compileTerm(e.Term)
 	}
 	switch e.Op {
@@ -1225,6 +1217,13 @@ func (c *compiler) compileTermSuffix(e *Term, s *Suffix) error {
 			}
 		}
 		return c.compileTry(&Try{Body: &Query{Term: e}})
+	} else if s.Bind != nil {
+		c.append(&code{op: opdup})
+		c.append(&code{op: opexpbegin})
+		if err := c.compileTerm(e); err != nil {
+			return err
+		}
+		return c.compileBind(s.Bind)
 	} else {
 		return fmt.Errorf("invalid suffix: %s", s)
 	}
