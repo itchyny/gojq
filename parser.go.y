@@ -101,10 +101,7 @@ metaopt
     {
         $$ = (*ConstObject)(nil)
     }
-    | constobject
-    {
-        $$ = $1
-    }
+    | constobject {}
 
 funcdefs
     :
@@ -438,24 +435,12 @@ stringparts
     }
 
 tokIdentModuleIdent
-    : tokIdent
-    {
-        $$ = $1
-    }
-    | tokModuleIdent
-    {
-        $$ = $1
-    }
+    : tokIdent {}
+    | tokModuleIdent {}
 
 tokVariableModuleVariable
-    : tokVariable
-    {
-        $$ = $1
-    }
-    | tokModuleVariable
-    {
-        $$ = $1
-    }
+    : tokVariable {}
+    | tokModuleVariable {}
 
 suffix
     : '[' ']'
