@@ -725,7 +725,7 @@ func (e *IfElif) minify() {
 // Try ...
 type Try struct {
 	Body  *Query
-	Catch *Term
+	Catch *Query
 }
 
 func (e *Try) String() string {

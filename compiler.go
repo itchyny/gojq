@@ -662,7 +662,7 @@ func (c *compiler) compileTry(e *Try) error {
 	setforktrybegin()
 	if e.Catch != nil {
 		defer c.newScopeDepth()()
-		return c.compileTerm(e.Catch)
+		return c.compileQuery(e.Catch)
 	}
 	c.append(&code{op: opbacktrack})
 	return nil

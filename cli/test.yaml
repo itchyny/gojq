@@ -2086,6 +2086,23 @@
   expected: |
     7
 
+- name: condition with optional operator
+  args:
+    - 'if . then tonumber end ?'
+  input: '1'
+  expected: |
+    1
+
+- name: condition with suffix
+  args:
+    - 'if . then 1 end []'
+  input: '1'
+  error: |
+    invalid query: if . then 1 end []
+        if . then 1 end []
+                        ^  unexpected token "["
+  exit_code: 3
+
 - name: not function
   args:
     - 'map(not)'
