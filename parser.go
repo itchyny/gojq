@@ -1094,7 +1094,7 @@ yydefault:
 		yyDollar = yyS[yypt-5 : yypt+1]
 //line parser.go.y:290
 		{
-			yyVAL.value = &PatternObject{Query: yyDollar[2].value.(*Query), Val: yyDollar[5].value.(*Pattern)}
+			yyVAL.value = &PatternObject{KeyQuery: yyDollar[2].value.(*Query), Val: yyDollar[5].value.(*Pattern)}
 		}
 	case 54:
 		yyDollar = yyS[yypt-1 : yypt+1]
@@ -1431,7 +1431,7 @@ yydefault:
 		yyDollar = yyS[yypt-5 : yypt+1]
 //line parser.go.y:531
 		{
-			yyVAL.value = &ObjectKeyVal{Query: yyDollar[2].value.(*Query), Val: yyDollar[5].value.(*ObjectVal)}
+			yyVAL.value = &ObjectKeyVal{KeyQuery: yyDollar[2].value.(*Query), Val: yyDollar[5].value.(*ObjectVal)}
 		}
 	case 110:
 		yyDollar = yyS[yypt-1 : yypt+1]

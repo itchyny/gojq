@@ -288,7 +288,7 @@ objectpattern
     }
     | '(' query ')' ':' pattern
     {
-        $$ = &PatternObject{Query: $2.(*Query), Val: $5.(*Pattern)}
+        $$ = &PatternObject{KeyQuery: $2.(*Query), Val: $5.(*Pattern)}
     }
     | tokVariable
     {
@@ -529,7 +529,7 @@ objectkeyval
     }
     | '(' query ')' ':' objectval
     {
-        $$ = &ObjectKeyVal{Query: $2.(*Query), Val: $5.(*ObjectVal)}
+        $$ = &ObjectKeyVal{KeyQuery: $2.(*Query), Val: $5.(*ObjectVal)}
     }
     | objectkey
     {

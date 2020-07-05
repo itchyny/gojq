@@ -581,9 +581,9 @@ func (c *compiler) compilePattern(p *Pattern) ([][2]int, error) {
 				if err := c.compileString(kv.KeyString, nil); err != nil {
 					return nil, err
 				}
-			} else if kv.Query != nil {
+			} else if kv.KeyQuery != nil {
 				c.append(&code{op: opload, v: v})
-				if err := c.compileQuery(kv.Query); err != nil {
+				if err := c.compileQuery(kv.KeyQuery); err != nil {
 					return nil, err
 				}
 			}
@@ -1044,10 +1044,10 @@ func (c *compiler) compileObjectKeyVal(v [2]int, kv *ObjectKeyVal) error {
 		c.append(&code{op: opcall, v: [3]interface{}{internalFuncs["_index"].callback, 2, "_index"}})
 		return nil
 	} else {
-		if kv.Query != nil {
+		if kv.KeyQuery != nil {
 			c.append(&code{op: opload, v: v})
 			f := c.newScopeDepth()
-			if err := c.compileQuery(kv.Query); err != nil {
+			if err := c.compileQuery(kv.KeyQuery); err != nil {
 				return err
 			}
 			f()

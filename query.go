@@ -353,7 +353,7 @@ func (e *Pattern) String() string {
 type PatternObject struct {
 	Key       string
 	KeyString *String
-	Query     *Query
+	KeyQuery  *Query
 	Val       *Pattern
 	KeyOnly   string
 }
@@ -364,8 +364,8 @@ func (e *PatternObject) String() string {
 		s.WriteString(e.Key)
 	} else if e.KeyString != nil {
 		fmt.Fprint(&s, e.KeyString)
-	} else if e.Query != nil {
-		fmt.Fprintf(&s, "(%s)", e.Query)
+	} else if e.KeyQuery != nil {
+		fmt.Fprintf(&s, "(%s)", e.KeyQuery)
 	}
 	if e.Val != nil {
 		s.WriteString(": ")
@@ -526,7 +526,7 @@ func (e *Object) minify() {
 type ObjectKeyVal struct {
 	Key           string
 	KeyString     *String
-	Query         *Query
+	KeyQuery      *Query
 	Val           *ObjectVal
 	KeyOnly       string
 	KeyOnlyString *String
@@ -538,8 +538,8 @@ func (e *ObjectKeyVal) String() string {
 		s.WriteString(e.Key)
 	} else if e.KeyString != nil {
 		fmt.Fprint(&s, e.KeyString)
-	} else if e.Query != nil {
-		fmt.Fprintf(&s, "(%s)", e.Query)
+	} else if e.KeyQuery != nil {
+		fmt.Fprintf(&s, "(%s)", e.KeyQuery)
 	}
 	if e.Val != nil {
 		fmt.Fprintf(&s, ": %s", e.Val)
@@ -553,8 +553,8 @@ func (e *ObjectKeyVal) String() string {
 }
 
 func (e *ObjectKeyVal) minify() {
-	if e.Query != nil {
-		e.Query.minify()
+	if e.KeyQuery != nil {
+		e.KeyQuery.minify()
 	}
 	if e.Val != nil {
 		e.Val.minify()
