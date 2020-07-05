@@ -2532,31 +2532,35 @@
 
 - name: binding an object deeply
   args:
-    - '. as {$foo, bar: {baz: {$qux}}} | {$foo, $qux}'
-  input: '{} {"foo": 10} {"foo": 20, "bar": { "baz": { "qux": 30 } } }'
+    - '. as {$foo, bar: {"baz": {$qux}, "": $quy}} | {$foo, $qux, $quy}'
+  input: '{} {"foo": 10} {"foo": 20, "bar": { "baz": { "qux": 30 }, "": -1 } }'
   expected: |
     {
       "foo": null,
-      "qux": null
+      "qux": null,
+      "quy": null
     }
     {
       "foo": 10,
-      "qux": null
+      "qux": null,
+      "quy": null
     }
     {
       "foo": 20,
-      "qux": 30
+      "qux": 30,
+      "quy": -1
     }
 
 - name: binding an object with expression
   args:
-    - '. as {as: $foo, ("e"+"x"+"p"): $bar, (.foo): $baz} | [$foo, $bar, $baz]'
-  input: '{"as": 1, "exp": 2, "foo": "bar", "bar": 3}'
+    - '. as {as: $foo, ("e"+"x"+"p"): $bar, (.foo): $baz, "\(.qux)": $qux} | [$foo, $bar, $baz, $qux]'
+  input: '{"as": 1, "exp": 2, "foo": "bar", "bar": 3, "qux": "quux", "quux": 4}'
   expected: |
     [
       1,
       2,
-      3
+      3,
+      4
     ]
 
 - name: binding an object error

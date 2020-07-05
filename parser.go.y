@@ -282,9 +282,9 @@ objectpattern
     {
         $$ = &PatternObject{Key: $1, Val: $3.(*Pattern)}
     }
-    | tokString ':' pattern
+    | string ':' pattern
     {
-        $$ = &PatternObject{KeyString: $1, Val: $3.(*Pattern)}
+        $$ = &PatternObject{KeyString: $1.(*String), Val: $3.(*Pattern)}
     }
     | '(' query ')' ':' pattern
     {

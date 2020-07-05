@@ -576,9 +576,11 @@ func (c *compiler) compilePattern(p *Pattern) ([][2]int, error) {
 					key, name = key[1:], key
 				}
 				c.append(&code{op: oppush, v: key})
-			} else if kv.KeyString != "" {
-				key = kv.KeyString[1 : len(kv.KeyString)-1]
-				c.append(&code{op: oppush, v: key})
+			} else if kv.KeyString != nil {
+				c.append(&code{op: opload, v: v})
+				if err := c.compileString(kv.KeyString, nil); err != nil {
+					return nil, err
+				}
 			} else if kv.Query != nil {
 				c.append(&code{op: opload, v: v})
 				if err := c.compileQuery(kv.Query); err != nil {

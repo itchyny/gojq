@@ -352,7 +352,7 @@ func (e *Pattern) String() string {
 // PatternObject ...
 type PatternObject struct {
 	Key       string
-	KeyString string
+	KeyString *String
 	Query     *Query
 	Val       *Pattern
 	KeyOnly   string
@@ -362,8 +362,8 @@ func (e *PatternObject) String() string {
 	var s strings.Builder
 	if e.Key != "" {
 		s.WriteString(e.Key)
-	} else if e.KeyString != "" {
-		s.WriteString(e.KeyString)
+	} else if e.KeyString != nil {
+		fmt.Fprint(&s, e.KeyString)
 	} else if e.Query != nil {
 		fmt.Fprintf(&s, "(%s)", e.Query)
 	}
