@@ -1,4 +1,10 @@
 # Changelog
+## [v0.11.0](https://github.com/itchyny/gojq/compare/v0.10.4..v0.11.0) (2020-07-08)
+* improve parsing performance significantly
+* rewrite the parser from `participle` library to `goyacc` generated parser
+* release to [itchyny/gojq - Docker Hub](https://hub.docker.com/r/itchyny/gojq)
+* support string interpolation for object pattern key
+
 ## [v0.10.4](https://github.com/itchyny/gojq/compare/v0.10.3..v0.10.4) (2020-06-30)
 * implement variable in object key (`. as $x | { $x: 1 }`)
 * fix modify operator (`|=`) with `try` `catch` expression
