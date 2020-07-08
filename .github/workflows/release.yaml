@@ -30,3 +30,16 @@ jobs:
       run: make upload
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Set variables
+      id: variables
+      run: |
+        git_tag_name="${GITHUB_REF#refs/tags/v}"
+        echo "::set-output name=release_tag_patch::${git_tag_name}"
+        echo "::set-output name=release_tag_minor::${git_tag_name%.*}"
+    - name: Release Docker image
+      uses: docker/build-push-action@v1
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        repository: itchyny/gojq
+        tags: latest, ${{ steps.variables.outputs.release_tag_patch }}, ${{ steps.variables.outputs.release_tag_minor }}
