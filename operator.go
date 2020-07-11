@@ -38,33 +38,6 @@ const (
 	OpUpdateAlt
 )
 
-var operatorMap = map[string]Operator{
-	"|":   OpPipe,
-	",":   OpComma,
-	"+":   OpAdd,
-	"-":   OpSub,
-	"*":   OpMul,
-	"/":   OpDiv,
-	"%":   OpMod,
-	"==":  OpEq,
-	"!=":  OpNe,
-	">":   OpGt,
-	"<":   OpLt,
-	">=":  OpGe,
-	"<=":  OpLe,
-	"and": OpAnd,
-	"or":  OpOr,
-	"//":  OpAlt,
-	"=":   OpAssign,
-	"|=":  OpModify,
-	"+=":  OpUpdateAdd,
-	"-=":  OpUpdateSub,
-	"*=":  OpUpdateMul,
-	"/=":  OpUpdateDiv,
-	"%=":  OpUpdateMod,
-	"//=": OpUpdateAlt,
-}
-
 // String implements Stringer.
 func (op Operator) String() string {
 	switch op {
