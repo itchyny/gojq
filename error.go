@@ -2,7 +2,6 @@ package gojq
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/big"
 	"reflect"
@@ -185,7 +184,11 @@ func (err *formatShError) Error() string {
 	return fmt.Sprintf("cannot escape for shell: %s", typeErrorPreview(err.v))
 }
 
-var errTooManyVariableValues = errors.New("too many variable values provided")
+type tooManyVariableValuesError struct{}
+
+func (err *tooManyVariableValuesError) Error() string {
+	return "too many variable values provided"
+}
 
 type expectedVariableError struct {
 	n string

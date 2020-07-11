@@ -40,7 +40,7 @@ func (c *Code) Run(v interface{}, values ...interface{}) Iter {
 // RunWithContext runs the code with context.
 func (c *Code) RunWithContext(ctx context.Context, v interface{}, values ...interface{}) Iter {
 	if len(values) > len(c.variables) {
-		return unitIterator(errTooManyVariableValues)
+		return unitIterator(&tooManyVariableValuesError{})
 	} else if len(values) < len(c.variables) {
 		return unitIterator(&expectedVariableError{c.variables[len(values)]})
 	}
