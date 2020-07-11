@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -560,6 +561,12 @@ func funcToJSON(v interface{}) interface{} {
 }
 
 func encodeJSON(v interface{}) (string, error) {
+	switch v := v.(type) {
+	case int:
+		return strconv.FormatInt(int64(v), 10), nil
+	case *big.Int:
+		return v.String(), nil
+	}
 	buf := new(bytes.Buffer)
 	enc := json.NewEncoder(buf)
 	enc.SetEscapeHTML(false)
