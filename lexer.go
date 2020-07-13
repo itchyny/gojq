@@ -445,7 +445,7 @@ func (err *parseError) Error() string {
 			message = "\"" + err.token + "\""
 		}
 	default:
-		message = strconv.Quote(string(err.tokenType))
+		message = strconv.Quote(string(rune(err.tokenType)))
 	}
 	return fmt.Sprintf("%s token %s", prefix, message)
 }
