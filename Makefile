@@ -55,6 +55,7 @@ test: build
 
 .PHONY: lint
 lint: $(GOBIN)/golint
+	go vet ./...
 	golint -set_exit_status ./...
 
 $(GOBIN)/golint:
