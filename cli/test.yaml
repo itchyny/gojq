@@ -3770,6 +3770,14 @@
     [2020,8,13,12,26,40,0,256]
     1600000000
 
+- name: strftime, strptime functions
+  args:
+    - 'strptime("%c") | strftime("%c")'
+  input: |
+    "Thu Jul 23 20:41:06 2020"
+  expected: |
+    "Thu Jul 23 20:41:06 2020"
+
 - name: now function
   args:
     - -c

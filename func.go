@@ -14,8 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lestrrat-go/strftime"
-	"github.com/pbnjay/strptime"
+	"github.com/itchyny/timefmt-go"
 )
 
 //go:generate go run _tools/gen_builtin.go -i builtin.jq -o builtin.go
@@ -1415,7 +1414,7 @@ func funcStrftime(v, x interface{}) interface{} {
 			if err != nil {
 				return err
 			}
-			got, err := strftime.Format(format, t)
+			got, err := timefmt.Format(t, format)
 			if err != nil {
 				return err
 			}
@@ -1436,7 +1435,7 @@ func funcStrflocaltime(v, x interface{}) interface{} {
 			if err != nil {
 				return err
 			}
-			got, err := strftime.Format(format, t)
+			got, err := timefmt.Format(t, format)
 			if err != nil {
 				return err
 			}
@@ -1450,7 +1449,7 @@ func funcStrflocaltime(v, x interface{}) interface{} {
 func funcStrptime(v, x interface{}) interface{} {
 	if v, ok := v.(string); ok {
 		if format, ok := x.(string); ok {
-			t, err := strptime.Parse(v, format)
+			t, err := timefmt.Parse(v, format)
 			if err != nil {
 				return err
 			}
