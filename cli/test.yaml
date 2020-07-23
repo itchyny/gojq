@@ -4904,6 +4904,22 @@
     }
     "bar"
 
+- name: yaml input option with non-string keys
+  args:
+    - --yaml-input
+    - '.'
+  input: |
+    foo:
+      - 42: bar
+  expected: |
+    {
+      "foo": [
+        {
+          "42": "bar"
+        }
+      ]
+    }
+
 - name: yaml input option with slurp option
   args:
     - --yaml-input

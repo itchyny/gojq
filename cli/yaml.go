@@ -12,6 +12,13 @@ func fixMapKeyToString(v interface{}) interface{} {
 		}
 		return w
 
+	case map[string]interface{}:
+		w := make(map[string]interface{}, len(v))
+		for k, v := range v {
+			w[k] = fixMapKeyToString(v)
+		}
+		return w
+
 	case []interface{}:
 		w := make([]interface{}, len(v))
 		for i := range v {
