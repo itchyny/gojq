@@ -7,7 +7,7 @@ require (
 	github.com/hokaccha/go-prettyjson v0.0.0-20190818114111-108c894c2c0e
 	github.com/itchyny/astgen-go v0.0.0-20200519013840-cf3ea398f645
 	github.com/itchyny/go-flags v1.5.0
-	github.com/itchyny/timefmt-go v0.0.0-20200723203345-4bad62018899
+	github.com/itchyny/timefmt-go v0.0.0-20200724163110-ac6b3a21a37f
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mattn/go-runewidth v0.0.9

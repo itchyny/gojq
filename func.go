@@ -1414,11 +1414,7 @@ func funcStrftime(v, x interface{}) interface{} {
 			if err != nil {
 				return err
 			}
-			got, err := timefmt.Format(t, format)
-			if err != nil {
-				return err
-			}
-			return got
+			return timefmt.Format(t, format)
 		}
 		return &funcTypeError{"strftime", x}
 	}
@@ -1435,11 +1431,7 @@ func funcStrflocaltime(v, x interface{}) interface{} {
 			if err != nil {
 				return err
 			}
-			got, err := timefmt.Format(t, format)
-			if err != nil {
-				return err
-			}
-			return got
+			return timefmt.Format(t, format)
 		}
 		return &funcTypeError{"strflocaltime", x}
 	}
