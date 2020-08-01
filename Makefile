@@ -10,7 +10,11 @@ export GO111MODULE=on
 all: build
 
 .PHONY: build
-build: parser.go builtin.go
+build:
+	go build -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
+
+.PHONY: build-dev
+build-dev: parser.go builtin.go
 	go build -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
 
 .PHONY: build-debug
