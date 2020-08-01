@@ -163,8 +163,20 @@ func (err *jsonParseError) Error() string {
 		rs := []rune(ss.String())
 		for len(rs) > 100 {
 			k := len(rs) / 2
-			j -= runewidth.StringWidth(string(rs[:k]))
-			rs = rs[k:]
+			l := runewidth.StringWidth(string(rs[:k]))
+			if j < l+10 {
+				k /= 2
+				l = runewidth.StringWidth(string(rs[:k]))
+				if j < l+10 {
+					rs = rs[:k*2]
+				} else {
+					j -= l
+					rs = rs[k:]
+				}
+			} else {
+				j -= l
+				rs = rs[k:]
+			}
 		}
 		fmt.Fprintf(&s, "\n    %s\n%s  %s", string(rs), strings.Repeat(" ", 3+j)+"^", er)
 	}

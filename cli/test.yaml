@@ -5262,6 +5262,15 @@
           bar
           ^  invalid character 'b' looking for beginning of value
 
+- name: json file error json
+  args:
+    - '.'
+    - 'testdata/8.json'
+  error: |
+    invalid json: testdata/8.json
+         1, 1, 1, 1, ,, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                     ^  invalid character ',' looking for beginning of value
+
 - name: json file error json with multibyte character in the error line
   args:
     - '.'
