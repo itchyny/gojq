@@ -32,11 +32,15 @@ $(GOBIN)/goyacc:
 	@cd && go get golang.org/x/tools/cmd/goyacc
 
 .PHONY: install
-install: builtin.go
+install:
+	go install -ldflags=$(BUILD_LDFLAGS) ./...
+
+.PHONY: install-dev
+install-dev: parser.go builtin.go
 	go install -ldflags=$(BUILD_LDFLAGS) ./...
 
 .PHONY: install-debug
-install-debug: builtin.go
+install-debug: parser.go builtin.go
 	go install -tags debug -ldflags=$(BUILD_LDFLAGS) ./...
 
 .PHONY: show-version
