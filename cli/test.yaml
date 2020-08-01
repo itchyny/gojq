@@ -4242,13 +4242,14 @@
 
 - name: gsub function
   args:
-    - 'gsub("a"; "b"), gsub("a.c"; "b"), gsub("a(?<a>..)"; "\(.a+.a)"; "i"), gsub("(?<foo>★)"; "\(.foo)☆\(.foo)")'
+    - 'gsub("a"; "b"), gsub("a.c"; "b"), gsub("a(?<a>..)"; "\(.a+.a)"; "i"), gsub("(?<foo>★)"; "\(.foo)☆\(.foo)"), gsub("^"; "a")'
   input: '"abcABC☆★☆ABCabc"'
   expected: |
     "bbcABC☆★☆ABCbbc"
     "bABC☆★☆ABCb"
     "bcbcBCBC☆★☆BCBCbcbc"
     "abcABC☆★☆★☆ABCabc"
+    "aabcABC☆★☆ABCabc"
 
 - name: INDEX function
   args:
