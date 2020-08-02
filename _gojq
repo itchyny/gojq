@@ -6,7 +6,7 @@ _gojq()
     '(-c --compact-output)'{-c,--compact-output}'[compact output]' \
     '(-r --raw-output)'{-r,--raw-output}'[output raw strings]' \
     '(-j --join-output)'{-j,--join-output}'[stop printing a newline after each output]' \
-    '(-0 --nul-output)'{-0,--nul-output}'[print NUL after each ouput]' \
+    '(-0 --nul-output)'{-0,--nul-output}'[print NUL after each output]' \
     '(-C --color-output)'{-C,--color-output}'[colorize output even if piped]' \
     '(-M --monochrome-output)'{-M,--monochrome-output}'[stop colorizing output]' \
     '(--yaml-output)'--yaml-output'[output by YAML]' \

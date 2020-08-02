@@ -58,7 +58,7 @@ type flagopts struct {
 	OutputCompact bool              `short:"c" long:"compact-output" description:"compact output"`
 	OutputRaw     bool              `short:"r" long:"raw-output" description:"output raw strings"`
 	OutputJoin    bool              `short:"j" long:"join-output" description:"stop printing a newline after each output"`
-	OutputNul     bool              `short:"0" long:"nul-output" description:"print NUL after each ouput"`
+	OutputNul     bool              `short:"0" long:"nul-output" description:"print NUL after each output"`
 	OutputColor   bool              `short:"C" long:"color-output" description:"colorize output even if piped"`
 	OutputMono    bool              `short:"M" long:"monochrome-output" description:"stop colorizing output"`
 	OutputYAML    bool              `long:"yaml-output" description:"output by YAML"`
