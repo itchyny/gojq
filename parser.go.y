@@ -181,7 +181,7 @@ query
         if t := $1.(*Query).Term; t != nil {
             t.SuffixList = append(t.SuffixList, &Suffix{Optional: true})
         } else {
-            $$ = &Query{Term: &Term{Type: TermTypeQuery, Query: $1.(*Query), SuffixList: []*Suffix{&Suffix{Optional: true}}}}
+            $$ = &Query{Term: &Term{Type: TermTypeQuery, Query: $1.(*Query), SuffixList: []*Suffix{{Optional: true}}}}
         }
     }
     | query ',' query
@@ -548,7 +548,7 @@ objectkey
 objectval
     : term
     {
-        $$ = &ObjectVal{[]*Query{&Query{Term: $1.(*Term)}}}
+        $$ = &ObjectVal{[]*Query{{Term: $1.(*Term)}}}
     }
     | term '|' objectval
     {

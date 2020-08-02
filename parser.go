@@ -950,7 +950,7 @@ yydefault:
 			if t := yyDollar[1].value.(*Query).Term; t != nil {
 				t.SuffixList = append(t.SuffixList, &Suffix{Optional: true})
 			} else {
-				yyVAL.value = &Query{Term: &Term{Type: TermTypeQuery, Query: yyDollar[1].value.(*Query), SuffixList: []*Suffix{&Suffix{Optional: true}}}}
+				yyVAL.value = &Query{Term: &Term{Type: TermTypeQuery, Query: yyDollar[1].value.(*Query), SuffixList: []*Suffix{{Optional: true}}}}
 			}
 		}
 	case 30:
@@ -1465,7 +1465,7 @@ yydefault:
 		yyDollar = yyS[yypt-1 : yypt+1]
 //line parser.go.y:550
 		{
-			yyVAL.value = &ObjectVal{[]*Query{&Query{Term: yyDollar[1].value.(*Term)}}}
+			yyVAL.value = &ObjectVal{[]*Query{{Term: yyDollar[1].value.(*Term)}}}
 		}
 	case 116:
 		yyDollar = yyS[yypt-3 : yypt+1]

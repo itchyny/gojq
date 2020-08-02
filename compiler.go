@@ -485,11 +485,11 @@ func (c *compiler) compileQueryUpdate(l, r *Query, op Operator) (err error) {
 				Name: "_modify",
 				Args: []*Query{
 					l,
-					&Query{Term: &Term{Type: TermTypeFunc, Func: &Func{
+					{Term: &Term{Type: TermTypeFunc, Func: &Func{
 						Name: op.getFunc(),
 						Args: []*Query{
-							&Query{Term: &Term{Type: TermTypeIdentity}},
-							&Query{Func: name}},
+							{Term: &Term{Type: TermTypeIdentity}},
+							{Func: name}},
 					},
 					}},
 				},
@@ -810,21 +810,21 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 func (c *compiler) compileIndex(e *Term, x *Index) error {
 	c.appendCodeInfo(x)
 	if x.Name != "" {
-		return c.compileCall("_index", []*Query{&Query{Term: e}, &Query{Term: &Term{Type: TermTypeString, Str: &String{Str: x.Name}}}})
+		return c.compileCall("_index", []*Query{{Term: e}, {Term: &Term{Type: TermTypeString, Str: &String{Str: x.Name}}}})
 	}
 	if x.Str != nil {
-		return c.compileCall("_index", []*Query{&Query{Term: e}, &Query{Term: &Term{Type: TermTypeString, Str: x.Str}}})
+		return c.compileCall("_index", []*Query{{Term: e}, {Term: &Term{Type: TermTypeString, Str: x.Str}}})
 	}
 	if x.Start != nil {
 		if x.IsSlice {
 			if x.End != nil {
-				return c.compileCall("_slice", []*Query{&Query{Term: e}, x.End, x.Start})
+				return c.compileCall("_slice", []*Query{{Term: e}, x.End, x.Start})
 			}
-			return c.compileCall("_slice", []*Query{&Query{Term: e}, &Query{Term: &Term{Type: TermTypeNull}}, x.Start})
+			return c.compileCall("_slice", []*Query{{Term: e}, {Term: &Term{Type: TermTypeNull}}, x.Start})
 		}
-		return c.compileCall("_index", []*Query{&Query{Term: e}, x.Start})
+		return c.compileCall("_index", []*Query{{Term: e}, x.Start})
 	}
-	return c.compileCall("_slice", []*Query{&Query{Term: e}, x.End, &Query{Term: &Term{Type: TermTypeNull}}})
+	return c.compileCall("_slice", []*Query{{Term: e}, x.End, {Term: &Term{Type: TermTypeNull}}})
 }
 
 func (c *compiler) compileFunc(e *Func) error {
