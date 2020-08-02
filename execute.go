@@ -93,7 +93,7 @@ loop:
 						break loop
 					}
 					if er.value == nil {
-						backtrack, err = true, nil
+						err = nil
 						break loop
 					}
 				default:
