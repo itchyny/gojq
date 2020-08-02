@@ -1599,8 +1599,9 @@ func funcHalt(interface{}) interface{} {
 }
 
 func funcHaltError(v interface{}, args []interface{}) interface{} {
-	code, ok := 5, false
+	code := 5
 	if len(args) > 0 {
+		var ok bool
 		if code, ok = toInt(args[0]); !ok {
 			return &funcTypeError{"halt_error", args[0]}
 		}
