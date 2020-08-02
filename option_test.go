@@ -151,6 +151,9 @@ func TestWithVariablesError1(t *testing.T) {
 		query,
 		gojq.WithVariables([]string{"$x"}),
 	)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	iter := code.Run(nil)
 	for {
 		v, ok := iter.Next()
@@ -174,6 +177,9 @@ func TestWithVariablesError2(t *testing.T) {
 		query,
 		gojq.WithVariables([]string{"$x"}),
 	)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	iter := code.Run(nil, 1, 2)
 	for {
 		v, ok := iter.Next()
