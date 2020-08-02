@@ -79,7 +79,6 @@ func (err *queryParseError) Error() string {
 		_, offset := er.Token()
 		var ss strings.Builder
 		var i, j int
-		var cr bool
 		line, total := 1, len(err.contents)
 		for _, r := range toValidUTF8(err.contents) {
 			if i+len(string(r)) < offset {
@@ -87,7 +86,6 @@ func (err *queryParseError) Error() string {
 			}
 			i += len(string(r))
 			if r == '\n' || r == '\r' {
-				cr = r == '\r'
 				if i == int(offset) {
 					j++
 					break
@@ -95,13 +93,12 @@ func (err *queryParseError) Error() string {
 					break
 				} else if i < total {
 					j = 0
-					if !cr || r == '\n' {
+					if r == '\n' {
 						line++
 					}
 					ss.Reset()
 				}
 			} else {
-				cr = false
 				ss.WriteRune(r)
 			}
 		}
