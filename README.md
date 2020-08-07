@@ -1,5 +1,13 @@
-# gojq [![CI Status][ci-badge]][ci-url] [![Go Report Card][goreportcard-badge]][goreportcard-url] [![MIT License][license-badge]][license-url] [![PkgGoDev][pkggodev-badge]][pkggodev-url]
-Pure Go implementation of [jq](https://github.com/stedolan/jq).
+# gojq
+[![CI Status](https://github.com/itchyny/gojq/workflows/CI/badge.svg)](https://github.com/itchyny/gojq/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/itchyny/gojq)](https://goreportcard.com/report/github.com/itchyny/gojq)
+[![MIT License](http://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/itchyny/gojq/blob/master/LICENSE)
+[![release](https://img.shields.io/github/release/itchyny/gojq/all.svg)](https://github.com/itchyny/gojq/releases)
+[![pkg.go.dev](https://pkg.go.dev/badge/github.com/itchyny/gojq)](https://pkg.go.dev/github.com/itchyny/gojq)
+
+### Pure Go implementation of [jq](https://github.com/stedolan/jq)
+This is an implementation of jq command written in Go language.
+You can also embed gojq as a library to your Go products.
 
 ## Usage
 ```sh
@@ -50,7 +58,7 @@ brew install itchyny/tap/gojq
 
 ### Build from source
 ```sh
-env GO111MODULE=on go get github.com/itchyny/gojq/cmd/gojq
+go get github.com/itchyny/gojq/cmd/gojq
 ```
 
 ### Docker
@@ -120,12 +128,3 @@ itchyny (https://github.com/itchyny)
 
 ## License
 This software is released under the MIT License, see LICENSE.
-
-[ci-url]: https://github.com/itchyny/gojq/actions
-[ci-badge]: https://github.com/itchyny/gojq/workflows/CI/badge.svg
-[goreportcard-url]: https://goreportcard.com/report/github.com/itchyny/gojq
-[goreportcard-badge]: https://goreportcard.com/badge/github.com/itchyny/gojq
-[license-url]: https://github.com/itchyny/gojq/blob/master/LICENSE
-[license-badge]: http://img.shields.io/badge/license-MIT-blue.svg
-[pkggodev-url]: https://pkg.go.dev/github.com/itchyny/gojq
-[pkggodev-badge]: https://pkg.go.dev/badge/github.com/itchyny/gojq
