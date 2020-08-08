@@ -196,7 +196,8 @@ func (c *compiler) compileImport(i *Import) error {
 func (c *compiler) compileModule(q *Query, alias string) error {
 	cc := &compiler{
 		moduleLoader: c.moduleLoader, environLoader: c.environLoader, variables: c.variables, inputIter: c.inputIter,
-		codeoffset: c.pc(), scopes: c.scopes, scopecnt: c.scopecnt}
+		codeoffset: c.pc(), scopes: c.scopes, scopecnt: c.scopecnt,
+	}
 	defer cc.newScopeDepth()()
 	bs, err := cc.compileModuleInternal(q)
 	if err != nil {
@@ -282,7 +283,8 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	c.funcs = append(c.funcs, &funcinfo{e.Name, pc, e.Args, argsorder})
 	cc := &compiler{
 		moduleLoader: c.moduleLoader, environLoader: c.environLoader, inputIter: c.inputIter,
-		codeoffset: pc, scopecnt: c.scopecnt, funcs: c.funcs}
+		codeoffset: pc, scopecnt: c.scopecnt, funcs: c.funcs,
+	}
 	scope := cc.newScope()
 	cc.scopes = append(c.scopes, scope)
 	setscope := cc.lazy(func() *code {
@@ -485,12 +487,15 @@ func (c *compiler) compileQueryUpdate(l, r *Query, op Operator) (err error) {
 				Name: "_modify",
 				Args: []*Query{
 					l,
-					{Term: &Term{Type: TermTypeFunc, Func: &Func{
-						Name: op.getFunc(),
-						Args: []*Query{
-							{Term: &Term{Type: TermTypeIdentity}},
-							{Func: name}},
-					},
+					{Term: &Term{
+						Type: TermTypeFunc,
+						Func: &Func{
+							Name: op.getFunc(),
+							Args: []*Query{
+								{Term: &Term{Type: TermTypeIdentity}},
+								{Func: name},
+							},
+						},
 					}},
 				},
 			},

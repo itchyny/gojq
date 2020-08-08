@@ -180,30 +180,34 @@ func init() {
 }
 
 func argFunc0(fn func(interface{}) interface{}) function {
-	return function{argcount0, func(v interface{}, _ []interface{}) interface{} {
-		return fn(v)
-	},
+	return function{
+		argcount0, func(v interface{}, _ []interface{}) interface{} {
+			return fn(v)
+		},
 	}
 }
 
 func argFunc1(fn func(interface{}, interface{}) interface{}) function {
-	return function{argcount1, func(v interface{}, args []interface{}) interface{} {
-		return fn(v, args[0])
-	},
+	return function{
+		argcount1, func(v interface{}, args []interface{}) interface{} {
+			return fn(v, args[0])
+		},
 	}
 }
 
 func argFunc2(fn func(interface{}, interface{}, interface{}) interface{}) function {
-	return function{argcount2, func(v interface{}, args []interface{}) interface{} {
-		return fn(v, args[0], args[1])
-	},
+	return function{
+		argcount2, func(v interface{}, args []interface{}) interface{} {
+			return fn(v, args[0], args[1])
+		},
 	}
 }
 
 func argFunc3(fn func(interface{}, interface{}, interface{}, interface{}) interface{}) function {
-	return function{argcount3, func(v interface{}, args []interface{}) interface{} {
-		return fn(v, args[0], args[1], args[2])
-	},
+	return function{
+		argcount3, func(v interface{}, args []interface{}) interface{} {
+			return fn(v, args[0], args[1], args[2])
+		},
 	}
 }
 
