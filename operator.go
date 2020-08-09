@@ -490,7 +490,7 @@ func funcOpMod(_, l, r interface{}) interface{} {
 			return l % r
 		},
 		func(l, r float64) interface{} {
-			if r == 0.0 {
+			if int(r) == 0 {
 				return &zeroModuloError{l, r}
 			}
 			return int(l) % int(r)
