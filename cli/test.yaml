@@ -23,6 +23,18 @@
   expected: |
     128
 
+- name: number query
+  args:
+    - '0, 128, 3.14, 1.2e3, 1E+3, 1E-9'
+  input: 0
+  expected: |
+    0
+    128
+    3.14
+    1200
+    1000
+    1e-9
+
 - name: string
   args:
     - '.'

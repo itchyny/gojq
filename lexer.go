@@ -342,7 +342,7 @@ func (l *lexer) scanNumber(state int) int {
 					l.offset++
 					return -l.offset
 				}
-				if state == numberStateExpLead && len(l.source) == l.offset {
+				if state == numberStateExpLead {
 					return -l.offset
 				}
 				return l.offset
