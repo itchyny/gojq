@@ -301,6 +301,13 @@
   error: |
     expected "start" and "end" for slicing but got: object ({"start":1})
 
+- name: array slice against string error
+  args:
+    - '""[:{}]'
+  input: 0
+  error: |
+    expected a number for indexing an array but got: object ({})
+
 - name: array index and slice with large number
   args:
     - -c

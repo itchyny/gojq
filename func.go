@@ -830,6 +830,7 @@ func funcSlice(_, v, end, start interface{}) (r interface{}) {
 				r = implode([]interface{}{s})
 			case nil:
 				r = ""
+			case error:
 			default:
 				panic(r)
 			}
