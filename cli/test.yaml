@@ -1792,7 +1792,7 @@
 
 - name: multiply strings
   args:
-    - '[-1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.7, 10, 9444732965739290427392 / 4722366482869645213696][] * "abc"'
+    - '[-1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.7, 10, 9444732965739290427392 / 4722366482869645213696, infinite][] * "abc"'
   input: 'null'
   expected: |
     null
@@ -1804,6 +1804,7 @@
     "abcabcabc"
     "abcabcabcabcabcabcabcabcabcabc"
     "abcabc"
+    null
 
 - name: multiply objects
   args:
