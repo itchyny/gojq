@@ -907,8 +907,11 @@ func toIndex(a []interface{}, i int) int {
 	}
 }
 
-func funcBreak(x interface{}) interface{} {
-	return &breakError{x.(string)}
+func funcBreak(v interface{}) interface{} {
+	if v, ok := v.(string); ok {
+		return &breakError{v}
+	}
+	return &funcTypeError{"_break", v}
 }
 
 func funcMinBy(v, x interface{}) interface{} {

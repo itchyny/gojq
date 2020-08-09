@@ -2334,6 +2334,13 @@
                          ^  unexpected token "x"
   exit_code: 3
 
+- name: invalid break syntax
+  args:
+    - 'label $x | _break'
+  input: 'null'
+  error: |
+    _break cannot be applied to: null
+
 - name: string interpolation
   args:
     - -c
