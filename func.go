@@ -1644,7 +1644,10 @@ func funcBuiltins(interface{}) interface{} {
 }
 
 func internalfuncTypeError(v, x interface{}) interface{} {
-	return &funcTypeError{x.(string), v}
+	if x, ok := x.(string); ok {
+		return &funcTypeError{x, v}
+	}
+	return &funcTypeError{"_type_error", v}
 }
 
 func toInt(x interface{}) (int, bool) {
