@@ -1807,6 +1807,13 @@
     null
     null
 
+- name: multiply empty string
+  args:
+    - '7 * ""'
+  input: 'null'
+  expected: |
+    ""
+
 - name: multiply objects
   args:
     - -c
