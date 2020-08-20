@@ -122,7 +122,7 @@ type hasKeyTypeError struct {
 }
 
 func (err *hasKeyTypeError) Error() string {
-	return fmt.Sprintf("cannot check wether %s has a key: %s", typeErrorPreview(err.l), typeErrorPreview(err.r))
+	return fmt.Sprintf("cannot check whether %s has a key: %s", typeErrorPreview(err.l), typeErrorPreview(err.r))
 }
 
 type unaryTypeError struct {
