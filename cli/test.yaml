@@ -928,7 +928,7 @@
     - 'has(0)'
   input: '{}'
   error: |
-    cannot check wether object ({}) has a key: number (0)
+    cannot check whether object ({}) has a key: number (0)
 
 - name: in function for object
   args:
@@ -957,7 +957,7 @@
     - 'in([])'
   input: '"x"'
   error: |
-    cannot check wether array ([]) has a key: string ("x")
+    cannot check whether array ([]) has a key: string ("x")
 
 - name: map function
   args:
