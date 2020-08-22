@@ -1,4 +1,12 @@
 # Changelog
+## [v0.11.1](https://github.com/itchyny/gojq/compare/v0.11.0..v0.11.1) (2020-08-22)
+*  improve compatibility of `strftime`, `strptime` functions with jq
+*  fix YAML input with numbers in keys
+*  fix crash on multiplying a large number or `infinite` to a string
+*  fix crash on error while slicing a string (`""[:{}]`)
+*  fix crash on modulo by a number near 0.0 (`1 % 0.1`)
+*  include `CREDITS` file in artifacts
+
 ## [v0.11.0](https://github.com/itchyny/gojq/compare/v0.10.4..v0.11.0) (2020-07-08)
 * improve parsing performance significantly
 * rewrite the parser from `participle` library to `goyacc` generated parser
@@ -120,7 +128,6 @@
 * implement `setpath` function
 
 ## [v0.3.0](https://github.com/itchyny/gojq/compare/v0.2.0..v0.3.0) (2019-06-05)
-
 * implement `reduce`, `foreach`, `label`, `break` syntax
 * improve binding variable syntax to bind to an object or an array
 * implement string interpolation
@@ -149,7 +156,6 @@
 * implement `-s` flag for reading all inputs into an array
 
 ## [v0.2.0](https://github.com/itchyny/gojq/compare/v0.1.0..v0.2.0) (2019-05-06)
-
 * implement binding variable syntax (`... as $var`)
 * implement `try` `catch` syntax
 * implement alternative operator (`//`)
@@ -161,7 +167,6 @@
 * support indexing against strings
 
 ## [v0.1.0](https://github.com/itchyny/gojq/compare/v0.0.1..v0.1.0) (2019-05-02)
-
 * implement binary operators (`+`, `-`, `*`, `/`, `%`, `==`, `!=`, `>`, `<`,
   `>=`, `<=`, `and`, `or`)
 * implement unary operators (`+`, `-`)
@@ -181,5 +186,4 @@
 * support json file name arguments
 
 ## [v0.0.1](https://github.com/itchyny/gojq/compare/0fa3241..v0.0.1) (2019-04-14)
-
 * initial implementation
