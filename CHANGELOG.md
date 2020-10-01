@@ -1,4 +1,8 @@
 # Changelog
+## [v0.11.2](https://github.com/itchyny/gojq/compare/v0.11.1..v0.11.2) (2020-10-01)
+* fix build for 32bit architecture
+* release to [GitHub Container Registry](https://github.com/users/itchyny/packages/container/package/gojq)
+
 ## [v0.11.1](https://github.com/itchyny/gojq/compare/v0.11.0..v0.11.1) (2020-08-22)
 *  improve compatibility of `strftime`, `strptime` functions with jq
 *  fix YAML input with numbers in keys
