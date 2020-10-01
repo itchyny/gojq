@@ -10,14 +10,18 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     steps:
+
     - name: Checkout code
       uses: actions/checkout@main
+
     - name: Setup Go
       uses: actions/setup-go@v2
       with:
         go-version: 1.14.7
+
     - name: Cross build
       run: make cross
+
     - name: Create Release
       id: create_release
       uses: actions/create-release@master
@@ -26,20 +30,64 @@ jobs:
       with:
         tag_name: ${{ github.ref }}
         release_name: Release ${{ github.ref }}
+
     - name: Upload
       run: make upload
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Set variables
       id: variables
       run: |
-        git_tag_name="${GITHUB_REF#refs/tags/v}"
+        git_tag_name="${GITHUB_REF#refs/tags/}"
+        echo "::set-output name=git_tag_name::${git_tag_name}"
+        git_tag_name="${git_tag_name#v}"
         echo "::set-output name=release_tag_patch::${git_tag_name}"
         echo "::set-output name=release_tag_minor::${git_tag_name%.*}"
-    - name: Release Docker image
-      uses: docker/build-push-action@v1
+        echo "::set-output name=release_tag_major::${git_tag_name%%.*}"
+        echo "::set-output name=created::$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        driver-opts: image=moby/buildkit:master
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v1
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-        repository: itchyny/gojq
-        tags: latest, ${{ steps.variables.outputs.release_tag_patch }}, ${{ steps.variables.outputs.release_tag_minor }}
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.GHCR_TOKEN }}
+
+    - name: Build and release to Docker Hub and GitHub Container Registry
+      uses: docker/build-push-action@v2
+      with:
+        push: true
+        tags: |
+          ${{ github.repository }}:latest
+          ${{ github.repository }}:${{ steps.variables.outputs.release_tag_patch }}
+          ${{ github.repository }}:${{ steps.variables.outputs.release_tag_minor }}
+          ${{ github.repository }}:${{ steps.variables.outputs.release_tag_major }}
+          ghcr.io/${{ github.repository }}:latest
+          ghcr.io/${{ github.repository }}:${{ steps.variables.outputs.release_tag_patch }}
+          ghcr.io/${{ github.repository }}:${{ steps.variables.outputs.release_tag_minor }}
+          ghcr.io/${{ github.repository }}:${{ steps.variables.outputs.release_tag_major }}
+        labels: |
+          org.opencontainers.image.title=${{ github.event.repository.name }}
+          org.opencontainers.image.description=${{ github.event.repository.description }}
+          org.opencontainers.image.url=${{ github.event.repository.html_url }}
+          org.opencontainers.image.documentation=${{ github.event.repository.html_url }}
+          org.opencontainers.image.source=${{ github.event.repository.clone_url }}
+          org.opencontainers.image.version=${{ steps.variables.outputs.git_tag_name }}
+          org.opencontainers.image.created=${{ steps.variables.outputs.created }}
+          org.opencontainers.image.revision=${{ github.sha }}
+          org.opencontainers.image.licenses=${{ github.event.repository.license.spdx_id }}
