@@ -17,7 +17,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.14.7
+        go-version: 1.14.9
 
     - name: Cross build
       run: make cross
