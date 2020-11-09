@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"strings"
 )
 
 type expectedObjectError struct {
@@ -285,7 +286,7 @@ func (err *jsonParseError) JSONParseError() (string, string, error) {
 }
 
 func (err *jsonParseError) Error() string {
-	return fmt.Sprintf("invalid json: %s: %s", err.fname, err.err)
+	return fmt.Sprintf("invalid json: %s: %s", err.fname, strings.TrimPrefix(err.err.Error(), "json: "))
 }
 
 func typeErrorPreview(v interface{}) string {

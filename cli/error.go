@@ -175,7 +175,7 @@ func (err *jsonParseError) Error() string {
 				rs = rs[k:]
 			}
 		}
-		fmt.Fprintf(&s, "\n    %s\n%s  %s", string(rs), strings.Repeat(" ", 3+j)+"^", er)
+		fmt.Fprintf(&s, "\n    %s\n%s  %s", string(rs), strings.Repeat(" ", 3+j)+"^", strings.TrimPrefix(er.Error(), "json: "))
 	}
 	return s.String()
 }
