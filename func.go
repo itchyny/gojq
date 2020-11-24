@@ -45,6 +45,7 @@ func init() {
 		"debug":          argFunc0(nil),
 		"stderr":         argFunc0(nil),
 		"env":            argFunc0(nil),
+		"builtins":       argFunc0(nil),
 		"input":          argFunc0(nil),
 		"modulemeta":     argFunc0(nil),
 		"length":         argFunc0(funcLength),
@@ -174,7 +175,6 @@ func init() {
 		"error":          {argcount0 | argcount1, funcError},
 		"halt":           argFunc0(funcHalt),
 		"halt_error":     {argcount0 | argcount1, funcHaltError},
-		"builtins":       argFunc0(funcBuiltins),
 		"_type_error":    argFunc1(internalfuncTypeError),
 	}
 }
@@ -1615,32 +1615,6 @@ func funcHaltError(v interface{}, args []interface{}) interface{} {
 		}
 	}
 	return &exitCodeError{v, code, true}
-}
-
-func funcBuiltins(interface{}) interface{} {
-	var xs []string
-	for name, fn := range internalFuncs {
-		if name[0] != '_' {
-			for i, cnt := 0, fn.argcount; cnt > 0; i, cnt = i+1, cnt>>1 {
-				if cnt&1 > 0 {
-					xs = append(xs, name+"/"+fmt.Sprint(i))
-				}
-			}
-		}
-	}
-	for _, fds := range builtinFuncDefs {
-		for _, fd := range fds {
-			if fd.Name[0] != '_' {
-				xs = append(xs, fd.Name+"/"+fmt.Sprint(len(fd.Args)))
-			}
-		}
-	}
-	sort.Strings(xs)
-	ys := make([]interface{}, len(xs))
-	for i, x := range xs {
-		ys[i] = x
-	}
-	return ys
 }
 
 func internalfuncTypeError(v, x interface{}) interface{} {

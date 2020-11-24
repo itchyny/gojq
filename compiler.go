@@ -905,6 +905,13 @@ func (c *compiler) compileFunc(e *Func) error {
 		case "stderr":
 			c.append(&code{op: opdebug, v: "STDERR:"})
 			return nil
+		case "builtins":
+			return c.compileCallInternal(
+				[3]interface{}{c.funcBuiltins, 0, e.Name},
+				e.Args,
+				nil,
+				false,
+			)
 		case "input":
 			if c.inputIter == nil {
 				return &inputNotAllowedError{}
@@ -935,6 +942,41 @@ func (c *compiler) compileFunc(e *Func) error {
 		)
 	}
 	return &funcNotFoundError{e}
+}
+
+func (c *compiler) funcBuiltins(interface{}, []interface{}) interface{} {
+	var xs []string
+	for name, fn := range internalFuncs {
+		if name[0] != '_' {
+			for i, cnt := 0, fn.argcount; cnt > 0; i, cnt = i+1, cnt>>1 {
+				if cnt&1 > 0 {
+					xs = append(xs, name+"/"+fmt.Sprint(i))
+				}
+			}
+		}
+	}
+	for _, fds := range builtinFuncDefs {
+		for _, fd := range fds {
+			if fd.Name[0] != '_' {
+				xs = append(xs, fd.Name+"/"+fmt.Sprint(len(fd.Args)))
+			}
+		}
+	}
+	for name, fn := range c.customFuncs {
+		if name[0] != '_' {
+			for i, cnt := 0, fn.argcount; cnt > 0; i, cnt = i+1, cnt>>1 {
+				if cnt&1 > 0 {
+					xs = append(xs, name+"/"+fmt.Sprint(i))
+				}
+			}
+		}
+	}
+	sort.Strings(xs)
+	ys := make([]interface{}, len(xs))
+	for i, x := range xs {
+		ys[i] = x
+	}
+	return ys
 }
 
 func (c *compiler) funcInput(interface{}, []interface{}) interface{} {

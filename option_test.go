@@ -196,12 +196,7 @@ func TestWithVariablesError2(t *testing.T) {
 }
 
 func TestWithFunction(t *testing.T) {
-	query, err := gojq.Parse(".[] | f | g(3)")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	code, err := gojq.Compile(
-		query,
+	options := []gojq.CompilerOption{
 		gojq.WithFunction("f", 0, func(x interface{}, _ []interface{}) interface{} {
 			if x, ok := x.(int); ok {
 				return x * 2
@@ -216,7 +211,15 @@ func TestWithFunction(t *testing.T) {
 			}
 			return fmt.Errorf("g cannot be applied to: %v, %v", x, xs)
 		}),
-	)
+	}
+	query, err := gojq.Parse(".[] | f | g(3)")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	code, err := gojq.Compile(query, options...)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	iter := code.Run([]interface{}{0, 1, 2, 3, 4})
 	n := 0
 	for {
@@ -226,6 +229,28 @@ func TestWithFunction(t *testing.T) {
 		}
 		if expected := n*2 + 3; v != expected {
 			t.Errorf("expected: %v, got: %v", expected, v)
+		}
+		n++
+	}
+	query, err = gojq.Parse(
+		`("f/0", "f/1", "g/0", "g/1") as $f | builtins | any(. == $f)`,
+	)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	code, err = gojq.Compile(query, options...)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	iter = code.Run(nil)
+	n = 0
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if expected := n == 0 || n == 3; v != expected {
+			t.Errorf("expected: %v, got: %v (n = %d)", expected, v, n)
 		}
 		n++
 	}
