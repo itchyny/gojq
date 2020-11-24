@@ -1,6 +1,7 @@
 package gojq_test
 
 import (
+	"fmt"
 	"log"
 	"reflect"
 	"strings"
@@ -191,6 +192,42 @@ func TestWithVariablesError2(t *testing.T) {
 				t.Errorf("expected: %v, got: %v", expected, got)
 			}
 		}
+	}
+}
+
+func TestWithFunction(t *testing.T) {
+	query, err := gojq.Parse(".[] | f | g(3)")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	code, err := gojq.Compile(
+		query,
+		gojq.WithFunction("f", 0, func(x interface{}, _ []interface{}) interface{} {
+			if x, ok := x.(int); ok {
+				return x * 2
+			}
+			return fmt.Errorf("f cannot be applied to: %v", x)
+		}),
+		gojq.WithFunction("g", 1, func(x interface{}, xs []interface{}) interface{} {
+			if x, ok := x.(int); ok {
+				if y, ok := xs[0].(int); ok {
+					return x + y
+				}
+			}
+			return fmt.Errorf("g cannot be applied to: %v, %v", x, xs)
+		}),
+	)
+	iter := code.Run([]interface{}{0, 1, 2, 3, 4})
+	n := 0
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if expected := n*2 + 3; v != expected {
+			t.Errorf("expected: %v, got: %v", expected, v)
+		}
+		n++
 	}
 }
 

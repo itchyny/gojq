@@ -29,6 +29,17 @@ func WithVariables(variables []string) CompilerOption {
 	}
 }
 
+// WithFunction is a compiler option for adding a custom function. You can add
+// your own custom internal functions using this option.
+func WithFunction(name string, arity int, f func(interface{}, []interface{}) interface{}) CompilerOption {
+	return func(c *compiler) {
+		if c.customFuncs == nil {
+			c.customFuncs = make(map[string]function)
+		}
+		c.customFuncs[name] = function{1 << uint(arity), f}
+	}
+}
+
 // WithInputIter is a compiler option for input iterator used by input(s)/0.
 // Note that input and inputs functions are not allowed by default. We have
 // to distinguish the query input and the values for input(s) functions. For

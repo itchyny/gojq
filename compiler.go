@@ -14,6 +14,7 @@ type compiler struct {
 	moduleLoader  ModuleLoader
 	environLoader func() []string
 	variables     []string
+	customFuncs   map[string]function
 	inputIter     Iter
 	codes         []*code
 	codeinfos     []codeinfo
@@ -924,6 +925,14 @@ func (c *compiler) compileFunc(e *Func) error {
 		default:
 			return c.compileCall(e.Name, e.Args)
 		}
+	}
+	if fn, ok := c.customFuncs[e.Name]; ok && fn.accept(len(e.Args)) {
+		return c.compileCallInternal(
+			[3]interface{}{fn.callback, len(e.Args), e.Name},
+			e.Args,
+			nil,
+			false,
+		)
 	}
 	return &funcNotFoundError{e}
 }
