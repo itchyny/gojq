@@ -36,7 +36,19 @@ func WithFunction(name string, arity int, f func(interface{}, []interface{}) int
 		if c.customFuncs == nil {
 			c.customFuncs = make(map[string]function)
 		}
-		c.customFuncs[name] = function{1 << uint(arity), f}
+		if fn, ok := c.customFuncs[name]; ok {
+			c.customFuncs[name] = function{
+				1<<uint(arity) | fn.argcount,
+				func(x interface{}, xs []interface{}) interface{} {
+					if len(xs) == arity {
+						return f(x, xs)
+					}
+					return fn.callback(x, xs)
+				},
+			}
+		} else {
+			c.customFuncs[name] = function{1 << uint(arity), f}
+		}
 	}
 }
 
