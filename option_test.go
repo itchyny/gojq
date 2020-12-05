@@ -406,6 +406,49 @@ func TestWithFunctionMultipleArities(t *testing.T) {
 	}
 }
 
+type moduleLoader2 struct{}
+
+func (*moduleLoader2) LoadModule(name string) (*gojq.Query, error) {
+	switch name {
+	case "module1":
+		return gojq.Parse(`
+			def g: def h: f * 3; h * 4;
+		`)
+	}
+	return nil, fmt.Errorf("module not found: %q", name)
+}
+
+func TestWithFunctionWithModuleLoader(t *testing.T) {
+	query, err := gojq.Parse(`include "module1"; .[] | g`)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	code, err := gojq.Compile(query,
+		gojq.WithFunction("f", 0, 0, func(x interface{}, _ []interface{}) interface{} {
+			if x, ok := x.(int); ok {
+				return x * 2
+			}
+			return fmt.Errorf("f cannot be applied to: %v", x)
+		}),
+		gojq.WithModuleLoader(&moduleLoader2{}),
+	)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	iter := code.Run([]interface{}{0, 1, 2, 3, 4})
+	n := 0
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if expected := n * 2 * 3 * 4; v != expected {
+			t.Errorf("expected: %v, got: %v", expected, v)
+		}
+		n++
+	}
+}
+
 func TestWithInputIter(t *testing.T) {
 	query, err := gojq.Parse("range(10) | input")
 	if err != nil {

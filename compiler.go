@@ -196,7 +196,8 @@ func (c *compiler) compileImport(i *Import) error {
 
 func (c *compiler) compileModule(q *Query, alias string) error {
 	cc := &compiler{
-		moduleLoader: c.moduleLoader, environLoader: c.environLoader, variables: c.variables, inputIter: c.inputIter,
+		moduleLoader: c.moduleLoader, environLoader: c.environLoader,
+		variables: c.variables, customFuncs: c.customFuncs, inputIter: c.inputIter,
 		codeoffset: c.pc(), scopes: c.scopes, scopecnt: c.scopecnt,
 	}
 	defer cc.newScopeDepth()()
@@ -283,7 +284,8 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	pc, argsorder := c.pc(), getArgsOrder(e.Args)
 	c.funcs = append(c.funcs, &funcinfo{e.Name, pc, e.Args, argsorder})
 	cc := &compiler{
-		moduleLoader: c.moduleLoader, environLoader: c.environLoader, inputIter: c.inputIter,
+		moduleLoader: c.moduleLoader, environLoader: c.environLoader,
+		customFuncs: c.customFuncs, inputIter: c.inputIter,
 		codeoffset: pc, scopecnt: c.scopecnt, funcs: c.funcs,
 	}
 	scope := cc.newScope()
