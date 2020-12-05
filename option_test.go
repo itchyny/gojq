@@ -197,13 +197,13 @@ func TestWithVariablesError2(t *testing.T) {
 
 func TestWithFunction(t *testing.T) {
 	options := []gojq.CompilerOption{
-		gojq.WithFunction("f", 0, func(x interface{}, _ []interface{}) interface{} {
+		gojq.WithFunction("f", 0, 0, func(x interface{}, _ []interface{}) interface{} {
 			if x, ok := x.(int); ok {
 				return x * 2
 			}
 			return fmt.Errorf("f cannot be applied to: %v", x)
 		}),
-		gojq.WithFunction("g", 1, func(x interface{}, xs []interface{}) interface{} {
+		gojq.WithFunction("g", 1, 1, func(x interface{}, xs []interface{}) interface{} {
 			if x, ok := x.(int); ok {
 				if y, ok := xs[0].(int); ok {
 					return x + y
@@ -258,13 +258,13 @@ func TestWithFunction(t *testing.T) {
 
 func TestWithFunctionDuplicateName(t *testing.T) {
 	options := []gojq.CompilerOption{
-		gojq.WithFunction("f", 0, func(x interface{}, _ []interface{}) interface{} {
+		gojq.WithFunction("f", 0, 0, func(x interface{}, _ []interface{}) interface{} {
 			if x, ok := x.(int); ok {
 				return x * 2
 			}
 			return fmt.Errorf("f cannot be applied to: %v", x)
 		}),
-		gojq.WithFunction("f", 1, func(x interface{}, xs []interface{}) interface{} {
+		gojq.WithFunction("f", 1, 1, func(x interface{}, xs []interface{}) interface{} {
 			if x, ok := x.(int); ok {
 				if y, ok := xs[0].(int); ok {
 					return x + y
@@ -272,13 +272,13 @@ func TestWithFunctionDuplicateName(t *testing.T) {
 			}
 			return fmt.Errorf("f cannot be applied to: %v, %v", x, xs)
 		}),
-		gojq.WithFunction("f", 0, func(x interface{}, _ []interface{}) interface{} {
+		gojq.WithFunction("f", 0, 0, func(x interface{}, _ []interface{}) interface{} {
 			if x, ok := x.(int); ok {
 				return x * 4
 			}
 			return fmt.Errorf("f cannot be applied to: %v", x)
 		}),
-		gojq.WithFunction("f", 2, func(x interface{}, xs []interface{}) interface{} {
+		gojq.WithFunction("f", 2, 2, func(x interface{}, xs []interface{}) interface{} {
 			if x, ok := x.(int); ok {
 				if y, ok := xs[0].(int); ok {
 					if z, ok := xs[1].(int); ok {
@@ -327,6 +327,79 @@ func TestWithFunctionDuplicateName(t *testing.T) {
 			break
 		}
 		if expected := n < 3; v != expected {
+			t.Errorf("expected: %v, got: %v (n = %d)", expected, v, n)
+		}
+		n++
+	}
+}
+
+func TestWithFunctionMultipleArities(t *testing.T) {
+	options := []gojq.CompilerOption{
+		gojq.WithFunction("f", 0, 4, func(x interface{}, xs []interface{}) interface{} {
+			if x, ok := x.(int); ok {
+				x *= 2
+				for _, y := range xs {
+					if y, ok := y.(int); ok {
+						x += y
+					}
+				}
+				return x
+			}
+			return fmt.Errorf("f cannot be applied to: %v, %v", x, xs)
+		}),
+		gojq.WithFunction("f", 2, 3, func(x interface{}, xs []interface{}) interface{} {
+			if x, ok := x.(int); ok {
+				for _, y := range xs {
+					if y, ok := y.(int); ok {
+						x *= y
+					}
+				}
+				return x
+			}
+			return fmt.Errorf("f cannot be applied to: %v, %v", x, xs)
+		}),
+		gojq.WithFunction("g", 0, 30, func(x interface{}, xs []interface{}) interface{} {
+			return nil
+		}),
+	}
+	query, err := gojq.Parse(".[] | f | f(1) | f(2; 3) | f(4; 5; 6) | f(7; 8; 9; 10)")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	code, err := gojq.Compile(query, options...)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	iter := code.Run([]interface{}{0, 1, 2, 3, 4})
+	n := 0
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if expected := (((n*2*2+1)*2*3)*4*5*6)*2 + 7 + 8 + 9 + 10; v != expected {
+			t.Errorf("expected: %v, got: %v", expected, v)
+		}
+		n++
+	}
+	query, err = gojq.Parse(
+		`("f/0", "f/1", "f/2", "f/3", "f/4", "f/5") as $f | builtins | any(. == $f)`,
+	)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	code, err = gojq.Compile(query, options...)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	iter = code.Run(nil)
+	n = 0
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if expected := n < 5; v != expected {
 			t.Errorf("expected: %v, got: %v (n = %d)", expected, v, n)
 		}
 		n++
