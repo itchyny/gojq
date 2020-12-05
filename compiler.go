@@ -947,20 +947,24 @@ func (c *compiler) compileFunc(e *Func) error {
 }
 
 func (c *compiler) funcBuiltins(interface{}, []interface{}) interface{} {
-	var xs []string
+	type funcNameArity struct {
+		name  string
+		arity int
+	}
+	var xs []*funcNameArity
+	for _, fds := range builtinFuncDefs {
+		for _, fd := range fds {
+			if fd.Name[0] != '_' {
+				xs = append(xs, &funcNameArity{fd.Name, len(fd.Args)})
+			}
+		}
+	}
 	for name, fn := range internalFuncs {
 		if name[0] != '_' {
 			for i, cnt := 0, fn.argcount; cnt > 0; i, cnt = i+1, cnt>>1 {
 				if cnt&1 > 0 {
-					xs = append(xs, name+"/"+fmt.Sprint(i))
+					xs = append(xs, &funcNameArity{name, i})
 				}
-			}
-		}
-	}
-	for _, fds := range builtinFuncDefs {
-		for _, fd := range fds {
-			if fd.Name[0] != '_' {
-				xs = append(xs, fd.Name+"/"+fmt.Sprint(len(fd.Args)))
 			}
 		}
 	}
@@ -968,15 +972,18 @@ func (c *compiler) funcBuiltins(interface{}, []interface{}) interface{} {
 		if name[0] != '_' {
 			for i, cnt := 0, fn.argcount; cnt > 0; i, cnt = i+1, cnt>>1 {
 				if cnt&1 > 0 {
-					xs = append(xs, name+"/"+fmt.Sprint(i))
+					xs = append(xs, &funcNameArity{name, i})
 				}
 			}
 		}
 	}
-	sort.Strings(xs)
+	sort.Slice(xs, func(i, j int) bool {
+		return xs[i].name < xs[j].name ||
+			xs[i].name == xs[j].name && xs[i].arity < xs[j].arity
+	})
 	ys := make([]interface{}, len(xs))
 	for i, x := range xs {
-		ys[i] = x
+		ys[i] = x.name + "/" + fmt.Sprint(x.arity)
 	}
 	return ys
 }
