@@ -118,6 +118,7 @@ func main() {
 - [`gojq.WithModuleLoader`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#WithModuleLoader) allows to load modules. By default, the module feature is disabled. If you want to load modules from the filesystem, use [`gojq.NewModuleLoader`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#NewModuleLoader).
 - [`gojq.WithEnvironLoader`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#WithEnvironLoader) allows to configure the environment variables referenced by `env` and `$ENV`. By default, OS environment variables are not accessible due to security reason. You can use `gojq.WithEnvironLoader(os.Environ)` if you want.
 - [`gojq.WithVariables`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#WithVariables) allows to configure the variables which can be used in the query. Pass the values of the variables to [`code.Run`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#Code.Run) in the same order.
+- [`gojq.WithFunction`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#WithFunction) allows to add a custom internal function.
 - [`gojq.WithInputIter`](https://pkg.go.dev/github.com/itchyny/gojq?tab=doc#WithInputIter) allows to use `input` and `inputs` functions. By default, these functions are disabled.
 
 ## Bug Tracker
