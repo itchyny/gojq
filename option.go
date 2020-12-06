@@ -1,5 +1,7 @@
 package gojq
 
+import "fmt"
+
 // CompilerOption ...
 type CompilerOption func(*compiler)
 
@@ -26,6 +28,36 @@ func WithEnvironLoader(environLoader func() []string) CompilerOption {
 func WithVariables(variables []string) CompilerOption {
 	return func(c *compiler) {
 		c.variables = variables
+	}
+}
+
+// WithFunction is a compiler option for adding a custom internal function.
+// Specify the minimum and maximum count of the function arguments. These
+// values should satisfy 0 <= minarity <= maxarity <= 30, otherwise panics.
+// On handling numbers, you should take account to int, float64 and *big.Int.
+func WithFunction(name string, minarity int, maxarity int,
+	f func(interface{}, []interface{}) interface{}) CompilerOption {
+	if !(0 <= minarity && minarity <= maxarity && maxarity <= 30) {
+		panic(fmt.Sprintf("invalid arity for %q: %d, %d", name, minarity, maxarity))
+	}
+	argcount := 1<<(maxarity+1) - 1<<minarity
+	return func(c *compiler) {
+		if c.customFuncs == nil {
+			c.customFuncs = make(map[string]function)
+		}
+		if fn, ok := c.customFuncs[name]; ok {
+			c.customFuncs[name] = function{
+				argcount | fn.argcount,
+				func(x interface{}, xs []interface{}) interface{} {
+					if argcount&(1<<len(xs)) != 0 {
+						return f(x, xs)
+					}
+					return fn.callback(x, xs)
+				},
+			}
+		} else {
+			c.customFuncs[name] = function{argcount, f}
+		}
 	}
 }
 

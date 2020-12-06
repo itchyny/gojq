@@ -14,6 +14,7 @@ type compiler struct {
 	moduleLoader  ModuleLoader
 	environLoader func() []string
 	variables     []string
+	customFuncs   map[string]function
 	inputIter     Iter
 	codes         []*code
 	codeinfos     []codeinfo
@@ -195,7 +196,8 @@ func (c *compiler) compileImport(i *Import) error {
 
 func (c *compiler) compileModule(q *Query, alias string) error {
 	cc := &compiler{
-		moduleLoader: c.moduleLoader, environLoader: c.environLoader, variables: c.variables, inputIter: c.inputIter,
+		moduleLoader: c.moduleLoader, environLoader: c.environLoader,
+		variables: c.variables, customFuncs: c.customFuncs, inputIter: c.inputIter,
 		codeoffset: c.pc(), scopes: c.scopes, scopecnt: c.scopecnt,
 	}
 	defer cc.newScopeDepth()()
@@ -282,7 +284,8 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	pc, argsorder := c.pc(), getArgsOrder(e.Args)
 	c.funcs = append(c.funcs, &funcinfo{e.Name, pc, e.Args, argsorder})
 	cc := &compiler{
-		moduleLoader: c.moduleLoader, environLoader: c.environLoader, inputIter: c.inputIter,
+		moduleLoader: c.moduleLoader, environLoader: c.environLoader,
+		customFuncs: c.customFuncs, inputIter: c.inputIter,
 		codeoffset: pc, scopecnt: c.scopecnt, funcs: c.funcs,
 	}
 	scope := cc.newScope()
@@ -904,6 +907,13 @@ func (c *compiler) compileFunc(e *Func) error {
 		case "stderr":
 			c.append(&code{op: opdebug, v: "STDERR:"})
 			return nil
+		case "builtins":
+			return c.compileCallInternal(
+				[3]interface{}{c.funcBuiltins, 0, e.Name},
+				e.Args,
+				nil,
+				false,
+			)
 		case "input":
 			if c.inputIter == nil {
 				return &inputNotAllowedError{}
@@ -925,7 +935,57 @@ func (c *compiler) compileFunc(e *Func) error {
 			return c.compileCall(e.Name, e.Args)
 		}
 	}
+	if fn, ok := c.customFuncs[e.Name]; ok && fn.accept(len(e.Args)) {
+		return c.compileCallInternal(
+			[3]interface{}{fn.callback, len(e.Args), e.Name},
+			e.Args,
+			nil,
+			false,
+		)
+	}
 	return &funcNotFoundError{e}
+}
+
+func (c *compiler) funcBuiltins(interface{}, []interface{}) interface{} {
+	type funcNameArity struct {
+		name  string
+		arity int
+	}
+	var xs []*funcNameArity
+	for _, fds := range builtinFuncDefs {
+		for _, fd := range fds {
+			if fd.Name[0] != '_' {
+				xs = append(xs, &funcNameArity{fd.Name, len(fd.Args)})
+			}
+		}
+	}
+	for name, fn := range internalFuncs {
+		if name[0] != '_' {
+			for i, cnt := 0, fn.argcount; cnt > 0; i, cnt = i+1, cnt>>1 {
+				if cnt&1 > 0 {
+					xs = append(xs, &funcNameArity{name, i})
+				}
+			}
+		}
+	}
+	for name, fn := range c.customFuncs {
+		if name[0] != '_' {
+			for i, cnt := 0, fn.argcount; cnt > 0; i, cnt = i+1, cnt>>1 {
+				if cnt&1 > 0 {
+					xs = append(xs, &funcNameArity{name, i})
+				}
+			}
+		}
+	}
+	sort.Slice(xs, func(i, j int) bool {
+		return xs[i].name < xs[j].name ||
+			xs[i].name == xs[j].name && xs[i].arity < xs[j].arity
+	})
+	ys := make([]interface{}, len(xs))
+	for i, x := range xs {
+		ys[i] = x.name + "/" + fmt.Sprint(x.arity)
+	}
+	return ys
 }
 
 func (c *compiler) funcInput(interface{}, []interface{}) interface{} {
