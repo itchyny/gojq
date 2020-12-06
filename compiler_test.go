@@ -74,7 +74,7 @@ func ExampleCode_Run() {
 }
 
 func ExampleCode_RunWithContext() {
-	query, err := gojq.Parse("def f: f; f")
+	query, err := gojq.Parse("def f: f; f, f")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -91,8 +91,8 @@ func ExampleCode_RunWithContext() {
 			break
 		}
 		if err, ok := v.(error); ok {
-			fmt.Printf("%s\n", err)
-			return
+			fmt.Println(err)
+			continue
 		}
 		_ = v
 	}

@@ -29,6 +29,7 @@ loop:
 		if hasCtx {
 			select {
 			case <-env.ctx.Done():
+				pc, env.forks = len(env.codes), nil
 				return env.ctx.Err(), true
 			default:
 			}
