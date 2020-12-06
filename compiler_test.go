@@ -12,7 +12,7 @@ import (
 )
 
 func ExampleCompile() {
-	query, err := gojq.Parse(".foo")
+	query, err := gojq.Parse(".[] | .foo")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -20,26 +20,23 @@ func ExampleCompile() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	inputs := []interface{}{
+	iter := code.Run([]interface{}{
 		nil,
 		"string",
 		42,
 		[]interface{}{"foo"},
 		map[string]interface{}{"foo": 42},
-	}
-	for _, input := range inputs {
-		iter := code.Run(input)
-		for {
-			v, ok := iter.Next()
-			if !ok {
-				break
-			}
-			if err, ok := v.(error); ok {
-				fmt.Printf("%s\n", err)
-				break
-			}
-			fmt.Printf("%#v\n", v)
+	})
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
 		}
+		if err, ok := v.(error); ok {
+			fmt.Println(err)
+			continue
+		}
+		fmt.Printf("%#v\n", v)
 	}
 
 	// Output:
