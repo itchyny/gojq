@@ -1662,8 +1662,7 @@ func bigToFloat(x *big.Int) float64 {
 	if x.IsInt64() {
 		return float64(x.Int64())
 	}
-	bs, _ := json.Marshal(x)
-	if f, err := json.Number(string(bs)).Float64(); err == nil {
+	if f, err := strconv.ParseFloat(x.String(), 64); err == nil {
 		return f
 	}
 	return math.Copysign(math.MaxFloat64, float64(x.Sign()))
