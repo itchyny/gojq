@@ -33,8 +33,8 @@ func normalizeNumbers(v interface{}) interface{} {
 		}
 		return v
 	case int64:
-		if v > int64(maxInt) {
-			return new(big.Int).SetUint64(uint64(v))
+		if v > int64(maxInt) || v < int64(minInt) {
+			return new(big.Int).SetInt64(v)
 		}
 		return int(v)
 	case int32:
