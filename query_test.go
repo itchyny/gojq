@@ -65,7 +65,7 @@ func ExampleQuery_RunWithContext() {
 func TestQueryRun_NumericTypes(t *testing.T) {
 	query, err := gojq.Parse(".[] > 1")
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	iter := query.Run([]interface{}{
 		int64(2), int32(2), int16(2), int8(2), uint64(2), uint32(2), uint16(2), uint8(2),
@@ -80,7 +80,7 @@ func TestQueryRun_NumericTypes(t *testing.T) {
 			break
 		}
 		if err, ok := v.(error); ok {
-			log.Fatalln(err)
+			t.Fatal(err)
 		}
 		if expected := true; expected != v {
 			t.Errorf("expected: %v, got: %v", expected, v)

@@ -2,7 +2,6 @@ package gojq_test
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
 	"testing"
@@ -16,7 +15,7 @@ func TestWithModuleLoaderError(t *testing.T) {
 		m::f
 	`)
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	_, err = gojq.Compile(query)
 	if got, expected := err.Error(), `cannot load module: "module1"`; got != expected {
@@ -25,11 +24,11 @@ func TestWithModuleLoaderError(t *testing.T) {
 
 	query, err = gojq.Parse("modulemeta")
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	code, err := gojq.Compile(query)
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	iter := code.Run("m")
 	for {
@@ -50,14 +49,14 @@ func TestWithModuleLoader_modulemeta(t *testing.T) {
 		"module1" | modulemeta
 	`)
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	code, err := gojq.Compile(
 		query,
 		gojq.WithModuleLoader(&moduleLoader{}),
 	)
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	iter := code.Run(nil)
 	for {
@@ -84,7 +83,7 @@ func TestWithModuleLoader_modulemeta(t *testing.T) {
 func TestWithEnvironLoader(t *testing.T) {
 	query, err := gojq.Parse("env")
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	code, err := gojq.Compile(
 		query,
@@ -93,7 +92,7 @@ func TestWithEnvironLoader(t *testing.T) {
 		}),
 	)
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	iter := code.Run(nil)
 	for {
@@ -111,11 +110,11 @@ func TestWithEnvironLoader(t *testing.T) {
 func TestWithEnvironLoaderEmpty(t *testing.T) {
 	query, err := gojq.Parse("env")
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	code, err := gojq.Compile(query)
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	iter := code.Run(nil)
 	for {
@@ -132,7 +131,7 @@ func TestWithEnvironLoaderEmpty(t *testing.T) {
 func TestWithVariablesError0(t *testing.T) {
 	query, err := gojq.Parse(".")
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	_, err = gojq.Compile(
 		query,
@@ -146,14 +145,14 @@ func TestWithVariablesError0(t *testing.T) {
 func TestWithVariablesError1(t *testing.T) {
 	query, err := gojq.Parse(".")
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	code, err := gojq.Compile(
 		query,
 		gojq.WithVariables([]string{"$x"}),
 	)
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	iter := code.Run(nil)
 	for {
@@ -172,14 +171,14 @@ func TestWithVariablesError1(t *testing.T) {
 func TestWithVariablesError2(t *testing.T) {
 	query, err := gojq.Parse(".")
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	code, err := gojq.Compile(
 		query,
 		gojq.WithVariables([]string{"$x"}),
 	)
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	iter := code.Run(nil, 1, 2)
 	for {
@@ -214,11 +213,11 @@ func TestWithFunction(t *testing.T) {
 	}
 	query, err := gojq.Parse(".[] | f | g(3)")
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	code, err := gojq.Compile(query, options...)
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	iter := code.Run([]interface{}{0, 1, 2, 3, 4})
 	n := 0
@@ -236,11 +235,11 @@ func TestWithFunction(t *testing.T) {
 		`("f/0", "f/1", "g/0", "g/1") as $f | builtins | any(. == $f)`,
 	)
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	code, err = gojq.Compile(query, options...)
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	iter = code.Run(nil)
 	n = 0
@@ -291,11 +290,11 @@ func TestWithFunctionDuplicateName(t *testing.T) {
 	}
 	query, err := gojq.Parse(".[] | f | f(3) | f(4; 5)")
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	code, err := gojq.Compile(query, options...)
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	iter := code.Run([]interface{}{0, 1, 2, 3, 4})
 	n := 0
@@ -313,11 +312,11 @@ func TestWithFunctionDuplicateName(t *testing.T) {
 		`("f/0", "f/1", "f/2", "f/3") as $f | builtins | any(. == $f)`,
 	)
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	code, err = gojq.Compile(query, options...)
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	iter = code.Run(nil)
 	n = 0
@@ -364,11 +363,11 @@ func TestWithFunctionMultipleArities(t *testing.T) {
 	}
 	query, err := gojq.Parse(".[] | f | f(1) | f(2; 3) | f(4; 5; 6) | f(7; 8; 9; 10)")
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	code, err := gojq.Compile(query, options...)
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	iter := code.Run([]interface{}{0, 1, 2, 3, 4})
 	n := 0
@@ -386,11 +385,11 @@ func TestWithFunctionMultipleArities(t *testing.T) {
 		`("f/0", "f/1", "f/2", "f/3", "f/4", "f/5") as $f | builtins | any(. == $f)`,
 	)
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	code, err = gojq.Compile(query, options...)
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	iter = code.Run(nil)
 	n = 0
@@ -421,7 +420,7 @@ func (*moduleLoader2) LoadModule(name string) (*gojq.Query, error) {
 func TestWithFunctionWithModuleLoader(t *testing.T) {
 	query, err := gojq.Parse(`include "module1"; .[] | g`)
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	code, err := gojq.Compile(query,
 		gojq.WithFunction("f", 0, 0, func(x interface{}, _ []interface{}) interface{} {
@@ -433,7 +432,7 @@ func TestWithFunctionWithModuleLoader(t *testing.T) {
 		gojq.WithModuleLoader(&moduleLoader2{}),
 	)
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	iter := code.Run([]interface{}{0, 1, 2, 3, 4})
 	n := 0
@@ -452,7 +451,7 @@ func TestWithFunctionWithModuleLoader(t *testing.T) {
 func TestWithInputIter(t *testing.T) {
 	query, err := gojq.Parse("range(10) | input")
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	code, err := gojq.Compile(
 		query,
@@ -461,7 +460,7 @@ func TestWithInputIter(t *testing.T) {
 		),
 	)
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	iter := code.Run(nil)
 	n := 1

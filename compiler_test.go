@@ -107,11 +107,11 @@ func ExampleCode_RunWithContext() {
 func Test_CodeCompileOptimizeConstants(t *testing.T) {
 	query, err := gojq.Parse("[1,{foo:2},[3]]")
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	code, err := gojq.Compile(query)
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	if got, expected := reflect.ValueOf(code).Elem().FieldByName("codes").Len(), 3; expected != got {
 		t.Errorf("expected: %v, got: %v", expected, got)
