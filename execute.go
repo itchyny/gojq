@@ -273,6 +273,9 @@ loop:
 			env.paths.push([2]interface{}{nil, env.stack.top()})
 			env.expdepth = 0
 		case oppathend:
+			if backtrack {
+				break loop
+			}
 			if env.expdepth > 0 {
 				panic(fmt.Sprintf("unexpected expdepth: %d", env.expdepth))
 			}

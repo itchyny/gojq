@@ -108,6 +108,27 @@ func TestQueryRun_ObjectError(t *testing.T) {
 	}
 }
 
+func TestQueryRun_InvalidPathError(t *testing.T) {
+	query, err := gojq.Parse(". + 1, path(. + 1)")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	iter := query.Run(0)
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if err, ok := v.(error); ok {
+			if expected := "invalid path against: number (1)"; err.Error() != expected {
+				t.Errorf("expected: %v, got: %v", expected, err)
+			}
+		} else if expected := 1; !reflect.DeepEqual(v, expected) {
+			t.Errorf("expected: %v, got: %v", expected, v)
+		}
+	}
+}
+
 func TestQueryRun_NumericTypes(t *testing.T) {
 	query, err := gojq.Parse(".[] != 0")
 	if err != nil {
