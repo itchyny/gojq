@@ -53,6 +53,9 @@ loop:
 		case opstore:
 			env.values[env.index(code.v.([2]int))] = env.pop()
 		case opobject:
+			if backtrack {
+				break loop
+			}
 			n := code.v.(int)
 			m := make(map[string]interface{}, n)
 			for i := 0; i < n; i++ {

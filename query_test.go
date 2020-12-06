@@ -7,6 +7,8 @@ import (
 	"log"
 	"math"
 	"math/big"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -82,6 +84,27 @@ func TestQueryRun_Errors(t *testing.T) {
 			t.Errorf("errors should occur")
 		}
 		n++
+	}
+}
+
+func TestQueryRun_ObjectError(t *testing.T) {
+	query, err := gojq.Parse(".[] | {(.): 1}")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	iter := query.Run([]interface{}{0, "x", []interface{}{}})
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if err, ok := v.(error); ok {
+			if expected := "expected a string for object key but got"; !strings.Contains(err.Error(), expected) {
+				t.Errorf("expected: %v, got: %v", expected, err)
+			}
+		} else if expected := map[string]interface{}{"x": 1}; !reflect.DeepEqual(v, expected) {
+			t.Errorf("expected: %v, got: %v", expected, v)
+		}
 	}
 }
 
