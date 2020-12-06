@@ -144,6 +144,9 @@ loop:
 				goto loop
 			}
 		case opcall:
+			if backtrack {
+				break loop
+			}
 			switch v := code.v.(type) {
 			case int:
 				pc, callpc, index = v, pc, env.scopes.index
@@ -196,7 +199,7 @@ loop:
 				env.values = vs
 			}
 		case opret:
-			if backtrack || err != nil {
+			if backtrack {
 				break loop
 			}
 			s := env.scopes.pop().(scope)

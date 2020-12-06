@@ -62,6 +62,29 @@ func ExampleQuery_RunWithContext() {
 	// context deadline exceeded
 }
 
+func TestQueryRun_Errors(t *testing.T) {
+	query, err := gojq.Parse(".[] | error")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	iter := query.Run([]interface{}{0, 1, 2, 3, 4})
+	n := 0
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if err, ok := v.(error); ok {
+			if expected := fmt.Sprintf("error: %d", n); err.Error() != expected {
+				t.Errorf("expected: %v, got: %v", expected, err)
+			}
+		} else {
+			t.Errorf("errors should occur")
+		}
+		n++
+	}
+}
+
 func TestQueryRun_NumericTypes(t *testing.T) {
 	query, err := gojq.Parse(".[] != 0")
 	if err != nil {
