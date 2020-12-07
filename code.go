@@ -1,8 +1,8 @@
 package gojq
 
 type code struct {
-	op opcode
 	v  interface{}
+	op opcode
 }
 
 type opcode int
