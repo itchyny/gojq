@@ -305,8 +305,12 @@ func (cli *cli) printValues(v gojq.Iter) error {
 				}
 			}
 		}
-		xs, err := m.Marshal(x)
-		if err != nil {
+		if cli.outputYAMLSeparator {
+			outStream.Write([]byte("---\n"))
+		} else {
+			cli.outputYAMLSeparator = cli.outputYAML
+		}
+		if err := m.marshal(x, outStream); err != nil {
 			return err
 		}
 		if cli.exitCodeError != nil {
@@ -316,11 +320,6 @@ func (cli *cli) printValues(v gojq.Iter) error {
 				cli.exitCodeError = &exitCodeError{exitCodeOK}
 			}
 		}
-		if cli.outputYAMLSeparator {
-			outStream.Write([]byte("---\n"))
-		}
-		outStream.Write(xs)
-		cli.outputYAMLSeparator = cli.outputYAML
 		if !cli.outputJoin && !cli.outputYAML {
 			if cli.outputNul {
 				outStream.Write([]byte{'\x00'})
@@ -336,18 +335,15 @@ func (cli *cli) createMarshaler() marshaler {
 	if cli.outputYAML {
 		return yamlFormatter(cli.outputIndent)
 	}
-	f := jsonFormatter()
-	if cli.outputCompact {
-		f.Indent = 0
-		f.Newline = ""
-	} else if i := cli.outputIndent; i != nil {
+	indent, compact := 2, cli.outputCompact
+	if i := cli.outputIndent; i != nil {
 		if *i == 0 {
-			f.Indent = 0
-			f.Newline = ""
+			compact = true
 		} else {
-			f.Indent = *i
+			indent = *i
 		}
 	}
+	f := jsonFormatter(indent, compact)
 	if cli.outputRaw || cli.outputJoin || cli.outputNul {
 		return &rawMarshaler{f}
 	}
