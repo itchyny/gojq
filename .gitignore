@@ -6,3 +6,6 @@
 *.exe
 *.test
 *.out
+
+# Ignore intellij files
+.idea
