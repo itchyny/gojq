@@ -51,6 +51,7 @@ func init() {
 		"length":         argFunc0(funcLength),
 		"utf8bytelength": argFunc0(funcUtf8ByteLength),
 		"keys":           argFunc0(funcKeys),
+		"keys_unsorted":  argFunc0(funcKeysUnsorted),
 		"has":            argFunc1(funcHas),
 		"add":            argFunc0(funcAdd),
 		"tonumber":       argFunc0(funcToNumber),
@@ -309,6 +310,31 @@ func funcKeys(v interface{}) interface{} {
 		return u
 	default:
 		return &funcTypeError{"keys", v}
+	}
+}
+
+func funcKeysUnsorted(v interface{}) interface{} {
+	switch v := v.(type) {
+	case []interface{}:
+		w := make([]interface{}, len(v))
+		for i := range v {
+			w[i] = i
+		}
+		return w
+	case map[string]interface{}:
+		w := make([]string, len(v))
+		var i int
+		for k := range v {
+			w[i] = k
+			i++
+		}
+		u := make([]interface{}, len(v))
+		for i, x := range w {
+			u[i] = x
+		}
+		return u
+	default:
+		return &funcTypeError{"keys_unsorted", v}
 	}
 }
 
