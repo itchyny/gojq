@@ -96,6 +96,13 @@
       "foo": 128
     }
 
+- name: object key and string escape
+  input: '{"foo\\u0000\\t\\n\\r\\u001f !\"#$/09:;<>?@AZ[\\\\]^_`az{|}~\\u007f": "<\\t\\n\\r>"}'
+  expected: |
+    {
+      "foo\\u0000\\t\\n\\r\\u001f !\"#$/09:;<>?@AZ[\\\\]^_`az{|}~\\u007f": "<\\t\\n\\r>"
+    }
+
 - name: object index
   args:
     - '.foo'
@@ -4600,8 +4607,20 @@
     - -C
     - '.'
   input: |
-    { "foo": "bar" }
-  expected: "{\n  \e[34;1m\"foo\"\e[0m: \e[32m\"bar\"\e[0m\n}\n"
+    { "x": "foo", "y": 128, "z": [null, false, true, 3.14, "foo", {}] }
+  expected:
+    "{\n\
+    \  \e[34;1m\"x\"\e[0m: \e[32m\"foo\"\e[0m,\n\
+    \  \e[34;1m\"y\"\e[0m: \e[36m128\e[0m,\n\
+    \  \e[34;1m\"z\"\e[0m: [\n\
+    \    \e[90mnull\e[0m,\n\
+    \    \e[33mfalse\e[0m,\n\
+    \    \e[33mtrue\e[0m,\n\
+    \    \e[36m3.14\e[0m,\n\
+    \    \e[32m\"foo\"\e[0m,\n\
+    \    {}\n\
+    \  ]\n\
+    }\n"
 
 - name: color output long option
   args:
@@ -4609,7 +4628,24 @@
     - '.'
   input: |
     { "foo": 42 }
-  expected: "{\n  \e[34;1m\"foo\"\e[0m: \e[36m42\e[0m\n}\n"
+  expected:
+    "{\n\
+    \  \e[34;1m\"foo\"\e[0m: \e[36m42\e[0m\n\
+    }\n"
+
+- name: color output with compact option
+  args:
+    - -C
+    - -c
+    - '.'
+  input: |
+    { "x": 42, "y": 3.14, "z": [10000000000000000000] }
+  expected:
+    "{\
+    \e[34;1m\"x\"\e[0m:\e[36m42\e[0m,\
+    \e[34;1m\"y\"\e[0m:\e[36m3.14\e[0m,\
+    \e[34;1m\"z\"\e[0m:[\e[36m10000000000000000000\e[0m]\
+    }\n"
 
 - name: monochrome output option
   args:
@@ -4676,12 +4712,31 @@
     - --indent
     - 7
     - '.'
-  input: '{ "foo": ["hello", "world"] }'
+  input: '{ "foo": ["hello", ["world", [[[[[[[[[]]]]]]]]]]] }'
   expected: |
     {
            "foo": [
                   "hello",
-                  "world"
+                  [
+                         "world",
+                         [
+                                [
+                                       [
+                                              [
+                                                     [
+                                                            [
+                                                                   [
+                                                                          [
+                                                                                 []
+                                                                          ]
+                                                                   ]
+                                                            ]
+                                                     ]
+                                              ]
+                                       ]
+                                ]
+                         ]
+                  ]
            ]
     }
 
