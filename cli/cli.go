@@ -302,6 +302,8 @@ func (cli *cli) printValues(v gojq.Iter) error {
 				cli.outputCompact = compact
 				if s == "STDERR:" {
 					x = v[1]
+				} else {
+					x = []interface{}{v[0], v[1]}
 				}
 			}
 		}
@@ -335,15 +337,13 @@ func (cli *cli) createMarshaler() marshaler {
 	if cli.outputYAML {
 		return yamlFormatter(cli.outputIndent)
 	}
-	indent, compact := 2, cli.outputCompact
-	if i := cli.outputIndent; i != nil {
-		if *i == 0 {
-			compact = true
-		} else {
-			indent = *i
-		}
+	indent := 2
+	if cli.outputCompact {
+		indent = 0
+	} else if i := cli.outputIndent; i != nil {
+		indent = *i
 	}
-	f := jsonFormatter(indent, compact)
+	f := newEncoder(indent)
 	if cli.outputRaw || cli.outputJoin || cli.outputNul {
 		return &rawMarshaler{f}
 	}

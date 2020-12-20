@@ -4,7 +4,6 @@ go 1.14
 
 require (
 	github.com/fatih/color v1.9.0
-	github.com/hokaccha/go-prettyjson v0.0.0-20190818114111-108c894c2c0e
 	github.com/itchyny/astgen-go v0.0.0-20200815150004-12a293722290
 	github.com/itchyny/go-flags v1.5.0
 	github.com/itchyny/timefmt-go v0.1.1
