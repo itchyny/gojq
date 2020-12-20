@@ -79,33 +79,6 @@ func normalizeNumbers(v interface{}) interface{} {
 	}
 }
 
-func normalizeValues(v interface{}) interface{} {
-	switch v := v.(type) {
-	case float64:
-		if math.IsNaN(v) {
-			return nil
-		} else if isinf(v) {
-			return math.Copysign(math.MaxFloat64, v)
-		} else {
-			return v
-		}
-	case map[string]interface{}:
-		u := make(map[string]interface{}, len(v))
-		for k, v := range v {
-			u[k] = normalizeValues(v)
-		}
-		return u
-	case []interface{}:
-		u := make([]interface{}, len(v))
-		for i, v := range v {
-			u[i] = normalizeValues(v)
-		}
-		return u
-	default:
-		return v
-	}
-}
-
 // It's ok to delete destructively because this function is used right after
 // updatePaths, where it shallow-copies maps or slices on updates.
 func deleteEmpty(v interface{}) interface{} {

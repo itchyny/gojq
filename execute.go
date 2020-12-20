@@ -209,7 +209,7 @@ loop:
 			s := env.scopes.pop().(scope)
 			pc, env.scopes.index = s.pc, s.saveindex
 			if env.scopes.empty() {
-				return normalizeValues(env.pop()), true
+				return env.pop(), true
 			}
 		case opeach:
 			if err != nil {
@@ -290,7 +290,7 @@ loop:
 			}
 		case opdebug:
 			if !backtrack {
-				return [2]interface{}{code.v, normalizeValues(env.stack.top())}, true
+				return [2]interface{}{code.v, env.stack.top()}, true
 			}
 			backtrack = false
 		default:
