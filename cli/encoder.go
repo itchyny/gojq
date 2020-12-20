@@ -29,13 +29,14 @@ func unsetColor(*color.Color, io.Writer)
 
 type encoder struct {
 	w      io.Writer
+	tab    bool
 	indent int
 	depth  int
 	buf    [64]byte
 }
 
-func newEncoder(indent int) *encoder {
-	return &encoder{indent: indent}
+func newEncoder(tab bool, indent int) *encoder {
+	return &encoder{tab: tab, indent: indent}
 }
 
 func (e *encoder) marshal(v interface{}, w io.Writer) error {
@@ -219,12 +220,21 @@ func (e *encoder) encodeMap(vs map[string]interface{}) {
 
 func (e *encoder) writeIndent() {
 	e.w.Write([]byte{'\n'})
-	const xs = "                                                                "
 	if n := e.depth; n > 0 {
-		for n > len(xs) {
-			e.w.Write([]byte(xs))
-			n -= len(xs)
+		if e.tab {
+			const tabs = "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+			for n > len(tabs) {
+				e.w.Write([]byte(tabs))
+				n -= len(tabs)
+			}
+			e.w.Write([]byte(tabs)[:n])
+		} else {
+			const spaces = "                                                                "
+			for n > len(spaces) {
+				e.w.Write([]byte(spaces))
+				n -= len(spaces)
+			}
+			e.w.Write([]byte(spaces)[:n])
 		}
-		e.w.Write([]byte(xs)[:n])
 	}
 }

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -42,6 +43,7 @@ type cli struct {
 	outputNul     bool
 	outputYAML    bool
 	outputIndent  *int
+	outputTab     bool
 	inputRaw      bool
 	inputSlurp    bool
 	inputStream   bool
@@ -63,6 +65,7 @@ type flagopts struct {
 	OutputMono    bool              `short:"M" long:"monochrome-output" description:"stop colorizing output"`
 	OutputYAML    bool              `long:"yaml-output" description:"output by YAML"`
 	OutputIndent  *int              `long:"indent" description:"number of spaces for indentation"`
+	OutputTab     bool              `long:"tab" description:"use tabs for indentation"`
 	InputNull     bool              `short:"n" long:"null-input" description:"use null as input value"`
 	InputRaw      bool              `short:"R" long:"raw-input" description:"read input as raw strings"`
 	InputSlurp    bool              `short:"s" long:"slurp" description:"read all inputs into an array"`
@@ -116,8 +119,10 @@ Synopsis:
 		fmt.Fprintf(cli.outStream, "%s %s (rev: %s/%s)\n", name, version, revision, runtime.Version())
 		return nil
 	}
-	cli.outputCompact, cli.outputRaw, cli.outputJoin, cli.outputNul, cli.outputYAML, cli.outputIndent =
-		opts.OutputCompact, opts.OutputRaw, opts.OutputJoin, opts.OutputNul, opts.OutputYAML, opts.OutputIndent
+	cli.outputCompact, cli.outputRaw, cli.outputJoin, cli.outputNul,
+		cli.outputYAML, cli.outputIndent, cli.outputTab =
+		opts.OutputCompact, opts.OutputRaw, opts.OutputJoin, opts.OutputNul,
+		opts.OutputYAML, opts.OutputIndent, opts.OutputTab
 	defer func(x bool) { color.NoColor = x }(color.NoColor)
 	if os.Getenv("NO_COLOR") != "" {
 		color.NoColor = true
@@ -132,6 +137,9 @@ Synopsis:
 		} else if *i < 0 {
 			return fmt.Errorf("negative indentation count: %d", *i)
 		}
+	}
+	if opts.OutputYAML && opts.OutputTab {
+		return errors.New("cannot use tabs for YAML output")
 	}
 	cli.inputRaw, cli.inputSlurp, cli.inputStream, cli.inputYAML =
 		opts.InputRaw, opts.InputSlurp, opts.InputStream, opts.InputYAML
@@ -340,10 +348,12 @@ func (cli *cli) createMarshaler() marshaler {
 	indent := 2
 	if cli.outputCompact {
 		indent = 0
+	} else if cli.outputTab {
+		indent = 1
 	} else if i := cli.outputIndent; i != nil {
 		indent = *i
 	}
-	f := newEncoder(indent)
+	f := newEncoder(cli.outputTab, indent)
 	if cli.outputRaw || cli.outputJoin || cli.outputNul {
 		return &rawMarshaler{f}
 	}

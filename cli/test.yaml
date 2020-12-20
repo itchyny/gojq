@@ -4758,6 +4758,54 @@
   error: |
     negative indentation count: -1
 
+- name: tab option
+  args:
+    - --tab
+    - '.'
+  input: '{ "foo": { "baz": ["hello", ["world", [[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]] } }'
+  expected: |
+    {
+    	"foo": {
+    		"baz": [
+    			"hello",
+    			[
+    				"world",
+    				[
+    					[
+    						[
+    							[
+    								[
+    									[
+    										[
+    											[
+    												[
+    													[
+    														[
+    															[
+    																[
+    																	[
+    																		[
+    																			[]
+    																		]
+    																	]
+    																]
+    															]
+    														]
+    													]
+    												]
+    											]
+    										]
+    									]
+    								]
+    							]
+    						]
+    					]
+    				]
+    			]
+    		]
+    	}
+    }
+
 - name: raw strings input option
   args:
     - -R
@@ -5164,6 +5212,15 @@
   input: '{ "foo": { "baz": ["hello", "world"] } }'
   error: |
     too many indentation count: 10
+
+- name: yaml output with tab option error
+  args:
+    - --yaml-output
+    - --tab
+    - '.'
+  input: '{"foo": 128, "bar": {"baz": [1,"qux", []]}}'
+  error: |
+    cannot use tabs for YAML output
 
 - name: source query from file
   args:
