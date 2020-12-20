@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"math"
@@ -28,7 +29,7 @@ func setColor(*color.Color, io.Writer) *color.Color
 func unsetColor(*color.Color, io.Writer)
 
 type encoder struct {
-	w      io.Writer
+	w      *bytes.Buffer
 	tab    bool
 	indent int
 	depth  int
@@ -40,23 +41,24 @@ func newEncoder(tab bool, indent int) *encoder {
 }
 
 func (e *encoder) marshal(v interface{}, w io.Writer) error {
-	e.w = w
+	e.w = new(bytes.Buffer)
 	e.encode(v)
-	return nil
+	_, err := w.Write(e.w.Bytes())
+	return err
 }
 
 func (e *encoder) encode(v interface{}) {
 	switch v := v.(type) {
 	case nil:
 		setColor(nullColor, e.w)
-		e.w.Write([]byte("null"))
+		e.w.WriteString("null")
 		unsetColor(nullColor, e.w)
 	case bool:
 		setColor(boolColor, e.w)
 		if v {
-			e.w.Write([]byte("true"))
+			e.w.WriteString("true")
 		} else {
-			e.w.Write([]byte("false"))
+			e.w.WriteString("false")
 		}
 		unsetColor(boolColor, e.w)
 	case int:
@@ -87,7 +89,7 @@ func (e *encoder) encode(v interface{}) {
 // ref: floatEncoder in encoding/json
 func (e *encoder) encodeFloat64(f float64) {
 	if math.IsNaN(f) {
-		e.w.Write([]byte("null"))
+		e.w.WriteString("null")
 		return
 	}
 	if f >= math.MaxFloat64 {
@@ -112,27 +114,27 @@ func (e *encoder) encodeFloat64(f float64) {
 
 // ref: encodeState#string in encoding/json
 func (e *encoder) encodeString(s string) {
-	e.w.Write([]byte{'"'})
-	start, xs := 0, []byte(s)
-	for i := 0; i < len(xs); {
-		if b := xs[i]; b < utf8.RuneSelf {
+	e.w.WriteByte('"')
+	start := 0
+	for i := 0; i < len(s); {
+		if b := s[i]; b < utf8.RuneSelf {
 			if ']' <= b && b <= '~' || '#' <= b && b <= '[' || b == ' ' || b == '!' {
 				i++
 				continue
 			}
 			if start < i {
-				e.w.Write(xs[start:i])
+				e.w.WriteString(s[start:i])
 			}
-			e.w.Write([]byte{'\\'})
+			e.w.WriteByte('\\')
 			switch b {
 			case '\\', '"':
-				e.w.Write([]byte{b})
+				e.w.WriteByte(b)
 			case '\n':
-				e.w.Write([]byte{'n'})
+				e.w.WriteByte('n')
 			case '\r':
-				e.w.Write([]byte{'r'})
+				e.w.WriteByte('r')
 			case '\t':
-				e.w.Write([]byte{'t'})
+				e.w.WriteByte('t')
 			default:
 				const hex = "0123456789abcdef"
 				e.w.Write([]byte{'u', '0', '0', hex[b>>4], hex[b&0xF]})
@@ -144,9 +146,9 @@ func (e *encoder) encodeString(s string) {
 		c, size := utf8.DecodeRuneInString(s[i:])
 		if c == utf8.RuneError && size == 1 {
 			if start < i {
-				e.w.Write(xs[start:i])
+				e.w.WriteString(s[start:i])
 			}
-			e.w.Write([]byte(`\ufffd`))
+			e.w.WriteString(`\ufffd`)
 			i += size
 			start = i
 			continue
@@ -154,17 +156,17 @@ func (e *encoder) encodeString(s string) {
 		i += size
 	}
 	if start < len(s) {
-		e.w.Write(xs[start:])
+		e.w.WriteString(s[start:])
 	}
-	e.w.Write([]byte{'"'})
+	e.w.WriteByte('"')
 }
 
 func (e *encoder) encodeArray(vs []interface{}) {
-	e.w.Write([]byte{'['})
+	e.w.WriteByte('[')
 	e.depth += e.indent
 	for i, v := range vs {
 		if i > 0 {
-			e.w.Write([]byte{','})
+			e.w.WriteByte(',')
 		}
 		if e.indent != 0 {
 			e.writeIndent()
@@ -175,11 +177,11 @@ func (e *encoder) encodeArray(vs []interface{}) {
 	if len(vs) > 0 && e.indent != 0 {
 		e.writeIndent()
 	}
-	e.w.Write([]byte{']'})
+	e.w.WriteByte(']')
 }
 
 func (e *encoder) encodeMap(vs map[string]interface{}) {
-	e.w.Write([]byte{'{'})
+	e.w.WriteByte('{')
 	e.depth += e.indent
 	type keyVal struct {
 		key string
@@ -196,7 +198,7 @@ func (e *encoder) encodeMap(vs map[string]interface{}) {
 	})
 	for i, kv := range kvs {
 		if i > 0 {
-			e.w.Write([]byte{','})
+			e.w.WriteByte(',')
 		}
 		if e.indent != 0 {
 			e.writeIndent()
@@ -205,7 +207,7 @@ func (e *encoder) encodeMap(vs map[string]interface{}) {
 		e.encodeString(kv.key)
 		unsetColor(keyColor, e.w)
 		if e.indent == 0 {
-			e.w.Write([]byte{':'})
+			e.w.WriteByte(':')
 		} else {
 			e.w.Write([]byte{':', ' '})
 		}
@@ -215,11 +217,11 @@ func (e *encoder) encodeMap(vs map[string]interface{}) {
 	if len(vs) > 0 && e.indent != 0 {
 		e.writeIndent()
 	}
-	e.w.Write([]byte{'}'})
+	e.w.WriteByte('}')
 }
 
 func (e *encoder) writeIndent() {
-	e.w.Write([]byte{'\n'})
+	e.w.WriteByte('\n')
 	if n := e.depth; n > 0 {
 		if e.tab {
 			const tabs = "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
