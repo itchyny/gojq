@@ -1,7 +1,6 @@
 package gojq
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -556,31 +555,7 @@ func implode(v []interface{}) interface{} {
 }
 
 func funcToJSON(v interface{}) interface{} {
-	s, err := encodeJSON(v)
-	if err != nil {
-		return err
-	}
-	return s
-}
-
-func encodeJSON(v interface{}) (string, error) {
-	switch v := v.(type) {
-	case int:
-		return strconv.FormatInt(int64(v), 10), nil
-	case *big.Int:
-		return v.String(), nil
-	}
-	buf := new(bytes.Buffer)
-	enc := json.NewEncoder(buf)
-	enc.SetEscapeHTML(false)
-	if err := enc.Encode(v); err != nil {
-		buf.Reset()
-		if err = enc.Encode(normalizeValues(v)); err != nil {
-			return "", err
-		}
-	}
-	s := buf.String()
-	return s[:len(s)-1], nil // trim last newline character
+	return jsonMarshal(v)
 }
 
 func funcFromJSON(v interface{}) interface{} {
@@ -648,12 +623,7 @@ func funcToSh(v interface{}) interface{} {
 		case string:
 			s.WriteString("'" + strings.ReplaceAll(x, "'", `'\''`) + "'")
 		default:
-			switch v := funcToJSON(x).(type) {
-			case error:
-				return v
-			case string:
-				s.WriteString(v)
-			}
+			s.WriteString(jsonMarshal(x))
 		}
 	}
 	return s.String()
@@ -683,17 +653,10 @@ func toCSVTSV(typ string, v interface{}, escape func(string) string) (string, er
 	case string:
 		return escape(v), nil
 	default:
-		switch v := funcToJSON(v).(type) {
-		case error:
-			return "", v
-		case string:
-			if v != "null" {
-				return v, nil
-			}
-			return "", nil
-		default:
-			panic("unreachable")
+		if s := jsonMarshal(v); s != "null" {
+			return s, nil
 		}
+		return "", nil
 	}
 }
 
