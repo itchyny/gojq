@@ -4605,7 +4605,7 @@
 - name: color output option
   args:
     - -C
-    - '.'
+    - '., null, nan, infinite'
   input: |
     { "x": "foo", "y": 128, "z": [null, false, true, 3.14, "foo", {}] }
   expected:
@@ -4620,7 +4620,10 @@
     \    \e[32m\"foo\"\e[0m,\n\
     \    {}\n\
     \  ]\n\
-    }\n"
+    }\n\
+    \e[90mnull\e[0m\n\
+    \e[90mnull\e[0m\n\
+    \e[36m1.7976931348623157e+308\e[0m\n"
 
 - name: color output long option
   args:

@@ -66,9 +66,7 @@ func (e *encoder) encode(v interface{}) {
 		e.w.Write(strconv.AppendInt(e.buf[:0], int64(v), 10))
 		unsetColor(numberColor, e.w)
 	case float64:
-		setColor(numberColor, e.w)
 		e.encodeFloat64(v)
-		unsetColor(numberColor, e.w)
 	case *big.Int:
 		setColor(numberColor, e.w)
 		e.w.Write(v.Append(e.buf[:0], 10))
@@ -89,9 +87,12 @@ func (e *encoder) encode(v interface{}) {
 // ref: floatEncoder in encoding/json
 func (e *encoder) encodeFloat64(f float64) {
 	if math.IsNaN(f) {
+		setColor(nullColor, e.w)
 		e.w.WriteString("null")
+		unsetColor(nullColor, e.w)
 		return
 	}
+	setColor(numberColor, e.w)
 	if f >= math.MaxFloat64 {
 		f = math.MaxFloat64
 	} else if f <= -math.MaxFloat64 {
@@ -110,6 +111,7 @@ func (e *encoder) encodeFloat64(f float64) {
 		}
 	}
 	e.w.Write(buf)
+	unsetColor(numberColor, e.w)
 }
 
 // ref: encodeState#string in encoding/json
