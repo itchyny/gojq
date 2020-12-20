@@ -621,7 +621,9 @@ func funcToSh(v interface{}) interface{} {
 		case map[string]interface{}, []interface{}:
 			return &formatShError{x}
 		case string:
-			s.WriteString("'" + strings.ReplaceAll(x, "'", `'\''`) + "'")
+			s.WriteByte('\'')
+			s.WriteString(strings.ReplaceAll(x, "'", `'\''`))
+			s.WriteByte('\'')
 		default:
 			s.WriteString(jsonMarshal(x))
 		}
