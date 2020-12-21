@@ -29,6 +29,7 @@ func setColor(*color.Color, io.Writer) *color.Color
 func unsetColor(*color.Color, io.Writer)
 
 type encoder struct {
+	out    io.Writer
 	w      *bytes.Buffer
 	tab    bool
 	indent int
@@ -37,13 +38,15 @@ type encoder struct {
 }
 
 func newEncoder(tab bool, indent int) *encoder {
-	return &encoder{tab: tab, indent: indent}
+	// reuse the buffer in multiple calls of marshal
+	return &encoder{w: new(bytes.Buffer), tab: tab, indent: indent}
 }
 
 func (e *encoder) marshal(v interface{}, w io.Writer) error {
-	e.w = new(bytes.Buffer)
+	e.out = w
 	e.encode(v)
 	_, err := w.Write(e.w.Bytes())
+	e.w.Reset()
 	return err
 }
 
@@ -81,6 +84,10 @@ func (e *encoder) encode(v interface{}) {
 		e.encodeMap(v)
 	default:
 		panic(fmt.Sprintf("invalid value: %v", v))
+	}
+	if e.w.Len() > 8*1024 {
+		e.out.Write(e.w.Bytes())
+		e.w.Reset()
 	}
 }
 
