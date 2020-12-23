@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
@@ -101,7 +102,7 @@ func ExampleCode_RunWithContext() {
 	// context deadline exceeded
 }
 
-func Test_CodeCompileOptimizeConstants(t *testing.T) {
+func TestCodeCompile_OptimizeConstants(t *testing.T) {
 	query, err := gojq.Parse("[1,{foo:2},[3]]")
 	if err != nil {
 		t.Fatal(err)
@@ -125,4 +126,35 @@ func Test_CodeCompileOptimizeConstants(t *testing.T) {
 			t.Errorf("expected: %v, got: %v", expected, got)
 		}
 	}
+}
+
+func TestCodeRun_Race(t *testing.T) {
+	query, err := gojq.Parse("range(10)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, err := gojq.Compile(query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			iter := code.Run(nil)
+			var n int
+			for {
+				got, ok := iter.Next()
+				if !ok {
+					break
+				}
+				if got != n {
+					t.Errorf("expected: %v, got: %v", n, got)
+				}
+				n++
+			}
+		}()
+	}
+	wg.Wait()
 }

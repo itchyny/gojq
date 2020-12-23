@@ -66,7 +66,7 @@ $(GOBIN)/gocredits:
 
 .PHONY: test
 test: build
-	go test -v ./...
+	go test -v -race ./...
 
 .PHONY: lint
 lint: $(GOBIN)/golint

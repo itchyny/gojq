@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -153,4 +154,31 @@ func TestQueryRun_NumericTypes(t *testing.T) {
 			t.Errorf("expected: %v, got: %v", expected, v)
 		}
 	}
+}
+
+func TestQueryRun_Race(t *testing.T) {
+	query, err := gojq.Parse("range(10)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			iter := query.Run(nil)
+			var n int
+			for {
+				got, ok := iter.Next()
+				if !ok {
+					break
+				}
+				if got != n {
+					t.Errorf("expected: %v, got: %v", n, got)
+				}
+				n++
+			}
+		}()
+	}
+	wg.Wait()
 }
