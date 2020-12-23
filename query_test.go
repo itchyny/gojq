@@ -67,7 +67,7 @@ func ExampleQuery_RunWithContext() {
 func TestQueryRun_Errors(t *testing.T) {
 	query, err := gojq.Parse(".[] | error")
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	iter := query.Run([]interface{}{0, 1, 2, 3, 4})
 	n := 0
@@ -90,7 +90,7 @@ func TestQueryRun_Errors(t *testing.T) {
 func TestQueryRun_ObjectError(t *testing.T) {
 	query, err := gojq.Parse(".[] | {(.): 1}")
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	iter := query.Run([]interface{}{0, "x", []interface{}{}})
 	for {
@@ -111,7 +111,7 @@ func TestQueryRun_ObjectError(t *testing.T) {
 func TestQueryRun_InvalidPathError(t *testing.T) {
 	query, err := gojq.Parse(". + 1, path(. + 1)")
 	if err != nil {
-		log.Fatalln(err)
+		t.Fatal(err)
 	}
 	iter := query.Run(0)
 	for {
