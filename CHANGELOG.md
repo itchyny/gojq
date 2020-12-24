@@ -1,4 +1,19 @@
 # Changelog
+## [v0.12.0](https://github.com/itchyny/gojq/compare/v0.11.2..v0.12.0) (2020-12-24)
+* implement tab indentation option (`--tab`)
+* implement a compiler option for adding custom internal functions
+* implement `gojq.Marshal` function for jq-flavored encoding
+* fix slurp option with JSON file arguments
+* fix escaping characters in object keys
+* fix normalizing negative `int64` to `int` on 32-bit architecture
+* fix crash on continuing iteration after emitting an error
+* `iter.Next()` does not normalize `NaN` and infinities anymore. Library users
+  should take care of them. To handle them for encoding as JSON bytes, use
+  `gojq.Marshal`. Also, `iter.Next()` does not clone values deeply anymore for
+  performance reason. Users must not update the elements of the returned arrays
+  and objects.
+* improve performance of outputting JSON values by about 3.5 times
+
 ## [v0.11.2](https://github.com/itchyny/gojq/compare/v0.11.1..v0.11.2) (2020-10-01)
 * fix build for 32bit architecture
 * release to [GitHub Container Registry](https://github.com/users/itchyny/packages/container/package/gojq)
