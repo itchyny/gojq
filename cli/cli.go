@@ -237,7 +237,7 @@ Synopsis:
 }
 
 func slurpFile(name string) (interface{}, error) {
-	iter := newFilesInputIter(newSlurpInputIter(newJSONInputIter), []string{name})
+	iter := newSlurpInputIter(newFilesInputIter(newJSONInputIter, []string{name}))
 	defer iter.Close()
 	val, _ := iter.Next()
 	if err, ok := val.(error); ok {
@@ -246,15 +246,11 @@ func slurpFile(name string) (interface{}, error) {
 	return val, nil
 }
 
-func (cli *cli) createInputIter(args []string) inputIter {
+func (cli *cli) createInputIter(args []string) (iter inputIter) {
 	var newIter func(io.Reader, string) inputIter
 	switch {
 	case cli.inputRaw:
-		if cli.inputSlurp {
-			newIter = newReadAllInputIter
-		} else {
-			newIter = newRawInputIter
-		}
+		newIter = newRawInputIter
 	case cli.inputStream:
 		newIter = newStreamInputIter
 	case cli.inputYAML:
@@ -262,8 +258,14 @@ func (cli *cli) createInputIter(args []string) inputIter {
 	default:
 		newIter = newJSONInputIter
 	}
-	if cli.inputSlurp && !cli.inputRaw {
-		newIter = newSlurpInputIter(newIter)
+	if cli.inputSlurp {
+		defer func() {
+			if cli.inputRaw {
+				iter = newSlurpRawInputIter(iter)
+			} else {
+				iter = newSlurpInputIter(iter)
+			}
+		}()
 	}
 	if len(args) == 0 {
 		return newIter(cli.inStream, "<stdin>")

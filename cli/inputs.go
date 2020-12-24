@@ -5,8 +5,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 
@@ -156,33 +156,6 @@ func (i *rawInputIter) Close() error {
 	return nil
 }
 
-type readAllInputIter struct {
-	r   io.Reader
-	err error
-}
-
-func newReadAllInputIter(r io.Reader, _ string) inputIter {
-	return &readAllInputIter{r: r}
-}
-
-func (i *readAllInputIter) Next() (interface{}, bool) {
-	if i.err != nil {
-		return nil, false
-	}
-	bs, err := ioutil.ReadAll(i.r)
-	if err != nil {
-		i.err = err
-		return err, true
-	}
-	i.err = io.EOF
-	return string(bs), true
-}
-
-func (i *readAllInputIter) Close() error {
-	i.err = io.EOF
-	return nil
-}
-
 type streamInputIter struct {
 	stream *jsonStream
 	buf    *bytes.Buffer
@@ -260,10 +233,8 @@ type slurpInputIter struct {
 	err  error
 }
 
-func newSlurpInputIter(newIter func(io.Reader, string) inputIter) func(io.Reader, string) inputIter {
-	return func(r io.Reader, fname string) inputIter {
-		return &slurpInputIter{iter: newIter(r, fname)}
-	}
+func newSlurpInputIter(iter inputIter) inputIter {
+	return &slurpInputIter{iter: iter}
 }
 
 func (i *slurpInputIter) Next() (interface{}, bool) {
@@ -287,6 +258,45 @@ func (i *slurpInputIter) Next() (interface{}, bool) {
 }
 
 func (i *slurpInputIter) Close() error {
+	if i.iter != nil {
+		i.iter.Close()
+		i.iter = nil
+		i.err = io.EOF
+	}
+	return nil
+}
+
+type slurpRawInputIter struct {
+	iter inputIter
+	err  error
+}
+
+func newSlurpRawInputIter(iter inputIter) inputIter {
+	return &slurpRawInputIter{iter: iter}
+}
+
+func (i *slurpRawInputIter) Next() (interface{}, bool) {
+	if i.err != nil {
+		return nil, false
+	}
+	var s strings.Builder
+	var v interface{}
+	var ok bool
+	for {
+		v, ok = i.iter.Next()
+		if !ok {
+			i.err = io.EOF
+			return s.String(), true
+		}
+		if i.err, ok = v.(error); ok {
+			return i.err, true
+		}
+		s.WriteString(v.(string))
+		s.WriteByte('\n')
+	}
+}
+
+func (i *slurpRawInputIter) Close() error {
 	if i.iter != nil {
 		i.iter.Close()
 		i.iter = nil

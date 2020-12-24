@@ -4934,6 +4934,34 @@
   expected: |
     null
 
+- name: slurp option with multiple json files
+  args:
+    - -s
+    - '.'
+    - testdata/1.json
+    - testdata/2.json
+  expected: |
+    [
+      {
+        "foo": 10
+      },
+      [
+        {
+          "bar": []
+        }
+      ]
+    ]
+
+- name: slurp and raw input option with multiple json files
+  args:
+    - -R
+    - -s
+    - '.'
+    - testdata/1.json
+    - testdata/2.json
+  expected: |
+    "{\"foo\":10}\n[{\n\"bar\"\n:\n[]\n}]\n"
+
 - name: stream option
   args:
     - -c
