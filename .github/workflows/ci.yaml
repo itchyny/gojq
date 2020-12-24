@@ -20,7 +20,7 @@ jobs:
     - name: Test
       run: make test
     - name: Test with GOARCH=386
-      run: env GOARCH=386 make test
+      run: env GOARCH=386 go test -v ./...
     - name: Lint
       run: make lint
     - name: Check alignment
