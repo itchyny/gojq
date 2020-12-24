@@ -34,6 +34,8 @@ type Code struct {
 // Run runs the code with the variable values (which should be in the
 // same order as the given variables using WithVariables) and returns
 // a result iterator.
+//
+// It is safe to call this method of a *Code in multiple goroutines.
 func (c *Code) Run(v interface{}, values ...interface{}) Iter {
 	return c.RunWithContext(nil, v, values...)
 }

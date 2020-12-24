@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// Query ...
+// Query represents the abstract syntax tree of a jq query.
 type Query struct {
 	Meta     *ConstObject
 	Imports  []*Import
@@ -20,12 +20,14 @@ type Query struct {
 	Func     string
 }
 
-// Run query.
+// Run the query.
+//
+// It is safe to call this method of a *Query in multiple goroutines.
 func (e *Query) Run(v interface{}) Iter {
 	return e.RunWithContext(nil, v)
 }
 
-// RunWithContext query.
+// RunWithContext runs the query with context.
 func (e *Query) RunWithContext(ctx context.Context, v interface{}) Iter {
 	code, err := Compile(e)
 	if err != nil {

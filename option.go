@@ -2,7 +2,7 @@ package gojq
 
 import "fmt"
 
-// CompilerOption ...
+// CompilerOption is a compiler option.
 type CompilerOption func(*compiler)
 
 // WithModuleLoader is a compiler option for module loader.
