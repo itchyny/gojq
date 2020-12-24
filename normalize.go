@@ -13,15 +13,15 @@ func normalizeNumbers(v interface{}) interface{} {
 		if i, err := v.Int64(); err == nil && minInt <= i && i <= maxInt {
 			return int(i)
 		}
-		if strings.ContainsAny(string(v), ".eE") {
+		if strings.ContainsAny(v.String(), ".eE") {
 			if f, err := v.Float64(); err == nil {
 				return f
 			}
 		}
-		if bi, ok := new(big.Int).SetString(string(v), 10); ok {
+		if bi, ok := new(big.Int).SetString(v.String(), 10); ok {
 			return bi
 		}
-		if strings.HasPrefix(string(v), "-") {
+		if strings.HasPrefix(v.String(), "-") {
 			return -math.MaxFloat64
 		}
 		return math.MaxFloat64
