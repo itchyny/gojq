@@ -1,23 +1,39 @@
 package gojq
 
 import (
+	"bytes"
 	"fmt"
 	"math"
 	"math/big"
 	"sort"
 	"strconv"
-	"strings"
 	"unicode/utf8"
 )
 
+// Marshal returns the jq-flavored JSON encoding of v.
+//
+// This method only accepts limited types (nil, bool, int, float64, *big.Int,
+// string, []interface{} and map[string]interface{}) because these are the
+// possible types a gojq iterator can emit. This method marshals NaN to null,
+// truncates infinities to (+|-) math.MaxFloat64 and does not escape '<' and
+// '>' for embedding in HTML. These behaviors are based on the marshaler of jq
+// command and different from the standard library method json.Marshal.
+func Marshal(v interface{}) ([]byte, error) {
+	return jsonMarshalBytes(v), nil
+}
+
 func jsonMarshal(v interface{}) string {
-	var s strings.Builder
-	(&encoder{w: &s}).encode(v)
-	return s.String()
+	return string(jsonMarshalBytes(v))
+}
+
+func jsonMarshalBytes(v interface{}) []byte {
+	var b bytes.Buffer
+	(&encoder{w: &b}).encode(v)
+	return b.Bytes()
 }
 
 type encoder struct {
-	w   *strings.Builder
+	w   *bytes.Buffer
 	buf [64]byte
 }
 
