@@ -279,20 +279,20 @@ func (i *slurpRawInputIter) Next() (interface{}, bool) {
 	if i.err != nil {
 		return nil, false
 	}
-	var s strings.Builder
+	var vs []string
 	var v interface{}
 	var ok bool
 	for {
 		v, ok = i.iter.Next()
 		if !ok {
 			i.err = io.EOF
-			return s.String(), true
+			return strings.Join(vs, ""), true
 		}
 		if i.err, ok = v.(error); ok {
 			return i.err, true
 		}
-		s.WriteString(v.(string))
-		s.WriteByte('\n')
+		vs = append(vs, v.(string))
+		vs = append(vs, "\n")
 	}
 }
 
