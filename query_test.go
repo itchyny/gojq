@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math"
 	"math/big"
@@ -181,4 +182,22 @@ func TestQueryRun_Race(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+}
+
+func TestQueryString(t *testing.T) {
+	cnt, err := ioutil.ReadFile("builtin.jq")
+	if err != nil {
+		t.Fatal(err)
+	}
+	q, err := gojq.Parse(string(cnt))
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, err := gojq.Parse(q.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(q, r) {
+		t.Errorf("\n%v\n%v", q, r)
+	}
 }
