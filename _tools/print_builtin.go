@@ -43,7 +43,7 @@ func main() {
 		}
 		q, err := gojq.Parse(s.String())
 		if err != nil {
-			panic(err)
+			panic(fmt.Sprintf("%s: %s", err, s.String()))
 		}
 		for _, fd := range q.FuncDefs {
 			fd.Minify()
