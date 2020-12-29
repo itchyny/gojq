@@ -444,6 +444,12 @@ func (e *Index) String() string {
 }
 
 func (e *Index) writeTo(s *strings.Builder) {
+	if l := s.Len(); l > 0 {
+		// ". .x" != "..x" and "0 .x" != "0.x"
+		if c := s.String()[l-1]; c == '.' || '0' <= c && c <= '9' {
+			s.WriteByte(' ')
+		}
+	}
 	s.WriteByte('.')
 	if e.Name != "" {
 		s.WriteString(e.Name)
