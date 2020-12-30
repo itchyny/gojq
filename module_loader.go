@@ -48,10 +48,6 @@ func (l *moduleLoader) LoadInitModules() ([]*Query, error) {
 	return qs, nil
 }
 
-func (l *moduleLoader) LoadModule(string) (*Query, error) {
-	panic("LocalModuleLoader#LoadModule: unreachable")
-}
-
 func (l *moduleLoader) LoadModuleWithMeta(name string, meta map[string]interface{}) (*Query, error) {
 	path, err := l.lookupModule(name, ".jq", meta)
 	if err != nil {
