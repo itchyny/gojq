@@ -1038,7 +1038,7 @@ func (c *compiler) funcModulemeta(v interface{}, _ []interface{}) interface{} {
 			v = make(map[string]interface{})
 		} else {
 			for k := range v {
-				// dirty hack to remove the extra fields added in the cli package
+				// dirty hack to remove the internal fields
 				if strings.HasPrefix(k, "$$") {
 					delete(v, k)
 				}
