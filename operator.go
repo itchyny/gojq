@@ -97,6 +97,8 @@ func (op Operator) String() string {
 // GoString implements GoStringer.
 func (op Operator) GoString() string {
 	switch op {
+	case Operator(0):
+		return "Operator(0)"
 	case OpPipe:
 		return "OpPipe"
 	case OpComma:
