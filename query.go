@@ -476,6 +476,9 @@ func (e *Index) writeTo(s *strings.Builder) {
 }
 
 func (e *Index) minify() {
+	if e.Str != nil {
+		e.Str.minify()
+	}
 	if e.Start != nil {
 		e.Start.minify()
 	}
@@ -636,11 +639,16 @@ func (e *ObjectKeyVal) writeTo(s *strings.Builder) {
 }
 
 func (e *ObjectKeyVal) minify() {
-	if e.KeyQuery != nil {
+	if e.KeyString != nil {
+		e.KeyString.minify()
+	} else if e.KeyQuery != nil {
 		e.KeyQuery.minify()
 	}
 	if e.Val != nil {
 		e.Val.minify()
+	}
+	if e.KeyOnlyString != nil {
+		e.KeyOnlyString.minify()
 	}
 }
 
