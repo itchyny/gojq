@@ -95,7 +95,8 @@ func (op Operator) String() string {
 }
 
 // GoString implements GoStringer.
-func (op Operator) GoString() string {
+func (op Operator) GoString() (str string) {
+	defer func() { str = "gojq." + str }()
 	switch op {
 	case Operator(0):
 		return "Operator(0)"

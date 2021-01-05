@@ -28,7 +28,8 @@ const (
 )
 
 // GoString implements GoStringer.
-func (termType TermType) GoString() string {
+func (termType TermType) GoString() (str string) {
+	defer func() { str = "gojq." + str }()
 	switch termType {
 	case TermTypeIdentity:
 		return "TermTypeIdentity"
