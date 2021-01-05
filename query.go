@@ -451,6 +451,10 @@ func (e *Index) writeTo(s *strings.Builder) {
 		}
 	}
 	s.WriteByte('.')
+	e.writeSuffixTo(s)
+}
+
+func (e *Index) writeSuffixTo(s *strings.Builder) {
 	if e.Name != "" {
 		s.WriteString(e.Name)
 	} else {
@@ -722,7 +726,7 @@ func (e *Suffix) writeTo(s *strings.Builder) {
 		if e.Index.Name != "" || e.Index.Str != nil {
 			e.Index.writeTo(s)
 		} else {
-			s.WriteString(e.Index.String()[1:])
+			e.Index.writeSuffixTo(s)
 		}
 	} else if e.Iter {
 		s.WriteString("[]")
