@@ -815,7 +815,6 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 		c.append(&code{op: opconst, v: e.Break})
 		return c.compileCall("_break", nil)
 	case TermTypeQuery:
-		e.Query.minify()
 		defer c.newScopeDepth()()
 		return c.compileQuery(e.Query)
 	default:
