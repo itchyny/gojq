@@ -69,7 +69,7 @@ type flagopts struct {
 	InputNull     bool              `short:"n" long:"null-input" description:"use null as input value"`
 	InputRaw      bool              `short:"R" long:"raw-input" description:"read input as raw strings"`
 	InputSlurp    bool              `short:"s" long:"slurp" description:"read all inputs into an array"`
-	InputStream   bool              `long:"stream" description:"parse input in stream fashon"`
+	InputStream   bool              `long:"stream" description:"parse input in stream fashion"`
 	InputYAML     bool              `long:"yaml-input" description:"read input as YAML"`
 	FromFile      string            `short:"f" long:"from-file" description:"load query from file"`
 	ModulePaths   []string          `short:"L" description:"directory to search modules from"`

@@ -15,7 +15,7 @@ _gojq()
     '(-n --null-input)'{-n,--null-input}'[use null as input value]' \
     '(-R --raw-input)'{-R,--raw-input}'[read input as raw strings]' \
     '(-s --slurp)'{-s,--slurp}'[read all inputs into an array]' \
-    '(--stream)'--stream'[parse input in stream fashon]' \
+    '(--stream)'--stream'[parse input in stream fashion]' \
     '(--yaml-input)'--yaml-input'[read input as YAML]' \
     '(-f --from-file)'{-f,--from-file}'[load query from file]' \
     '(-L)'-L'[directory to search modules from]' \
