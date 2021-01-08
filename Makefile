@@ -26,7 +26,7 @@ builtin.go: builtin.jq parser.go.y parser.go query.go operator.go _tools/*
 
 .SUFFIXES:
 parser.go: parser.go.y lexer.go $(GOBIN)/goyacc
-	goyacc -o $@ $<
+	$(GOBIN)/goyacc -o $@ $<
 
 $(GOBIN)/goyacc:
 	@cd && go get golang.org/x/tools/cmd/goyacc
@@ -45,21 +45,21 @@ install-debug: parser.go builtin.go
 
 .PHONY: show-version
 show-version: $(GOBIN)/gobump
-	@gobump show -r $(VERSION_PATH)
+	@$(GOBIN)/gobump show -r $(VERSION_PATH)
 
 $(GOBIN)/gobump:
 	@cd && go get github.com/x-motemen/gobump/cmd/gobump
 
 .PHONY: cross
 cross: $(GOBIN)/goxz CREDITS
-	goxz -n $(BIN) -pv=v$(VERSION) -include _$(BIN) -build-ldflags=$(BUILD_LDFLAGS) ./cmd/$(BIN)
+	$(GOBIN)/goxz -n $(BIN) -pv=v$(VERSION) -include _$(BIN) -build-ldflags=$(BUILD_LDFLAGS) ./cmd/$(BIN)
 
 $(GOBIN)/goxz:
 	cd && go get github.com/Songmu/goxz/cmd/goxz
 
 CREDITS: $(GOBIN)/gocredits go.sum
 	go mod tidy
-	gocredits -w .
+	$(GOBIN)/gocredits -w .
 
 $(GOBIN)/gocredits:
 	cd && go get github.com/Songmu/gocredits/cmd/gocredits
@@ -71,14 +71,14 @@ test: build
 .PHONY: lint
 lint: $(GOBIN)/golint
 	go vet ./...
-	golint -set_exit_status ./...
+	$(GOBIN)/golint -set_exit_status ./...
 
 $(GOBIN)/golint:
 	cd && go get golang.org/x/lint/golint
 
 .PHONY: maligned
 maligned: $(GOBIN)/maligned
-	! maligned . 2>&1 | grep -v pointer | grep ^
+	! $(GOBIN)/maligned . 2>&1 | grep -v pointer | grep ^
 
 $(GOBIN)/maligned:
 	cd && go get github.com/mdempsky/maligned
@@ -100,7 +100,7 @@ endif
 ifneq ($(shell git rev-parse --abbrev-ref HEAD),master)
 	$(error current branch is not master)
 endif
-	@gobump up -w "$(VERSION_PATH)"
+	@$(GOBIN)/gobump up -w "$(VERSION_PATH)"
 	git commit -am "bump up version to $(VERSION)"
 	git tag "v$(VERSION)"
 	git push origin master
@@ -108,7 +108,7 @@ endif
 
 .PHONY: upload
 upload: $(GOBIN)/ghr
-	ghr "v$(VERSION)" goxz
+	$(GOBIN)/ghr "v$(VERSION)" goxz
 
 $(GOBIN)/ghr:
 	cd && go get github.com/tcnksm/ghr
