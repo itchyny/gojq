@@ -198,9 +198,11 @@ Synopsis:
 	}
 	modulePaths := opts.ModulePaths
 	if len(modulePaths) == 0 && addDefaultModulePaths {
-		modulePaths = []string{"../lib/jq", "lib"}
+		modulePaths = []string{"", "../lib/jq", "lib"}
 		if homeDir, err := os.UserHomeDir(); err == nil {
-			modulePaths = append([]string{filepath.Join(homeDir, ".jq")}, modulePaths...)
+			modulePaths[0] = filepath.Join(homeDir, ".jq")
+		} else {
+			modulePaths = modulePaths[1:]
 		}
 	}
 	iter := cli.createInputIter(args)
