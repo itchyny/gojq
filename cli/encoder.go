@@ -9,24 +9,28 @@ import (
 	"sort"
 	"strconv"
 	"unicode/utf8"
-	_ "unsafe" // go:linkname
-
-	"github.com/fatih/color"
 )
+
+var noColor bool
+
+func newColor(c string) []byte {
+	return []byte("\x1b[" + c + "m")
+}
+
+func setColor(buf *bytes.Buffer, color []byte) {
+	if !noColor {
+		buf.Write([]byte(color))
+	}
+}
 
 var (
-	nullColor   = color.New(color.FgHiBlack)
-	boolColor   = color.New(color.FgYellow)
-	numberColor = color.New(color.FgCyan)
-	stringColor = color.New(color.FgGreen)
-	keyColor    = color.New(color.FgBlue, color.Bold)
+	resetColor     = newColor("0")    // Reset
+	nullColor      = newColor("90")   // Bright black
+	boolColor      = newColor("33")   // Yellow
+	numberColor    = newColor("36")   // Cyan
+	stringColor    = newColor("32")   // Green
+	objectKeyColor = newColor("34;1") // Bold Blue
 )
-
-//go:linkname setColor github.com/fatih/color.(*Color).setWriter
-func setColor(*color.Color, io.Writer) *color.Color
-
-//go:linkname unsetColor github.com/fatih/color.(*Color).unsetWriter
-func unsetColor(*color.Color, io.Writer)
 
 type encoder struct {
 	out    io.Writer
@@ -53,31 +57,31 @@ func (e *encoder) marshal(v interface{}, w io.Writer) error {
 func (e *encoder) encode(v interface{}) {
 	switch v := v.(type) {
 	case nil:
-		setColor(nullColor, e.w)
+		setColor(e.w, nullColor)
 		e.w.WriteString("null")
-		unsetColor(nullColor, e.w)
+		setColor(e.w, resetColor)
 	case bool:
-		setColor(boolColor, e.w)
+		setColor(e.w, boolColor)
 		if v {
 			e.w.WriteString("true")
 		} else {
 			e.w.WriteString("false")
 		}
-		unsetColor(boolColor, e.w)
+		setColor(e.w, resetColor)
 	case int:
-		setColor(numberColor, e.w)
+		setColor(e.w, numberColor)
 		e.w.Write(strconv.AppendInt(e.buf[:0], int64(v), 10))
-		unsetColor(numberColor, e.w)
+		setColor(e.w, resetColor)
 	case float64:
 		e.encodeFloat64(v)
 	case *big.Int:
-		setColor(numberColor, e.w)
+		setColor(e.w, numberColor)
 		e.w.Write(v.Append(e.buf[:0], 10))
-		unsetColor(numberColor, e.w)
+		setColor(e.w, resetColor)
 	case string:
-		setColor(stringColor, e.w)
+		setColor(e.w, stringColor)
 		e.encodeString(v)
-		unsetColor(stringColor, e.w)
+		setColor(e.w, resetColor)
 	case []interface{}:
 		e.encodeArray(v)
 	case map[string]interface{}:
@@ -94,12 +98,12 @@ func (e *encoder) encode(v interface{}) {
 // ref: floatEncoder in encoding/json
 func (e *encoder) encodeFloat64(f float64) {
 	if math.IsNaN(f) {
-		setColor(nullColor, e.w)
+		setColor(e.w, nullColor)
 		e.w.WriteString("null")
-		unsetColor(nullColor, e.w)
+		setColor(e.w, resetColor)
 		return
 	}
-	setColor(numberColor, e.w)
+	setColor(e.w, numberColor)
 	if f >= math.MaxFloat64 {
 		f = math.MaxFloat64
 	} else if f <= -math.MaxFloat64 {
@@ -118,7 +122,7 @@ func (e *encoder) encodeFloat64(f float64) {
 		}
 	}
 	e.w.Write(buf)
-	unsetColor(numberColor, e.w)
+	setColor(e.w, resetColor)
 }
 
 // ref: encodeState#string in encoding/json
@@ -212,9 +216,9 @@ func (e *encoder) encodeMap(vs map[string]interface{}) {
 		if e.indent != 0 {
 			e.writeIndent()
 		}
-		setColor(keyColor, e.w)
+		setColor(e.w, objectKeyColor)
 		e.encodeString(kv.key)
-		unsetColor(keyColor, e.w)
+		setColor(e.w, resetColor)
 		if e.indent == 0 {
 			e.w.WriteByte(':')
 		} else {

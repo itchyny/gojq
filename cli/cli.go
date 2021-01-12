@@ -10,7 +10,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/itchyny/go-flags"
 	"github.com/mattn/go-isatty"
 
@@ -123,13 +122,13 @@ Synopsis:
 		cli.outputYAML, cli.outputIndent, cli.outputTab =
 		opts.OutputCompact, opts.OutputRaw, opts.OutputJoin, opts.OutputNul,
 		opts.OutputYAML, opts.OutputIndent, opts.OutputTab
-	defer func(x bool) { color.NoColor = x }(color.NoColor)
+	defer func(x bool) { noColor = x }(noColor)
 	if os.Getenv("NO_COLOR") != "" {
-		color.NoColor = true
+		noColor = true
 	} else if opts.OutputColor || opts.OutputMono {
-		color.NoColor = opts.OutputMono
+		noColor = opts.OutputMono
 	} else {
-		color.NoColor = !isTTY(cli.outStream)
+		noColor = !isTTY(cli.outStream)
 	}
 	if i := cli.outputIndent; i != nil {
 		if *i > 9 {
