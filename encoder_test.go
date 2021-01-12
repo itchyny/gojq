@@ -24,8 +24,10 @@ func TestMarshal(t *testing.T) {
 		},
 		{
 			name: "numbers",
-			value: []interface{}{42, 3.14, 1e-6, 1e-7, -1e-9, 1e-10, math.NaN(), math.Inf(1), math.Inf(-1),
-				new(big.Int).SetBytes([]byte("\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"))},
+			value: []interface{}{
+				42, 3.14, 1e-6, 1e-7, -1e-9, 1e-10, math.NaN(), math.Inf(1), math.Inf(-1),
+				new(big.Int).SetBytes([]byte("\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff")),
+			},
 			expected: "[42,3.14,0.000001,1e-7,-1e-9,1e-10,null,1.7976931348623157e+308,-1.7976931348623157e+308,340282366920938463463374607431768211455]",
 		},
 		{
