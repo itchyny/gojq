@@ -53,7 +53,7 @@ gojq: invalid json: <stdin>
 ## Installation
 ### Homebrew
 ```sh
-brew install itchyny/tap/gojq
+brew install gojq
 ```
 
 ### Build from source
