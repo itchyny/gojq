@@ -35,6 +35,16 @@
     1000
     1e-9
 
+- name: number literal error
+  args:
+    - '0..[empty]'
+  input: 0
+  error: |
+    invalid query: 0..[empty]
+        0..[empty]
+        ^  invalid token "0.."
+  exit_code: 3
+
 - name: string
   args:
     - '.'

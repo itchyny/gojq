@@ -317,7 +317,8 @@ func (l *lexer) scanNumber(state int) int {
 				switch ch {
 				case '.':
 					if state != numberStateLead {
-						return l.offset
+						l.offset++
+						return -l.offset
 					}
 					l.offset++
 					state = numberStateFloat
