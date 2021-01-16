@@ -166,10 +166,6 @@ func (err *formatNotFoundError) Error() string {
 	return fmt.Sprintf("format not defined: %s", err.n)
 }
 
-func (err *formatNotFoundError) ExitCode() int {
-	return 5
-}
-
 type formatCsvTsvRowError struct {
 	typ string
 	v   interface{}

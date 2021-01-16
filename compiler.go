@@ -1218,13 +1218,17 @@ func (c *compiler) compileUnary(e *Unary) error {
 }
 
 func (c *compiler) compileFormat(fmt string, str *String) error {
-	if f := formatToFunc(fmt); f != nil {
-		if str == nil {
-			return c.compileFunc(f)
+	f := formatToFunc(fmt)
+	if f == nil {
+		f = &Func{
+			Name: "format",
+			Args: []*Query{{Term: &Term{Type: TermTypeString, Str: &String{Str: fmt[1:]}}}},
 		}
-		return c.compileString(str, f)
 	}
-	return &formatNotFoundError{fmt}
+	if str == nil {
+		return c.compileFunc(f)
+	}
+	return c.compileString(str, f)
 }
 
 func formatToFunc(fmt string) *Func {

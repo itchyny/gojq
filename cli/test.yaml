@@ -4514,6 +4514,15 @@
     format not defined: @0
   exit_code: 5
 
+- name: format strings not defined error with optional operator
+  args:
+    - -n
+    - '@foo?, @bar"\(0|debug)"?, 1'
+  expected: |
+    1
+  error: |
+    ["DEBUG:",0]
+
 - name: destructuring alternative operator
   args:
     - '.[] | . as {a:$a} ?// [$a] ?// $a | $a'
