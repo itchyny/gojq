@@ -150,7 +150,9 @@ func (e *encoder) encodeString(s string) {
 				e.w.WriteByte('t')
 			default:
 				const hex = "0123456789abcdef"
-				e.w.Write([]byte{'u', '0', '0', hex[b>>4], hex[b&0xF]})
+				e.w.WriteString("u00")
+				e.w.WriteByte(hex[b>>4])
+				e.w.WriteByte(hex[b&0xF])
 			}
 			i++
 			start = i
