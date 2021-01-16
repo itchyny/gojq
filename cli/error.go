@@ -65,6 +65,9 @@ func (err *compileError) Error() string {
 }
 
 func (err *compileError) ExitCode() int {
+	if err, ok := err.err.(interface{ ExitCode() int }); ok {
+		return err.ExitCode()
+	}
 	return exitCodeCompileErr
 }
 

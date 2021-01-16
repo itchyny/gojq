@@ -2368,6 +2368,7 @@
   input: '1'
   error: |
     label not defined: "$test"
+  exit_code: 3
 
 - name: invalid break name
   args:
@@ -4503,7 +4504,7 @@
     - '@foo'
   error: |
     format not defined: @foo
-  exit_code: 3
+  exit_code: 5
 
 - name: destructuring alternative operator
   args:
