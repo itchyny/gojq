@@ -4545,6 +4545,16 @@
     [4,5,null,null,7,null]
     [null,null,null,null,null,"foo"]
 
+- name: destructuring alternative operator parse error
+  args:
+    - '.?/'
+  input: 0
+  error: |
+    invalid query: .?/
+        .?/
+           ^  unexpected token <EOF>
+  exit_code: 3
+
 - name: compact output option
   args:
     - -c

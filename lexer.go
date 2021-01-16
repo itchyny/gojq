@@ -138,6 +138,7 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 				l.token = "?//"
 				return tokDestAltOp
 			}
+			l.offset--
 		}
 	case '+':
 		if l.peek() == '=' {
