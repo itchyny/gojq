@@ -4506,6 +4506,14 @@
     format not defined: @foo
   exit_code: 5
 
+- name: format strings not defined error
+  args:
+    - -n
+    - '@0'
+  error: |
+    format not defined: @0
+  exit_code: 5
+
 - name: destructuring alternative operator
   args:
     - '.[] | . as {a:$a} ?// [$a] ?// $a | $a'
