@@ -1,8 +1,8 @@
 # Changelog
 ## [v0.12.1](https://github.com/itchyny/gojq/compare/v0.12.0..v0.12.1) (2021-01-17)
-* skip adding $HOME/.jq to module paths when $HOME is unset
+* skip adding `$HOME/.jq` to module paths when `$HOME` is unset
 * fix optional operator followed by division operator (`1?/1`)
-* fix undefined label followed by optional operator (`@foo?`)
+* fix undefined format followed by optional operator (`@foo?`)
 * fix parsing invalid consecutive dots while scanning a number (`0..[empty]`)
 * fix panic on printing a query with `%#v`
 * improve performance and reduce memory allocation of `query.String()`
