@@ -3111,19 +3111,36 @@
 
 - name: infinite function
   args:
-    - 'infinite | ., -., 1/., 1/(-.), -1/., -1/(-.), ./(-.), (-.)/., ./., (-.)/(-.)'
+    - -c
+    - '[infinite, -infinite] | (.[], .[]+.[], .[]-.[], .[]*.[], .[]/.[], 1/.[], -1/.[], .[]-1e300, .[]+1e300) | [., . == infinite, . == -infinite, contains(infinite)]'
   input: 'null'
   expected: |
-    1.7976931348623157e+308
-    -1.7976931348623157e+308
-    0
-    -0
-    -0
-    0
-    null
-    null
-    null
-    null
+    [1.7976931348623157e+308,true,false,true]
+    [-1.7976931348623157e+308,false,true,false]
+    [1.7976931348623157e+308,true,false,true]
+    [null,false,false,false]
+    [null,false,false,false]
+    [-1.7976931348623157e+308,false,true,false]
+    [null,false,false,false]
+    [-1.7976931348623157e+308,false,true,false]
+    [1.7976931348623157e+308,true,false,true]
+    [null,false,false,false]
+    [1.7976931348623157e+308,true,false,true]
+    [-1.7976931348623157e+308,false,true,false]
+    [-1.7976931348623157e+308,false,true,false]
+    [1.7976931348623157e+308,true,false,true]
+    [null,false,false,false]
+    [null,false,false,false]
+    [null,false,false,false]
+    [null,false,false,false]
+    [0,false,false,false]
+    [-0,false,false,false]
+    [-0,false,false,false]
+    [0,false,false,false]
+    [1.7976931348623157e+308,true,false,true]
+    [-1.7976931348623157e+308,false,true,false]
+    [1.7976931348623157e+308,true,false,true]
+    [-1.7976931348623157e+308,false,true,false]
 
 - name: isfinite and isinfinite functions
   args:
@@ -3148,11 +3165,12 @@
 - name: nan and isnan functions
   args:
     - -c
-    - 'nan, null, 0/0, 0/0.0, infinite/infinite | [., .+1, isnan]'
+    - 'nan, null, 0/0, 0/0.0, infinite-infinite, infinite/infinite | [., .+1, isnan]'
   input: 'null'
   expected: |
     [null,null,true]
     [null,1,false]
+    [null,null,true]
     [null,null,true]
     [null,null,true]
     [null,null,true]

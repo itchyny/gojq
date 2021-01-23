@@ -994,7 +994,7 @@ func sortItems(v, x interface{}) ([]*sortItem, error) {
 }
 
 func funcSignificand(v float64) float64 {
-	if math.IsNaN(v) || isinf(v) || v == 0.0 {
+	if math.IsNaN(v) || math.IsInf(v, 0) || v == 0.0 {
 		return v
 	}
 	return math.Float64frombits((math.Float64bits(v) & 0x800fffffffffffff) | 0x3ff0000000000000)
@@ -1060,20 +1060,17 @@ func funcFma(x, y, z float64) float64 {
 }
 
 func funcInfinite(interface{}) interface{} {
-	return math.MaxFloat64
+	return math.Inf(1)
 }
 
 func funcIsfinite(v interface{}) interface{} {
-	return typeof(v) == "number" && !funcIsinfinite(v).(bool)
+	x, ok := toFloat(v)
+	return ok && !math.IsInf(x, 0)
 }
 
 func funcIsinfinite(v interface{}) interface{} {
 	x, ok := toFloat(v)
-	return ok && isinf(x)
-}
-
-func isinf(f float64) bool {
-	return f >= math.MaxFloat64 || f <= -math.MaxFloat64
+	return ok && math.IsInf(x, 0)
 }
 
 func funcNan(interface{}) interface{} {
@@ -1093,7 +1090,7 @@ func funcIsnan(v interface{}) interface{} {
 
 func funcIsnormal(v interface{}) interface{} {
 	x, ok := toFloat(v)
-	return ok && !math.IsNaN(x) && !isinf(x) && x != 0.0
+	return ok && !math.IsNaN(x) && !math.IsInf(x, 0) && x != 0.0
 }
 
 func funcSetpath(v, p, w interface{}) interface{} {
@@ -1630,5 +1627,5 @@ func bigToFloat(x *big.Int) float64 {
 	if f, err := strconv.ParseFloat(x.String(), 64); err == nil {
 		return f
 	}
-	return math.Copysign(math.MaxFloat64, float64(x.Sign()))
+	return math.Inf(x.Sign())
 }

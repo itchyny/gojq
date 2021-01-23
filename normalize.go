@@ -22,9 +22,9 @@ func normalizeNumbers(v interface{}) interface{} {
 			return bi
 		}
 		if strings.HasPrefix(v.String(), "-") {
-			return -math.MaxFloat64
+			return math.Inf(-1)
 		}
-		return math.MaxFloat64
+		return math.Inf(0)
 	case *big.Int:
 		if v.IsInt64() {
 			if i := v.Int64(); minInt <= i && i <= maxInt {
