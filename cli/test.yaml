@@ -3175,6 +3175,17 @@
     [null,null,true]
     [null,null,true]
 
+- name: nan and comparison
+  args:
+    - -c
+    - 'nan | [.<., .>., .<0, .>0, .==., .!=.], ([., 1, ., 2, .] | [min, max], sort, group_by(.))'
+  input: 'null'
+  expected: |
+    [true,false,true,false,false,true]
+    [null,2]
+    [null,null,null,1,2]
+    [[null],[null],[null],[1],[2]]
+
 - name: isnormal function
   args:
     - -c

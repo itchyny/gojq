@@ -1,6 +1,9 @@
 package gojq
 
-import "math/big"
+import (
+	"math"
+	"math/big"
+)
 
 func compare(l, r interface{}) int {
 	return binopTypeSwitch(l, r,
@@ -16,7 +19,7 @@ func compare(l, r interface{}) int {
 		},
 		func(l, r float64) interface{} {
 			switch {
-			case l < r:
+			case l < r || math.IsNaN(l):
 				return -1
 			case l == r:
 				return 0
