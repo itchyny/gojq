@@ -356,7 +356,7 @@ func funcAdd(v interface{}) interface{} {
 		case map[string]interface{}:
 			switch w := v.(type) {
 			case nil:
-				m := make(map[string]interface{})
+				m := make(map[string]interface{}, len(y))
 				for k, e := range y {
 					m[k] = e
 				}

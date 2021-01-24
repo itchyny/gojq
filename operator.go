@@ -328,7 +328,7 @@ func funcOpAdd(_, l, r interface{}) interface{} {
 			return append(append(v, l...), r...)
 		},
 		func(l, r map[string]interface{}) interface{} {
-			m := make(map[string]interface{})
+			m := make(map[string]interface{}, len(l)+len(r))
 			for k, v := range l {
 				m[k] = v
 			}
@@ -402,7 +402,7 @@ func funcOpMul(_, l, r interface{}) interface{} {
 }
 
 func deepMergeObjects(l, r map[string]interface{}) interface{} {
-	m := make(map[string]interface{})
+	m := make(map[string]interface{}, len(l)+len(r))
 	for k, v := range l {
 		m[k] = v
 	}
