@@ -388,7 +388,7 @@ func funcAdd(v interface{}) interface{} {
 	return v
 }
 
-var numberPattern = regexp.MustCompile(`^[-+]?(?:(?:\d*\.)?\d+|\d+\.)(?:[eE][-+]?\d+)?$`)
+var numberPattern = regexp.MustCompile(`^[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?$`)
 
 func funcToNumber(v interface{}) interface{} {
 	switch v := v.(type) {
