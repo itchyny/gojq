@@ -24,7 +24,7 @@ func normalizeNumbers(v interface{}) interface{} {
 		if strings.HasPrefix(v.String(), "-") {
 			return math.Inf(-1)
 		}
-		return math.Inf(0)
+		return math.Inf(1)
 	case *big.Int:
 		if v.IsInt64() {
 			if i := v.Int64(); minInt <= i && i <= maxInt {
