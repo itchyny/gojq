@@ -2398,7 +2398,7 @@
     - 'break $test'
   input: '1'
   error: |
-    label not defined: "$test"
+    label not defined: $test
   exit_code: 3
 
 - name: invalid break name

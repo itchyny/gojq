@@ -218,7 +218,7 @@ type breakError struct {
 }
 
 func (err *breakError) Error() string {
-	return fmt.Sprintf(`label not defined: %q`, err.n)
+	return fmt.Sprintf("label not defined: %s", err.n)
 }
 
 func (err *breakError) ExitCode() int {
