@@ -225,14 +225,6 @@ func (err *breakError) ExitCode() int {
 	return 3
 }
 
-type stringLiteralError struct {
-	s string
-}
-
-func (err *stringLiteralError) Error() string {
-	return fmt.Sprintf("expected a string but got: %s", err.s)
-}
-
 type tryEndError struct {
 	err error
 }
