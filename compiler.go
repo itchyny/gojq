@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -815,7 +816,7 @@ func (c *compiler) compileTerm(e *Term) (err error) {
 		defer c.newScopeDepth()()
 		return c.compileQuery(e.Query)
 	default:
-		return fmt.Errorf("invalid term: %s", e)
+		panic("invalid term: " + e.String())
 	}
 }
 
@@ -987,7 +988,7 @@ func (c *compiler) funcBuiltins(interface{}, []interface{}) interface{} {
 	})
 	ys := make([]interface{}, len(xs))
 	for i, x := range xs {
-		ys[i] = x.name + "/" + fmt.Sprint(x.arity)
+		ys[i] = x.name + "/" + strconv.Itoa(x.arity)
 	}
 	return ys
 }
@@ -1343,7 +1344,7 @@ func (c *compiler) compileCallInternal(fn interface{}, args []*Query, vars map[i
 	}
 	for i := len(args) - 1; i >= 0; i-- {
 		pc := c.pc() + 1 // ref: compileFuncDef
-		name := fmt.Sprintf("lambda:%d", pc)
+		name := "lambda:" + strconv.Itoa(pc)
 		if err := c.compileFuncDef(&FuncDef{Name: name, Body: args[i]}, false); err != nil {
 			return err
 		}

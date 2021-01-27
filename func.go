@@ -1546,7 +1546,7 @@ func compileRegexp(re, flags string) (*regexp.Regexp, error) {
 	}
 	r, err := regexp.Compile(re)
 	if err != nil {
-		return nil, fmt.Errorf("invalid regular expression %q: %v", re, err)
+		return nil, fmt.Errorf("invalid regular expression %q: %s", re, err)
 	}
 	return r, nil
 }

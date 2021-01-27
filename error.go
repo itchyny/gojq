@@ -1,9 +1,9 @@
 package gojq
 
 import (
-	"fmt"
 	"math/big"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -12,7 +12,7 @@ type expectedObjectError struct {
 }
 
 func (err *expectedObjectError) Error() string {
-	return fmt.Sprintf("expected an object but got: %s", typeErrorPreview(err.v))
+	return "expected an object but got: " + typeErrorPreview(err.v)
 }
 
 type expectedArrayError struct {
@@ -20,7 +20,7 @@ type expectedArrayError struct {
 }
 
 func (err *expectedArrayError) Error() string {
-	return fmt.Sprintf("expected an array but got: %s", typeErrorPreview(err.v))
+	return "expected an array but got: " + typeErrorPreview(err.v)
 }
 
 type iteratorError struct {
@@ -28,7 +28,7 @@ type iteratorError struct {
 }
 
 func (err *iteratorError) Error() string {
-	return fmt.Sprintf("cannot iterate over: %s", typeErrorPreview(err.v))
+	return "cannot iterate over: " + typeErrorPreview(err.v)
 }
 
 type arrayIndexTooLargeError struct {
@@ -36,7 +36,7 @@ type arrayIndexTooLargeError struct {
 }
 
 func (err *arrayIndexTooLargeError) Error() string {
-	return fmt.Sprintf("array index too large: %s", previewValue(err.v))
+	return "array index too large: " + previewValue(err.v)
 }
 
 type objectKeyNotStringError struct {
@@ -44,7 +44,7 @@ type objectKeyNotStringError struct {
 }
 
 func (err *objectKeyNotStringError) Error() string {
-	return fmt.Sprintf("expected a string for object key but got: %s", typeErrorPreview(err.v))
+	return "expected a string for object key but got: " + typeErrorPreview(err.v)
 }
 
 type arrayIndexNotNumberError struct {
@@ -52,7 +52,7 @@ type arrayIndexNotNumberError struct {
 }
 
 func (err *arrayIndexNotNumberError) Error() string {
-	return fmt.Sprintf("expected a number for indexing an array but got: %s", typeErrorPreview(err.v))
+	return "expected a number for indexing an array but got: " + typeErrorPreview(err.v)
 }
 
 type expectedStartEndError struct {
@@ -60,7 +60,7 @@ type expectedStartEndError struct {
 }
 
 func (err *expectedStartEndError) Error() string {
-	return fmt.Sprintf(`expected "start" and "end" for slicing but got: %s`, typeErrorPreview(err.v))
+	return `expected "start" and "end" for slicing but got: ` + typeErrorPreview(err.v)
 }
 
 type inputNotAllowedError struct {
@@ -75,7 +75,7 @@ type funcNotFoundError struct {
 }
 
 func (err *funcNotFoundError) Error() string {
-	return fmt.Sprintf("function not defined: %s/%d", err.f.Name, len(err.f.Args))
+	return "function not defined: " + err.f.Name + "/" + strconv.Itoa(len(err.f.Args))
 }
 
 type funcTypeError struct {
@@ -84,7 +84,7 @@ type funcTypeError struct {
 }
 
 func (err *funcTypeError) Error() string {
-	return fmt.Sprintf("%s cannot be applied to: %s", err.name, typeErrorPreview(err.v))
+	return err.name + " cannot be applied to: " + typeErrorPreview(err.v)
 }
 
 type exitCodeError struct {
@@ -95,9 +95,9 @@ type exitCodeError struct {
 
 func (err *exitCodeError) Error() string {
 	if s, ok := err.value.(string); ok {
-		return fmt.Sprintf("error: %s", s)
+		return "error: " + s
 	}
-	return fmt.Sprintf("error: %s", jsonMarshal(err.value))
+	return "error: " + jsonMarshal(err.value)
 }
 
 func (err *exitCodeError) IsEmptyError() bool {
@@ -113,7 +113,7 @@ type funcContainsError struct {
 }
 
 func (err *funcContainsError) Error() string {
-	return fmt.Sprintf("cannot check contains(%s): %s", previewValue(err.r), typeErrorPreview(err.l))
+	return "cannot check contains(" + previewValue(err.r) + "): " + typeErrorPreview(err.l)
 }
 
 type hasKeyTypeError struct {
@@ -121,7 +121,7 @@ type hasKeyTypeError struct {
 }
 
 func (err *hasKeyTypeError) Error() string {
-	return fmt.Sprintf("cannot check whether %s has a key: %s", typeErrorPreview(err.l), typeErrorPreview(err.r))
+	return "cannot check whether " + typeErrorPreview(err.l) + " has a key: " + typeErrorPreview(err.r)
 }
 
 type unaryTypeError struct {
@@ -130,7 +130,7 @@ type unaryTypeError struct {
 }
 
 func (err *unaryTypeError) Error() string {
-	return fmt.Sprintf("cannot %s: %s", err.name, typeErrorPreview(err.v))
+	return "cannot " + err.name + ": " + typeErrorPreview(err.v)
 }
 
 type binopTypeError struct {
@@ -139,7 +139,7 @@ type binopTypeError struct {
 }
 
 func (err *binopTypeError) Error() string {
-	return fmt.Sprintf("cannot %s: %s and %s", err.name, typeErrorPreview(err.l), typeErrorPreview(err.r))
+	return "cannot " + err.name + ": " + typeErrorPreview(err.l) + " and " + typeErrorPreview(err.r)
 }
 
 type zeroDivisionError struct {
@@ -147,7 +147,7 @@ type zeroDivisionError struct {
 }
 
 func (err *zeroDivisionError) Error() string {
-	return fmt.Sprintf("cannot divide %s by: %s", typeErrorPreview(err.l), typeErrorPreview(err.r))
+	return "cannot divide " + typeErrorPreview(err.l) + " by: " + typeErrorPreview(err.r)
 }
 
 type zeroModuloError struct {
@@ -155,7 +155,7 @@ type zeroModuloError struct {
 }
 
 func (err *zeroModuloError) Error() string {
-	return fmt.Sprintf("cannot modulo %s by: %s", typeErrorPreview(err.l), typeErrorPreview(err.r))
+	return "cannot modulo " + typeErrorPreview(err.l) + " by: " + typeErrorPreview(err.r) + ""
 }
 
 type formatNotFoundError struct {
@@ -163,7 +163,7 @@ type formatNotFoundError struct {
 }
 
 func (err *formatNotFoundError) Error() string {
-	return fmt.Sprintf("format not defined: %s", err.n)
+	return "format not defined: " + err.n
 }
 
 type formatCsvTsvRowError struct {
@@ -172,7 +172,7 @@ type formatCsvTsvRowError struct {
 }
 
 func (err *formatCsvTsvRowError) Error() string {
-	return fmt.Sprintf("invalid %s row: %s", err.typ, typeErrorPreview(err.v))
+	return "invalid " + err.typ + " row: " + typeErrorPreview(err.v)
 }
 
 type formatShError struct {
@@ -180,7 +180,7 @@ type formatShError struct {
 }
 
 func (err *formatShError) Error() string {
-	return fmt.Sprintf("cannot escape for shell: %s", typeErrorPreview(err.v))
+	return "cannot escape for shell: " + typeErrorPreview(err.v)
 }
 
 type tooManyVariableValuesError struct{}
@@ -194,7 +194,7 @@ type expectedVariableError struct {
 }
 
 func (err *expectedVariableError) Error() string {
-	return fmt.Sprintf("variable defined but not bound: %s", err.n)
+	return "variable defined but not bound: " + err.n
 }
 
 type variableNotFoundError struct {
@@ -202,7 +202,7 @@ type variableNotFoundError struct {
 }
 
 func (err *variableNotFoundError) Error() string {
-	return fmt.Sprintf("variable not defined: %s", err.n)
+	return "variable not defined: " + err.n
 }
 
 type variableNameError struct {
@@ -218,7 +218,7 @@ type breakError struct {
 }
 
 func (err *breakError) Error() string {
-	return fmt.Sprintf("label not defined: %s", err.n)
+	return "label not defined: " + err.n
 }
 
 func (err *breakError) ExitCode() int {
@@ -238,7 +238,7 @@ type invalidPathError struct {
 }
 
 func (err *invalidPathError) Error() string {
-	return fmt.Sprintf("invalid path against: %s", typeErrorPreview(err.v))
+	return "invalid path against: " + typeErrorPreview(err.v)
 }
 
 type invalidPathIterError struct {
@@ -246,7 +246,7 @@ type invalidPathIterError struct {
 }
 
 func (err *invalidPathIterError) Error() string {
-	return fmt.Sprintf("invalid path on iterating against: %s", typeErrorPreview(err.v))
+	return "invalid path on iterating against: " + typeErrorPreview(err.v)
 }
 
 type getpathError struct {
@@ -254,7 +254,7 @@ type getpathError struct {
 }
 
 func (err *getpathError) Error() string {
-	return fmt.Sprintf("cannot getpath with %s against: %s", previewValue(err.path), typeErrorPreview(err.v))
+	return "cannot getpath with " + previewValue(err.path) + " against: " + typeErrorPreview(err.v) + ""
 }
 
 type queryParseError struct {
@@ -267,7 +267,7 @@ func (err *queryParseError) QueryParseError() (string, string, string, error) {
 }
 
 func (err *queryParseError) Error() string {
-	return fmt.Sprintf("invalid %s: %s: %s", err.typ, err.fname, err.err)
+	return "invalid " + err.typ + ": " + err.fname + ": " + err.err.Error()
 }
 
 type jsonParseError struct {
@@ -280,7 +280,7 @@ func (err *jsonParseError) JSONParseError() (string, string, error) {
 }
 
 func (err *jsonParseError) Error() string {
-	return fmt.Sprintf("invalid json: %s: %s", err.fname, strings.TrimPrefix(err.err.Error(), "json: "))
+	return "invalid json: " + err.fname + ": " + strings.TrimPrefix(err.err.Error(), "json: ")
 }
 
 func typeErrorPreview(v interface{}) string {

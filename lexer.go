@@ -1,7 +1,6 @@
 package gojq
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -473,7 +472,7 @@ func (err *parseError) Error() string {
 	default:
 		message = strconv.Quote(string(rune(err.tokenType)))
 	}
-	return fmt.Sprintf("%s token %s", prefix, message)
+	return prefix + " token " + message
 }
 
 func (err *parseError) Token() (string, int) {
@@ -488,7 +487,7 @@ func (l *lexer) Error(e string) {
 	case l.tokenType >= utf8.RuneSelf:
 		offset -= len(token) - 1
 	default:
-		token = fmt.Sprintf("%c", l.tokenType)
+		token = string(rune(l.tokenType))
 	}
 	l.err = &parseError{offset, token, l.tokenType}
 }

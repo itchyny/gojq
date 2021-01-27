@@ -3,6 +3,7 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -33,7 +34,7 @@ type exitCodeError struct {
 }
 
 func (err *exitCodeError) Error() string {
-	return fmt.Sprintf("exit code: %d", err.code)
+	return "exit code: " + strconv.Itoa(err.code)
 }
 
 func (err *exitCodeError) IsEmptyError() bool {
@@ -106,8 +107,8 @@ func (err *queryParseError) Error() string {
 		if !strings.ContainsAny(err.contents, "\n\r") && strings.HasPrefix(err.fname, "<arg>") {
 			fname = err.contents
 		} else {
-			fname = fmt.Sprintf("%s:%d", err.fname, line)
-			prefix = fmt.Sprintf("%d | ", line)
+			fname = err.fname + ":" + strconv.Itoa(line)
+			prefix = strconv.Itoa(line) + " | "
 		}
 		fmt.Fprintf(&s, "invalid %s: %s\n", err.typ, fname)
 		fmt.Fprintf(
