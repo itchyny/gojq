@@ -1188,7 +1188,7 @@
 - name: tonumber function
   args:
     - 'map(tonumber)'
-  input: '["0", "12345", "-43210", "+4.2", "05", "9.", ".123", "1e-2", "2.e-2", 3.14]'
+  input: '["0", "12345", "-43210", "+4.2", "05", "9.", "+.123", "-.1", "1e-2", "2.e-2", 3.14]'
   expected: |
     [
       0,
@@ -1198,10 +1198,23 @@
       5,
       9,
       0.123,
+      -0.1,
       0.01,
       0.02,
       3.14
     ]
+
+- name: tonumber function error
+  args:
+    - '.[] | try tonumber catch .'
+  input: '["", ".", " ", "1a", ".e1", "-.e"]'
+  expected: |
+    "invalid number: \"\""
+    "invalid number: \".\""
+    "invalid number: \" \""
+    "invalid number: \"1a\""
+    "invalid number: \".e1\""
+    "invalid number: \"-.e\""
 
 - name: tostring function
   args:

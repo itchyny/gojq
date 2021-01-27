@@ -365,6 +365,22 @@ func (l *lexer) scanNumber(state int) int {
 	}
 }
 
+func (l *lexer) validNumber() bool {
+	ch := l.peek()
+	switch ch {
+	case '+', '-':
+		l.offset++
+		ch = l.peek()
+	}
+	state := numberStateLead
+	if ch == '.' {
+		l.offset++
+		ch = l.peek()
+		state = numberStateFloat
+	}
+	return isNumber(ch) && l.scanNumber(state) == len(l.source)
+}
+
 func (l *lexer) scanString(start int) (int, string) {
 	var quote bool
 	for i, m := l.offset, len(l.source); i < m; i++ {
