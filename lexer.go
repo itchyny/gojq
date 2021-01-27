@@ -301,6 +301,14 @@ func (l *lexer) scanIdentOrModule() (int, bool) {
 	return index, isModule
 }
 
+func (l *lexer) validVarName() bool {
+	if l.peek() != '$' {
+		return false
+	}
+	l.offset++
+	return isIdent(l.peek(), false) && l.scanIdent() == len(l.source)
+}
+
 const (
 	numberStateLead = iota
 	numberStateFloat

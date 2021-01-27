@@ -133,12 +133,17 @@ func TestWithVariablesError0(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = gojq.Compile(
-		query,
-		gojq.WithVariables([]string{"x"}),
-	)
-	if got, expected := err.Error(), "invalid variable name: x"; got != expected {
-		t.Errorf("expected: %v, got: %v", expected, got)
+	for _, name := range []string{"", "$", "_x", "x", "$0x", "$$", "$x ", " $x"} {
+		_, err = gojq.Compile(
+			query,
+			gojq.WithVariables([]string{name}),
+		)
+		if err == nil {
+			t.Fatalf("%q is not a valid variable name", name)
+		}
+		if got, expected := err.Error(), "invalid variable name: "+name; got != expected {
+			t.Errorf("expected: %v, got: %v", expected, got)
+		}
 	}
 }
 
