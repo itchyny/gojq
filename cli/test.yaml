@@ -4713,6 +4713,61 @@
     \e[90mnull\e[0m\n\
     \e[36m1.7976931348623157e+308\e[0m\n"
 
+- name: color output option configured by environment variable
+  args:
+    - -C
+    - '., null, nan, infinite'
+  input: |
+    { "x": "foo", "y": 128, "z": [null, false, true, 3.14, "foo", {}] }
+  env:
+    - GOJQ_COLORS=31:32:33:34:35:36:41:42
+  expected:
+    "\e[42m{\e[0m\n\
+    \  \e[36m\"x\"\e[0m\e[42m:\e[0m \e[35m\"foo\"\e[0m\e[42m,\e[0m\n\
+    \  \e[36m\"y\"\e[0m\e[42m:\e[0m \e[34m128\e[0m\e[42m,\e[0m\n\
+    \  \e[36m\"z\"\e[0m\e[42m:\e[0m \e[41m[\e[0m\n\
+    \    \e[31mnull\e[0m\e[41m,\e[0m\n\
+    \    \e[32mfalse\e[0m\e[41m,\e[0m\n\
+    \    \e[33mtrue\e[0m\e[41m,\e[0m\n\
+    \    \e[34m3.14\e[0m\e[41m,\e[0m\n\
+    \    \e[35m\"foo\"\e[0m\e[41m,\e[0m\n\
+    \    \e[42m{\e[0m\e[42m}\e[0m\n\
+    \  \e[41m]\e[0m\n\
+    \e[42m}\e[0m\n\
+    \e[31mnull\e[0m\n\
+    \e[31mnull\e[0m\n\
+    \e[34m1.7976931348623157e+308\e[0m\n"
+
+- name: color output option configured by environment variable with fewer colors
+  args:
+    - -C
+    - .
+  input: |
+    { "foo": [null, false, true, 3.14, "bar"] }
+  env:
+    - GOJQ_COLORS=31;1:::32;2
+  expected:
+    "{\n\
+    \  \"foo\": [\n\
+    \    \e[31;1mnull\e[0m,\n\
+    \    false,\n\
+    \    true,\n\
+    \    \e[32;2m3.14\e[0m,\n\
+    \    \"bar\"\n\
+    \  ]\n\
+    }\n"
+
+- name: invalid colors environment variable
+  args:
+    - -C
+    - .
+  input: |
+    0
+  env:
+    - GOJQ_COLORS=30:31;;:32
+  error: |
+    invalid color: "31;;"
+
 - name: color output long option
   args:
     - --color-output

@@ -73,6 +73,15 @@ docker run -i --rm itchyny/gojq
 - gojq supports arbitrary-precision integer calculation while jq does not. This is important to keeping the precision of numeric IDs or nanosecond values. You can use gojq to solve some mathematical problems which require big integers.
 - gojq supports reading from YAML input while jq does not. gojq also supports YAML output.
 
+### Color configuration
+The gojq command automatically disables coloring output when the output is not a tty.
+In order to force coloring output, specify `--color-output` (`-C`) option.
+When [`NO_COLOR` environment variable](https://no-color.org/) is present or `--monochrome-output` (`-M`) option is specified, gojq disables coloring output, even if `--color-output` (`-C`) is specified.
+
+Use `GOJQ_COLORS` environment variable to configure individual colors.
+The variable is a colon-separated list of ANSI escape sequences of `null`, `false`, `true`, numbers, strings, object keys, arrays and objects.
+The default configuration is `90:33:33:36:32:34;1`.
+
 ## Usage as a library
 You can use the gojq parser and interpreter from your Go products.
 

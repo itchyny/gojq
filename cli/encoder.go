@@ -11,27 +11,6 @@ import (
 	"unicode/utf8"
 )
 
-var noColor bool
-
-func newColor(c string) []byte {
-	return []byte("\x1b[" + c + "m")
-}
-
-func setColor(buf *bytes.Buffer, color []byte) {
-	if !noColor {
-		buf.Write([]byte(color))
-	}
-}
-
-var (
-	resetColor     = newColor("0")    // Reset
-	nullColor      = newColor("90")   // Bright black
-	boolColor      = newColor("33")   // Yellow
-	numberColor    = newColor("36")   // Cyan
-	stringColor    = newColor("32")   // Green
-	objectKeyColor = newColor("34;1") // Bold Blue
-)
-
 type encoder struct {
 	out    io.Writer
 	w      *bytes.Buffer
@@ -57,31 +36,21 @@ func (e *encoder) marshal(v interface{}, w io.Writer) error {
 func (e *encoder) encode(v interface{}) {
 	switch v := v.(type) {
 	case nil:
-		setColor(e.w, nullColor)
-		e.w.WriteString("null")
-		setColor(e.w, resetColor)
+		e.write([]byte("null"), nullColor)
 	case bool:
-		setColor(e.w, boolColor)
 		if v {
-			e.w.WriteString("true")
+			e.write([]byte("true"), trueColor)
 		} else {
-			e.w.WriteString("false")
+			e.write([]byte("false"), falseColor)
 		}
-		setColor(e.w, resetColor)
 	case int:
-		setColor(e.w, numberColor)
-		e.w.Write(strconv.AppendInt(e.buf[:0], int64(v), 10))
-		setColor(e.w, resetColor)
+		e.write(strconv.AppendInt(e.buf[:0], int64(v), 10), numberColor)
 	case float64:
 		e.encodeFloat64(v)
 	case *big.Int:
-		setColor(e.w, numberColor)
-		e.w.Write(v.Append(e.buf[:0], 10))
-		setColor(e.w, resetColor)
+		e.write(v.Append(e.buf[:0], 10), numberColor)
 	case string:
-		setColor(e.w, stringColor)
-		e.encodeString(v)
-		setColor(e.w, resetColor)
+		e.encodeString(v, stringColor)
 	case []interface{}:
 		e.encodeArray(v)
 	case map[string]interface{}:
@@ -98,12 +67,9 @@ func (e *encoder) encode(v interface{}) {
 // ref: floatEncoder in encoding/json
 func (e *encoder) encodeFloat64(f float64) {
 	if math.IsNaN(f) {
-		setColor(e.w, nullColor)
-		e.w.WriteString("null")
-		setColor(e.w, resetColor)
+		e.write([]byte("null"), nullColor)
 		return
 	}
-	setColor(e.w, numberColor)
 	if f >= math.MaxFloat64 {
 		f = math.MaxFloat64
 	} else if f <= -math.MaxFloat64 {
@@ -121,12 +87,14 @@ func (e *encoder) encodeFloat64(f float64) {
 			buf = buf[:n-1]
 		}
 	}
-	e.w.Write(buf)
-	setColor(e.w, resetColor)
+	e.write(buf, numberColor)
 }
 
 // ref: encodeState#string in encoding/json
-func (e *encoder) encodeString(s string) {
+func (e *encoder) encodeString(s string, color []byte) {
+	if color != nil {
+		setColor(e.w, color)
+	}
 	e.w.WriteByte('"')
 	start := 0
 	for i := 0; i < len(s); {
@@ -174,14 +142,17 @@ func (e *encoder) encodeString(s string) {
 		e.w.WriteString(s[start:])
 	}
 	e.w.WriteByte('"')
+	if color != nil {
+		setColor(e.w, resetColor)
+	}
 }
 
 func (e *encoder) encodeArray(vs []interface{}) {
-	e.w.WriteByte('[')
+	e.writeByte('[', arrayColor)
 	e.depth += e.indent
 	for i, v := range vs {
 		if i > 0 {
-			e.w.WriteByte(',')
+			e.writeByte(',', arrayColor)
 		}
 		if e.indent != 0 {
 			e.writeIndent()
@@ -192,11 +163,11 @@ func (e *encoder) encodeArray(vs []interface{}) {
 	if len(vs) > 0 && e.indent != 0 {
 		e.writeIndent()
 	}
-	e.w.WriteByte(']')
+	e.writeByte(']', arrayColor)
 }
 
 func (e *encoder) encodeMap(vs map[string]interface{}) {
-	e.w.WriteByte('{')
+	e.writeByte('{', objectColor)
 	e.depth += e.indent
 	type keyVal struct {
 		key string
@@ -213,18 +184,15 @@ func (e *encoder) encodeMap(vs map[string]interface{}) {
 	})
 	for i, kv := range kvs {
 		if i > 0 {
-			e.w.WriteByte(',')
+			e.writeByte(',', objectColor)
 		}
 		if e.indent != 0 {
 			e.writeIndent()
 		}
-		setColor(e.w, objectKeyColor)
-		e.encodeString(kv.key)
-		setColor(e.w, resetColor)
-		if e.indent == 0 {
-			e.w.WriteByte(':')
-		} else {
-			e.w.Write([]byte{':', ' '})
+		e.encodeString(kv.key, objectKeyColor)
+		e.writeByte(':', objectColor)
+		if e.indent != 0 {
+			e.w.WriteByte(' ')
 		}
 		e.encode(kv.val)
 	}
@@ -232,7 +200,7 @@ func (e *encoder) encodeMap(vs map[string]interface{}) {
 	if len(vs) > 0 && e.indent != 0 {
 		e.writeIndent()
 	}
-	e.w.WriteByte('}')
+	e.writeByte('}', objectColor)
 }
 
 func (e *encoder) writeIndent() {
@@ -253,5 +221,25 @@ func (e *encoder) writeIndent() {
 			}
 			e.w.Write([]byte(spaces)[:n])
 		}
+	}
+}
+
+func (e *encoder) writeByte(b byte, color []byte) {
+	if color == nil {
+		e.w.WriteByte(b)
+	} else {
+		setColor(e.w, color)
+		e.w.WriteByte(b)
+		setColor(e.w, resetColor)
+	}
+}
+
+func (e *encoder) write(bs []byte, color []byte) {
+	if color == nil {
+		e.w.Write(bs)
+	} else {
+		setColor(e.w, color)
+		e.w.Write(bs)
+		setColor(e.w, resetColor)
 	}
 }

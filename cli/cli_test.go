@@ -15,6 +15,7 @@ import (
 func init() {
 	addDefaultModulePaths = false
 	os.Setenv("NO_COLOR", "")
+	os.Setenv("GOJQ_COLORS", "")
 }
 
 func setLocation(loc *time.Location) func() {
@@ -54,6 +55,17 @@ func TestCliRun(t *testing.T) {
 				xs := strings.SplitN(env, "=", 2)
 				k, v := xs[0], xs[1]
 				defer func(v string) { os.Setenv(k, v) }(os.Getenv(k))
+				if k == "GOJQ_COLORS" {
+					defer func(colors [][]byte) {
+						nullColor, falseColor, trueColor, numberColor,
+							stringColor, objectKeyColor, arrayColor, objectColor =
+							colors[0], colors[1], colors[2], colors[3],
+							colors[4], colors[5], colors[6], colors[7]
+					}([][]byte{
+						nullColor, falseColor, trueColor, numberColor,
+						stringColor, objectKeyColor, arrayColor, objectColor,
+					})
+				}
 				os.Setenv(k, v)
 			}
 			code := cli.run(tc.Args)
@@ -74,8 +86,8 @@ func TestCliRun(t *testing.T) {
 				assert.Contains(t,
 					strings.ReplaceAll(errStr, name+": ", ""),
 					strings.TrimSpace(tc.Error))
-				assert.Equal(t, '\n', rune(errStr[len(errStr)-1]), errStr)
-				assert.NotEqual(t, '\n', rune(errStr[len(errStr)-2]), errStr)
+				assert.Equal(t, true, strings.HasSuffix(errStr, "\n"), errStr)
+				assert.Equal(t, false, strings.HasSuffix(errStr, "\n\n"), errStr)
 			}
 		})
 	}

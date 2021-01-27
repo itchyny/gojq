@@ -130,6 +130,13 @@ Synopsis:
 	} else {
 		noColor = !isTTY(cli.outStream)
 	}
+	if !noColor {
+		if colors := os.Getenv("GOJQ_COLORS"); colors != "" {
+			if err := setColors(colors); err != nil {
+				return err
+			}
+		}
+	}
 	if i := cli.outputIndent; i != nil {
 		if *i > 9 {
 			return fmt.Errorf("too many indentation count: %d", *i)
