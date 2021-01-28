@@ -233,7 +233,7 @@ Synopsis:
 			JSONParseError() (string, string, error)
 		}); ok {
 			fname, contents, err := err.JSONParseError()
-			return &compileError{&jsonParseError{fname, contents, err}}
+			return &compileError{&jsonParseError{fname, contents, 0, err}}
 		}
 		return &compileError{err}
 	}

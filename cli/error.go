@@ -98,6 +98,7 @@ func (err *queryParseError) ExitCode() int {
 
 type jsonParseError struct {
 	fname, contents string
+	line            int
 	err             error
 }
 
@@ -117,6 +118,7 @@ func (err *jsonParseError) Error() string {
 			trimLastInvalidRune(err.contents), int(er.Offset),
 		)
 		if i := strings.IndexAny(err.contents, "\n\r"); i >= 0 && i < len(err.contents)-1 {
+			line += err.line
 			fname += ":" + strconv.Itoa(line)
 			prefix = strconv.Itoa(line) + " | "
 		}

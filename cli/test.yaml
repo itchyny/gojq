@@ -5704,8 +5704,20 @@
   args:
     - '.'
     - 'testdata/5.json'
-  error: |
+  error: | # file contents is read by inputReader so the entire error line is shown unlike the following input json test
     invalid json: testdata/5.json:3
+        3 |   "abcde": :★★★★★★★★★★★★★★★
+                       ^  invalid character ':' looking for beginning of value
+
+- name: json input error json with multibyte character in the error line
+  args:
+    - '.'
+  input: |
+    {
+      "a": "This is a test for multibyte character in the error line of JSON. Since the first buffer size of JSON decoder is 512 (see encoding/json/stream.go) and the decoder stops reading bytes on encountering an error, the error line can be an invalid UTF-8 string even if the complete input is a valid UTF-8 string. Note that the error happens before 512 bytes and the corresponding line continues beyond 512 bytes with a multibyte character at the boundary.",
+      "abcde": :★★★★★★★★★★★★★★★
+  error: |
+    invalid json: <stdin>:3
         3 |   "abcde": :★★★★★★★★★★★★
                        ^  invalid character ':' looking for beginning of value
 
