@@ -5309,9 +5309,22 @@
     10
     bar:
   error: |
-    invalid yaml: <stdin>
-        10
-        ^  could not find expected ':'
+    invalid yaml: <stdin>:2
+        2 | 10
+            ^  could not find expected ':'
+
+- name: yaml input option multiple errors
+  args:
+    - --yaml-input
+    - '.'
+  input: |
+    foo: 1
+    bar: 2
+    foo: 3
+  error: |
+    invalid yaml: <stdin>:3
+        3 | foo: 3
+            ^  mapping key "foo" already defined at line 1
 
 - name: yaml file input error
   args:
@@ -5319,9 +5332,9 @@
     - '.'
     - 'testdata/2.yaml'
   error: |
-    invalid yaml: testdata/2.yaml
-          a: b: c
-        ^  mapping values are not allowed in this context
+    invalid yaml: testdata/2.yaml:5
+        5 |   a: b: c
+            ^  mapping values are not allowed in this context
 
 - name: yaml file input error in dos format
   args:
@@ -5329,9 +5342,9 @@
     - '.'
     - 'testdata/3.yaml'
   error: |
-    invalid yaml: testdata/3.yaml
-          a: b: c
-        ^  mapping values are not allowed in this context
+    invalid yaml: testdata/3.yaml:5
+        5 |   a: b: c
+            ^  mapping values are not allowed in this context
 
 - name: yaml file input error in mac format
   args:
@@ -5339,9 +5352,9 @@
     - '.'
     - 'testdata/4.yaml'
   error: |
-    invalid yaml: testdata/4.yaml
-          a: b: c
-        ^  mapping values are not allowed in this context
+    invalid yaml: testdata/4.yaml:5
+        5 |   a: b: c
+            ^  mapping values are not allowed in this context
 
 - name: yaml output option
   args:
@@ -5544,23 +5557,33 @@
                        ^  unexpected token "}"
   exit_code: 3
 
-- name: invalid multiple line query in dos format
+- name: invalid multiple line query in file
   args:
     - -f
     - testdata/10.jq
   error: |
-    invalid query: testdata/10.jq:3
-        3 | bar ]
+    invalid query: testdata/10.jq:5
+        5 | bar ]
+                ^  unexpected token "]"
+  exit_code: 3
+
+- name: invalid multiple line query in dos format
+  args:
+    - -f
+    - testdata/11.jq
+  error: |
+    invalid query: testdata/11.jq:5
+        5 | bar ]
                 ^  unexpected token "]"
   exit_code: 3
 
 - name: invalid multiple line query in mac format
   args:
     - -f
-    - testdata/11.jq
+    - testdata/12.jq
   error: |
-    invalid query: testdata/11.jq:3
-        3 | bar ]
+    invalid query: testdata/12.jq:5
+        5 | bar ]
                 ^  unexpected token "]"
   exit_code: 3
 
@@ -5600,9 +5623,9 @@
       "１２３４５" 100
     }
   error: |
-    invalid json: <stdin>
-          "１２３４５" 100
-                       ^  invalid character '1' after object key
+    invalid json: <stdin>:2
+        2 |   "１２３４５" 100
+                           ^  invalid character '1' after object key
 
 - name: invalid json string literal
   input: |
@@ -5610,9 +5633,9 @@
       "１２３": n
     }
   error: |
-    invalid json: <stdin>
-          "１２３": n
-                     ^  invalid character '\n' in literal null (expecting 'u')
+    invalid json: <stdin>:2
+        2 |   "１２３": n
+                         ^  invalid character '\n' in literal null (expecting 'u')
 
 - name: multiple json in input
   input: '{}[]{"foo":10}{"bar":[]}'
@@ -5655,9 +5678,9 @@
     - '.'
     - 'testdata/4.json'
   error: |
-    invalid json: testdata/4.json
-          bar
-          ^  invalid character 'b' looking for beginning of value
+    invalid json: testdata/4.json:3
+        3 |   bar
+              ^  invalid character 'b' looking for beginning of value
 
 - name: json file error json
   args:
@@ -5673,18 +5696,18 @@
     - '.'
     - 'testdata/9.json'
   error: |
-    invalid json: testdata/9.json
-        ", "０", "０", "０", "０", , "０", "０"]
-                                   ^  invalid character ',' looking for beginning of value
+    invalid json: testdata/9.json:3
+        3 | ", "０", "０", "０", "０", , "０", "０"]
+                                       ^  invalid character ',' looking for beginning of value
 
 - name: json file error json with multibyte character in the error line
   args:
     - '.'
     - 'testdata/5.json'
   error: |
-    invalid json: testdata/5.json
-          "abcde": :★★★★★★★★★★★★
-                   ^  invalid character ':' looking for beginning of value
+    invalid json: testdata/5.json:3
+        3 |   "abcde": :★★★★★★★★★★★★
+                       ^  invalid character ':' looking for beginning of value
 
 - name: json file not found
   args:
@@ -5811,9 +5834,9 @@
     - 'import "4" as $x; $x'
   input: 0
   error: |
-    compile error: invalid json: testdata/4.json
-          bar
-          ^  invalid character 'b' looking for beginning of value
+    compile error: invalid json: testdata/4.json:3
+        3 |   bar
+              ^  invalid character 'b' looking for beginning of value
   exit_code: 3
 
 - name: module directory option with same alias name

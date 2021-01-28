@@ -78,7 +78,7 @@ func (err *queryParseError) Error() string {
 	if er, ok := err.err.(interface{ Token() (string, int) }); ok {
 		_, offset := er.Token()
 		linestr, line, col := getLineByOffset(err.contents, offset)
-		var prefix, fname string
+		var fname, prefix string
 		if !strings.ContainsAny(err.contents, "\n\r") && strings.HasPrefix(err.fname, "<arg>") {
 			fname = err.contents
 		} else {
@@ -102,8 +102,9 @@ type jsonParseError struct {
 }
 
 func (err *jsonParseError) Error() string {
-	var linestr string
-	var col int
+	fname := err.fname
+	var prefix, linestr string
+	var line, col int
 	var errmsg string
 	if errmsg = err.err.Error(); errmsg == "unexpected EOF" {
 		linestr = strings.TrimRight(err.contents, "\n\r")
@@ -112,14 +113,18 @@ func (err *jsonParseError) Error() string {
 		}
 		col = runewidth.StringWidth(linestr)
 	} else if er, ok := err.err.(*json.SyntaxError); ok {
-		linestr, _, col = getLineByOffset(
+		linestr, line, col = getLineByOffset(
 			trimLastInvalidRune(err.contents), int(er.Offset),
 		)
+		if i := strings.IndexAny(err.contents, "\n\r"); i >= 0 && i < len(err.contents)-1 {
+			fname += ":" + strconv.Itoa(line)
+			prefix = strconv.Itoa(line) + " | "
+		}
 		errmsg = strings.TrimPrefix(er.Error(), "json: ")
 	}
-	return "invalid json: " + err.fname + "\n" +
-		"    " + linestr + "\n" +
-		"    " + strings.Repeat(" ", col) + "^  " + errmsg
+	return "invalid json: " + fname + "\n" +
+		"    " + prefix + linestr + "\n" +
+		"    " + strings.Repeat(" ", len(prefix)+col) + "^  " + errmsg
 }
 
 type yamlParseError struct {
@@ -131,10 +136,20 @@ func (err *yamlParseError) Error() string {
 	var line int
 	msg := err.err.Error()
 	fmt.Sscanf(msg, "yaml: line %d:", &line)
-	if line == 0 {
-		return "invalid yaml: " + err.fname
+	if line > 0 {
+		msg = msg[7+strings.IndexRune(msg[5:], ':'):] // trim "yaml: line N:"
+	} else {
+		if !strings.HasPrefix(msg, "yaml: unmarshal errors:\n") {
+			return "invalid yaml: " + err.fname
+		}
+		msg = strings.Split(msg, "\n")[1]
+		fmt.Sscanf(msg, " line %d: ", &line)
+		if line > 0 {
+			msg = msg[2+strings.IndexRune(msg, ':'):] // trim "line N:"
+		} else {
+			return "invalid yaml: " + err.fname
+		}
 	}
-	msg = msg[7+strings.IndexRune(msg[5:], ':'):] // trim "yaml: line N:"
 	var ss strings.Builder
 	var i, j int
 	var cr bool
@@ -154,9 +169,10 @@ func (err *yamlParseError) Error() string {
 			ss.WriteRune(r)
 		}
 	}
-	return "invalid yaml: " + err.fname + "\n" +
-		"    " + ss.String() + "\n" +
-		"    ^  " + msg
+	linestr := strconv.Itoa(line)
+	return "invalid yaml: " + err.fname + ":" + linestr + "\n" +
+		"    " + linestr + " | " + ss.String() + "\n" +
+		"    " + strings.Repeat(" ", len(linestr)) + "   ^  " + msg
 }
 
 func getLineByOffset(str string, offset int) (string, int, int) {
