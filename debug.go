@@ -3,7 +3,6 @@
 package gojq
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -102,16 +101,16 @@ func (env *env) debugState(pc int, backtrack bool) {
 	if !debug {
 		return
 	}
-	buf := new(bytes.Buffer)
+	var sb strings.Builder
 	c := env.codes[pc]
-	fmt.Fprintf(buf, "\t%d\t%s%s\t|", pc, formatOp(c.op, backtrack), debugOperand(c))
+	fmt.Fprintf(&sb, "\t%d\t%s%s\t|", pc, formatOp(c.op, backtrack), debugOperand(c))
 	var xs []int
 	for i := env.stack.index; i >= 0; i = env.stack.data[i].next {
 		xs = append(xs, i)
 	}
 	for i := len(xs) - 1; i >= 0; i-- {
-		buf.WriteString("\t")
-		buf.WriteString(debugJSON(env.stack.data[xs[i]].value))
+		sb.WriteString("\t")
+		sb.WriteString(debugJSON(env.stack.data[xs[i]].value))
 	}
 	switch c.op {
 	case opcall:
@@ -126,12 +125,12 @@ func (env *env) debugState(pc int, backtrack bool) {
 	}
 	if name := env.lookupInfoName(pc); name != "" {
 		if (c.op == opcall || c.op == opjump) && !strings.HasPrefix(name, "module ") {
-			buf.WriteString("\t\t\t## call " + name)
+			sb.WriteString("\t\t\t## call " + name)
 		} else {
-			buf.WriteString("\t\t\t## " + name)
+			sb.WriteString("\t\t\t## " + name)
 		}
 	}
-	fmt.Fprintln(debugOut, buf.String())
+	fmt.Fprintln(debugOut, sb.String())
 }
 
 func formatOp(c opcode, backtrack bool) string {
@@ -145,20 +144,20 @@ func (env *env) debugForks(pc int, op string) {
 	if !debug {
 		return
 	}
-	buf := new(bytes.Buffer)
+	var sb strings.Builder
 	for i, v := range env.forks {
 		if i > 0 {
-			buf.WriteByte('\t')
+			sb.WriteByte('\t')
 		}
 		if i == len(env.forks)-1 {
-			buf.WriteByte('<')
+			sb.WriteByte('<')
 		}
-		fmt.Fprintf(buf, "%d, %s", v.pc, debugJSON(env.stack.data[v.stackindex].value))
+		fmt.Fprintf(&sb, "%d, %s", v.pc, debugJSON(env.stack.data[v.stackindex].value))
 		if i == len(env.forks)-1 {
-			buf.WriteByte('>')
+			sb.WriteByte('>')
 		}
 	}
-	fmt.Fprintf(debugOut, "\t-\t%s%s%d\t|\t%s\n", op, strings.Repeat(" ", 22), pc, buf.String())
+	fmt.Fprintf(debugOut, "\t-\t%s%s%d\t|\t%s\n", op, strings.Repeat(" ", 22), pc, sb.String())
 }
 
 func debugOperand(c *code) string {
@@ -177,7 +176,7 @@ func debugOperand(c *code) string {
 }
 
 func debugJSON(v interface{}) string {
-	b := new(bytes.Buffer)
-	json.NewEncoder(b).Encode(v)
-	return strings.TrimSpace(b.String())
+	var sb strings.Builder
+	json.NewEncoder(&sb).Encode(v)
+	return strings.TrimSpace(sb.String())
 }

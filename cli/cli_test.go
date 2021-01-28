@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bytes"
 	"os"
 	"strings"
 	"testing"
@@ -44,12 +43,11 @@ func TestCliRun(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
 			defer func() { assert.Nil(t, recover()) }()
-			outStream := new(bytes.Buffer)
-			errStream := new(bytes.Buffer)
+			var outStream, errStream strings.Builder
 			cli := cli{
 				inStream:  strings.NewReader(tc.Input),
-				outStream: outStream,
-				errStream: errStream,
+				outStream: &outStream,
+				errStream: &errStream,
 			}
 			for _, env := range tc.Env {
 				xs := strings.SplitN(env, "=", 2)

@@ -1,13 +1,13 @@
 package gojq
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type moduleLoader struct {
@@ -75,15 +75,21 @@ func (l *moduleLoader) LoadJSONWithMeta(name string, meta map[string]interface{}
 	}
 	defer f.Close()
 	var vals []interface{}
-	var buf bytes.Buffer
-	dec := json.NewDecoder(io.TeeReader(f, &buf))
+	dec := json.NewDecoder(f)
 	for {
 		var val interface{}
 		if err := dec.Decode(&val); err != nil {
 			if err == io.EOF {
 				break
 			}
-			return nil, &jsonParseError{path, buf.String(), err}
+			if _, err := f.Seek(0, io.SeekStart); err != nil {
+				return nil, err
+			}
+			var sb strings.Builder
+			if _, err := io.Copy(&sb, f); err != nil {
+				return nil, err
+			}
+			return nil, &jsonParseError{path, sb.String(), err}
 		}
 		vals = append(vals, val)
 	}

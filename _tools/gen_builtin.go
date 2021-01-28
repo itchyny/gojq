@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"go/ast"
@@ -11,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/itchyny/astgen-go"
 	"github.com/itchyny/gojq"
@@ -56,9 +56,9 @@ func run(input, output string) error {
 	if err != nil {
 		return err
 	}
-	var buf bytes.Buffer
-	buf.Write([]byte("\n\tbuiltinFuncDefs = "))
-	if err := printCompositeLit(&buf, t.(*ast.CompositeLit)); err != nil {
+	var sb strings.Builder
+	sb.Write([]byte("\n\tbuiltinFuncDefs = "))
+	if err := printCompositeLit(&sb, t.(*ast.CompositeLit)); err != nil {
 		return err
 	}
 	out := os.Stdout
@@ -70,7 +70,7 @@ func run(input, output string) error {
 		defer f.Close()
 		out = f
 	}
-	_, err = fmt.Fprintf(out, fileFormat, buf.String())
+	_, err = fmt.Fprintf(out, fileFormat, sb.String())
 	return err
 }
 
@@ -82,12 +82,12 @@ func printCompositeLit(out io.Writer, t *ast.CompositeLit) error {
 	out.Write([]byte("{"))
 	for _, kv := range t.Elts {
 		out.Write([]byte("\n\t\t"))
-		var kvBuf bytes.Buffer
-		err = printer.Fprint(&kvBuf, token.NewFileSet(), kv)
+		var sb strings.Builder
+		err = printer.Fprint(&sb, token.NewFileSet(), kv)
 		if err != nil {
 			return err
 		}
-		str := kvBuf.String()
+		str := sb.String()
 		for op := gojq.OpPipe; op <= gojq.OpUpdateAlt; op++ {
 			r := regexp.MustCompile(fmt.Sprintf(`\b((?:Update)?Op): %d\b`, op))
 			str = r.ReplaceAllString(str, fmt.Sprintf("$1: %#v", op))
@@ -96,7 +96,7 @@ func printCompositeLit(out io.Writer, t *ast.CompositeLit) error {
 			r := regexp.MustCompile(fmt.Sprintf(`(Term{Type): %d\b`, termType))
 			str = r.ReplaceAllString(str, fmt.Sprintf("$1: %#v", termType))
 		}
-		out.Write([]byte(str))
+		out.Write([]byte(strings.ReplaceAll(str, "gojq.", "")))
 		out.Write([]byte(","))
 	}
 	out.Write([]byte("\n\t}\n"))
