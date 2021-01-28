@@ -432,9 +432,9 @@
   args:
     - -c
     - '[.[-5],.[-1],.[0],.[3],.[4],.[6],.[2:4],.[-4:-2]]'
-  input: '"あいうえお"'
+  input: '"１２３４５"'
   expected: |
-    ["あ","お","あ","え","お","","うえ","いう"]
+    ["１","５","１","４","５","","３４","２３"]
 
 - name: array construction
   args:
@@ -866,10 +866,10 @@
   args:
     - -c
     - 'map(length),.'
-  input: '[42, -42, {"a":1,"b":2}, [3,4,5], "Hello, world", "あいうえお", null, -4722366482869645213696]'
+  input: '[42, -42, {"a":1,"b":2}, [3,4,5], "Hello, world", "１２３４５", null, -4722366482869645213696]'
   expected: |
     [42,42,2,3,12,5,0,4722366482869645213696]
-    [42,-42,{"a":1,"b":2},[3,4,5],"Hello, world","あいうえお",null,-4722366482869645213696]
+    [42,-42,{"a":1,"b":2},[3,4,5],"Hello, world","１２３４５",null,-4722366482869645213696]
 
 - name: length function error
   args:
@@ -898,7 +898,7 @@
 - name: utf8bytelength function
   args:
     - 'utf8bytelength'
-  input: '"あいうえお☆ミ"'
+  input: '"☆１２３４５☆"'
   expected: |
     21
 
@@ -1321,8 +1321,8 @@
 
 - name: indices function for string
   args:
-    - 'indices(""), indices("ell"), indices("wor"), indices("ol"), indices("うえ")'
-  input: '"hello, world, hello, word あいうえお"'
+    - 'indices(""), indices("ell"), indices("wor"), indices("ol"), indices("３４")'
+  input: '"hello, world, hello, word １２３４５"'
   expected: | # different from jq due to multibyte characters
     []
     [
@@ -2109,17 +2109,17 @@
   args:
     - -c
     - 'map(explode)'
-  input: '["", "foo bar", "あいうえお", "\n\t"]'
+  input: '["", "foo bar", "１２３４５", "\n\t"]'
   expected: |
-    [[],[102,111,111,32,98,97,114],[12354,12356,12358,12360,12362],[10,9]]
+    [[],[102,111,111,32,98,97,114],[65297,65298,65299,65300,65301],[10,9]]
 
 - name: implode function
   args:
     - -c
     - 'map(implode)'
-  input: '[[],[102,111,111,32,98,97,114],[12354,12356,12358,12360,12362],[10,9]]'
+  input: '[[],[102,111,111,32,98,97,114],[65297,65298,65299,65300,65301],[10,9]]'
   expected: |
-    ["","foo bar","あいうえお","\n\t"]
+    ["","foo bar","１２３４５","\n\t"]
 
 - name: split/1 function
   args:
