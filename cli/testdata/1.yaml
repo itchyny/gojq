@@ -1,0 +1,10 @@
+foo:
+  bar: 42
+  baz: |
+    a
+    b
+qux: 100
+---
+foo: 1
+---
+bar

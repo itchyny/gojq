@@ -5235,6 +5235,24 @@
     }
     "bar"
 
+- name: yaml file input
+  args:
+    - --yaml-input
+    - '.'
+    - 'testdata/1.yaml'
+  expected: |
+    {
+      "foo": {
+        "bar": 42,
+        "baz": "a\nb\n"
+      },
+      "qux": 100
+    }
+    {
+      "foo": 1
+    }
+    "bar"
+
 - name: yaml input option with non-string keys
   args:
     - --yaml-input
@@ -5294,6 +5312,36 @@
     invalid yaml: <stdin>
         10
         ^  could not find expected ':'
+
+- name: yaml file input error
+  args:
+    - --yaml-input
+    - '.'
+    - 'testdata/2.yaml'
+  error: |
+    invalid yaml: testdata/2.yaml
+          a: b: c
+        ^  mapping values are not allowed in this context
+
+- name: yaml file input error in dos format
+  args:
+    - --yaml-input
+    - '.'
+    - 'testdata/3.yaml'
+  error: |
+    invalid yaml: testdata/3.yaml
+          a: b: c
+        ^  mapping values are not allowed in this context
+
+- name: yaml file input error in mac format
+  args:
+    - --yaml-input
+    - '.'
+    - 'testdata/4.yaml'
+  error: |
+    invalid yaml: testdata/4.yaml
+          a: b: c
+        ^  mapping values are not allowed in this context
 
 - name: yaml output option
   args:
@@ -5496,12 +5544,22 @@
                        ^  unexpected token "}"
   exit_code: 3
 
-- name: invalid multiple line query in dos format newline
+- name: invalid multiple line query in dos format
   args:
     - -f
     - testdata/10.jq
   error: |
     invalid query: testdata/10.jq:3
+        3 | bar ]
+                ^  unexpected token "]"
+  exit_code: 3
+
+- name: invalid multiple line query in mac format
+  args:
+    - -f
+    - testdata/11.jq
+  error: |
+    invalid query: testdata/11.jq:3
         3 | bar ]
                 ^  unexpected token "]"
   exit_code: 3
@@ -5529,24 +5587,31 @@
         {
          ^  unexpected EOF
 
-- name: invalid json invalid character
+- name: invalid json eof with multibyte characters
+  input: '{ "１２３４５":'
+  error: |
+    invalid json: <stdin>
+        { "１２３４５":
+                       ^  unexpected EOF
+
+- name: invalid json invalid character with multibyte characters
   input: |
     {
-      "あいうえお" 100
+      "１２３４５" 100
     }
   error: |
     invalid json: <stdin>
-          "あいうえお" 100
+          "１２３４５" 100
                        ^  invalid character '1' after object key
 
 - name: invalid json string literal
   input: |
     {
-      "いろは": n
+      "１２３": n
     }
   error: |
     invalid json: <stdin>
-          "いろは": n
+          "１２３": n
                      ^  invalid character '\n' in literal null (expecting 'u')
 
 - name: multiple json in input
@@ -5600,8 +5665,17 @@
     - 'testdata/8.json'
   error: |
     invalid json: testdata/8.json
-         1, 1, 1, 1, ,, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                     ^  invalid character ',' looking for beginning of value
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ,, 1, 1, 1, 1, 1, 1, 1
+                                                   ^  invalid character ',' looking for beginning of value
+
+- name: json file error json
+  args:
+    - '.'
+    - 'testdata/9.json'
+  error: |
+    invalid json: testdata/9.json
+        ", "０", "０", "０", "０", , "０", "０"]
+                                   ^  invalid character ',' looking for beginning of value
 
 - name: json file error json with multibyte character in the error line
   args:
