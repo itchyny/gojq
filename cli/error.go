@@ -103,11 +103,10 @@ type jsonParseError struct {
 }
 
 func (err *jsonParseError) Error() string {
-	fname := err.fname
 	var prefix, linestr string
 	var line, col int
-	var errmsg string
-	if errmsg = err.err.Error(); errmsg == "unexpected EOF" {
+	fname, errmsg := err.fname, err.err.Error()
+	if errmsg == "unexpected EOF" {
 		linestr = strings.TrimRight(err.contents, "\n\r")
 		if i := strings.LastIndexAny(linestr, "\n\r"); i >= 0 {
 			linestr = linestr[i:]
@@ -122,7 +121,6 @@ func (err *jsonParseError) Error() string {
 			fname += ":" + strconv.Itoa(line)
 			prefix = strconv.Itoa(line) + " | "
 		}
-		errmsg = strings.TrimPrefix(er.Error(), "json: ")
 	}
 	return "invalid json: " + fname + "\n" +
 		"    " + prefix + linestr + "\n" +

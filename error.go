@@ -4,7 +4,6 @@ import (
 	"math/big"
 	"reflect"
 	"strconv"
-	"strings"
 )
 
 type expectedObjectError struct {
@@ -280,7 +279,7 @@ func (err *jsonParseError) JSONParseError() (string, string, error) {
 }
 
 func (err *jsonParseError) Error() string {
-	return "invalid json: " + err.fname + ": " + strings.TrimPrefix(err.err.Error(), "json: ")
+	return "invalid json: " + err.fname + ": " + err.err.Error()
 }
 
 func typeErrorPreview(v interface{}) string {
