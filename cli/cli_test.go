@@ -28,6 +28,11 @@ func TestCliRun(t *testing.T) {
 	require.NoError(t, err)
 	defer f.Close()
 	defer setLocation(time.FixedZone("UTC-7", -7*60*60))()
+	errorReplacer := strings.NewReplacer(
+		name+": ", "",
+		"testdata\\", "testdata/",
+		"flag `/", "flag `--",
+	)
 
 	var testCases []struct {
 		Name     string
@@ -81,9 +86,7 @@ func TestCliRun(t *testing.T) {
 					assert.Equal(t, exitCodeDefaultErr, code)
 				}
 				assert.Equal(t, tc.Expected, outStream.String())
-				assert.Contains(t,
-					strings.ReplaceAll(errStr, name+": ", ""),
-					strings.TrimSpace(tc.Error))
+				assert.Contains(t, errorReplacer.Replace(errStr), strings.TrimSpace(tc.Error))
 				assert.Equal(t, true, strings.HasSuffix(errStr, "\n"), errStr)
 				assert.Equal(t, false, strings.HasSuffix(errStr, "\n\n"), errStr)
 			}
