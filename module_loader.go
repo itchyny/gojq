@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 type moduleLoader struct {
@@ -85,11 +84,11 @@ func (l *moduleLoader) LoadJSONWithMeta(name string, meta map[string]interface{}
 			if _, err := f.Seek(0, io.SeekStart); err != nil {
 				return nil, err
 			}
-			var sb strings.Builder
-			if _, err := io.Copy(&sb, f); err != nil {
-				return nil, err
+			cnt, er := ioutil.ReadAll(f)
+			if er != nil {
+				return nil, er
 			}
-			return nil, &jsonParseError{path, sb.String(), err}
+			return nil, &jsonParseError{path, string(cnt), err}
 		}
 		vals = append(vals, val)
 	}
