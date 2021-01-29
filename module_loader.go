@@ -75,6 +75,7 @@ func (l *moduleLoader) LoadJSONWithMeta(name string, meta map[string]interface{}
 	defer f.Close()
 	var vals []interface{}
 	dec := json.NewDecoder(f)
+	dec.UseNumber()
 	for {
 		var val interface{}
 		if err := dec.Decode(&val); err != nil {

@@ -175,6 +175,7 @@ func (c *compiler) compileImport(i *Import) error {
 		} else {
 			return fmt.Errorf("module not found: %q", path)
 		}
+		vals = normalizeNumbers(vals)
 		c.append(&code{op: oppush, v: vals})
 		c.append(&code{op: opstore, v: c.pushVariable(alias)})
 		c.append(&code{op: oppush, v: vals})

@@ -5784,11 +5784,12 @@
     - -c
     - -L
     - testdata
-    - 'import "m1" as $x; $x, $x::x'
+    - 'import "m1" as $x; $x, $x::x, $x[1].m1*100000000000000000000'
   input: 0
   expected: |
     [42,{"m1":42}]
     [42,{"m1":42}]
+    4200000000000000000000
 
 - name: module directory option with argjson
   args:

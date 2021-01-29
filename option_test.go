@@ -1,7 +1,9 @@
 package gojq_test
 
 import (
+	"encoding/json"
 	"fmt"
+	"math/big"
 	"reflect"
 	"strings"
 	"testing"
@@ -74,6 +76,46 @@ func TestWithModuleLoader_modulemeta(t *testing.T) {
 			},
 			"name": "module1",
 			"test": 42,
+		}; !reflect.DeepEqual(got, expected) {
+			t.Errorf("expected: %v, got: %v", expected, got)
+		}
+	}
+}
+
+type moduleLoaderJSON struct{}
+
+func (*moduleLoaderJSON) LoadJSON(name string) (interface{}, error) {
+	switch name {
+	case "module1":
+		return []interface{}{1.0, 42, json.Number("123")}, nil
+	}
+	return nil, fmt.Errorf("module not found: %q", name)
+}
+
+func TestWithModuleLoader_JSON(t *testing.T) {
+	query, err := gojq.Parse(`
+		import "module1" as $m;
+		[$m, $m[1]*$m[2]*1000000000000]
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, err := gojq.Compile(
+		query,
+		gojq.WithModuleLoader(&moduleLoaderJSON{}),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	iter := code.Run(nil)
+	for {
+		got, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if expected := []interface{}{
+			[]interface{}{1.0, 42, 123},
+			big.NewInt(5166000000000000),
 		}; !reflect.DeepEqual(got, expected) {
 			t.Errorf("expected: %v, got: %v", expected, got)
 		}
