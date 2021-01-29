@@ -279,7 +279,7 @@ func funcLength(v interface{}) interface{} {
 func funcUtf8ByteLength(v interface{}) interface{} {
 	switch v := v.(type) {
 	case string:
-		return len([]byte(v))
+		return len(v)
 	default:
 		return &funcTypeError{"utf8bytelength", v}
 	}
