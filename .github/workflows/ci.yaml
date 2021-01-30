@@ -32,3 +32,6 @@ jobs:
       run: make maligned
     - name: Check tools
       run: make check-tools
+    - name: Check go generate
+      run: go generate && ! git diff | grep ^
+      shell: bash
