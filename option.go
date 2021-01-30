@@ -35,6 +35,7 @@ func WithVariables(variables []string) CompilerOption {
 // Specify the minimum and maximum count of the function arguments. These
 // values should satisfy 0 <= minarity <= maxarity <= 30, otherwise panics.
 // On handling numbers, you should take account to int, float64 and *big.Int.
+// Refer to ValueError to return a value error just like builtin error function.
 func WithFunction(name string, minarity int, maxarity int,
 	f func(interface{}, []interface{}) interface{}) CompilerOption {
 	if !(0 <= minarity && minarity <= maxarity && maxarity <= 30) {

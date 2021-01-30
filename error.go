@@ -6,6 +6,15 @@ import (
 	"strconv"
 )
 
+// ValueError is an interface for errors with a value for internal function.
+// Return an error implementing this interface when you want to catch error
+// values (not error messages) by try-cacth, just like builtin error function.
+// Refer to WithFunction to add a custom internal function.
+type ValueError interface {
+	error
+	Value() interface{}
+}
+
 type expectedObjectError struct {
 	v interface{}
 }
@@ -105,6 +114,10 @@ func (err *exitCodeError) IsEmptyError() bool {
 
 func (err *exitCodeError) ExitCode() int {
 	return err.code
+}
+
+func (err *exitCodeError) Value() interface{} {
+	return err.value
 }
 
 type funcContainsError struct {

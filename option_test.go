@@ -452,6 +452,44 @@ func TestWithFunctionMultipleArities(t *testing.T) {
 	}
 }
 
+type valueError struct {
+	v interface{}
+}
+
+func (err *valueError) Error() string {
+	return "error: " + fmt.Sprint(err.v)
+}
+
+func (err *valueError) Value() interface{} {
+	return err.v
+}
+
+func TestWithFunctionValueError(t *testing.T) {
+	expected := map[string]interface{}{"foo": 42}
+	query, err := gojq.Parse("try f catch .")
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, err := gojq.Compile(query,
+		gojq.WithFunction("f", 0, 0, func(x interface{}, _ []interface{}) interface{} {
+			return &valueError{expected}
+		}),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	iter := code.Run(nil)
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if !reflect.DeepEqual(v, expected) {
+			t.Errorf("expected: %#v, got: %#v", expected, v)
+		}
+	}
+}
+
 type moduleLoader2 struct{}
 
 func (*moduleLoader2) LoadModule(name string) (*gojq.Query, error) {

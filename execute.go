@@ -90,13 +90,14 @@ loop:
 				case *tryEndError:
 					err = er.err
 					break loop
-				case *exitCodeError:
-					env.pop()
-					env.push(er.value)
-					if er.halt {
+				case ValueError:
+					if er, ok := er.(*exitCodeError); ok && er.halt {
 						break loop
 					}
-					if er.value == nil {
+					if v := er.Value(); v != nil {
+						env.pop()
+						env.push(v)
+					} else {
 						err = nil
 						break loop
 					}

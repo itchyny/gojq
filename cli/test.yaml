@@ -3673,12 +3673,14 @@
 
 - name: error/0 function and try catch
   args:
-    - 'null,1,[],{} | try error catch .'
+    - 'null,1,[],{x:42} | try error catch .'
   input: '0'
   expected: |
     1
     []
-    {}
+    {
+      "x": 42
+    }
 
 - name: error/1 function
   args:
@@ -3688,13 +3690,14 @@
     error: error message
   exit_code: 5
 
-- name: error/1 function
+- name: error/1 function and try catch
   args:
-    - '.foo | error({})'
-  input: '{ "foo": "error" }'
-  error: |
-    error: {}
-  exit_code: 5
+    - 'try error({ x: 42 }) catch .'
+  input: 0
+  expected: |
+    {
+      "x": 42
+    }
 
 - name: error/1 function with null
   args:
@@ -4013,6 +4016,12 @@
   input: 'null'
   error: |
     error: 0
+  exit_code: 5
+
+- name: halt_error/0 function with null input and try catch
+  args:
+    - 'try halt_error catch .'
+  input: 'null'
   exit_code: 5
 
 - name: halt_error/0 function and raw strings input option
