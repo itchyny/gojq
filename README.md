@@ -33,7 +33,7 @@ You can also embed gojq as a library to your Go products.
 2
 3
  $ echo '{"foo": 4722366482869645213696}' | gojq .foo
-4722366482869645213696  # keeps the precision of number while jq does not
+4722366482869645213696  # keeps the precision of large numbers
  $ gojq -n 'def fact($n): if $n < 1 then 1 else $n * fact($n - 1) end; fact(50)'
 30414093201713378043612608166064768844377641568960512000000000000 # arbitrary-precision integer calculation
 ```
@@ -69,8 +69,8 @@ docker run -i --rm itchyny/gojq
 ## Difference to jq
 - gojq is purely implemented with Go language and is completely portable. jq depends on the C standard library so the availability of math functions depends on the library. jq also depends on the regular expression library and it makes build scripts complex.
 - gojq implements nice error messages for invalid query and JSON input. The error message of jq is sometimes difficult to tell where to fix the query.
-- gojq does not keep the order of object keys. I understand this might cause problems for some scripts but basically we should not rely on the order of object keys. I would implement when ordered map is implemented in the standard library of Go but I'm less motivated.
-- gojq supports arbitrary-precision integer calculation while jq does not. This is important to keeping the precision of numeric IDs or nanosecond values. You can use gojq to solve some mathematical problems which require big integers.
+- gojq does not keep the order of object keys. I understand this might cause problems for some scripts but basically we should not rely on the order of object keys. Due to this limitation, gojq does not have `keys_unsorted` function and `--sort-keys` (`-S`) option. I would implement when ordered map is implemented in the standard library of Go but I'm less motivated.
+- gojq supports arbitrary-precision integer calculation while jq does not. This is important to keeping the precision of numeric IDs or nanosecond values. You can also use gojq to solve some mathematical problems which require big integers. Note that mathematical functions convert integers to floating-point numbers; only addition, subtraction, multiplication, modulo operation and division (when divisible) keep integer precisions. When you want to calculate floor division of big integers, use `def intdiv($x; $y): ($x - $x % $y) / $y;`, instead of `$x / $y`.
 - gojq supports reading from YAML input while jq does not. gojq also supports YAML output.
 
 ### Color configuration
