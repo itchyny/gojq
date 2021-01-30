@@ -1,9 +1,11 @@
-package gojq
+package gojq_test
 
 import (
 	"math"
 	"math/big"
 	"testing"
+
+	"github.com/itchyny/gojq"
 )
 
 func TestMarshal(t *testing.T) {
@@ -48,7 +50,7 @@ func TestMarshal(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := Marshal(tc.value)
+			got, err := gojq.Marshal(tc.value)
 			if err != nil {
 				t.Fatal(err)
 			}
