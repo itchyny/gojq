@@ -16,7 +16,7 @@ import (
 	"github.com/itchyny/timefmt-go"
 )
 
-//go:generate go run _tools/gen_builtin.go -i builtin.jq -o builtin.go
+//go:generate go run -modfile=go.dev.mod _tools/gen_builtin.go -i builtin.jq -o builtin.go
 var builtinFuncDefs map[string][]*FuncDef
 
 const (
