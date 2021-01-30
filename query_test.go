@@ -9,6 +9,7 @@ import (
 	"math"
 	"math/big"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -79,7 +80,7 @@ func TestQueryRun_Errors(t *testing.T) {
 			break
 		}
 		if err, ok := v.(error); ok {
-			if expected := fmt.Sprintf("error: %d", n); err.Error() != expected {
+			if expected := "error: " + strconv.Itoa(n); err.Error() != expected {
 				t.Errorf("expected: %v, got: %v", expected, err)
 			}
 		} else {
