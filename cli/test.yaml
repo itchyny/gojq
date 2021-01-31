@@ -26,7 +26,7 @@
 - name: number query
   args:
     - '0, 128, 3.14, 1.2e3, 1E+3, 1E-9'
-  input: 0
+  input: '0'
   expected: |
     0
     128
@@ -38,7 +38,7 @@
 - name: number literal error
   args:
     - '0..[empty]'
-  input: 0
+  input: '0'
   error: |
     invalid query: 0..[empty]
         0..[empty]
@@ -55,14 +55,14 @@
 - name: string query
   args:
     - '" Hello, world! \n\t\uff10 "'
-  input: 0
+  input: '0'
   expected: |
     " Hello, world! \n\t０ "
 
 - name: string query error
   args:
     - '. + "foo'
-  input: 0
+  input: '0'
   error: |
     invalid query: . + "foo
         . + "foo
@@ -72,7 +72,7 @@
 - name: string query error
   args:
     - '"foo\,bar"'
-  input: 0
+  input: '0'
   error: |
     invalid query: "foo\,bar"
         "foo\,bar"
@@ -82,7 +82,7 @@
 - name: string query error
   args:
     - '"\u "'
-  input: 0
+  input: '0'
   error: |
     invalid query: "\u "
         "\u "
@@ -92,7 +92,7 @@
 - name: string query error
   args:
     - '"\(1) \x "'
-  input: 0
+  input: '0'
   error: |
     invalid query: "\(1) \x "
         "\(1) \x "
@@ -333,7 +333,7 @@
 - name: array slice against string error
   args:
     - '""[:{}]'
-  input: 0
+  input: '0'
   error: |
     expected a number for indexing an array but got: object ({})
 
@@ -627,7 +627,7 @@
 - name: negate in object value
   args:
     - '{ foo: -128 }'
-  input: 0
+  input: '0'
   expected: |
     {
       "foo": -128
@@ -1380,7 +1380,7 @@
 - name: startswith function error
   args:
     - '("x" | try startswith({}) catch .), (10 | try startswith("x") catch .)'
-  input: 0
+  input: '0'
   expected: |
     "startswith cannot be applied to: object ({})"
     "startswith cannot be applied to: number (10)"
@@ -1401,7 +1401,7 @@
 - name: endswith function error
   args:
     - '("x" | try endswith({}) catch .), (10 | try endswith("x") catch .)'
-  input: 0
+  input: '0'
   expected: |
     "endswith cannot be applied to: object ({})"
     "endswith cannot be applied to: number (10)"
@@ -1699,14 +1699,14 @@
 - name: optional and division operator
   args:
     - '1?/1'
-  input: 0
+  input: '0'
   expected: |
     1
 
 - name: optional and division operator parse error
   args:
     - '.?/'
-  input: 0
+  input: '0'
   error: |
     invalid query: .?/
         .?/
@@ -2234,7 +2234,7 @@
 - name: try catch
   args:
     - 'def f: fromjson; try {} | f catch ., 1'
-  input: 0
+  input: '0'
   expected: |
     "fromjson cannot be applied to: object ({})"
     1
@@ -2745,7 +2745,7 @@
 - name: binding variable scope in reduce
   args:
     - '[range(.)] | 3 as $x | reduce .[] as $i (.[5] as $x | $x; . + $x + $i)'
-  input: 10
+  input: '10'
   expected: |
     80
 
@@ -2753,14 +2753,14 @@
   args:
     - -c
     - '[2 as $x | foreach range(.) as $item (. as $x | $x; . + $item * $x; . + $x)]'
-  input: 5
+  input: '5'
   expected: |
     [7,9,13,19,27]
 
 - name: binding variable scope error in parenthesis
   args:
     - '(. as $i | $i) | $i'
-  input: 0
+  input: '0'
   error: |
     variable not defined: $i
   exit_code: 3
@@ -2768,7 +2768,7 @@
 - name: binding variable scope error in array
   args:
     - '[. as $i | $i] | $i'
-  input: 0
+  input: '0'
   error: |
     variable not defined: $i
   exit_code: 3
@@ -2776,7 +2776,7 @@
 - name: binding variable scope error in object
   args:
     - '{x: (. as $i | $i)} | $i'
-  input: 0
+  input: '0'
   error: |
     variable not defined: $i
   exit_code: 3
@@ -2792,7 +2792,7 @@
 - name: function scope in parenthesis
   args:
     - 'def f: 1; . | (def f: 2; f) | f, .'
-  input: 0
+  input: '0'
   expected: |
     1
     2
@@ -2801,7 +2801,7 @@
   args:
     - -c
     - 'def f: 1; . | [def f: 2; f] | f, .'
-  input: 0
+  input: '0'
   expected: |
     1
     [2]
@@ -2818,7 +2818,7 @@
 - name: function scope in object key
   args:
     - 'def f: 1; . | {(def f: "foo"; f): f}'
-  input: 0
+  input: '0'
   expected: |
     {
       "foo": 1
@@ -2827,7 +2827,7 @@
 - name: function scope error in parenthesis
   args:
     - '(def f: 1; f) | f'
-  input: 0
+  input: '0'
   error: |
     function not defined: f
   exit_code: 3
@@ -2835,7 +2835,7 @@
 - name: function scope error in array
   args:
     - '[def f: 1; f] | f'
-  input: 0
+  input: '0'
   error: |
     function not defined: f
   exit_code: 3
@@ -2843,7 +2843,7 @@
 - name: function scope error in object
   args:
     - '{x: (def f: 1; f)} | f'
-  input: 0
+  input: '0'
   error: |
     function not defined: f
   exit_code: 3
@@ -3597,7 +3597,7 @@
   args:
     - -c
     - '. |= try . catch .'
-  input: 1
+  input: '1'
   expected: |
     1
 
@@ -3693,7 +3693,7 @@
 - name: error/1 function and try catch
   args:
     - 'try error({ x: 42 }) catch .'
-  input: 0
+  input: '0'
   expected: |
     {
       "x": 42
@@ -4094,7 +4094,7 @@
   args:
     - -n
     - 'input, input'
-  input: 1
+  input: '1'
   expected: |
     1
   error: |
@@ -4114,7 +4114,7 @@
   args:
     - -n
     - 'def f: [def f: input; range(3) | f]; f'
-  input: 1 2 3
+  input: '1 2 3'
   expected: |
     [
       1,
@@ -4140,7 +4140,7 @@
 - name: input function without null input option
   args:
     - '. + input'
-  input: 1 2
+  input: '1 2'
   expected: |
     3
 
@@ -4150,8 +4150,7 @@
     - -c
     - --stream
     - 'range(5) | input'
-  input: |
-    {"a":[1,2,3]}
+  input: '{"a":[1,2,3]}'
   expected: |
     [["a",0],1]
     [["a",1],2]
@@ -4163,7 +4162,7 @@
   args:
     - -n
     - 'reduce inputs as $x (0; . + $x)'
-  input: 1 2 3 4 5
+  input: '1 2 3 4 5'
   expected: |
     15
 
@@ -4173,8 +4172,7 @@
     - -c
     - --stream
     - 'range(5) | input'
-  input: |
-    {"a":[1,2,3]}
+  input: '{"a":[1,2,3]}'
   expected: |
     [["a",0],1]
     [["a",1],2]
@@ -4187,8 +4185,7 @@
     - -n
     - --stream
     - 'fromstream(1 | truncate_stream(inputs) | select(length > 1) | .[0] |= .[1:])'
-  input: |
-    {"a": [1, true, null, "x"]}
+  input: '{"a":[1,true,null,"x"]}'
   expected: |
     1
     true
@@ -4201,7 +4198,7 @@
     - --stream
     - --slurp
     - 'inputs'
-  input: 1 2 3
+  input: '1 2 3'
   expected: |
     [
       [
@@ -4546,16 +4543,14 @@
 - name: format strings @base64
   args:
     - '@base64'
-  input: |
-    {"foo": "bar"}
+  input: '{"foo":"bar"}'
   expected: |
     "eyJmb28iOiJiYXIifQ=="
 
 - name: format strings @base64 with string interpolation
   args:
     - '@base64 "\(.),\(. + .),\(. + . + .)"'
-  input: |
-    [1,2]
+  input: '[1,2]'
   expected: |
     "WzEsMl0=,WzEsMiwxLDJd,WzEsMiwxLDIsMSwyXQ=="
 
@@ -4563,7 +4558,7 @@
   args:
     - -R
     - '@base64d'
-  input: eyJmb28iOiJiYXIifQ==
+  input: 'eyJmb28iOiJiYXIifQ=='
   expected: |
     "{\"foo\":\"bar\"}"
 
@@ -4703,8 +4698,7 @@
   args:
     - -C
     - '., null, nan, infinite'
-  input: |
-    { "x": "foo", "y": 128, "z": [null, false, true, 3.14, "foo", {}] }
+  input: '{"x":"foo","y":128,"z":[null,false,true,3.14,"foo",{}]}'
   expected:
     "{\n\
     \  \e[34;1m\"x\"\e[0m: \e[32m\"foo\"\e[0m,\n\
@@ -4750,7 +4744,7 @@
 - name: color output option configured by environment variable with fewer colors
   args:
     - -C
-    - .
+    - '.'
   input: |
     { "foo": [null, false, true, 3.14, "bar"] }
   env:
@@ -4769,7 +4763,7 @@
 - name: invalid colors environment variable
   args:
     - -C
-    - .
+    - '.'
   input: |
     0
   env:
@@ -4781,8 +4775,7 @@
   args:
     - --color-output
     - '.'
-  input: |
-    { "foo": 42 }
+  input: '{"foo":42}'
   expected:
     "{\n\
     \  \e[34;1m\"foo\"\e[0m: \e[36m42\e[0m\n\
@@ -4793,8 +4786,7 @@
     - -C
     - -c
     - '.'
-  input: |
-    { "x": 42, "y": 3.14, "z": [10000000000000000000] }
+  input: '{"x":42,"y":3.14,"z":[10000000000000000000]}'
   expected:
     "{\
     \e[34;1m\"x\"\e[0m:\e[36m42\e[0m,\
@@ -4807,8 +4799,7 @@
     - -C
     - -M
     - '.'
-  input: |
-    { "foo": "bar" }
+  input: '{"foo":"bar"}'
   expected: |
     {
       "foo": "bar"
@@ -4819,8 +4810,7 @@
     - -C
     - --monochrome-output
     - '.'
-  input: |
-    { "foo": 42 }
+  input: '{"foo":42}'
   expected: |
     {
       "foo": 42
@@ -4842,7 +4832,7 @@
 - name: indent option
   args:
     - --indent
-    - 1
+    - '1'
     - '.'
   input: '{ "foo": ["hello", "world"] }'
   expected: |
@@ -4856,7 +4846,7 @@
 - name: indent option
   args:
     - --indent
-    - 0
+    - '0'
     - '.'
   input: '{ "foo": ["hello", "world"] }'
   expected: |
@@ -4865,7 +4855,7 @@
 - name: indent option
   args:
     - --indent
-    - 7
+    - '7'
     - '.'
   input: '{ "foo": ["hello", ["world", [[[[[[[[[]]]]]]]]]]] }'
   expected: |
@@ -4898,7 +4888,7 @@
 - name: indent option error
   args:
     - --indent
-    - 10
+    - '10'
     - '.'
   input: '{ "foo": { "baz": ["hello", "world"] } }'
   error: |
@@ -5090,8 +5080,8 @@
   args:
     - -s
     - '.'
-    - testdata/1.json
-    - testdata/2.json
+    - 'testdata/1.json'
+    - 'testdata/2.json'
   expected: |
     [
       {
@@ -5109,8 +5099,8 @@
     - -R
     - -s
     - '.'
-    - testdata/1.json
-    - testdata/2.json
+    - 'testdata/1.json'
+    - 'testdata/2.json'
   expected: |
     "{\"foo\":10}\n[{\n\"bar\"\n:\n[]\n}]\n"
 
@@ -5118,7 +5108,7 @@
   args:
     - -c
     - --stream
-    - .
+    - '.'
   input: |
     1
     2
@@ -5172,7 +5162,7 @@
   args:
     - -n
     - --stream
-    - .
+    - '.'
   input: '1'
   expected: |
     null
@@ -5181,7 +5171,7 @@
   args:
     - -R
     - --stream
-    - .
+    - '.'
   input: |
     1
     2
@@ -5195,7 +5185,7 @@
   args:
     - --stream
     - --slurp
-    - .
+    - '.'
   input: |
     1
     2
@@ -5438,7 +5428,7 @@
   args:
     - --yaml-output
     - --indent
-    - 8
+    - '8'
     - '.'
   input: '{ "foo": { "baz": ["hello", "world"] } }'
   expected: |
@@ -5451,7 +5441,7 @@
   args:
     - --yaml-output
     - --indent
-    - 10
+    - '10'
     - '.'
   input: '{ "foo": { "baz": ["hello", "world"] } }'
   error: |
@@ -5470,7 +5460,7 @@
   args:
     - -n
     - -f
-    - testdata/1.jq
+    - 'testdata/1.jq'
   expected: |
     null
 
@@ -5478,7 +5468,7 @@
   args:
     - --null-input
     - --from-file
-    - testdata/1.jq
+    - 'testdata/1.jq'
   expected: |
     null
 
@@ -5569,7 +5559,7 @@
 - name: invalid multiple line query in file
   args:
     - -f
-    - testdata/10.jq
+    - 'testdata/10.jq'
   error: |
     invalid query: testdata/10.jq:5
         5 | bar ]
@@ -5579,7 +5569,7 @@
 - name: invalid multiple line query in dos format
   args:
     - -f
-    - testdata/11.jq
+    - 'testdata/11.jq'
   error: |
     invalid query: testdata/11.jq:5
         5 | bar ]
@@ -5589,7 +5579,7 @@
 - name: invalid multiple line query in mac format
   args:
     - -f
-    - testdata/12.jq
+    - 'testdata/12.jq'
   error: |
     invalid query: testdata/12.jq:5
         5 | bar ]
@@ -5599,7 +5589,7 @@
 - name: invalid query in file
   args:
     - -f
-    - testdata/2.jq
+    - 'testdata/2.jq'
   error: |
     invalid query: testdata/2.jq:3
         3 |   bar, []
@@ -5609,7 +5599,7 @@
 - name: query file not found
   args:
     - -f
-    - testdata/3.jq
+    - 'testdata/3.jq'
   error: 'open testdata/3.jq:'
 
 - name: invalid json eof
@@ -5751,9 +5741,9 @@
   args:
     - -c
     - -L
-    - testdata
+    - 'testdata'
     - 'include "4"; 1 | f | g'
-  input: 0
+  input: '0'
   expected: |
     {"foo":[1,2,3,4,[1,2,{"foo":42}]]}
 
@@ -5761,9 +5751,9 @@
   args:
     - -c
     - -L
-    - testdata
+    - 'testdata'
     - 'import "4" as m1; 1 | m1::f | m1::g'
-  input: 0
+  input: '0'
   expected: |
     {"foo":[1,2,3,4,[1,2,{"foo":42}]]}
 
@@ -5771,9 +5761,9 @@
   args:
     - -c
     - -L
-    - testdata
+    - 'testdata'
     - 'include "m1"; include "m3"; [f, g]'
-  input: 0
+  input: '0'
   expected: |
     [42,43,44,45]
 
@@ -5781,9 +5771,9 @@
   args:
     - -c
     - -L
-    - testdata
+    - 'testdata'
     - 'import "7" as $foo; $foo, $foo::foo'
-  input: 0
+  input: '0'
   expected: |
     [1,2,{"foo":42}]
     [1,2,{"foo":42}]
@@ -5792,9 +5782,9 @@
   args:
     - -c
     - -L
-    - testdata
+    - 'testdata'
     - 'import "m1" as $x; $x, $x::x, $x[1].m1*100000000000000000000'
-  input: 0
+  input: '0'
   expected: |
     [42,{"m1":42}]
     [42,{"m1":42}]
@@ -5804,37 +5794,37 @@
   args:
     - -c
     - -L
-    - testdata
+    - 'testdata'
     - --argjson
-    - x
+    - 'x'
     - '{}'
     - 'import "m1" as $x; $x'
-  input: 0
+  input: '0'
   expected: |
     [42,{"m1":42}]
 
 - name: module directory option parse error
   args:
     - 'include "m"; f'
-  input: 0
+  input: '0'
   error: 'compile error: module not found: "m"'
   exit_code: 3
 
 - name: module directory option function error
   args:
     - -L
-    - testdata
+    - 'testdata'
     - 'include "5"; i'
-  input: 0
+  input: '0'
   error: 'function not defined: i/0'
   exit_code: 3
 
 - name: module directory option variable error
   args:
     - -L
-    - testdata
+    - 'testdata'
     - 'include "4"; $x'
-  input: 0
+  input: '0'
   error: 'compile error: variable not defined: $x'
   exit_code: 3
 
@@ -5842,9 +5832,9 @@
   args:
     - -c
     - -L
-    - testdata
+    - 'testdata'
     - 'include "6"; . as $x | $x, g'
-  input: 1
+  input: '1'
   expected: |
     1
     [1,2,{"foo":42}]
@@ -5852,9 +5842,9 @@
 - name: module directory option json parse error
   args:
     - -L
-    - testdata
+    - 'testdata'
     - 'import "4" as $x; $x'
-  input: 0
+  input: '0'
   error: |
     compile error: invalid json: testdata/4.json:3
         3 |   bar
@@ -5865,27 +5855,27 @@
   args:
     - -c
     - -L
-    - testdata
+    - 'testdata'
     - 'include "4"; import "6" as bar; bar::g'
-  input: 1
+  input: '1'
   expected: |
     [1,2,{"foo":42}]
 
 - name: empty module
   args:
     - -L
-    - testdata
+    - 'testdata'
     - 'include "8"; .'
-  input: 0
+  input: '0'
   expected: |
     0
 
 - name: invalid query in a module
   args:
     - -L
-    - testdata
+    - 'testdata'
     - 'include "7"; .'
-  input: 0
+  input: '0'
   error: |
     invalid query in module: testdata/7.jq:1
         1 | def f: 1 +
@@ -5896,9 +5886,9 @@
   args:
     - -c
     - -L
-    - testdata
+    - 'testdata'
     - 'include "9"; f(2)'
-  input: 3
+  input: '3'
   expected: |
     6
 
@@ -5913,9 +5903,9 @@
   args:
     - -c
     - -L
-    - testdata
+    - 'testdata'
     - 'tostring | modulemeta'
-  input: 4 5 6 8 9
+  input: '4 5 6 8 9'
   expected: |
     {"deps":[{"is_data":false,"relpath":"5"},{"as":"bar","is_data":false,"relpath":"6"}]}
     {"deps":[{"as":"foo","is_data":false,"relpath":"6","test":"foo"}]}
@@ -5927,7 +5917,7 @@
   args:
     - -c
     - -L
-    - testdata
+    - 'testdata'
     - '"3" | modulemeta'
   input: '0'
   error: |
@@ -5993,7 +5983,7 @@
     - 'foo'
     - '10000000000000000000000000000000'
     - '$foo * 2'
-  input: 0
+  input: '0'
   expected: |
     20000000000000000000000000000000
 
