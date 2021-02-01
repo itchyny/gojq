@@ -69,17 +69,17 @@ docker run -i --rm itchyny/gojq
 ## Difference to jq
 - gojq is purely implemented with Go language and is completely portable. jq depends on the C standard library so the availability of math functions depends on the library. jq also depends on the regular expression library and it makes build scripts complex.
 - gojq implements nice error messages for invalid query and JSON input. The error message of jq is sometimes difficult to tell where to fix the query.
-- gojq does not keep the order of object keys. I understand this might cause problems for some scripts but basically we should not rely on the order of object keys. Due to this limitation, gojq does not have `keys_unsorted` function and `--sort-keys` (`-S`) option. I would implement when ordered map is implemented in the standard library of Go but I'm less motivated.
-- gojq supports arbitrary-precision integer calculation while jq does not. This is important to keeping the precision of numeric IDs or nanosecond values. You can also use gojq to solve some mathematical problems which require big integers. Note that mathematical functions convert integers to floating-point numbers; only addition, subtraction, multiplication, modulo operation and division (when divisible) keep integer precisions. When you want to calculate floor division of big integers, use `def intdiv($x; $y): ($x - $x % $y) / $y;`, instead of `$x / $y`.
+- gojq does not keep the order of object keys. I understand this might cause problems for some scripts but basically, we should not rely on the order of object keys. Due to this limitation, gojq does not have `keys_unsorted` function and `--sort-keys` (`-S`) option. I would implement when ordered map is implemented in the standard library of Go but I'm less motivated.
+- gojq supports arbitrary-precision integer calculation while jq does not. This is important to keep the precision of numeric IDs or nanosecond values. You can also use gojq to solve some mathematical problems which require big integers. Note that mathematical functions convert integers to floating-point numbers; only addition, subtraction, multiplication, modulo operation and division (when divisible) keep integer precisions. When you want to calculate floor division of big integers, use `def intdiv($x; $y): ($x - $x % $y) / $y;`, instead of `$x / $y`.
 - gojq supports reading from YAML input while jq does not. gojq also supports YAML output.
 
 ### Color configuration
 The gojq command automatically disables coloring output when the output is not a tty.
-In order to force coloring output, specify `--color-output` (`-C`) option.
+To force coloring output, specify `--color-output` (`-C`) option.
 When [`NO_COLOR` environment variable](https://no-color.org/) is present or `--monochrome-output` (`-M`) option is specified, gojq disables coloring output, even if `--color-output` (`-C`) is specified.
 
 Use `GOJQ_COLORS` environment variable to configure individual colors.
-The variable is a colon-separated list of ANSI escape sequences of `null`, `false`, `true`, numbers, strings, object keys, arrays and objects.
+The variable is a colon-separated list of ANSI escape sequences of `null`, `false`, `true`, numbers, strings, object keys, arrays, and objects.
 The default configuration is `90:33:33:36:32:34;1`.
 
 ## Usage as a library
@@ -120,12 +120,12 @@ func main() {
   - using [`query.Run`](https://pkg.go.dev/github.com/itchyny/gojq#Query.Run) or [`query.RunWithContext`](https://pkg.go.dev/github.com/itchyny/gojq#Query.RunWithContext)
   - or alternatively, compile the query using [`gojq.Compile`](https://pkg.go.dev/github.com/itchyny/gojq#Compile) and then [`code.Run`](https://pkg.go.dev/github.com/itchyny/gojq#Code.Run) or [`code.RunWithContext`](https://pkg.go.dev/github.com/itchyny/gojq#Code.RunWithContext). You can reuse the `*Code` against multiple inputs to avoid compilation of the same query.
   - In either case, you cannot use custom type values as the query input. The type should be `[]interface{}` for an array and `map[string]interface{}` for a map (just like decoded to an `interface{}` using the [encoding/json](https://golang.org/pkg/encoding/json/) package). You can't use `[]int` or `map[string]string`, for example. If you want to query your custom struct, marshal to JSON, unmarshal to `interface{}` and use it as the query input.
-- Thirdly, iterate through the results using [`iter.Next() (interface{}, bool)`](https://pkg.go.dev/github.com/itchyny/gojq#Iter). The iterater can emit an error so make sure to handle it. Termination is notified by the second returned value of `Next()`. The reason why the return type is not `(interface{}, error)` is that the iterator can emit multiple errors and you can continue after an error.
+- Thirdly, iterate through the results using [`iter.Next() (interface{}, bool)`](https://pkg.go.dev/github.com/itchyny/gojq#Iter). The iterator can emit an error so make sure to handle it. Termination is notified by the second returned value of `Next()`. The reason why the return type is not `(interface{}, error)` is that the iterator can emit multiple errors and you can continue after an error.
 
 [`gojq.Compile`](https://pkg.go.dev/github.com/itchyny/gojq#Compile) allows to configure the following compiler options.
 
-- [`gojq.WithModuleLoader`](https://pkg.go.dev/github.com/itchyny/gojq#WithModuleLoader) allows to load modules. By default, the module feature is disabled. If you want to load modules from the filesystem, use [`gojq.NewModuleLoader`](https://pkg.go.dev/github.com/itchyny/gojq#NewModuleLoader).
-- [`gojq.WithEnvironLoader`](https://pkg.go.dev/github.com/itchyny/gojq#WithEnvironLoader) allows to configure the environment variables referenced by `env` and `$ENV`. By default, OS environment variables are not accessible due to security reason. You can use `gojq.WithEnvironLoader(os.Environ)` if you want.
+- [`gojq.WithModuleLoader`](https://pkg.go.dev/github.com/itchyny/gojq#WithModuleLoader) allows to load modules. By default, the module feature is disabled. If you want to load modules from the file system, use [`gojq.NewModuleLoader`](https://pkg.go.dev/github.com/itchyny/gojq#NewModuleLoader).
+- [`gojq.WithEnvironLoader`](https://pkg.go.dev/github.com/itchyny/gojq#WithEnvironLoader) allows to configure the environment variables referenced by `env` and `$ENV`. By default, OS environment variables are not accessible due to security reasons. You can use `gojq.WithEnvironLoader(os.Environ)` if you want.
 - [`gojq.WithVariables`](https://pkg.go.dev/github.com/itchyny/gojq#WithVariables) allows to configure the variables which can be used in the query. Pass the values of the variables to [`code.Run`](https://pkg.go.dev/github.com/itchyny/gojq#Code.Run) in the same order.
 - [`gojq.WithFunction`](https://pkg.go.dev/github.com/itchyny/gojq#WithFunction) allows to add a custom internal function.
 - [`gojq.WithInputIter`](https://pkg.go.dev/github.com/itchyny/gojq#WithInputIter) allows to use `input` and `inputs` functions. By default, these functions are disabled.
