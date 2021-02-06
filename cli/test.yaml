@@ -5268,6 +5268,21 @@
       ]
     }
 
+- name: yaml input option with timestamps
+  args:
+    - --yaml-input
+    - '.'
+  input: |
+    foo: 2021-01-02
+    bar: 2021-01-02t10:11:12Z
+    baz: "2021-01-02"
+  expected: | # it is impossible to keep the original timestamp strings
+    {
+      "bar": "2021-01-02T10:11:12Z",
+      "baz": "2021-01-02",
+      "foo": "2021-01-02T00:00:00Z"
+    }
+
 - name: yaml input option with slurp option
   args:
     - --yaml-input

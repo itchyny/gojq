@@ -287,7 +287,7 @@ func (i *yamlInputIter) Next() (interface{}, bool) {
 		i.err = &yamlParseError{i.fname, i.ir.getContents(nil, nil), err}
 		return i.err, true
 	}
-	return fixMapKeyToString(v), true
+	return normalizeYAML(v), true
 }
 
 func (i *yamlInputIter) Close() error {
