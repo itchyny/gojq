@@ -20,11 +20,10 @@ func fixMapKeyToString(v interface{}) interface{} {
 		return w
 
 	case []interface{}:
-		w := make([]interface{}, len(v))
-		for i := range v {
-			w[i] = fixMapKeyToString(v[i])
+		for i, w := range v {
+			v[i] = fixMapKeyToString(w)
 		}
-		return w
+		return v
 
 	default:
 		return v
