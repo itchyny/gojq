@@ -35,3 +35,23 @@ jobs:
     - name: Check go generate
       run: go generate && ! git diff | grep ^
       shell: bash
+    - name: Check command examples in README.md
+      run: |
+        ./gojq -Rnr 'reduce inputs as $x (
+          {};
+          if $x|test("^ [$] .*gojq|^```$")
+          then
+            if .command
+            then .results += [{command: .command, output: .output}] | del(.command,.output)
+            end | if $x|test("gojq") then .command = $x[3:] end
+          elif .command then .output += ($x + "\n" | sub(" +#.*"; ""))
+          end
+        ) | .results[] |
+            "if got=$(diff <(printf %s \(.output | @sh)) " +
+                     "<(\(.command | gsub("gojq"; "./gojq")) 2>&1)); then\n" +
+            "  echo ok: \(.command | @sh)\n" +
+            "else\n" +
+            "  echo ng: \(.command | @sh); echo \"$got\"; exit 1\n" +
+            "fi"
+        ' README.md | bash
+      shell: bash
