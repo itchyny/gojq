@@ -40,7 +40,7 @@ You can also embed gojq as a library to your Go products.
 
 Nice error messages.
 ```sh
- $ echo '[1,2,3]' | gojq  '.foo & .bar'
+ $ echo '[1,2,3]' | gojq '.foo & .bar'
 gojq: invalid query: .foo & .bar
     .foo & .bar
          ^  unexpected token "&"
