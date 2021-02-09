@@ -4799,10 +4799,10 @@
     - -C
     - -M
     - '.'
-  input: '{"foo":"bar"}'
+  input: '{"foo":42}'
   expected: |
     {
-      "foo": "bar"
+      "foo": 42
     }
 
 - name: monochrome output long option
@@ -4816,18 +4816,17 @@
       "foo": 42
     }
 
-- name: NO_COLOR environment variable
+- name: NO_COLOR environment variable with color output option
   args:
     - --color-output
     - '.'
-  input: |
-    { "foo": 42 }
+  input: '{"foo":42}'
   env:
     - NO_COLOR=1
-  expected: |
-    {
-      "foo": 42
-    }
+  expected:
+    "{\n\
+    \  \e[34;1m\"foo\"\e[0m: \e[36m42\e[0m\n\
+    }\n"
 
 - name: indent option
   args:

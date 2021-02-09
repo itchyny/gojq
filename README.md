@@ -76,7 +76,7 @@ docker run -i --rm itchyny/gojq
 ### Color configuration
 The gojq command automatically disables coloring output when the output is not a tty.
 To force coloring output, specify `--color-output` (`-C`) option.
-When [`NO_COLOR` environment variable](https://no-color.org/) is present or `--monochrome-output` (`-M`) option is specified, gojq disables coloring output, even if `--color-output` (`-C`) is specified.
+When [`NO_COLOR` environment variable](https://no-color.org/) is present or `--monochrome-output` (`-M`) option is specified, gojq disables coloring output.
 
 Use `GOJQ_COLORS` environment variable to configure individual colors.
 The variable is a colon-separated list of ANSI escape sequences of `null`, `false`, `true`, numbers, strings, object keys, arrays, and objects.

@@ -123,10 +123,10 @@ Synopsis:
 		opts.OutputCompact, opts.OutputRaw, opts.OutputJoin, opts.OutputNul,
 		opts.OutputYAML, opts.OutputIndent, opts.OutputTab
 	defer func(x bool) { noColor = x }(noColor)
-	if os.Getenv("NO_COLOR") != "" {
-		noColor = true
-	} else if opts.OutputColor || opts.OutputMono {
+	if opts.OutputColor || opts.OutputMono {
 		noColor = opts.OutputMono
+	} else if os.Getenv("NO_COLOR") != "" {
+		noColor = true
 	} else {
 		noColor = !isTTY(cli.outStream)
 	}
