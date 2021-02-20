@@ -339,6 +339,168 @@ func TestWithFunction(t *testing.T) {
 	}
 }
 
+func TestWithIterator(t *testing.T) {
+	options := []gojq.CompilerOption{
+		gojq.WithIterator("f", 0, 0, func(x interface{}, _ []interface{}) interface{} {
+			if x, ok := x.([]interface{}); ok {
+				return &gojq.SliceIter{Slice: x}
+			}
+			return fmt.Errorf("f cannot be applied to: %v", x)
+		}),
+		gojq.WithFunction("g", 1, 1, func(x interface{}, xs []interface{}) interface{} {
+			if x, ok := x.(int); ok {
+				if y, ok := xs[0].(int); ok {
+					return x + y
+				}
+			}
+			return fmt.Errorf("g cannot be applied to: %v, %v", x, xs)
+		}),
+	}
+	query, err := gojq.Parse("[0, 1, 2, 3, 4] | f | g(3)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, err := gojq.Compile(query, options...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	iter := code.Run(nil)
+	n := 0
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if expected := n + 3; v != expected {
+			t.Errorf("expected: %v, got: %v", expected, v)
+		}
+		n++
+	}
+	query, err = gojq.Parse(
+		`("f/0", "f/1", "g/0", "g/1") as $f | builtins | any(. == $f)`,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, err = gojq.Compile(query, options...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	iter = code.Run(nil)
+	n = 0
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if expected := n == 0 || n == 3; v != expected {
+			t.Errorf("expected: %v, got: %v (n = %d)", expected, v, n)
+		}
+		n++
+	}
+}
+
+func TestWithIteratorEmpty(t *testing.T) {
+	options := []gojq.CompilerOption{
+		gojq.WithIterator("f", 0, 0, func(x interface{}, _ []interface{}) interface{} {
+			return gojq.EmptyIter{}
+		}),
+	}
+	query, err := gojq.Parse("1 | f")
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, err := gojq.Compile(query, options...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	iter := code.Run(nil)
+	v, ok := iter.Next()
+	if ok {
+		t.Errorf("expected: %v, got: %v", false, ok)
+	}
+	if v != nil {
+		t.Errorf("expected: %v, got: %v", nil, v)
+	}
+}
+
+func TestWithIteratorError(t *testing.T) {
+	options := []gojq.CompilerOption{
+		gojq.WithIterator("f", 0, 0, func(x interface{}, _ []interface{}) interface{} {
+			return &gojq.SliceIter{Slice: []interface{}{1, 2, fmt.Errorf("itererr"), 3}}
+		}),
+	}
+	query, err := gojq.Parse(`[try f catch .] == [1, 2, "itererr"]`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, err := gojq.Compile(query, options...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	iter := code.Run(nil)
+	v, ok := iter.Next()
+	if !ok {
+		t.Errorf("expected: %v, got: %v", true, ok)
+	}
+	if b, ok := v.(bool); !ok || !b {
+		t.Errorf("expected: %v, got: %v", true, b)
+	}
+}
+
+func TestWithIteratorDebug(t *testing.T) {
+	options := []gojq.CompilerOption{
+		gojq.WithIterator("f", 0, 0, func(x interface{}, _ []interface{}) interface{} {
+			gq, err := gojq.Parse("debug")
+			if err != nil {
+				return err
+			}
+			return gq.Run(123)
+		}),
+	}
+	query, err := gojq.Parse(`f, 456`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, err := gojq.Compile(query, options...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	iter := code.Run(nil)
+
+	v0, ok0 := iter.Next()
+	if ok0 != true {
+		t.Errorf("expected: %v, got %v", true, ok0)
+	}
+	expectedV0 := [2]interface{}{"DEBUG:", 123}
+	if !reflect.DeepEqual(v0, expectedV0) {
+		t.Errorf("expected: %v, got %v", expectedV0, v0)
+	}
+
+	v1, ok1 := iter.Next()
+	if ok1 != true {
+		t.Errorf("expected: %v, got %v", true, ok1)
+	}
+	expectedV1 := 123
+	if !reflect.DeepEqual(v1, expectedV1) {
+		t.Errorf("expected: %v, got %v", expectedV1, v1)
+	}
+
+	v2, ok2 := iter.Next()
+	if ok2 != true {
+		t.Errorf("expected: %v, got %v", true, ok2)
+	}
+	expectedV2 := 456
+	if !reflect.DeepEqual(v2, expectedV2) {
+		t.Errorf("expected: %v, got %v", expectedV2, v2)
+	}
+
+	_, ok3 := iter.Next()
+	if ok3 != false {
+		t.Errorf("expected: %v, got %v", false, ok3)
+	}
+}
+
 func TestWithFunctionDuplicateName(t *testing.T) {
 	options := []gojq.CompilerOption{
 		gojq.WithFunction("f", 0, 0, func(x interface{}, _ []interface{}) interface{} {

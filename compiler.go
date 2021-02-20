@@ -897,6 +897,7 @@ func (c *compiler) compileFunc(e *Func) error {
 				e.Args,
 				nil,
 				false,
+				false,
 			)
 		case "input":
 			if c.inputIter == nil {
@@ -907,12 +908,14 @@ func (c *compiler) compileFunc(e *Func) error {
 				e.Args,
 				nil,
 				false,
+				false,
 			)
 		case "modulemeta":
 			return c.compileCallInternal(
 				[3]interface{}{c.funcModulemeta, 0, e.Name},
 				e.Args,
 				nil,
+				false,
 				false,
 			)
 		default:
@@ -925,6 +928,7 @@ func (c *compiler) compileFunc(e *Func) error {
 			e.Args,
 			nil,
 			false,
+			fn.iterator,
 		)
 	}
 	return &funcNotFoundError{e}
@@ -1294,12 +1298,13 @@ func (c *compiler) compileCall(name string, args []*Query) error {
 		args,
 		nil,
 		name == "_index" || name == "_slice",
+		false,
 	)
 }
 
 func (c *compiler) compileCallPc(fn *funcinfo, args []*Query) error {
 	if len(args) == 0 {
-		return c.compileCallInternal(fn.pc, args, nil, false)
+		return c.compileCallInternal(fn.pc, args, nil, false, false)
 	}
 	xs, vars := make([]*Query, len(args)), make(map[int]bool, len(fn.args))
 	for i, j := range fn.argsorder {
@@ -1308,12 +1313,15 @@ func (c *compiler) compileCallPc(fn *funcinfo, args []*Query) error {
 			vars[i] = true
 		}
 	}
-	return c.compileCallInternal(fn.pc, xs, vars, false)
+	return c.compileCallInternal(fn.pc, xs, vars, false, false)
 }
 
-func (c *compiler) compileCallInternal(fn interface{}, args []*Query, vars map[int]bool, indexing bool) error {
+func (c *compiler) compileCallInternal(fn interface{}, args []*Query, vars map[int]bool, indexing bool, each bool) error {
 	if len(args) == 0 {
 		c.append(&code{op: opcall, v: fn})
+		if each {
+			c.append(&code{op: opeach})
+		}
 		return nil
 	}
 	idx := c.newVariable()
@@ -1367,6 +1375,9 @@ func (c *compiler) compileCallInternal(fn interface{}, args []*Query, vars map[i
 	}
 	c.append(&code{op: opload, v: idx})
 	c.append(&code{op: opcall, v: fn})
+	if each {
+		c.append(&code{op: opeach})
+	}
 	return nil
 }
 

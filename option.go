@@ -31,15 +31,7 @@ func WithVariables(variables []string) CompilerOption {
 	}
 }
 
-// WithFunction is a compiler option for adding a custom internal function.
-// Specify the minimum and maximum count of the function arguments. These
-// values should satisfy 0 <= minarity <= maxarity <= 30, otherwise panics.
-// On handling numbers, you should take account to int, float64 and *big.Int.
-// Refer to ValueError to return a value error just like built-in error function.
-// If you want to emit multiple values, call the empty function, accept a filter
-// for its argument, or call another built-in function, then use LoadInitModules
-// of the module loader.
-func WithFunction(name string, minarity, maxarity int,
+func withFunction(name string, iterator bool, minarity int, maxarity int,
 	f func(interface{}, []interface{}) interface{}) CompilerOption {
 	if !(0 <= minarity && minarity <= maxarity && maxarity <= 30) {
 		panic(fmt.Sprintf("invalid arity for %q: %d, %d", name, minarity, maxarity))
@@ -58,11 +50,33 @@ func WithFunction(name string, minarity, maxarity int,
 					}
 					return fn.callback(x, xs)
 				},
+				iterator,
 			}
 		} else {
-			c.customFuncs[name] = function{argcount, f}
+			c.customFuncs[name] = function{argcount, f, iterator}
 		}
 	}
+}
+
+// WithFunction is a compiler option for adding a custom internal function.
+// Specify the minimum and maximum count of the function arguments. These
+// values should satisfy 0 <= minarity <= maxarity <= 30, otherwise panics.
+// On handling numbers, you should take account to int, float64 and *big.Int.
+// Refer to ValueError to return a value error just like built-in error function.
+// If you want to emit multiple values, call the empty function, accept a filter
+// for its argument, or call another built-in function, then use LoadInitModules
+// of the module loader.
+func WithFunction(name string, minarity int, maxarity int,
+	f func(interface{}, []interface{}) interface{}) CompilerOption {
+	return withFunction(name, false, minarity, maxarity, f)
+}
+
+// WithIterator is a compiler option for adding a custom internal iterator.
+// This works the same way as WithFunction but instead of returning one value
+// the iterator returs a Iter that can return zero or more values.
+func WithIterator(name string, minarity int, maxarity int,
+	f func(interface{}, []interface{}) interface{}) CompilerOption {
+	return withFunction(name, true, minarity, maxarity, f)
 }
 
 // WithInputIter is a compiler option for input iterator used by input(s)/0.

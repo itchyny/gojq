@@ -217,10 +217,17 @@ loop:
 				break loop
 			}
 			backtrack = false
+
+			var xc [2]interface{}
+			var xv interface{}
 			var xs [][2]interface{}
+
 			switch v := env.pop().(type) {
 			case [][2]interface{}:
-				xs = v
+				xc = v[0]
+				if len(v) > 1 {
+					xv = v[1:]
+				}
 			case []interface{}:
 				if !env.paths.empty() && (env.expdepth == 0 && !reflect.DeepEqual(v, env.paths.top().([2]interface{})[1])) {
 					err = &invalidPathIterError{v}
@@ -229,9 +236,13 @@ loop:
 				if len(v) == 0 {
 					break loop
 				}
-				xs = make([][2]interface{}, len(v))
+				xs := make([][2]interface{}, len(v))
 				for i, v := range v {
 					xs[i] = [2]interface{}{i, v}
+				}
+				xc = xs[0]
+				if len(xs) > 1 {
+					xv = xs[1:]
 				}
 			case map[string]interface{}:
 				if !env.paths.empty() && (env.expdepth == 0 && !reflect.DeepEqual(v, env.paths.top().([2]interface{})[1])) {
@@ -250,21 +261,50 @@ loop:
 				sort.Slice(xs, func(i, j int) bool {
 					return xs[i][0].(string) < xs[j][0].(string)
 				})
+				xc = xs[0]
+				if len(xs) > 1 {
+					xv = xs[1:]
+				}
+			case Iter:
+				iv, ok := v.Next()
+				if !ok {
+					break loop
+				}
+				if e, ok := iv.(error); ok {
+					err = e
+					break loop
+				} else {
+					xc = [2]interface{}{0, iv}
+					xv = v
+				}
+
 			default:
 				err = &iteratorError{v}
 				break loop
 			}
-			if len(xs) > 1 {
-				env.push(xs[1:])
-				env.pushfork(code.op, pc)
-				env.pop()
-			}
-			env.push(xs[0][1])
-			if !env.paths.empty() {
-				if env.expdepth == 0 {
-					env.paths.push(xs[0])
+
+			// TODO: make debug nicer? backtrack correct?
+			if _, ok := xc[1].([2]interface{}); ok {
+				env.push(xv)
+				if !backtrack {
+					return xc[1], true
+				}
+				backtrack = false
+			} else {
+				if xv != nil {
+					env.push(xv)
+					env.pushfork(code.op, pc)
+					env.pop()
+				}
+
+				env.push(xc[1])
+				if !env.paths.empty() {
+					if env.expdepth == 0 {
+						env.paths.push(xc)
+					}
 				}
 			}
+
 		case opexpbegin:
 			env.expdepth++
 		case opexpend:

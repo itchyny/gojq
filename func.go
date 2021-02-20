@@ -30,6 +30,7 @@ const (
 type function struct {
 	argcount int
 	callback func(interface{}, []interface{}) interface{}
+	iterator bool
 }
 
 func (fn function) accept(cnt int) bool {
@@ -60,7 +61,7 @@ func init() {
 		"contains":       argFunc1(funcContains),
 		"explode":        argFunc0(funcExplode),
 		"implode":        argFunc0(funcImplode),
-		"split":          {argcount1 | argcount2, funcSplit},
+		"split":          {argcount1 | argcount2, funcSplit, false},
 		"tojson":         argFunc0(funcToJSON),
 		"fromjson":       argFunc0(funcFromJSON),
 		"format":         argFunc1(funcFormat),
@@ -172,9 +173,9 @@ func init() {
 		"strptime":       argFunc1(funcStrptime),
 		"now":            argFunc0(funcNow),
 		"_match":         argFunc3(funcMatch),
-		"error":          {argcount0 | argcount1, funcError},
+		"error":          {argcount0 | argcount1, funcError, false},
 		"halt":           argFunc0(funcHalt),
-		"halt_error":     {argcount0 | argcount1, funcHaltError},
+		"halt_error":     {argcount0 | argcount1, funcHaltError, false},
 		"_type_error":    argFunc1(internalfuncTypeError),
 	}
 }
@@ -184,6 +185,7 @@ func argFunc0(fn func(interface{}) interface{}) function {
 		argcount0, func(v interface{}, _ []interface{}) interface{} {
 			return fn(v)
 		},
+		false,
 	}
 }
 
@@ -192,6 +194,7 @@ func argFunc1(fn func(interface{}, interface{}) interface{}) function {
 		argcount1, func(v interface{}, args []interface{}) interface{} {
 			return fn(v, args[0])
 		},
+		false,
 	}
 }
 
@@ -200,6 +203,7 @@ func argFunc2(fn func(interface{}, interface{}, interface{}) interface{}) functi
 		argcount2, func(v interface{}, args []interface{}) interface{} {
 			return fn(v, args[0], args[1])
 		},
+		false,
 	}
 }
 
@@ -208,6 +212,7 @@ func argFunc3(fn func(interface{}, interface{}, interface{}, interface{}) interf
 		argcount3, func(v interface{}, args []interface{}) interface{} {
 			return fn(v, args[0], args[1], args[2])
 		},
+		false,
 	}
 }
 
