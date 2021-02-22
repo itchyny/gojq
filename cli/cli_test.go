@@ -6,8 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/google/go-cmp/cmp"
 	"gopkg.in/yaml.v3"
 )
 
@@ -25,7 +24,9 @@ func setLocation(loc *time.Location) func() {
 
 func TestCliRun(t *testing.T) {
 	f, err := os.Open("test.yaml")
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer f.Close()
 	defer setLocation(time.FixedZone("UTC-7", -7*60*60))()
 	errorReplacer := strings.NewReplacer(
@@ -43,11 +44,17 @@ func TestCliRun(t *testing.T) {
 		Error    string
 		ExitCode int `yaml:"exit_code"`
 	}
-	require.NoError(t, yaml.NewDecoder(f).Decode(&testCases))
+	if err = yaml.NewDecoder(f).Decode(&testCases); err != nil {
+		t.Fatal(err)
+	}
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			defer func() { assert.Nil(t, recover()) }()
+			defer func() {
+				if err := recover(); err != nil {
+					t.Fatal(err)
+				}
+			}()
 			var outStream, errStream strings.Builder
 			cli := cli{
 				inStream:  strings.NewReader(tc.Input),
@@ -73,22 +80,42 @@ func TestCliRun(t *testing.T) {
 			}
 			code := cli.run(tc.Args)
 			if tc.Error == "" {
-				assert.Equal(t, tc.ExitCode, code)
-				assert.Equal(t, tc.Expected, outStream.String())
-				assert.Equal(t, "", errStream.String())
+				if code != tc.ExitCode {
+					t.Errorf("exit code: got: %v, expected: %v", code, tc.ExitCode)
+				}
+				if diff := cmp.Diff(tc.Expected, outStream.String()); diff != "" {
+					t.Error("standard output:\n" + diff)
+				}
+				if diff := cmp.Diff("", errStream.String()); diff != "" {
+					t.Error("standard error output:\n" + diff)
+				}
 			} else {
 				errStr := errStream.String()
 				if strings.Contains(errStr, "DEBUG:") {
-					assert.Equal(t, exitCodeOK, code)
+					if code != exitCodeOK {
+						t.Errorf("exit code: got: %v, expected: %v", code, exitCodeOK)
+					}
 				} else if tc.ExitCode != 0 {
-					assert.Equal(t, tc.ExitCode, code)
+					if code != tc.ExitCode {
+						t.Errorf("exit code: got: %v, expected: %v", code, tc.ExitCode)
+					}
 				} else {
-					assert.Equal(t, exitCodeDefaultErr, code)
+					if code != exitCodeDefaultErr {
+						t.Errorf("exit code: got: %v, expected: %v", code, exitCodeDefaultErr)
+					}
 				}
-				assert.Equal(t, tc.Expected, outStream.String())
-				assert.Contains(t, errorReplacer.Replace(errStr), strings.TrimSpace(tc.Error))
-				assert.Equal(t, true, strings.HasSuffix(errStr, "\n"), errStr)
-				assert.Equal(t, false, strings.HasSuffix(errStr, "\n\n"), errStr)
+				if diff := cmp.Diff(tc.Expected, outStream.String()); diff != "" {
+					t.Error("standard output:\n" + diff)
+				}
+				if got, expected := errorReplacer.Replace(errStr), strings.TrimSpace(tc.Error); !strings.Contains(got, expected) {
+					t.Error("standard error output:\n" + cmp.Diff(expected, got))
+				}
+				if !strings.HasSuffix(errStr, "\n") {
+					t.Error(`standard error output should end with "\n"`)
+				}
+				if strings.HasSuffix(errStr, "\n\n") {
+					t.Error(`standard error output should not end with "\n\n"`)
+				}
 			}
 		})
 	}
