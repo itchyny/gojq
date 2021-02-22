@@ -4,6 +4,7 @@ VERSION_PATH := cli
 CURRENT_REVISION := $(shell git rev-parse --short HEAD)
 BUILD_LDFLAGS := "-s -w -X github.com/itchyny/$(BIN)/cli.revision=$(CURRENT_REVISION)"
 GOBIN ?= $(shell go env GOPATH)/bin
+SHELL := /bin/bash
 export GO111MODULE=on
 
 .PHONY: all
@@ -91,6 +92,13 @@ check-tools:
 clean:
 	rm -rf $(BIN) goxz CREDITS
 	go clean
+
+.PHONY: update
+update:
+	export GOPROXY=direct
+	rm -f go.sum && go get -u -d ./... && go get github.com/mattn/go-runewidth@v0.0.9 && go mod tidy
+	sed -i.bak '/require (/,/)/d' go.dev.mod && rm -f go.dev.{sum,mod.bak}
+	go get -u -d -modfile=go.dev.mod github.com/itchyny/{astgen,timefmt}-go && go generate
 
 .PHONY: bump
 bump: $(GOBIN)/gobump
