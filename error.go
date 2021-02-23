@@ -4,6 +4,7 @@ import (
 	"math/big"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 // ValueError is an interface for errors with a value for internal function.
@@ -334,8 +335,28 @@ func preview(v interface{}) string {
 		return ""
 	}
 	s := jsonMarshal(v)
-	if l := 25; len(s) > l {
-		s = s[:l-3] + " ..."
+	if l := 30; len(s) > l {
+		var trailing string
+		switch v.(type) {
+		case string:
+			trailing = ` ..."`
+		case []interface{}:
+			trailing = " ...]"
+		case map[string]interface{}:
+			trailing = " ...}"
+		default:
+			trailing = " ..."
+		}
+		var sb strings.Builder
+		sb.Grow(l + 5)
+		for _, c := range s {
+			sb.WriteRune(c)
+			if sb.Len() >= l-len(trailing) {
+				sb.WriteString(trailing)
+				break
+			}
+		}
+		s = sb.String()
 	}
 	return s
 }

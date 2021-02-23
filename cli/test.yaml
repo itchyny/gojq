@@ -215,12 +215,19 @@
           ^  unexpected token "a"
   exit_code: 3
 
-- name: expected object
+- name: expected object but got number
   args:
     - '.foo.bar'
   input: '{"foo": 128}'
   error: |
     expected an object but got: number (128)
+
+- name: expected object but got string
+  args:
+    - '"a"+"☆"*100 | .foo'
+  input: '0'
+  error: |
+    expected an object but got: string ("a☆☆☆☆☆☆☆☆ ...")
 
 - name: expected object in pipe
   args:
@@ -560,7 +567,7 @@
     - '(-.)'
   input: '"abcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcde"'
   error: |
-    cannot negate: string ("abcdeabcdeabcdeabcdea ...)
+    cannot negate: string ("abcdeabcdeabcdeabcdeabcd ...")
 
 - name: object construction
   args:
@@ -971,10 +978,10 @@
 
 - name: in function type error
   args:
-    - 'in([])'
+    - 'in([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])'
   input: '"x"'
   error: |
-    cannot check whether array ([]) has a key: string ("x")
+    cannot check whether array ([0,0,0,0,0,0,0,0,0,0,0,0, ...]) has a key: string ("x")
 
 - name: map function
   args:
@@ -1822,8 +1829,8 @@
     - '[try .[] / .[] catch .], [try .[] % .[] catch .]'
   input: '[1267650600228229401496703205376, 0]'
   expected: |
-    [1,0,"cannot divide number (1267650600228229401496 ...) by: number (0)"]
-    [0,0,"cannot modulo number (1267650600228229401496 ...) by: number (0)"]
+    [1,0,"cannot divide number (12676506002282294014967032 ...) by: number (0)"]
+    [0,0,"cannot modulo number (12676506002282294014967032 ...) by: number (0)"]
 
 - name: add strings
   args:
@@ -3389,9 +3396,9 @@
   args:
     - -c
     - 'getpath(["a",1,"b","c"])'
-  input: '{"a":[{},{"b":[1,2,3]}]}'
+  input: '{"a":[{},{"b":[1,2,3,4,5,6,7]}]}'
   error: |
-    cannot getpath with ["a",1,"b","c"] against: object ({"a":[{},{"b":[1,2,3]}]})
+    cannot getpath with ["a",1,"b","c"] against: object ({"a":[{},{"b":[1,2,3,4,5, ...})
 
 - name: setpath, delpaths, getpath functions
   args:
