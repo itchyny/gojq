@@ -109,13 +109,13 @@ bump: $(GOBIN)/gobump
 ifneq ($(shell git status --porcelain),)
 	$(error git workspace is dirty)
 endif
-ifneq ($(shell git rev-parse --abbrev-ref HEAD),master)
-	$(error current branch is not master)
+ifneq ($(shell git rev-parse --abbrev-ref HEAD),main)
+	$(error current branch is not main)
 endif
 	@gobump up -w "$(VERSION_PATH)"
 	git commit -am "bump up version to $(VERSION)"
 	git tag "v$(VERSION)"
-	git push origin master
+	git push origin main
 	git push origin "refs/tags/v$(VERSION)"
 
 .PHONY: upload
