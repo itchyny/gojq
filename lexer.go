@@ -7,7 +7,7 @@ import (
 )
 
 type lexer struct {
-	source    []byte
+	source    string
 	offset    int
 	result    *Query
 	token     string
@@ -17,7 +17,7 @@ type lexer struct {
 }
 
 func newLexer(src string) *lexer {
-	return &lexer{source: []byte(src)}
+	return &lexer{source: src}
 }
 
 const eof = -1
@@ -66,7 +66,7 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 	case isIdent(ch, false):
 		i := l.offset - 1
 		j, isModule := l.scanIdentOrModule()
-		l.token = string(l.source[i:j])
+		l.token = l.source[i:j]
 		lval.token = l.token
 		if isModule {
 			return tokModuleIdent
@@ -79,10 +79,10 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 		i := l.offset - 1
 		j := l.scanNumber(numberStateLead)
 		if j < 0 {
-			l.token = string(l.source[i:-j])
+			l.token = l.source[i:-j]
 			return tokInvalid
 		}
-		l.token = string(l.source[i:j])
+		l.token = l.source[i:j]
 		lval.token = l.token
 		return tokNumber
 	}
@@ -95,17 +95,17 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 			l.token = ".."
 			return tokRecurse
 		case isIdent(ch, false):
-			l.token = string(l.source[l.offset-1 : l.scanIdent()])
+			l.token = l.source[l.offset-1 : l.scanIdent()]
 			lval.token = l.token[1:]
 			return tokIndex
 		case isNumber(ch):
 			i := l.offset - 1
 			j := l.scanNumber(numberStateFloat)
 			if j < 0 {
-				l.token = string(l.source[i:-j])
+				l.token = l.source[i:-j]
 				return tokInvalid
 			}
-			l.token = string(l.source[i:j])
+			l.token = l.source[i:j]
 			lval.token = l.token
 			return tokNumber
 		default:
@@ -115,7 +115,7 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 		if isIdent(l.peek(), false) {
 			i := l.offset - 1
 			j, isModule := l.scanIdentOrModule()
-			l.token = string(l.source[i:j])
+			l.token = l.source[i:j]
 			lval.token = l.token
 			if isModule {
 				return tokModuleVariable
@@ -225,7 +225,7 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 		return tokCompareOp
 	case '@':
 		if isIdent(l.peek(), true) {
-			l.token = string(l.source[l.offset-1 : l.scanIdent()])
+			l.token = l.source[l.offset-1 : l.scanIdent()]
 			lval.token = l.token
 			return tokFormat
 		}
@@ -235,7 +235,7 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 		return tok
 	default:
 		if ch >= utf8.RuneSelf {
-			r, _ := utf8.DecodeRune(l.source[l.offset-1:])
+			r, _ := utf8.DecodeRuneInString(l.source[l.offset-1:])
 			l.token = string(r)
 			l.offset += len(l.token)
 		}
@@ -391,7 +391,7 @@ func (l *lexer) scanString(start int) (int, string) {
 			if !quote {
 				if !l.inString {
 					l.offset = i + 1
-					l.token = string(l.source[start:l.offset])
+					l.token = l.source[start:l.offset]
 					str, err := strconv.Unquote(l.token)
 					if err != nil {
 						return tokInvalid, ""
@@ -400,7 +400,7 @@ func (l *lexer) scanString(start int) (int, string) {
 				}
 				if i > l.offset {
 					l.offset = i
-					l.token = string(l.source[start:l.offset])
+					l.token = l.source[start:l.offset]
 					str, err := strconv.Unquote("\"" + l.token + "\"")
 					if err != nil {
 						return tokInvalid, ""
@@ -417,7 +417,7 @@ func (l *lexer) scanString(start int) (int, string) {
 				if l.inString {
 					if i > l.offset+1 {
 						l.offset = i - 1
-						l.token = string(l.source[start:l.offset])
+						l.token = l.source[start:l.offset]
 						str, err := strconv.Unquote("\"" + l.token + "\"")
 						if err != nil {
 							return tokInvalid, ""
@@ -436,7 +436,7 @@ func (l *lexer) scanString(start int) (int, string) {
 				if !('a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' ||
 					'0' <= ch && ch <= '9' || ch == '\'' || ch == '"') {
 					l.offset = i + 1
-					l.token = string(l.source[l.offset-2 : l.offset])
+					l.token = l.source[l.offset-2 : l.offset]
 					return tokInvalid, ""
 				}
 				quote = false
@@ -444,7 +444,7 @@ func (l *lexer) scanString(start int) (int, string) {
 		}
 	}
 	l.offset = len(l.source)
-	l.token = string(l.source[start:l.offset])
+	l.token = l.source[start:l.offset]
 	return tokInvalid, ""
 }
 
