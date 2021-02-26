@@ -8,6 +8,7 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"unsafe"
 
 	"github.com/itchyny/gojq"
 )
@@ -123,6 +124,68 @@ func TestCodeCompile_OptimizeConstants(t *testing.T) {
 		if expected := []interface{}{
 			1, map[string]interface{}{"foo": 2}, []interface{}{3},
 		}; !reflect.DeepEqual(got, expected) {
+			t.Errorf("expected: %v, got: %v", expected, got)
+		}
+	}
+}
+
+func TestCodeCompile_OptimizeTailRec(t *testing.T) {
+	query, err := gojq.Parse("range(10)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, err := gojq.Compile(query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	codes := reflect.ValueOf(code).Elem().FieldByName("codes")
+	if got, expected := codes.Len(), 85; expected != got {
+		t.Errorf("expected: %v, got: %v", expected, got)
+	}
+	op1 := codes.Index(1).Elem().FieldByName("op")
+	op2 := codes.Index(32).Elem().FieldByName("op") // test jump of _while
+	if got, expected := *(*int)(unsafe.Pointer(op2.UnsafeAddr())),
+		*(*int)(unsafe.Pointer(op1.UnsafeAddr())); expected != got {
+		t.Errorf("expected: %v, got: %v", expected, got)
+	}
+	iter := code.Run(nil)
+	var n int
+	for {
+		got, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if !reflect.DeepEqual(got, n) {
+			t.Errorf("expected: %v, got: %v", n, got)
+		}
+		n++
+	}
+}
+
+func TestCodeCompile_OptimizeJumps(t *testing.T) {
+	query, err := gojq.Parse("def f: 1; def g: 2; def h: 3; f")
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, err := gojq.Compile(query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	codes := reflect.ValueOf(code).Elem().FieldByName("codes")
+	if got, expected := codes.Len(), 15; expected != got {
+		t.Errorf("expected: %v, got: %v", expected, got)
+	}
+	v := codes.Index(1).Elem().FieldByName("v")
+	if got, expected := *(*interface{})(unsafe.Pointer(v.UnsafeAddr())), 13; expected != got {
+		t.Errorf("expected: %v, got: %v", expected, got)
+	}
+	iter := code.Run(nil)
+	for {
+		got, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if expected := 1; !reflect.DeepEqual(got, expected) {
 			t.Errorf("expected: %v, got: %v", expected, got)
 		}
 	}
