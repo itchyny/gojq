@@ -541,15 +541,16 @@ func funcSplit(v interface{}, args []interface{}) interface{} {
 }
 
 func implode(v []interface{}) interface{} {
-	var rs []rune
+	var sb strings.Builder
+	sb.Grow(len(v))
 	for _, r := range v {
 		if r, ok := toInt(r); ok {
-			rs = append(rs, rune(r))
-			continue
+			sb.WriteRune(rune(r))
+		} else {
+			return &funcTypeError{"implode", v}
 		}
-		return &funcTypeError{"implode", v}
 	}
-	return string(rs)
+	return sb.String()
 }
 
 func funcToJSON(v interface{}) interface{} {
