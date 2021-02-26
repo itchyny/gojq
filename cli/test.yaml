@@ -2128,6 +2128,18 @@
   expected: |
     ["","foo bar","１２３４５","\n\t"]
 
+- name: implode function error
+  args:
+    - -c
+    - '.[] | try implode catch .'
+  input: '[[0],[-1],[1114112],[[]],[{}]]'
+  expected: |
+    "\u0000"
+    "implode cannot be applied to: array ([-1])"
+    "implode cannot be applied to: array ([1114112])"
+    "implode cannot be applied to: array ([[]])"
+    "implode cannot be applied to: array ([{}])"
+
 - name: split/1 function
   args:
     - 'map(split(", ","") | join("/"))'

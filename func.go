@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/itchyny/timefmt-go"
 )
@@ -544,7 +545,7 @@ func implode(v []interface{}) interface{} {
 	var sb strings.Builder
 	sb.Grow(len(v))
 	for _, r := range v {
-		if r, ok := toInt(r); ok {
+		if r, ok := toInt(r); ok && 0 <= r && r <= utf8.MaxRune {
 			sb.WriteRune(rune(r))
 		} else {
 			return &funcTypeError{"implode", v}
