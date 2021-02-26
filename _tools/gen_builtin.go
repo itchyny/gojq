@@ -6,7 +6,6 @@ import (
 	"go/ast"
 	"go/printer"
 	"go/token"
-	"io"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -57,7 +56,7 @@ func run(input, output string) error {
 		return err
 	}
 	var sb strings.Builder
-	sb.Write([]byte("\n\tbuiltinFuncDefs = "))
+	sb.WriteString("\n\tbuiltinFuncDefs = ")
 	if err := printCompositeLit(&sb, t.(*ast.CompositeLit)); err != nil {
 		return err
 	}
@@ -74,14 +73,14 @@ func run(input, output string) error {
 	return err
 }
 
-func printCompositeLit(out io.Writer, t *ast.CompositeLit) error {
+func printCompositeLit(out *strings.Builder, t *ast.CompositeLit) error {
 	err := printer.Fprint(out, token.NewFileSet(), t.Type)
 	if err != nil {
 		return err
 	}
-	out.Write([]byte("{"))
+	out.WriteString("{")
 	for _, kv := range t.Elts {
-		out.Write([]byte("\n\t\t"))
+		out.WriteString("\n\t\t")
 		var sb strings.Builder
 		err = printer.Fprint(&sb, token.NewFileSet(), kv)
 		if err != nil {
@@ -96,9 +95,9 @@ func printCompositeLit(out io.Writer, t *ast.CompositeLit) error {
 			r := regexp.MustCompile(fmt.Sprintf(`(Term{Type): %d\b`, termType))
 			str = r.ReplaceAllString(str, fmt.Sprintf("$1: %#v", termType))
 		}
-		out.Write([]byte(strings.ReplaceAll(str, "gojq.", "")))
-		out.Write([]byte(","))
+		out.WriteString(strings.ReplaceAll(str, "gojq.", ""))
+		out.WriteString(",")
 	}
-	out.Write([]byte("\n\t}\n"))
+	out.WriteString("\n\t}\n")
 	return nil
 }
