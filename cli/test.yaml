@@ -5866,11 +5866,12 @@
     - -c
     - -L
     - 'testdata'
-    - 'include "6"; . as $x | $x, g'
+    - 'include "6"; include "13"; . as $x | $x, g, h'
   input: '1'
   expected: |
     1
     [1,2,{"foo":42}]
+    [[{"foo":10}],[1,2,{"foo":42}]]
 
 - name: module directory option json parse error
   args:
