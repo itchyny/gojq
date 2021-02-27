@@ -14,6 +14,7 @@ type env struct {
 	backtrack bool
 	offset    int
 	expdepth  int
+	args      [32]interface{} // len(env.args) > maxarity
 	ctx       context.Context
 }
 

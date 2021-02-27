@@ -158,7 +158,7 @@ loop:
 				goto loop
 			case [3]interface{}:
 				argcnt := v[1].(int)
-				x, args := env.pop(), make([]interface{}, argcnt)
+				x, args := env.pop(), env.args[:argcnt]
 				for i := 0; i < argcnt; i++ {
 					args[i] = env.pop()
 				}
