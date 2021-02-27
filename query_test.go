@@ -202,3 +202,33 @@ func TestQueryString(t *testing.T) {
 		t.Errorf("\n%v\n%v", q, r)
 	}
 }
+
+func BenchmarkRun(b *testing.B) {
+	query, err := gojq.Parse("range(1000)")
+	if err != nil {
+		b.Fatal(err)
+	}
+	for i := 0; i < b.N; i++ {
+		iter := query.Run(nil)
+		for {
+			_, ok := iter.Next()
+			if !ok {
+				break
+			}
+		}
+	}
+}
+
+func BenchmarkParse(b *testing.B) {
+	cnt, err := ioutil.ReadFile("builtin.jq")
+	if err != nil {
+		b.Fatal(err)
+	}
+	src := string(cnt)
+	for i := 0; i < b.N; i++ {
+		_, err := gojq.Parse(src)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}

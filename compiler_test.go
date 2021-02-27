@@ -3,6 +3,7 @@ package gojq_test
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"reflect"
 	"sync"
@@ -220,4 +221,24 @@ func TestCodeRun_Race(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+}
+
+func BenchmarkCompile(b *testing.B) {
+	cnt, err := ioutil.ReadFile("builtin.jq")
+	if err != nil {
+		b.Fatal(err)
+	}
+	query, err := gojq.Parse(string(cnt))
+	if err != nil {
+		b.Fatal(err)
+	}
+	for i := 0; i < b.N; i++ {
+		_, err := gojq.Compile(
+			query,
+			gojq.WithInputIter(newTestInputIter(nil)),
+		)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
 }
