@@ -1,4 +1,18 @@
 # Changelog
+## [v0.12.2](https://github.com/itchyny/gojq/compare/v0.12.1..v0.12.2) (2021-03-01)
+* implement `GOJQ_COLORS` environment variable to configure individual colors
+* respect `--color-output` (`-C`) option even if `NO_COLOR` is set
+* implement `gojq.ValueError` interface for custom internal functions
+* fix crash on timestamps in YAML input
+* fix calculation on `infinite` (`infinite-infinite | isnan`)
+* fix comparison on `nan` (`nan < nan`)
+* fix validation of `implode` (`[-1] | implode`)
+* fix number normalization for custom JSON module loader
+* print error line numbers on invalid JSON and YAML
+* improve `strftime`, `strptime` for time zone offsets
+* improve performance on reading a large JSON file given by command line argument
+* improve performance and reduce memory allocation of the lexer, compiler and executor
+
 ## [v0.12.1](https://github.com/itchyny/gojq/compare/v0.12.0..v0.12.1) (2021-01-17)
 * skip adding `$HOME/.jq` to module paths when `$HOME` is unset
 * fix optional operator followed by division operator (`1?/1`)
