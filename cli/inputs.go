@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"io"
 	"os"
@@ -15,7 +16,7 @@ import (
 type inputReader struct {
 	io.Reader
 	file *os.File
-	sb   *strings.Builder
+	buf  *bytes.Buffer
 }
 
 func newInputReader(r io.Reader) *inputReader {
@@ -24,27 +25,27 @@ func newInputReader(r io.Reader) *inputReader {
 			return &inputReader{r, r, nil}
 		}
 	}
-	sb := new(strings.Builder)
-	return &inputReader{io.TeeReader(r, sb), nil, sb}
+	var buf bytes.Buffer // do not use strings.Builder because we need to Reset
+	return &inputReader{io.TeeReader(r, &buf), nil, &buf}
 }
 
 func (ir *inputReader) getContents(offset *int64, line *int) string {
-	if sb := ir.sb; sb != nil {
-		return sb.String()
+	if buf := ir.buf; buf != nil {
+		return buf.String()
 	}
 	if current, err := ir.file.Seek(0, io.SeekCurrent); err == nil {
 		defer func() { ir.file.Seek(current, io.SeekStart) }()
 	}
 	ir.file.Seek(0, io.SeekStart)
 	const bufSize = 16 * 1024
-	var sb strings.Builder
+	var buf bytes.Buffer // do not use strings.Builder because we need to Reset
 	if offset != nil && *offset > bufSize {
-		sb.Grow(bufSize)
+		buf.Grow(bufSize)
 		for *offset > bufSize {
-			n, err := io.Copy(&sb, io.LimitReader(ir.file, bufSize))
+			n, err := io.Copy(&buf, io.LimitReader(ir.file, bufSize))
 			*offset -= int64(n)
-			*line += strings.Count(sb.String(), "\n")
-			sb.Reset()
+			*line += bytes.Count(buf.Bytes(), []byte{'\n'})
+			buf.Reset()
 			if err != nil || n == 0 {
 				break
 			}
@@ -56,8 +57,8 @@ func (ir *inputReader) getContents(offset *int64, line *int) string {
 	} else {
 		r = io.LimitReader(ir.file, bufSize*2)
 	}
-	io.Copy(&sb, r)
-	return sb.String()
+	io.Copy(&buf, r)
+	return buf.String()
 }
 
 type inputIter interface {
@@ -100,10 +101,10 @@ func (i *jsonInputIter) Next() (interface{}, bool) {
 		i.err = &jsonParseError{i.fname, i.ir.getContents(offset, line), i.line, err}
 		return i.err, true
 	}
-	if sb := i.ir.sb; sb != nil && sb.Len() >= 16*1024 {
-		i.offset += int64(sb.Len())
-		i.line += strings.Count(sb.String(), "\n")
-		sb.Reset()
+	if buf := i.ir.buf; buf != nil && buf.Len() >= 16*1024 {
+		i.offset += int64(buf.Len())
+		i.line += bytes.Count(buf.Bytes(), []byte{'\n'})
+		buf.Reset()
 	}
 	return v, true
 }
@@ -248,10 +249,10 @@ func (i *streamInputIter) Next() (interface{}, bool) {
 		i.err = &jsonParseError{i.fname, i.ir.getContents(offset, line), i.line, err}
 		return i.err, true
 	}
-	if sb := i.ir.sb; sb != nil && sb.Len() >= 16*1024 {
-		i.offset += int64(sb.Len())
-		i.line += strings.Count(sb.String(), "\n")
-		sb.Reset()
+	if buf := i.ir.buf; buf != nil && buf.Len() >= 16*1024 {
+		i.offset += int64(buf.Len())
+		i.line += bytes.Count(buf.Bytes(), []byte{'\n'})
+		buf.Reset()
 	}
 	return v, true
 }
