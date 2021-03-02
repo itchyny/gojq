@@ -9,7 +9,7 @@ import (
 
 // ValueError is an interface for errors with a value for internal function.
 // Return an error implementing this interface when you want to catch error
-// values (not error messages) by try-catch, just like builtin error function.
+// values (not error messages) by try-catch, just like built-in error function.
 // Refer to WithFunction to add a custom internal function.
 type ValueError interface {
 	error
