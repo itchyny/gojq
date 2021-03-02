@@ -122,6 +122,43 @@ func TestWithModuleLoader_JSON(t *testing.T) {
 	}
 }
 
+type moduleLoaderInitModules struct{}
+
+func (*moduleLoaderInitModules) LoadInitModules() ([]*gojq.Query, error) {
+	query, err := gojq.Parse(`
+		def f: 42;
+		def g: f * f;
+	`)
+	if err != nil {
+		return nil, err
+	}
+	return []*gojq.Query{query}, nil
+}
+
+func TestWithModuleLoader_LoadInitModules(t *testing.T) {
+	query, err := gojq.Parse("g")
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, err := gojq.Compile(
+		query,
+		gojq.WithModuleLoader(&moduleLoaderInitModules{}),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	iter := code.Run(nil)
+	for {
+		got, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if expected := 42 * 42; !reflect.DeepEqual(got, expected) {
+			t.Errorf("expected: %v, got: %v", expected, got)
+		}
+	}
+}
+
 func TestWithEnvironLoader(t *testing.T) {
 	query, err := gojq.Parse("env")
 	if err != nil {
