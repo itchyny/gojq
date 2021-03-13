@@ -285,7 +285,7 @@
 
 - name: array index
   args:
-    - '.[-5],.[-1],.[0],.[2],.[3],.[4]'
+    - '.[-5], .[-1], .[0], .[2], .[3], .[4], .[nan]'
   input: '[16, 32, 48, 64]'
   expected: |
     null
@@ -293,6 +293,7 @@
     16
     48
     64
+    null
     null
 
 - name: array slice
@@ -312,6 +313,36 @@
     [16,32,48,64]
     [16,32,48,64]
     []
+    []
+
+- name: array index and slice with large number
+  args:
+    - -c
+    - '.[1e300], .[-1e300], .[-1e300:], .[1e300:], .[:-1e300], .[:1e300], .[-1e300:1e300], .[1e300:-1e300]'
+  input: '[16, 32, 48, 64]'
+  expected: |
+    null
+    null
+    [16,32,48,64]
+    []
+    []
+    [16,32,48,64]
+    [16,32,48,64]
+    []
+
+- name: array index and slice with infinite
+  args:
+    - -c
+    - '.[infinite], .[-infinite], .[-infinite:], .[infinite:], .[:-infinite], .[:infinite], .[-infinite:infinite], .[infinite:-infinite]'
+  input: '[16, 32, 48, 64]'
+  expected: |
+    null
+    null
+    [16,32,48,64]
+    []
+    []
+    [16,32,48,64]
+    [16,32,48,64]
     []
 
 - name: array and string slice with object
@@ -923,11 +954,17 @@
 
 - name: has function on arrays
   args:
-    - 'map(has(2))'
+    - 'map(has(2, nan, infinite, -infinite))'
   input: '[[1, 2, 3], [1, 3]]'
   expected: |
     [
       true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
       false
     ]
 

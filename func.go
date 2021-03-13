@@ -1591,7 +1591,13 @@ func toInt(x interface{}) (int, bool) {
 	case int:
 		return x, true
 	case float64:
-		return int(x), true
+		if minInt <= x && x <= maxInt {
+			return int(x), true
+		}
+		if x > 0 {
+			return maxInt, true
+		}
+		return minInt, true
 	case *big.Int:
 		if x.IsInt64() {
 			if i := x.Int64(); minInt <= i && i <= maxInt {
