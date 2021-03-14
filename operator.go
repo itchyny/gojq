@@ -378,7 +378,7 @@ func funcOpMul(_, l, r interface{}) interface{} {
 		deepMergeObjects,
 		func(l, r interface{}) interface{} {
 			multiplyString := func(s string, cnt float64) interface{} {
-				if cnt <= 0.0 || int(cnt) > maxHalfInt/(16*(len(s)+1)) || math.IsNaN(cnt-cnt) {
+				if cnt <= 0.0 || cnt > float64(maxHalfInt/(16*(len(s)+1))) || math.IsNaN(cnt) {
 					return nil
 				}
 				if cnt < 1.0 {
