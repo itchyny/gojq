@@ -23,8 +23,7 @@ func WithEnvironLoader(environLoader func() []string) CompilerOption {
 }
 
 // WithVariables is a compiler option for variable names. The variables can be
-// used in the query. You have to give the values to query.Run or code.Run in
-// the same order.
+// used in the query. You have to give the values to code.Run in the same order.
 func WithVariables(variables []string) CompilerOption {
 	return func(c *compiler) {
 		c.variables = variables
