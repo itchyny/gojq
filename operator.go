@@ -479,6 +479,9 @@ func funcOpMod(_, l, r interface{}) interface{} {
 		},
 		func(l, r float64) interface{} {
 			if int(r) == 0 {
+				if r < -1.0 || 1.0 < r { // int(math.Inf(1)) == 0 on some architectures
+					return int(l) % minInt
+				}
 				return &zeroModuloError{l, r}
 			}
 			return int(l) % int(r)
