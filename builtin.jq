@@ -15,7 +15,7 @@ def while(cond; update):
   def _while: if cond then ., (update | _while) else empty end;
   _while;
 def until(cond; next):
-  def _until: if cond then . else (next | _until) end;
+  def _until: if cond then . else next | _until end;
   _until;
 def repeat(f):
   def _repeat: f, _repeat;
@@ -24,8 +24,8 @@ def range($x): range(0; $x);
 def range($start; $end):
   $start | while(. < $end; . + 1);
 def range($start; $end; $step):
-  if $step > 0 then $start|while(. < $end; . + $step)
-  elif $step < 0 then $start|while(. > $end; . + $step)
+  if $step > 0 then $start | while(. < $end; . + $step)
+  elif $step < 0 then $start | while(. > $end; . + $step)
   else empty end;
 
 def _flatten($x):
@@ -52,7 +52,7 @@ def unique_by(f): _unique_by(map([f]));
 
 def arrays: select(type == "array");
 def objects: select(type == "object");
-def iterables: select(type |. == "array" or . == "object");
+def iterables: select(type | . == "array" or . == "object");
 def booleans: select(type == "boolean");
 def numbers: select(type == "number");
 def finites: select(isfinite);
@@ -60,7 +60,7 @@ def normals: select(isnormal);
 def strings: select(type == "string");
 def nulls: select(. == null);
 def values: select(. != null);
-def scalars: select(type |. != "array" and . != "object");
+def scalars: select(type | . != "array" and . != "object");
 def leaf_paths: paths(scalars);
 
 def indices($x):
@@ -104,13 +104,13 @@ def combinations:
   if length == 0 then
     []
   else
-    .[0][] as $x | (.[1:] | combinations) as $y | [$x] + $y
+    .[0][] as $x | .[1:] | combinations as $y | [$x] + $y
   end;
 def combinations(n):
   . as $dot | [range(n) | $dot] | combinations;
 def join($x): reduce .[] as $i (null;
-    (if . == null then "" else . + $x end) +
-    ($i | if type == "boolean" or type == "number" then tostring else . // "" end)
+    if . == null then "" else . + $x end +
+    ($i | if type | . == "boolean" or . == "number" then tostring else . // "" end)
   ) // "";
 def ascii_downcase:
   explode | map(if 65 <= . and . <= 90 then . + 32 end) | implode;
@@ -119,7 +119,7 @@ def ascii_upcase:
 def walk(f):
   . as $in
     | if type == "object" then
-        reduce keys[] as $key ({}; . + { ($key): ($in[$key] | walk(f)) }) | f
+        reduce keys[] as $key ({}; . + { ($key): $in[$key] | walk(f) }) | f
       elif type == "array" then
         map(walk(f)) | f
       else
@@ -164,7 +164,7 @@ def nth($n; g):
   else
     label $out
       | foreach g as $item
-        ($n; .-1; . < 0 or empty|$item, break $out)
+        ($n; .-1; . < 0 or empty | $item, break $out)
   end;
 
 def truncate_stream(f):
@@ -193,7 +193,7 @@ def _modify(ps; f):
 def map_values(f): .[] |= f;
 def del(f): delpaths([path(f)]);
 def paths:
-  path(recurse(if (type | . == "array" or . == "object") then .[] else empty end))
+  path(recurse(if type | . == "array" or . == "object" then .[] else empty end))
     | select(length > 0);
 def paths(f):
   . as $x | paths | select(. as $p | $x | getpath($p) | f);
@@ -215,7 +215,7 @@ def capture($re; $flags):
 def scan($re): scan($re; null);
 def scan($re; $flags):
   match($re; "g" + $flags)
-    | if (.captures|length > 0) then [ .captures | .[] | .string ] else .string end;
+    | if .captures|length > 0 then [ .captures | .[] | .string ] else .string end;
 def splits($re): splits($re; null);
 def splits($re; $flags): split($re; $flags) | .[];
 def sub($re; str): sub($re; str; null);
