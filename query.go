@@ -23,7 +23,7 @@ type Query struct {
 //
 // It is safe to call this method of a *Query in multiple goroutines.
 func (e *Query) Run(v interface{}) Iter {
-	return e.RunWithContext(nil, v)
+	return e.RunWithContext(context.TODO(), v)
 }
 
 // RunWithContext runs the query with context.

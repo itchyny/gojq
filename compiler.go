@@ -36,7 +36,7 @@ type Code struct {
 //
 // It is safe to call this method of a *Code in multiple goroutines.
 func (c *Code) Run(v interface{}, values ...interface{}) Iter {
-	return c.RunWithContext(nil, v, values...)
+	return c.RunWithContext(context.TODO(), v, values...)
 }
 
 // RunWithContext runs the code with context.
