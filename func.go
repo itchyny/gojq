@@ -600,9 +600,7 @@ var tsvEscaper = strings.NewReplacer(
 )
 
 func funcToTSV(v interface{}) interface{} {
-	return funcToCSVTSV("tsv", v, "\t", func(s string) string {
-		return tsvEscaper.Replace(s)
-	})
+	return funcToCSVTSV("tsv", v, "\t", tsvEscaper.Replace)
 }
 
 func funcToSh(v interface{}) interface{} {
