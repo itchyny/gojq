@@ -64,6 +64,7 @@ go get github.com/itchyny/gojq/cmd/gojq
 ### Docker
 ```sh
 docker run -i --rm itchyny/gojq
+docker run -i --rm ghcr.io/itchyny/gojq
 ```
 
 ## Difference to jq
