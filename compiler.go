@@ -1322,21 +1322,20 @@ func (c *compiler) compileCallInternal(fn interface{}, args []*Query, vars map[i
 		c.append(&code{op: opexpbegin})
 	}
 	for i := len(args) - 1; i >= 0; i-- {
-		pc := c.pc() + 1 // ref: compileFuncDef
+		pc := c.pc() + 1 // skip opjump (ref: compileFuncDef)
 		name := "lambda:" + strconv.Itoa(pc)
 		if err := c.compileFuncDef(&FuncDef{Name: name, Body: args[i]}, false); err != nil {
 			return err
 		}
 		if vars == nil || vars[i] {
-			if pc == c.pc()-2 {
-				// optimize identity argument
+			switch c.pc() - pc {
+			case 2: // optimize identity argument (opscope, opret)
 				j := len(c.codes) - 3
 				c.codes[j] = &code{op: opload, v: idx}
 				c.codes = c.codes[:j+1]
 				c.funcs = c.funcs[:len(c.funcs)-1]
 				c.deleteCodeInfo(name)
-			} else if pc == c.pc()-3 {
-				// optimize one instruction argument
+			case 3: // optimize one instruction argument (opscope, opX, opret)
 				j := len(c.codes) - 4
 				if c.codes[j+2].op == opconst {
 					c.codes[j] = &code{op: oppush, v: c.codes[j+2].v}
@@ -1348,7 +1347,7 @@ func (c *compiler) compileCallInternal(fn interface{}, args []*Query, vars map[i
 				}
 				c.funcs = c.funcs[:len(c.funcs)-1]
 				c.deleteCodeInfo(name)
-			} else {
+			default:
 				c.append(&code{op: opload, v: idx})
 				c.append(&code{op: oppushpc, v: pc})
 				c.append(&code{op: opcallpc})
