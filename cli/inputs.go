@@ -359,8 +359,7 @@ func (i *slurpRawInputIter) Next() (interface{}, bool) {
 		if i.err, ok = v.(error); ok {
 			return i.err, true
 		}
-		vs = append(vs, v.(string))
-		vs = append(vs, "\n")
+		vs = append(vs, v.(string), "\n")
 	}
 }
 
