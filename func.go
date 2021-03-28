@@ -33,7 +33,7 @@ type function struct {
 }
 
 func (fn function) accept(cnt int) bool {
-	return fn.argcount&(1<<uint(cnt)) > 0
+	return fn.argcount&(1<<cnt) != 0
 }
 
 var internalFuncs map[string]function
