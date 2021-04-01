@@ -1,4 +1,11 @@
 # Changelog
+## [v0.12.3](https://github.com/itchyny/gojq/compare/v0.12.2..v0.12.3) (2021-04-01)
+* fix array slicing with infinities and large numbers (`[0][-infinite:infinite], [0][:1e20]`)
+* fix multiplying strings and modulo by infinities on MIPS 64 architecture
+* fix git revision information in Docker images
+* release multi-platform Docker images for ARM 64
+* switch to `distroless` image for Docker base image
+
 ## [v0.12.2](https://github.com/itchyny/gojq/compare/v0.12.1..v0.12.2) (2021-03-01)
 * implement `GOJQ_COLORS` environment variable to configure individual colors
 * respect `--color-output` (`-C`) option even if `NO_COLOR` is set
