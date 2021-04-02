@@ -3186,7 +3186,7 @@
 - name: infinite function
   args:
     - -c
-    - '[infinite, -infinite] | (.[], .[]+.[], .[]-.[], .[]*.[], .[]/.[], .[]%.[], 1/.[], -1/.[], .[]-1e300, .[]+1e300) | [., . == infinite, . == -infinite, contains(infinite)]'
+    - '[infinite, -infinite] | (.[], .[]+.[], .[]-.[], .[]*.[], .[]/.[], .[]%.[]%256, 1/.[], -1/.[], .[]-1e300, .[]+1e300) | [., . == infinite, . == -infinite, contains(infinite)]'
   input: 'null'
   expected: |
     [1.7976931348623157e+308,true,false,true]
@@ -3209,7 +3209,7 @@
     [null,false,false,false]
     [0,false,false,false]
     [-1,false,false,false]
-    [9223372036854775807,false,false,false]
+    [255,false,false,false]
     [0,false,false,false]
     [0,false,false,false]
     [-0,false,false,false]
