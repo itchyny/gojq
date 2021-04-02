@@ -478,13 +478,11 @@ func funcOpMod(_, l, r interface{}) interface{} {
 			return l % r
 		},
 		func(l, r float64) interface{} {
-			if int(r) == 0 {
-				if r < -1.0 || 1.0 < r { // int(math.Inf(1)) == 0 on some architectures
-					return int(l) % minInt
-				}
+			ri := floatToInt(r)
+			if ri == 0 {
 				return &zeroModuloError{l, r}
 			}
-			return int(l) % int(r)
+			return floatToInt(l) % ri
 		},
 		func(l, r *big.Int) interface{} {
 			if r.Sign() == 0 {
