@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/itchyny/gojq"
@@ -577,9 +576,7 @@ func TestWithInputIter(t *testing.T) {
 	}
 	code, err := gojq.Compile(
 		query,
-		gojq.WithInputIter(
-			newTestInputIter(strings.NewReader("1 2 3 4 5")),
-		),
+		gojq.WithInputIter(newIntIter(1, 2, 3, 4, 5)),
 	)
 	if err != nil {
 		t.Fatal(err)
