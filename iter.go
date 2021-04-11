@@ -14,10 +14,10 @@ type unitIter struct {
 	done bool
 }
 
-func (c *unitIter) Next() (interface{}, bool) {
-	if !c.done {
-		c.done = true
-		return c.v, true
+func (iter *unitIter) Next() (interface{}, bool) {
+	if iter.done {
+		return nil, false
 	}
-	return nil, false
+	iter.done = true
+	return iter.v, true
 }
