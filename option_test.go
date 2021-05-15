@@ -576,7 +576,7 @@ func TestWithInputIter(t *testing.T) {
 	}
 	code, err := gojq.Compile(
 		query,
-		gojq.WithInputIter(newIntIter(1, 2, 3, 4, 5)),
+		gojq.WithInputIter(gojq.NewIter(1, 2, 3, 4, 5)),
 	)
 	if err != nil {
 		t.Fatal(err)

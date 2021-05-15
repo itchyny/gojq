@@ -30,7 +30,7 @@ func (e *Query) Run(v interface{}) Iter {
 func (e *Query) RunWithContext(ctx context.Context, v interface{}) Iter {
 	code, err := Compile(e)
 	if err != nil {
-		return unitIterator(err)
+		return NewIter(err)
 	}
 	return code.RunWithContext(ctx, v)
 }

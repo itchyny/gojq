@@ -235,7 +235,7 @@ func BenchmarkCompile(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, err := gojq.Compile(
 			query,
-			gojq.WithInputIter(newIntIter()),
+			gojq.WithInputIter(gojq.NewIter()),
 		)
 		if err != nil {
 			b.Fatal(err)

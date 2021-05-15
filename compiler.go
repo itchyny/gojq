@@ -42,9 +42,9 @@ func (c *Code) Run(v interface{}, values ...interface{}) Iter {
 // RunWithContext runs the code with context.
 func (c *Code) RunWithContext(ctx context.Context, v interface{}, values ...interface{}) Iter {
 	if len(values) > len(c.variables) {
-		return unitIterator(&tooManyVariableValuesError{})
+		return NewIter(&tooManyVariableValuesError{})
 	} else if len(values) < len(c.variables) {
-		return unitIterator(&expectedVariableError{c.variables[len(values)]})
+		return NewIter(&expectedVariableError{c.variables[len(values)]})
 	}
 	for i, v := range values {
 		values[i] = normalizeNumbers(v)
