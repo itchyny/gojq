@@ -29,6 +29,7 @@ const (
 
 type function struct {
 	argcount int
+	iter     bool
 	callback func(interface{}, []interface{}) interface{}
 }
 
@@ -60,7 +61,7 @@ func init() {
 		"contains":       argFunc1(funcContains),
 		"explode":        argFunc0(funcExplode),
 		"implode":        argFunc0(funcImplode),
-		"split":          {argcount1 | argcount2, funcSplit},
+		"split":          {argcount1 | argcount2, false, funcSplit},
 		"tojson":         argFunc0(funcToJSON),
 		"fromjson":       argFunc0(funcFromJSON),
 		"format":         argFunc1(funcFormat),
@@ -172,16 +173,16 @@ func init() {
 		"strptime":       argFunc1(funcStrptime),
 		"now":            argFunc0(funcNow),
 		"_match":         argFunc3(funcMatch),
-		"error":          {argcount0 | argcount1, funcError},
+		"error":          {argcount0 | argcount1, false, funcError},
 		"halt":           argFunc0(funcHalt),
-		"halt_error":     {argcount0 | argcount1, funcHaltError},
+		"halt_error":     {argcount0 | argcount1, false, funcHaltError},
 		"_type_error":    argFunc1(internalfuncTypeError),
 	}
 }
 
 func argFunc0(fn func(interface{}) interface{}) function {
 	return function{
-		argcount0, func(v interface{}, _ []interface{}) interface{} {
+		argcount0, false, func(v interface{}, _ []interface{}) interface{} {
 			return fn(v)
 		},
 	}
@@ -189,7 +190,7 @@ func argFunc0(fn func(interface{}) interface{}) function {
 
 func argFunc1(fn func(interface{}, interface{}) interface{}) function {
 	return function{
-		argcount1, func(v interface{}, args []interface{}) interface{} {
+		argcount1, false, func(v interface{}, args []interface{}) interface{} {
 			return fn(v, args[0])
 		},
 	}
@@ -197,7 +198,7 @@ func argFunc1(fn func(interface{}, interface{}) interface{}) function {
 
 func argFunc2(fn func(interface{}, interface{}, interface{}) interface{}) function {
 	return function{
-		argcount2, func(v interface{}, args []interface{}) interface{} {
+		argcount2, false, func(v interface{}, args []interface{}) interface{} {
 			return fn(v, args[0], args[1])
 		},
 	}
@@ -205,7 +206,7 @@ func argFunc2(fn func(interface{}, interface{}, interface{}) interface{}) functi
 
 func argFunc3(fn func(interface{}, interface{}, interface{}, interface{}) interface{}) function {
 	return function{
-		argcount3, func(v interface{}, args []interface{}) interface{} {
+		argcount3, false, func(v interface{}, args []interface{}) interface{} {
 			return fn(v, args[0], args[1], args[2])
 		},
 	}

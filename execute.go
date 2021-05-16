@@ -250,6 +250,23 @@ loop:
 				sort.Slice(xs, func(i, j int) bool {
 					return xs[i][0].(string) < xs[j][0].(string)
 				})
+			case Iter:
+				if !env.paths.empty() && env.expdepth == 0 {
+					err = &invalidPathIterError{v}
+					break loop
+				}
+				if w, ok := v.Next(); ok {
+					env.push(v)
+					env.pushfork(code.op, pc)
+					env.pop()
+					if e, ok := w.(error); ok {
+						err = e
+						break loop
+					}
+					env.push(w)
+					continue
+				}
+				break loop
 			default:
 				err = &iteratorError{v}
 				break loop

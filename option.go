@@ -40,6 +40,25 @@ func WithVariables(variables []string) CompilerOption {
 // of the module loader.
 func WithFunction(name string, minarity, maxarity int,
 	f func(interface{}, []interface{}) interface{}) CompilerOption {
+	return withFunction(name, minarity, maxarity, false, f)
+}
+
+// WithIterFunction is a compiler option for adding a custom iterator function.
+// This is like the WithFunction option, but you can add a function which
+// returns an Iter to emit multiple values. You cannot define both iterator and
+// non-iterator functions of the same name (with possibly different arities).
+// See also NewIter, which can be used to convert values or an error to an Iter.
+func WithIterFunction(name string, minarity, maxarity int,
+	f func(interface{}, []interface{}) Iter) CompilerOption {
+	return withFunction(name, minarity, maxarity, true,
+		func(v interface{}, args []interface{}) interface{} {
+			return f(v, args)
+		},
+	)
+}
+
+func withFunction(name string, minarity, maxarity int, iter bool,
+	f func(interface{}, []interface{}) interface{}) CompilerOption {
 	if !(0 <= minarity && minarity <= maxarity && maxarity <= 30) {
 		panic(fmt.Sprintf("invalid arity for %q: %d, %d", name, minarity, maxarity))
 	}
@@ -49,8 +68,11 @@ func WithFunction(name string, minarity, maxarity int,
 			c.customFuncs = make(map[string]function)
 		}
 		if fn, ok := c.customFuncs[name]; ok {
+			if fn.iter != iter {
+				panic(fmt.Sprintf("cannot define both iterator and non-iterator functions for %q", name))
+			}
 			c.customFuncs[name] = function{
-				argcount | fn.argcount,
+				argcount | fn.argcount, iter,
 				func(x interface{}, xs []interface{}) interface{} {
 					if argcount&(1<<len(xs)) != 0 {
 						return f(x, xs)
@@ -59,7 +81,7 @@ func WithFunction(name string, minarity, maxarity int,
 				},
 			}
 		} else {
-			c.customFuncs[name] = function{argcount, f}
+			c.customFuncs[name] = function{argcount, iter, f}
 		}
 	}
 }

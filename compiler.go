@@ -920,12 +920,18 @@ func (c *compiler) compileFunc(e *Func) error {
 		}
 	}
 	if fn, ok := c.customFuncs[e.Name]; ok && fn.accept(len(e.Args)) {
-		return c.compileCallInternal(
+		if err := c.compileCallInternal(
 			[3]interface{}{fn.callback, len(e.Args), e.Name},
 			e.Args,
 			nil,
 			false,
-		)
+		); err != nil {
+			return err
+		}
+		if fn.iter {
+			c.append(&code{op: opeach})
+		}
+		return nil
 	}
 	return &funcNotFoundError{e}
 }

@@ -297,6 +297,9 @@ func (err *jsonParseError) Error() string {
 }
 
 func typeErrorPreview(v interface{}) string {
+	if _, ok := v.(Iter); ok {
+		return "gojq.Iter"
+	}
 	p := preview(v)
 	if p != "" {
 		p = " (" + p + ")"

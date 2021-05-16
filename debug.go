@@ -176,6 +176,9 @@ func debugOperand(c *code) string {
 }
 
 func debugJSON(v interface{}) string {
+	if _, ok := v.(Iter); ok {
+		return fmt.Sprintf("gojq.Iter(%#v)", v)
+	}
 	var sb strings.Builder
 	json.NewEncoder(&sb).Encode(v)
 	return strings.TrimSpace(sb.String())
