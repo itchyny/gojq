@@ -33,16 +33,17 @@ func TestWithModuleLoaderError(t *testing.T) {
 		t.Fatal(err)
 	}
 	iter := code.Run("m")
-	for {
-		v, ok := iter.Next()
-		if !ok {
-			break
-		}
-		err := v.(error)
-		if got, expected := err.Error(), `cannot load module: "m"`; got != expected {
-			t.Errorf("expected: %v, got: %v", expected, got)
-		}
-		break
+	v, ok := iter.Next()
+	if !ok {
+		t.Fatal("should emit an error but got no output")
+	}
+	err, expected := v.(error), `cannot load module: "m"`
+	if got := err.Error(); got != expected {
+		t.Errorf("expected: %v, got: %v", expected, got)
+	}
+	v, ok = iter.Next()
+	if ok {
+		t.Errorf("should not emit a value but got: %v", v)
 	}
 }
 
@@ -239,16 +240,17 @@ func TestWithVariablesError1(t *testing.T) {
 		t.Fatal(err)
 	}
 	iter := code.Run(nil)
-	for {
-		v, ok := iter.Next()
-		if !ok {
-			break
-		}
-		if err, ok := v.(error); ok {
-			if got, expected := err.Error(), "variable defined but not bound: $x"; got != expected {
-				t.Errorf("expected: %v, got: %v", expected, got)
-			}
-		}
+	v, ok := iter.Next()
+	if !ok {
+		t.Fatal("should emit an error but got no output")
+	}
+	err, expected := v.(error), "variable defined but not bound: $x"
+	if got := err.Error(); got != expected {
+		t.Errorf("expected: %v, got: %v", expected, got)
+	}
+	v, ok = iter.Next()
+	if ok {
+		t.Errorf("should not emit a value but got: %v", v)
 	}
 }
 
@@ -265,16 +267,17 @@ func TestWithVariablesError2(t *testing.T) {
 		t.Fatal(err)
 	}
 	iter := code.Run(nil, 1, 2)
-	for {
-		v, ok := iter.Next()
-		if !ok {
-			break
-		}
-		if err, ok := v.(error); ok {
-			if got, expected := err.Error(), "too many variable values provided"; got != expected {
-				t.Errorf("expected: %v, got: %v", expected, got)
-			}
-		}
+	v, ok := iter.Next()
+	if !ok {
+		t.Fatal("should emit an error but got no output")
+	}
+	err, expected := v.(error), "too many variable values provided"
+	if got := err.Error(); got != expected {
+		t.Errorf("expected: %v, got: %v", expected, got)
+	}
+	v, ok = iter.Next()
+	if ok {
+		t.Errorf("should not emit a value but got: %v", v)
 	}
 }
 
@@ -628,8 +631,8 @@ func TestWithIterFunctionError(t *testing.T) {
 				t.Errorf("expected: %v, got: %v", expected, v)
 			}
 		case 3, 5:
-			if expected := errors.New("error"); !reflect.DeepEqual(v, expected) {
-				t.Errorf("expected: %v, got: %v", expected, v)
+			if expected := "error"; v.(error).Error() != expected {
+				t.Errorf("expected: %v, got: %v", expected, err)
 			}
 		default:
 			if expected := n - 3; v != expected {
@@ -679,16 +682,13 @@ func TestWithIterFunctionPathError(t *testing.T) {
 		t.Fatal(err)
 	}
 	iter := code.Run(nil)
-	for {
-		v, ok := iter.Next()
-		if !ok {
-			break
-		}
-		err, expected := v.(error), "invalid path on iterating against: gojq.Iter"
-		if got := err.Error(); got != expected {
-			t.Errorf("expected: %v, got: %v", expected, got)
-		}
-		break
+	v, ok := iter.Next()
+	if !ok {
+		t.Fatal("should emit an error but got no output")
+	}
+	err, expected := v.(error), "invalid path on iterating against: gojq.Iter"
+	if got := err.Error(); got != expected {
+		t.Errorf("expected: %v, got: %v", expected, got)
 	}
 }
 
@@ -779,9 +779,7 @@ func TestWithInputIter(t *testing.T) {
 			if expected := "break"; err.Error() != expected {
 				t.Errorf("expected: %v, got: %v", expected, err)
 			}
-			break
-		}
-		if v != n {
+		} else if v != n {
 			t.Errorf("expected: %v, got: %v", n, v)
 		}
 		n++
