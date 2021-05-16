@@ -60,8 +60,7 @@ func (c *Code) RunWithContext(ctx context.Context, v interface{}, values ...inte
 //  LoadInitModules() ([]*Query, error)
 //  LoadJSON(string) (interface{}, error)
 //  LoadJSONWithMeta(string, map[string]interface{}) (interface{}, error)
-type ModuleLoader interface {
-}
+type ModuleLoader interface{}
 
 type codeinfo struct {
 	name string
