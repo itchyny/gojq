@@ -318,6 +318,9 @@ func TestWithFunction(t *testing.T) {
 		}
 		n++
 	}
+	if expected := 5; n != expected {
+		t.Errorf("expected: %v, got: %v", expected, n)
+	}
 	query, err = gojq.Parse(
 		`("f/0", "f/1", "g/0", "g/1") as $f | builtins | any(. == $f)`,
 	)
@@ -339,6 +342,9 @@ func TestWithFunction(t *testing.T) {
 			t.Errorf("expected: %v, got: %v (n = %d)", expected, v, n)
 		}
 		n++
+	}
+	if expected := 4; n != expected {
+		t.Errorf("expected: %v, got: %v", expected, n)
 	}
 }
 
@@ -395,6 +401,9 @@ func TestWithFunctionDuplicateName(t *testing.T) {
 		}
 		n++
 	}
+	if expected := 5; n != expected {
+		t.Errorf("expected: %v, got: %v", expected, n)
+	}
 	query, err = gojq.Parse(
 		`("f/0", "f/1", "f/2", "f/3") as $f | builtins | any(. == $f)`,
 	)
@@ -416,6 +425,9 @@ func TestWithFunctionDuplicateName(t *testing.T) {
 			t.Errorf("expected: %v, got: %v (n = %d)", expected, v, n)
 		}
 		n++
+	}
+	if expected := 4; n != expected {
+		t.Errorf("expected: %v, got: %v", expected, n)
 	}
 }
 
@@ -468,6 +480,9 @@ func TestWithFunctionMultipleArities(t *testing.T) {
 		}
 		n++
 	}
+	if expected := 5; n != expected {
+		t.Errorf("expected: %v, got: %v", expected, n)
+	}
 	query, err = gojq.Parse(
 		`("f/0", "f/1", "f/2", "f/3", "f/4", "f/5") as $f | builtins | any(. == $f)`,
 	)
@@ -489,6 +504,9 @@ func TestWithFunctionMultipleArities(t *testing.T) {
 			t.Errorf("expected: %v, got: %v (n = %d)", expected, v, n)
 		}
 		n++
+	}
+	if expected := 6; n != expected {
+		t.Errorf("expected: %v, got: %v", expected, n)
 	}
 }
 
@@ -603,6 +621,9 @@ func TestWithIterFunction(t *testing.T) {
 		}
 		n++
 	}
+	if expected := 16; n != expected {
+		t.Errorf("expected: %v, got: %v", expected, n)
+	}
 }
 
 func TestWithIterFunctionError(t *testing.T) {
@@ -640,6 +661,9 @@ func TestWithIterFunctionError(t *testing.T) {
 			}
 		}
 		n++
+	}
+	if expected := 7; n != expected {
+		t.Errorf("expected: %v, got: %v", expected, n)
 	}
 }
 
@@ -754,6 +778,9 @@ func TestWithFunctionWithModuleLoader(t *testing.T) {
 		}
 		n++
 	}
+	if expected := 5; n != expected {
+		t.Errorf("expected: %v, got: %v", expected, n)
+	}
 }
 
 func TestWithInputIter(t *testing.T) {
@@ -763,13 +790,13 @@ func TestWithInputIter(t *testing.T) {
 	}
 	code, err := gojq.Compile(
 		query,
-		gojq.WithInputIter(gojq.NewIter(1, 2, 3, 4, 5)),
+		gojq.WithInputIter(gojq.NewIter(0, 1, 2, 3, 4)),
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	iter := code.Run(nil)
-	n := 1
+	n := 0
 	for {
 		v, ok := iter.Next()
 		if !ok {
@@ -783,5 +810,8 @@ func TestWithInputIter(t *testing.T) {
 			t.Errorf("expected: %v, got: %v", n, v)
 		}
 		n++
+	}
+	if expected := 10; n != expected {
+		t.Errorf("expected: %v, got: %v", expected, n)
 	}
 }

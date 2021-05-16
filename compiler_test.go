@@ -150,7 +150,7 @@ func TestCodeCompile_OptimizeTailRec(t *testing.T) {
 		t.Errorf("expected: %v, got: %v", expected, got)
 	}
 	iter := code.Run(nil)
-	var n int
+	n := 0
 	for {
 		got, ok := iter.Next()
 		if !ok {
@@ -160,6 +160,9 @@ func TestCodeCompile_OptimizeTailRec(t *testing.T) {
 			t.Errorf("expected: %v, got: %v", n, got)
 		}
 		n++
+	}
+	if expected := 10; n != expected {
+		t.Errorf("expected: %v, got: %v", expected, n)
 	}
 }
 
@@ -207,7 +210,7 @@ func TestCodeRun_Race(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			iter := code.Run(nil)
-			var n int
+			n := 0
 			for {
 				got, ok := iter.Next()
 				if !ok {
@@ -217,6 +220,9 @@ func TestCodeRun_Race(t *testing.T) {
 					t.Errorf("expected: %v, got: %v", n, got)
 				}
 				n++
+			}
+			if expected := 10; n != expected {
+				t.Errorf("expected: %v, got: %v", expected, n)
 			}
 		}()
 	}

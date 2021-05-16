@@ -88,6 +88,9 @@ func TestQueryRun_Errors(t *testing.T) {
 		}
 		n++
 	}
+	if expected := 5; n != expected {
+		t.Errorf("expected: %v, got: %v", expected, n)
+	}
 }
 
 func TestQueryRun_ObjectError(t *testing.T) {
@@ -169,7 +172,7 @@ func TestQueryRun_Race(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			iter := query.Run(nil)
-			var n int
+			n := 0
 			for {
 				got, ok := iter.Next()
 				if !ok {
@@ -179,6 +182,9 @@ func TestQueryRun_Race(t *testing.T) {
 					t.Errorf("expected: %v, got: %v", n, got)
 				}
 				n++
+			}
+			if expected := 10; n != expected {
+				t.Errorf("expected: %v, got: %v", expected, n)
 			}
 		}()
 	}
