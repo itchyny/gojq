@@ -527,6 +527,43 @@ func TestWithFunctionValueError(t *testing.T) {
 	}
 }
 
+func TestWithFunctionCompileArgsError(t *testing.T) {
+	query, err := gojq.Parse("f(g)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = gojq.Compile(query,
+		gojq.WithFunction("f", 0, 1, func(interface{}, []interface{}) interface{} {
+			return 0
+		}),
+	)
+	if got, expected := err.Error(), "function not defined: g/0"; got != expected {
+		t.Errorf("expected: %v, got: %v", expected, got)
+	}
+}
+
+func TestWithFunctionArityError(t *testing.T) {
+	query, err := gojq.Parse("f")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct{ min, max int }{{3, 2}, {-1, 3}, {0, 31}, {-1, 31}} {
+		func() {
+			defer func() {
+				expected := fmt.Sprintf(`invalid arity for "f": %d, %d`, tc.min, tc.max)
+				if got := recover(); got != expected {
+					t.Errorf("expected: %v, got: %v", expected, got)
+				}
+			}()
+			t.Fatal(gojq.Compile(query,
+				gojq.WithFunction("f", tc.min, tc.max, func(interface{}, []interface{}) interface{} {
+					return 0
+				}),
+			))
+		}()
+	}
+}
+
 func TestWithIterFunction(t *testing.T) {
 	query, err := gojq.Parse("f * g(5; 10), h, 10")
 	if err != nil {
@@ -647,8 +684,8 @@ func TestWithIterFunctionPathError(t *testing.T) {
 		if !ok {
 			break
 		}
-		err := v.(error)
-		if got, expected := err.Error(), "invalid path on iterating against: gojq.Iter"; got != expected {
+		err, expected := v.(error), "invalid path on iterating against: gojq.Iter"
+		if got := err.Error(); got != expected {
 			t.Errorf("expected: %v, got: %v", expected, got)
 		}
 		break
@@ -661,7 +698,8 @@ func TestWithIterFunctionDefineError(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() {
-		if got, expected := recover(), `cannot define both iterator and non-iterator functions for "f"`; got != expected {
+		expected := `cannot define both iterator and non-iterator functions for "f"`
+		if got := recover(); got != expected {
 			t.Errorf("expected: %v, got: %v", expected, got)
 		}
 	}()
