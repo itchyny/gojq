@@ -7,8 +7,34 @@ type Iter interface {
 
 // NewIter creates a new Iter from values.
 func NewIter(values ...interface{}) Iter {
-	iter := sliceIter(values)
-	return &iter
+	switch len(values) {
+	case 0:
+		return emptyIter{}
+	case 1:
+		return &unitIter{value: values[0]}
+	default:
+		iter := sliceIter(values)
+		return &iter
+	}
+}
+
+type emptyIter struct{}
+
+func (emptyIter) Next() (interface{}, bool) {
+	return nil, false
+}
+
+type unitIter struct {
+	value interface{}
+	done  bool
+}
+
+func (iter *unitIter) Next() (interface{}, bool) {
+	if iter.done {
+		return nil, false
+	}
+	iter.done = true
+	return iter.value, true
 }
 
 type sliceIter []interface{}
