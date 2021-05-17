@@ -110,7 +110,7 @@ func TestCliRun(t *testing.T) {
 				if got, expected := errorReplacer.Replace(errStr), strings.TrimSpace(tc.Error); !strings.Contains(got, expected) {
 					t.Error("standard error output:\n" + cmp.Diff(expected, got))
 				}
-				if !strings.HasSuffix(errStr, "\n") {
+				if !strings.HasSuffix(errStr, "\n") && !strings.Contains(tc.Name, "stderr") {
 					t.Error(`standard error output should end with "\n"`)
 				}
 				if strings.HasSuffix(errStr, "\n\n") {

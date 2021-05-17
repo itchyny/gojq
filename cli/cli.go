@@ -364,7 +364,6 @@ func (cli *cli) funcDebug(v interface{}, _ []interface{}) interface{} {
 
 func (cli *cli) funcStderr(v interface{}, _ []interface{}) interface{} {
 	newEncoder(false, 0).marshal(v, cli.errStream)
-	cli.errStream.Write([]byte{'\n'})
 	return v
 }
 

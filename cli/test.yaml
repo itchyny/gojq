@@ -4025,14 +4025,7 @@
     }
     2
     "DEBUG:"
-  error: |
-    [{}]
-    {}
-    [1,{"a":2}]
-    1
-    {"a":2}
-    2
-    "DEBUG:"
+  error: '[{}]{}[1,{"a":2}]1{"a":2}2"DEBUG:"'
 
 - name: halt function
   args:
