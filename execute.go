@@ -306,11 +306,6 @@ loop:
 				err = &invalidPathError{x}
 				break loop
 			}
-		case opdebug:
-			if !backtrack {
-				return [2]interface{}{code.v, env.stack.top()}, true
-			}
-			backtrack = false
 		default:
 			panic(code.op)
 		}

@@ -43,8 +43,6 @@ func init() {
 	internalFuncs = map[string]function{
 		"empty":          argFunc0(nil),
 		"path":           argFunc1(nil),
-		"debug":          argFunc0(nil),
-		"stderr":         argFunc0(nil),
 		"env":            argFunc0(nil),
 		"builtins":       argFunc0(nil),
 		"input":          argFunc0(nil),

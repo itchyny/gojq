@@ -35,7 +35,6 @@ const (
 	opexpend
 	oppathbegin
 	oppathend
-	opdebug
 )
 
 func (op opcode) String() string {
@@ -94,8 +93,6 @@ func (op opcode) String() string {
 		return "pathbegin"
 	case oppathend:
 		return "pathend"
-	case opdebug:
-		return "debug"
 	default:
 		panic(op)
 	}

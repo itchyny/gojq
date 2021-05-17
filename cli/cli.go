@@ -217,6 +217,8 @@ Synopsis:
 		gojq.WithModuleLoader(gojq.NewModuleLoader(modulePaths)),
 		gojq.WithEnvironLoader(os.Environ),
 		gojq.WithVariables(cli.argnames),
+		gojq.WithFunction("debug", 0, 0, cli.funcDebug),
+		gojq.WithFunction("stderr", 0, 0, cli.funcStderr),
 		gojq.WithInputIter(iter),
 	)
 	if err != nil {
@@ -299,41 +301,26 @@ func (cli *cli) process(iter inputIter, code *gojq.Code) error {
 	}
 }
 
-func (cli *cli) printValues(v gojq.Iter) error {
+func (cli *cli) printValues(iter gojq.Iter) error {
 	m := cli.createMarshaler()
 	for {
-		m, outStream := m, cli.outStream
-		x, ok := v.Next()
+		v, ok := iter.Next()
 		if !ok {
 			break
 		}
-		switch v := x.(type) {
-		case error:
-			return v
-		case [2]interface{}:
-			if s, ok := v[0].(string); ok {
-				outStream = cli.errStream
-				compact := cli.outputCompact
-				cli.outputCompact = true
-				m = cli.createMarshaler()
-				cli.outputCompact = compact
-				if s == "STDERR:" {
-					x = v[1]
-				} else {
-					x = []interface{}{v[0], v[1]}
-				}
-			}
+		if err, ok := v.(error); ok {
+			return err
 		}
 		if cli.outputYAMLSeparator {
-			outStream.Write([]byte("---\n"))
+			cli.outStream.Write([]byte("---\n"))
 		} else {
 			cli.outputYAMLSeparator = cli.outputYAML
 		}
-		if err := m.marshal(x, outStream); err != nil {
+		if err := m.marshal(v, cli.outStream); err != nil {
 			return err
 		}
 		if cli.exitCodeError != nil {
-			if x == nil || x == false {
+			if v == nil || v == false {
 				cli.exitCodeError = &exitCodeError{exitCodeFalsyErr}
 			} else {
 				cli.exitCodeError = &exitCodeError{exitCodeOK}
@@ -341,9 +328,9 @@ func (cli *cli) printValues(v gojq.Iter) error {
 		}
 		if !cli.outputJoin && !cli.outputYAML {
 			if cli.outputNul {
-				outStream.Write([]byte{'\x00'})
+				cli.outStream.Write([]byte{'\x00'})
 			} else {
-				outStream.Write([]byte{'\n'})
+				cli.outStream.Write([]byte{'\n'})
 			}
 		}
 	}
@@ -367,6 +354,18 @@ func (cli *cli) createMarshaler() marshaler {
 		return &rawMarshaler{f}
 	}
 	return f
+}
+
+func (cli *cli) funcDebug(v interface{}, _ []interface{}) interface{} {
+	newEncoder(false, 0).marshal([]interface{}{"DEBUG:", v}, cli.errStream)
+	cli.errStream.Write([]byte{'\n'})
+	return v
+}
+
+func (cli *cli) funcStderr(v interface{}, _ []interface{}) interface{} {
+	newEncoder(false, 0).marshal(v, cli.errStream)
+	cli.errStream.Write([]byte{'\n'})
+	return v
 }
 
 func (cli *cli) printError(err error) {

@@ -884,12 +884,6 @@ func (c *compiler) compileFunc(e *Func) error {
 			}
 			c.codes[len(c.codes)-1] = &code{op: oppathend}
 			return nil
-		case "debug":
-			c.append(&code{op: opdebug, v: "DEBUG:"})
-			return nil
-		case "stderr":
-			c.append(&code{op: opdebug, v: "STDERR:"})
-			return nil
 		case "builtins":
 			return c.compileCallInternal(
 				[3]interface{}{c.funcBuiltins, 0, e.Name},
