@@ -161,6 +161,22 @@ func TestQueryRun_NumericTypes(t *testing.T) {
 	}
 }
 
+func TestQueryRun_Input(t *testing.T) {
+	query, err := gojq.Parse("input")
+	if err != nil {
+		t.Fatal(err)
+	}
+	iter := query.Run(nil)
+	v, ok := iter.Next()
+	if !ok {
+		t.Fatal("should emit an error but got no output")
+	}
+	err, expected := v.(error), "input(s)/0 is not allowed"
+	if got := err.Error(); got != expected {
+		t.Errorf("expected: %v, got: %v", expected, got)
+	}
+}
+
 func TestQueryRun_Race(t *testing.T) {
 	query, err := gojq.Parse("range(10)")
 	if err != nil {
