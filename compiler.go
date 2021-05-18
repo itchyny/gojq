@@ -437,7 +437,7 @@ func (c *compiler) compileAlt(l, r *Query) error {
 	return c.compileQuery(r)
 }
 
-func (c *compiler) compileQueryUpdate(l, r *Query, op Operator) (err error) {
+func (c *compiler) compileQueryUpdate(l, r *Query, op Operator) error {
 	switch op {
 	case OpAssign:
 		// .foo.bar = f => setpath(["foo", "bar"]; f)
@@ -735,7 +735,7 @@ func (c *compiler) compileLabel(e *Label) error {
 	return c.compileQuery(e.Body)
 }
 
-func (c *compiler) compileTerm(e *Term) (err error) {
+func (c *compiler) compileTerm(e *Term) error {
 	if len(e.SuffixList) > 0 {
 		s := e.SuffixList[len(e.SuffixList)-1]
 		t := *e // clone without changing e
