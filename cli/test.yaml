@@ -4027,6 +4027,14 @@
     "DEBUG:"
   error: '[{}]{}[1,{"a":2}]1{"a":2}2"DEBUG:"'
 
+- name: debug and stderr in builtins
+  args:
+    - 'builtins[] | select(test("debug|stderr"))'
+  input: 'null'
+  expected: |
+    "debug/0"
+    "stderr/0"
+
 - name: halt function
   args:
     - 'def f($n): if $n > 0 then $n, f($n - 1) else halt end; f(.), .'
@@ -4122,12 +4130,12 @@
   expected: |
     true
 
-- name: env in builtin
+- name: env in builtins
   args:
-    - 'builtins | contains(["env/0"])'
+    - 'builtins[] | select(test("env"))'
   input: 'null'
   expected: |
-    true
+    "env/0"
 
 - name: $ENV variable
   args:
