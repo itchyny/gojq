@@ -1,6 +1,7 @@
 package gojq
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"sort"
@@ -20,7 +21,7 @@ func (env *env) execute(bc *Code, v interface{}, vars ...interface{}) Iter {
 func (env *env) Next() (interface{}, bool) {
 	var err error
 	pc, callpc, index := env.pc, len(env.codes)-1, -1
-	backtrack, hasCtx := env.backtrack, env.ctx != nil
+	backtrack, hasCtx := env.backtrack, env.ctx != context.Background()
 	defer func() { env.pc, env.backtrack = pc, true }()
 loop:
 	for ; pc < len(env.codes); pc++ {
