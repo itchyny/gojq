@@ -6157,6 +6157,37 @@
   input: 'null'
   error: 'open testdata/6.json:'
 
+- name: $ARGS variable
+  args:
+    - --arg
+    - 'a'
+    - '1'
+    - --argjson
+    - 'b'
+    - '1'
+    - --slurpfile
+    - 'c'
+    - 'testdata/1.json'
+    - --rawfile
+    - 'd'
+    - 'testdata/1.json'
+    - '$ARGS | ., .named.a'
+  input: 'null'
+  expected: |
+    {
+      "named": {
+        "a": "1",
+        "b": 1,
+        "c": [
+          {
+            "foo": 10
+          }
+        ],
+        "d": "{\"foo\":10}\n"
+      }
+    }
+    "1"
+
 - name: exit status option
   args:
     - -e

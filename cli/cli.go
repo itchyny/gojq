@@ -177,6 +177,12 @@ Synopsis:
 		cli.argnames = append(cli.argnames, "$"+k)
 		cli.argvalues = append(cli.argvalues, string(val))
 	}
+	named := make(map[string]interface{}, len(cli.argnames))
+	for i, name := range cli.argnames {
+		named[name[1:]] = cli.argvalues[i]
+	}
+	cli.argnames = append(cli.argnames, "$ARGS")
+	cli.argvalues = append(cli.argvalues, map[string]interface{}{"named": named})
 	var arg, fname string
 	if opts.FromFile != "" {
 		src, err := ioutil.ReadFile(opts.FromFile)
