@@ -34,6 +34,7 @@ func WithVariables(variables []string) CompilerOption {
 // Specify the minimum and maximum count of the function arguments. These
 // values should satisfy 0 <= minarity <= maxarity <= 30, otherwise panics.
 // On handling numbers, you should take account to int, float64 and *big.Int.
+// These are the number types you are allowed to return, so do not return int64.
 // Refer to ValueError to return a value error just like built-in error function.
 // If you want to emit multiple values, call the empty function, accept a filter
 // for its argument, or call another built-in function, then use LoadInitModules
