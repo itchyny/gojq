@@ -6,6 +6,7 @@ on:
     - 'v*'
 
 jobs:
+
   release:
     name: Release
     runs-on: ubuntu-latest
@@ -36,16 +37,17 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Set variables
-      id: variables
-      run: |
-        git_tag_name="${GITHUB_REF#refs/tags/}"
-        echo "::set-output name=git_tag_name::${git_tag_name}"
-        git_tag_name="${git_tag_name#v}"
-        echo "::set-output name=release_tag_patch::${git_tag_name}"
-        echo "::set-output name=release_tag_minor::${git_tag_name%.*}"
-        echo "::set-output name=release_tag_major::${git_tag_name%%.*}"
-        echo "::set-output name=created::$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    - name: Docker metadata
+      uses: docker/metadata-action@v3
+      id: metadata
+      with:
+        images: |
+          ${{ github.repository }}
+          ghcr.io/${{ github.repository }}
+        tags: |
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
@@ -66,28 +68,11 @@ jobs:
         username: ${{ github.repository_owner }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build and release to Docker Hub and GitHub Container Registry
+    - name: Build and release Docker image
       uses: docker/build-push-action@v2
       with:
         context: .
         push: true
         platforms: linux/amd64, linux/arm64
-        tags: |
-          ${{ github.repository }}:latest
-          ${{ github.repository }}:${{ steps.variables.outputs.release_tag_patch }}
-          ${{ github.repository }}:${{ steps.variables.outputs.release_tag_minor }}
-          ${{ github.repository }}:${{ steps.variables.outputs.release_tag_major }}
-          ghcr.io/${{ github.repository }}:latest
-          ghcr.io/${{ github.repository }}:${{ steps.variables.outputs.release_tag_patch }}
-          ghcr.io/${{ github.repository }}:${{ steps.variables.outputs.release_tag_minor }}
-          ghcr.io/${{ github.repository }}:${{ steps.variables.outputs.release_tag_major }}
-        labels: |
-          org.opencontainers.image.title=${{ github.event.repository.name }}
-          org.opencontainers.image.description=${{ github.event.repository.description }}
-          org.opencontainers.image.url=${{ github.event.repository.html_url }}
-          org.opencontainers.image.documentation=${{ github.event.repository.html_url }}
-          org.opencontainers.image.source=${{ github.event.repository.clone_url }}
-          org.opencontainers.image.version=${{ steps.variables.outputs.git_tag_name }}
-          org.opencontainers.image.created=${{ steps.variables.outputs.created }}
-          org.opencontainers.image.revision=${{ github.sha }}
-          org.opencontainers.image.licenses=${{ github.event.repository.license.spdx_id }}
+        tags: ${{ steps.metadata.outputs.tags }}
+        labels: ${{ steps.metadata.outputs.labels }}
