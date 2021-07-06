@@ -176,7 +176,7 @@ loop:
 						break loop
 					}
 					for _, p := range ps {
-						env.paths.push([2]interface{}{p, w})
+						env.paths.push(pathValue{path: p, value: w})
 					}
 				}
 			default:
@@ -218,40 +218,40 @@ loop:
 				break loop
 			}
 			backtrack = false
-			var xs [][2]interface{}
+			var xs []pathValue
 			switch v := env.pop().(type) {
-			case [][2]interface{}:
+			case []pathValue:
 				xs = v
 			case []interface{}:
 				if !env.paths.empty() && env.expdepth == 0 &&
-					!reflect.DeepEqual(v, env.paths.top().([2]interface{})[1]) {
+					!reflect.DeepEqual(v, env.paths.top().(pathValue).value) {
 					err = &invalidPathIterError{v}
 					break loop
 				}
 				if len(v) == 0 {
 					break loop
 				}
-				xs = make([][2]interface{}, len(v))
+				xs = make([]pathValue, len(v))
 				for i, v := range v {
-					xs[i] = [2]interface{}{i, v}
+					xs[i] = pathValue{path: i, value: v}
 				}
 			case map[string]interface{}:
 				if !env.paths.empty() && env.expdepth == 0 &&
-					!reflect.DeepEqual(v, env.paths.top().([2]interface{})[1]) {
+					!reflect.DeepEqual(v, env.paths.top().(pathValue).value) {
 					err = &invalidPathIterError{v}
 					break loop
 				}
 				if len(v) == 0 {
 					break loop
 				}
-				xs = make([][2]interface{}, len(v))
+				xs = make([]pathValue, len(v))
 				var i int
 				for k, v := range v {
-					xs[i] = [2]interface{}{k, v}
+					xs[i] = pathValue{path: k, value: v}
 					i++
 				}
 				sort.Slice(xs, func(i, j int) bool {
-					return xs[i][0].(string) < xs[j][0].(string)
+					return xs[i].path.(string) < xs[j].path.(string)
 				})
 			case Iter:
 				if !env.paths.empty() && env.expdepth == 0 {
@@ -279,7 +279,7 @@ loop:
 				env.pushfork(code.op, pc)
 				env.pop()
 			}
-			env.push(xs[0][1])
+			env.push(xs[0].value)
 			if !env.paths.empty() && env.expdepth == 0 {
 				env.paths.push(xs[0])
 			}
@@ -289,7 +289,7 @@ loop:
 			env.expdepth--
 		case oppathbegin:
 			env.paths.push(env.expdepth)
-			env.paths.push([2]interface{}{nil, env.stack.top()})
+			env.paths.push(pathValue{value: env.stack.top()})
 			env.expdepth = 0
 		case oppathend:
 			if backtrack {
@@ -300,7 +300,7 @@ loop:
 			}
 			env.pop()
 			x := env.pop()
-			if reflect.DeepEqual(x, env.paths.top().([2]interface{})[1]) {
+			if reflect.DeepEqual(x, env.paths.top().(pathValue).value) {
 				env.push(env.poppaths())
 				env.expdepth = env.paths.pop().(int)
 			} else {
@@ -358,26 +358,30 @@ func (env *env) index(v [2]int) int {
 	return env.scopeOffset(v[0]) + v[1]
 }
 
+type pathValue struct {
+	path, value interface{}
+}
+
 func (env *env) pathEntries(name string, x interface{}, args []interface{}) ([]interface{}, error) {
 	switch name {
 	case "_index":
 		if env.expdepth > 0 {
 			return nil, nil
-		} else if !reflect.DeepEqual(args[0], env.paths.top().([2]interface{})[1]) {
+		} else if !reflect.DeepEqual(args[0], env.paths.top().(pathValue).value) {
 			return nil, &invalidPathError{x}
 		}
 		return []interface{}{args[1]}, nil
 	case "_slice":
 		if env.expdepth > 0 {
 			return nil, nil
-		} else if !reflect.DeepEqual(args[0], env.paths.top().([2]interface{})[1]) {
+		} else if !reflect.DeepEqual(args[0], env.paths.top().(pathValue).value) {
 			return nil, &invalidPathError{x}
 		}
 		return []interface{}{map[string]interface{}{"start": args[2], "end": args[1]}}, nil
 	case "getpath":
 		if env.expdepth > 0 {
 			return nil, nil
-		} else if !reflect.DeepEqual(x, env.paths.top().([2]interface{})[1]) {
+		} else if !reflect.DeepEqual(x, env.paths.top().(pathValue).value) {
 			return nil, &invalidPathError{x}
 		}
 		return args[0].([]interface{}), nil
@@ -389,11 +393,11 @@ func (env *env) pathEntries(name string, x interface{}, args []interface{}) ([]i
 func (env *env) poppaths() []interface{} {
 	var xs []interface{}
 	for {
-		p := env.paths.pop().([2]interface{})
-		if p[0] == nil {
+		p := env.paths.pop().(pathValue)
+		if p.path == nil {
 			break
 		}
-		xs = append(xs, p[0])
+		xs = append(xs, p.path)
 	}
 	for i := 0; i < len(xs)/2; i++ { // reverse
 		j := len(xs) - 1 - i
