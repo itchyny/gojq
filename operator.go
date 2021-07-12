@@ -428,6 +428,9 @@ func funcOpDiv(_, l, r interface{}) interface{} {
 				}
 				return &zeroDivisionError{l, r}
 			}
+			if l%r == 0 {
+				return l / r
+			}
 			return float64(l) / float64(r)
 		},
 		func(l, r float64) interface{} {
