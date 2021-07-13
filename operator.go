@@ -449,9 +449,9 @@ func funcOpDiv(_, l, r interface{}) interface{} {
 				}
 				return &zeroDivisionError{l, r}
 			}
-			x := new(big.Int).Div(l, r)
-			if new(big.Int).Mul(x, r).Cmp(l) == 0 {
-				return x
+			d, m := new(big.Int).DivMod(l, r, new(big.Int))
+			if m.Sign() == 0 {
+				return d
 			}
 			return bigToFloat(l) / bigToFloat(r)
 		},
