@@ -32,6 +32,14 @@ func (err *expectedArrayError) Error() string {
 	return "expected an array but got: " + typeErrorPreview(err.v)
 }
 
+type expectedStringError struct {
+	v interface{}
+}
+
+func (err *expectedStringError) Error() string {
+	return "expected a string but got: " + typeErrorPreview(err.v)
+}
+
 type iteratorError struct {
 	v interface{}
 }

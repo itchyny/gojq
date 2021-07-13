@@ -1382,7 +1382,54 @@
       28
     ]
 
-- name: index, rindex functions
+- name: index, rindex functions on arrays
+  args:
+    - '[index(0, [1, 2]), rindex(0, [1, 2]), indices(0, [1, 2])]'
+  input: 'null [] [0] [0, 1, 2, 1, 2, 1, 0, 1, 2]'
+  expected: |
+    [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+    [
+      null,
+      null,
+      null,
+      null,
+      [],
+      []
+    ]
+    [
+      0,
+      null,
+      0,
+      null,
+      [
+        0
+      ],
+      []
+    ]
+    [
+      0,
+      1,
+      6,
+      7,
+      [
+        0,
+        6
+      ],
+      [
+        1,
+        3,
+        7
+      ]
+    ]
+
+- name: index, rindex functions on strings
   args:
     - 'index(","), rindex(","), indices(",")'
   input: '"a,bc,def,ghij,klmno"'

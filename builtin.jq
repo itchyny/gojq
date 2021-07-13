@@ -63,13 +63,9 @@ def values: select(. != null);
 def scalars: select(type | . != "array" and . != "object");
 def leaf_paths: paths(scalars);
 
-def indices($x):
-  if type == "array" and ($x|type) == "array" then .[$x]
-  elif type == "array" then .[[$x]]
-  elif type == "string" and ($x|type) == "string" then explode | .[$x|explode]
-  else .[$x] end;
-def index($x): indices($x) | .[0];
-def rindex($x): indices($x) | .[-1:][0];
+def indices($x): _indices($x);
+def index($x): _lindex($x);
+def rindex($x): _rindex($x);
 def inside(xs): . as $x | xs | contains($x);
 def startswith($x):
   if type == "string" then
