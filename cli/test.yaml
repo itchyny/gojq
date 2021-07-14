@@ -6365,8 +6365,7 @@
     - '-'
     - '{ $foo }'
   input: 'null'
-  error: |
-    open -: no such file or directory
+  error: "open -:"
 
 - name: rawfile option
   args:
