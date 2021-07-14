@@ -110,6 +110,10 @@ func (e *encoder) encodeString(s string, color []byte) {
 			switch b {
 			case '\\', '"':
 				e.w.WriteByte(b)
+			case '\b':
+				e.w.WriteByte('b')
+			case '\f':
+				e.w.WriteByte('f')
 			case '\n':
 				e.w.WriteByte('n')
 			case '\r':

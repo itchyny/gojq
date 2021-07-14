@@ -34,8 +34,8 @@ func TestMarshal(t *testing.T) {
 		},
 		{
 			name:     "strings",
-			value:    []interface{}{"", "abcde", "foo\x00\x1f\r\t\n\f\b<=>!\"#$%'& \\\x7fbar"},
-			expected: `["","abcde","foo\u0000\u001f\r\t\n\u000c\u0008<=>!\"#$%'& \\\u007fbar"]`,
+			value:    []interface{}{"", "abcde", "foo\x00\x1f\r\n\t\f\b<=>!\"#$%'& \\\x7fbar"},
+			expected: `["","abcde","foo\u0000\u001f\r\n\t\f\b<=>!\"#$%'& \\\u007fbar"]`,
 		},
 		{
 			name:     "arrays",

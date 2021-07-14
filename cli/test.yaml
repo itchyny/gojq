@@ -48,16 +48,16 @@
 - name: string
   args:
     - '.'
-  input: '"Hello, world!\n\t\uff06"'
+  input: '"Hello, world!\r\n\t\f\b\uff06"'
   expected: |
-    "Hello, world!\n\t＆"
+    "Hello, world!\r\n\t\f\b＆"
 
 - name: string query
   args:
-    - '" Hello, world! \n\t\uff10 "'
+    - '" Hello, world! \r\n\t\f\b\uff10 "'
   input: '0'
   expected: |
-    " Hello, world! \n\t０ "
+    " Hello, world! \r\n\t\f\b０ "
 
 - name: string query error
   args:
