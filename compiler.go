@@ -729,10 +729,35 @@ func (c *compiler) compileForeach(e *Foreach) error {
 
 func (c *compiler) compileLabel(e *Label) error {
 	c.appendCodeInfo(e)
+	v := c.pushVariable("$%" + e.Ident[1:])
 	defer c.lazy(func() *code {
-		return &code{op: opforklabel, v: e.Ident}
+		return &code{op: opforklabel, v: v}
 	})()
 	return c.compileQuery(e.Body)
+}
+
+func (c *compiler) compileBreak(label string) error {
+	var v [2]int
+	name, scope, found := "$%"+label[1:], c.scopes[len(c.scopes)-1], false
+	for j := len(scope.variables) - 1; j >= 0; j-- {
+		if w := scope.variables[j]; w.name == name {
+			v, found = w.index, true
+			break
+		}
+	}
+	if !found {
+		return &breakError{label, nil}
+	}
+	c.append(&code{op: oppop})
+	c.append(&code{op: opload, v: v})
+	c.append(&code{op: opcall, v: [3]interface{}{
+		func(v interface{}, _ []interface{}) interface{} {
+			return &breakError{label, v}
+		},
+		0,
+		"_break",
+	}})
+	return nil
 }
 
 func (c *compiler) compileTerm(e *Term) error {
@@ -788,8 +813,7 @@ func (c *compiler) compileTerm(e *Term) error {
 	case TermTypeLabel:
 		return c.compileLabel(e.Label)
 	case TermTypeBreak:
-		c.append(&code{op: opconst, v: e.Break})
-		return c.compileCall("_break", nil)
+		return c.compileBreak(e.Break)
 	case TermTypeQuery:
 		defer c.newScopeDepth()()
 		return c.compileQuery(e.Query)

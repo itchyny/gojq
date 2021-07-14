@@ -2502,6 +2502,13 @@
     3
     6
 
+- name: duplicate label name
+  args:
+    - 'label $x | (label $x | break $x), .'
+  input: '1'
+  expected: |
+    1
+
 - name: invalid label name
   args:
     - 'label foo | .'
@@ -2512,12 +2519,20 @@
               ^  unexpected token "foo"
   exit_code: 3
 
-- name: label not defined error for break syntax
+- name: label not defined error for break without label
   args:
     - 'break $test'
   input: '1'
   error: |
     label not defined: $test
+  exit_code: 3
+
+- name: label not defined error for break with label in parenthesis
+  args:
+    - '(label $x | 1) | break $x'
+  input: '1'
+  error: |
+    label not defined: $x
   exit_code: 3
 
 - name: invalid break name
@@ -2532,10 +2547,20 @@
 
 - name: invalid break syntax
   args:
-    - 'label $x | _break'
-  input: 'null'
+    - 'label $x | break'
+  input: '0'
   error: |
-    _break cannot be applied to: null
+    invalid query: label $x | break
+        label $x | break
+                        ^  unexpected token <EOF>
+  exit_code: 3
+
+- name: variable and label name conflict
+  args:
+    - '. as $x | (label $x | break $x), $x'
+  input: '0'
+  expected: |
+    0
 
 - name: string interpolation
   args:
@@ -3002,6 +3027,21 @@
     null
     null
     null
+
+- name: first/1 function in first/1 argument
+  args:
+    - 'first((null, null) | first(null)), isempty(first(null))'
+  input: 'null'
+  expected: |
+    null
+    false
+
+- name: all/2 function in first/1 argument
+  args:
+    - 'first(range(1; 200) | . as $x | select(all(range(1; 7); $x % . == 0)))'
+  input: 'null'
+  expected: |
+    60
 
 - name: limit/2 function
   args:

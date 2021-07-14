@@ -75,7 +75,6 @@ func init() {
 		"_indices":       argFunc1(funcIndices),
 		"_lindex":        argFunc1(funcLindex),
 		"_rindex":        argFunc1(funcRindex),
-		"_break":         argFunc0(funcBreak),
 		"_plus":          argFunc0(funcOpPlus),
 		"_negate":        argFunc0(funcOpNegate),
 		"_add":           argFunc2(funcOpAdd),
@@ -946,13 +945,6 @@ func indexFunc(v, x interface{}, f func([]interface{}, []interface{}) interface{
 	default:
 		return &expectedArrayError{v}
 	}
-}
-
-func funcBreak(v interface{}) interface{} {
-	if v, ok := v.(string); ok {
-		return &breakError{v}
-	}
-	return &funcTypeError{"_break", v}
 }
 
 func funcMinBy(v, x interface{}) interface{} {

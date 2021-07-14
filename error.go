@@ -235,6 +235,7 @@ func (err *variableNameError) Error() string {
 
 type breakError struct {
 	n string
+	v interface{}
 }
 
 func (err *breakError) Error() string {

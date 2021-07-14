@@ -132,12 +132,17 @@ loop:
 			}
 		case opforklabel:
 			if backtrack {
-				if e, ok := err.(*breakError); ok && code.v.(string) == e.n {
+				label := env.pop()
+				if e, ok := err.(*breakError); ok && e.v == label {
 					err = nil
 				}
 				break loop
 			} else {
+				env.push(env.label)
 				env.pushfork(code.op, pc)
+				env.pop()
+				env.values[env.index(code.v.([2]int))] = env.label
+				env.label++
 			}
 		case opbacktrack:
 			break loop
