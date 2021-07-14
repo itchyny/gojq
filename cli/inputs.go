@@ -64,6 +64,7 @@ func (ir *inputReader) getContents(offset *int64, line *int) string {
 type inputIter interface {
 	gojq.Iter
 	io.Closer
+	Name() string
 }
 
 type jsonInputIter struct {
@@ -114,6 +115,10 @@ func (i *jsonInputIter) Close() error {
 	return nil
 }
 
+func (i *jsonInputIter) Name() string {
+	return i.fname
+}
+
 type nullInputIter struct {
 	err error
 }
@@ -133,6 +138,10 @@ func (i *nullInputIter) Next() (interface{}, bool) {
 func (i *nullInputIter) Close() error {
 	i.err = io.EOF
 	return nil
+}
+
+func (i *nullInputIter) Name() string {
+	return ""
 }
 
 type filesInputIter struct {
@@ -186,13 +195,21 @@ func (i *filesInputIter) Close() error {
 	return nil
 }
 
+func (i *filesInputIter) Name() string {
+	if i.file != nil {
+		return i.file.Name()
+	}
+	return ""
+}
+
 type rawInputIter struct {
 	scanner *bufio.Scanner
+	fname   string
 	err     error
 }
 
-func newRawInputIter(r io.Reader, _ string) inputIter {
-	return &rawInputIter{scanner: bufio.NewScanner(r)}
+func newRawInputIter(r io.Reader, fname string) inputIter {
+	return &rawInputIter{scanner: bufio.NewScanner(r), fname: fname}
 }
 
 func (i *rawInputIter) Next() (interface{}, bool) {
@@ -212,6 +229,10 @@ func (i *rawInputIter) Next() (interface{}, bool) {
 func (i *rawInputIter) Close() error {
 	i.err = io.EOF
 	return nil
+}
+
+func (i *rawInputIter) Name() string {
+	return i.fname
 }
 
 type streamInputIter struct {
@@ -262,6 +283,10 @@ func (i *streamInputIter) Close() error {
 	return nil
 }
 
+func (i *streamInputIter) Name() string {
+	return i.fname
+}
+
 type yamlInputIter struct {
 	dec   *yaml.Decoder
 	ir    *inputReader
@@ -294,6 +319,10 @@ func (i *yamlInputIter) Next() (interface{}, bool) {
 func (i *yamlInputIter) Close() error {
 	i.err = io.EOF
 	return nil
+}
+
+func (i *yamlInputIter) Name() string {
+	return i.fname
 }
 
 type slurpInputIter struct {
@@ -334,6 +363,10 @@ func (i *slurpInputIter) Close() error {
 	return nil
 }
 
+func (i *slurpInputIter) Name() string {
+	return i.iter.Name()
+}
+
 type slurpRawInputIter struct {
 	iter inputIter
 	err  error
@@ -370,4 +403,8 @@ func (i *slurpRawInputIter) Close() error {
 		i.err = io.EOF
 	}
 	return nil
+}
+
+func (i *slurpRawInputIter) Name() string {
+	return i.iter.Name()
 }

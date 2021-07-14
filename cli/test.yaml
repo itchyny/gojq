@@ -4134,6 +4134,95 @@
     "debug/0"
     "stderr/0"
 
+- name: input_filename function with stdin input
+  args:
+    - 'input_filename'
+  input: '0 1 2'
+  expected: |
+    "<stdin>"
+    "<stdin>"
+    "<stdin>"
+
+- name: input_filename function with null input option
+  args:
+    - -n
+    - 'input_filename'
+  input: '0'
+  expected: |
+    null
+
+- name: input_filename function with raw strings input option
+  args:
+    - --raw-input
+    - 'input_filename'
+  input: |
+    1
+    2
+    3
+  expected: |
+    "<stdin>"
+    "<stdin>"
+    "<stdin>"
+
+- name: input_filename function with slurp option
+  args:
+    - --slurp
+    - 'input_filename'
+  input: |
+    1
+    2
+    3
+  expected: |
+    "<stdin>"
+
+- name: input_filename function with input and slurp option
+  args:
+    - --raw-input
+    - --slurp
+    - 'input_filename'
+  input: |
+    1
+    2
+    3
+  expected: |
+    "<stdin>"
+
+- name: input_filename function with json file arguments
+  args:
+    - 'input_filename'
+    - 'testdata/1.json'
+    - 'testdata/2.json'
+  input: '0'
+  expected: |
+    "testdata/1.json"
+    "testdata/2.json"
+
+- name: input_filename function with yaml input option
+  args:
+    - --yaml-input
+    - 'input_filename'
+  input: '0'
+  expected: |
+    "<stdin>"
+
+- name: input_filename function with yaml file arguments
+  args:
+    - --yaml-input
+    - 'input_filename'
+    - 'testdata/1.yaml'
+  input: '0'
+  expected: |
+    "testdata/1.yaml"
+    "testdata/1.yaml"
+    "testdata/1.yaml"
+
+- name: input_filename in builtins
+  args:
+    - 'builtins[] | select(test("input_filename"))'
+  input: 'null'
+  expected: |
+    "input_filename/0"
+
 - name: halt function
   args:
     - 'def f($n): if $n > 0 then $n, f($n - 1) else halt end; f(.), .'

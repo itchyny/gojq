@@ -225,6 +225,14 @@ Synopsis:
 		gojq.WithVariables(cli.argnames),
 		gojq.WithFunction("debug", 0, 0, cli.funcDebug),
 		gojq.WithFunction("stderr", 0, 0, cli.funcStderr),
+		gojq.WithFunction("input_filename", 0, 0,
+			func(interface{}, []interface{}) interface{} {
+				if fname := iter.Name(); fname != "" {
+					return fname
+				}
+				return nil
+			},
+		),
 		gojq.WithInputIter(iter),
 	)
 	if err != nil {
