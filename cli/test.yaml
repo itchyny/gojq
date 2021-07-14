@@ -4197,6 +4197,20 @@
     "testdata/1.json"
     "testdata/2.json"
 
+- name: input_filename function with hyphen for stdin
+  args:
+    - 'input_filename'
+    - '-'
+    - 'testdata/1.json'
+    - '-'
+    - 'testdata/2.json'
+    - '-'
+  input: '0'
+  expected: |
+    "<stdin>"
+    "testdata/1.json"
+    "testdata/2.json"
+
 - name: input_filename function with yaml input option
   args:
     - --yaml-input
@@ -5566,6 +5580,18 @@
       "bar"
     ]
 
+- name: yaml input option with hyphen for stdin
+  args:
+    - --yaml-input
+    - '.'
+    - '-'
+  input: |
+    foo: 1
+  expected: |
+    {
+      "foo": 1
+    }
+
 - name: yaml input option error
   args:
     - --yaml-input
@@ -5914,6 +5940,14 @@
     {
       "bar": []
     }
+
+- name: hyphen for stdin
+  args:
+    - '.'
+    - '-'
+  input: '{}'
+  expected: |
+    {}
 
 - name: json file arguments
   args:
@@ -6323,6 +6357,16 @@
     invalid json: testdata/1.jq
         .foo.bar
         ^  invalid character '.' looking for beginning of value
+
+- name: slurpfile option error
+  args:
+    - --slurpfile
+    - 'foo'
+    - '-'
+    - '{ $foo }'
+  input: 'null'
+  error: |
+    open -: no such file or directory
 
 - name: rawfile option
   args:

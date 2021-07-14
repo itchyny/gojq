@@ -147,13 +147,16 @@ func (i *nullInputIter) Name() string {
 type filesInputIter struct {
 	newIter func(io.Reader, string) inputIter
 	fnames  []string
+	stdin   io.Reader
 	iter    inputIter
-	file    *os.File
+	file    io.Reader
 	err     error
 }
 
-func newFilesInputIter(newIter func(io.Reader, string) inputIter, fnames []string) inputIter {
-	return &filesInputIter{newIter: newIter, fnames: fnames}
+func newFilesInputIter(
+	newIter func(io.Reader, string) inputIter, fnames []string, stdin io.Reader,
+) inputIter {
+	return &filesInputIter{newIter: newIter, fnames: fnames, stdin: stdin}
 }
 
 func (i *filesInputIter) Next() (interface{}, bool) {
@@ -168,11 +171,15 @@ func (i *filesInputIter) Next() (interface{}, bool) {
 			}
 			fname := i.fnames[0]
 			i.fnames = i.fnames[1:]
-			file, err := os.Open(fname)
-			if err != nil {
-				return err, true
+			if fname == "-" && i.stdin != nil {
+				i.file, fname = i.stdin, "<stdin>"
+			} else {
+				file, err := os.Open(fname)
+				if err != nil {
+					return err, true
+				}
+				i.file = file
 			}
-			i.file = file
 			if i.iter != nil {
 				i.iter.Close()
 			}
@@ -181,14 +188,18 @@ func (i *filesInputIter) Next() (interface{}, bool) {
 		if v, ok := i.iter.Next(); ok {
 			return v, ok
 		}
-		i.file.Close()
+		if r, ok := i.file.(io.Closer); ok && i.file != i.stdin {
+			r.Close()
+		}
 		i.file = nil
 	}
 }
 
 func (i *filesInputIter) Close() error {
 	if i.file != nil {
-		i.file.Close()
+		if r, ok := i.file.(io.Closer); ok && i.file != i.stdin {
+			r.Close()
+		}
 		i.file = nil
 		i.err = io.EOF
 	}
@@ -196,8 +207,8 @@ func (i *filesInputIter) Close() error {
 }
 
 func (i *filesInputIter) Name() string {
-	if i.file != nil {
-		return i.file.Name()
+	if i.iter != nil {
+		return i.iter.Name()
 	}
 	return ""
 }

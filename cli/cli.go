@@ -260,7 +260,9 @@ Synopsis:
 }
 
 func slurpFile(name string) (interface{}, error) {
-	iter := newSlurpInputIter(newFilesInputIter(newJSONInputIter, []string{name}))
+	iter := newSlurpInputIter(
+		newFilesInputIter(newJSONInputIter, []string{name}, nil),
+	)
 	defer iter.Close()
 	val, _ := iter.Next()
 	if err, ok := val.(error); ok {
@@ -293,7 +295,7 @@ func (cli *cli) createInputIter(args []string) (iter inputIter) {
 	if len(args) == 0 {
 		return newIter(cli.inStream, "<stdin>")
 	}
-	return newFilesInputIter(newIter, args)
+	return newFilesInputIter(newIter, args, cli.inStream)
 }
 
 func (cli *cli) process(iter inputIter, code *gojq.Code) error {
