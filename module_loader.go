@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type moduleLoader struct {
@@ -136,21 +137,25 @@ func parseModule(path, cnt string) (*Query, error) {
 }
 
 func searchPath(meta map[string]interface{}) string {
-	x, ok := meta["$$path"]
-	if !ok {
-		return ""
+	var path string
+	if x, ok := meta["$$path"]; ok {
+		path, _ = x.(string)
 	}
-	path, ok := x.(string)
-	if !ok {
-		return ""
-	}
-	x, ok = meta["search"]
+	x, ok := meta["search"]
 	if !ok {
 		return ""
 	}
 	s, ok := x.(string)
 	if !ok {
 		return ""
+	}
+	if strings.HasPrefix(s, "~") {
+		if homeDir, err := os.UserHomeDir(); err == nil {
+			return filepath.Join(homeDir, s[1:])
+		}
+	}
+	if path == "" {
+		return s
 	}
 	return filepath.Join(filepath.Dir(path), s)
 }

@@ -6170,6 +6170,15 @@
   expected: |
     [1,2,{"foo":42}]
 
+- name: search directory in query
+  args:
+    - 'include "m2" { search: "testdata/m2" }; g'
+  input: '0'
+  expected: |
+    0
+    43
+    44
+
 - name: empty module
   args:
     - -L
