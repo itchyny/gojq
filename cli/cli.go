@@ -97,7 +97,7 @@ func (cli *cli) runInternal(args []string) (err error) {
 	var opts flagopts
 	args, err = flags.NewParser(
 		&opts, flags.HelpFlag|flags.PassDoubleDash,
-	).ParseArgs(args)
+	).ParseArgs(adjustArgs(args))
 	if err != nil {
 		if err, ok := err.(*flags.Error); ok && err.Type == flags.ErrHelp {
 			fmt.Fprintf(cli.outStream, `%[1]s - Go implementation of jq
@@ -257,6 +257,30 @@ Synopsis:
 		iter = newNullInputIter()
 	}
 	return cli.process(iter, code)
+}
+
+// insert double dash to recognize query with leading hyphen
+func adjustArgs(args []string) []string {
+	for i := len(args) - 1; i >= 0; i-- {
+		if arg := args[i]; strings.HasPrefix(arg, "-") {
+			if strings.ContainsAny(arg, " .|,$?+*/%=!<>@()[]") {
+				j, hasDoubleDash := i, false
+				for ; j >= 0; j-- {
+					if args[j] == "--" {
+						hasDoubleDash = true
+						break
+					}
+				}
+				if !hasDoubleDash {
+					args = append(args, "")
+					copy(args[i+1:], args[i:])
+					args[i] = "--"
+				}
+			}
+			break
+		}
+	}
+	return args
 }
 
 func slurpFile(name string) (interface{}, error) {

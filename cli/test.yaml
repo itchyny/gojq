@@ -4961,6 +4961,13 @@
   input: '["foo",[{},{}],1,[2,3]]'
   expected: "foo\x00[\n  {},\n  {}\n]\x001\x00[\n  2,\n  3\n]\x00"
 
+- name: nul output option at the last argument
+  args:
+    - '.[]'
+    - '-0'
+  input: '["foo",1,2,3]'
+  expected: "foo\x001\x002\x003\x00"
+
 - name: color output option
   args:
     - -C
@@ -6478,10 +6485,102 @@
   input: 'null'
   exit_code: 4
 
+- name: query with leading hyphen
+  args:
+    - '-.'
+  input: '1'
+  expected: |
+    -1
+
+- name: query with leading hyphen after an argument
+  args:
+    - -r
+    - '-.'
+  input: '1'
+  expected: |
+    -1
+
+- name: query with leading -0 and spaces
+  args:
+    - '-0 + .'
+  input: '1'
+  expected: |
+    1
+
+- name: query with leading -0 but no spaces
+  args:
+    - '-0.1'
+  input: '1'
+  expected: |
+    -0.1
+
+- name: query with leading -0 before json files
+  args:
+    - -c
+    - '-0 * 1'
+    - 'testdata/1.json'
+    - 'testdata/2.json'
+  input: '1'
+  expected: |
+    0
+    0
+
+- name: double dash
+  args:
+    - '--'
+    - '.'
+  input: '1'
+  expected: |
+    1
+
+- name: double dash with argument with leading hyphen
+  args:
+    - '--'
+    - '-.'
+  input: '1'
+  expected: |
+    -1
+
+- name: double dash with argument with leading -0
+  args:
+    - '--'
+    - '-0'
+  input: '1'
+  expected: |
+    0
+
+- name: double dash in arguments with leading -0
+  args:
+    - '-0'
+    - '--'
+    - '-0'
+  input: '1'
+  expected: "0\x00"
+
+- name: double double dash
+  args:
+    - '--'
+    - '--'
+    - '.'
+  input: '1'
+  error: |
+    invalid query: --
+        --
+          ^  unexpected token <EOF>
+  exit_code: 3
+
 - name: invalid option error
   args:
     - -q
     - '.'
   error: |
     unknown flag `q'
+  exit_code: 2
+
+- name: invalid option error with leading -0
+  args:
+    - -0nep
+    - '.'
+  error: |
+    unknown flag `p'
   exit_code: 2
