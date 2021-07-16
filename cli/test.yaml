@@ -3,14 +3,14 @@
   expected: ''
 
 - name: empty query
-  args :
+  args:
     - ''
   input: '128'
   expected: |
     128
 
 - name: comment only query
-  args :
+  args:
     - '# comment'
   input: '128'
   expected: |
