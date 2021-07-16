@@ -137,10 +137,6 @@ func parseModule(path, cnt string) (*Query, error) {
 }
 
 func searchPath(meta map[string]interface{}) string {
-	var path string
-	if x, ok := meta["$$path"]; ok {
-		path, _ = x.(string)
-	}
 	x, ok := meta["search"]
 	if !ok {
 		return ""
@@ -149,10 +145,17 @@ func searchPath(meta map[string]interface{}) string {
 	if !ok {
 		return ""
 	}
+	if filepath.IsAbs(s) {
+		return s
+	}
 	if strings.HasPrefix(s, "~") {
 		if homeDir, err := os.UserHomeDir(); err == nil {
 			return filepath.Join(homeDir, s[1:])
 		}
+	}
+	var path string
+	if x, ok := meta["$$path"]; ok {
+		path, _ = x.(string)
 	}
 	if path == "" {
 		return s
