@@ -1408,18 +1408,20 @@ func (c *compiler) lazy(f func() *code) func() {
 
 func (c *compiler) optimizeTailRec() {
 	var pcs []int
-	targets := map[int]bool{}
+	targets := map[int]struct{}{}
 L:
 	for i, l := 0, len(c.codes); i < l; i++ {
 		switch c.codes[i].op {
 		case opscope:
 			pcs = append(pcs, i)
 			if c.codes[i].v.([2]int)[1] == 0 {
-				targets[i] = true
+				targets[i] = struct{}{}
 			}
 		case opcall:
 			if j, ok := c.codes[i].v.(int); !ok ||
-				len(pcs) == 0 || pcs[len(pcs)-1] != j || !targets[j] {
+				len(pcs) == 0 || pcs[len(pcs)-1] != j {
+				break
+			} else if _, ok := targets[j]; !ok {
 				break
 			}
 			for j := i + 1; j < l; {
