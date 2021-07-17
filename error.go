@@ -80,6 +80,15 @@ func (err *expectedStartEndError) Error() string {
 	return `expected "start" and "end" for slicing but got: ` + typeErrorPreview(err.v)
 }
 
+type lengthMismatchError struct {
+	name string
+	v, x []interface{}
+}
+
+func (err *lengthMismatchError) Error() string {
+	return "length mismatch in " + err.name + ": " + typeErrorPreview(err.v) + ", " + typeErrorPreview(err.x)
+}
+
 type inputNotAllowedError struct{}
 
 func (*inputNotAllowedError) Error() string {

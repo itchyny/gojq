@@ -957,7 +957,7 @@ func funcMinBy(v, x interface{}) interface{} {
 		return &expectedArrayError{x}
 	}
 	if len(vs) != len(xs) {
-		panic("length mismatch in min_by")
+		return &lengthMismatchError{"min_by", vs, xs}
 	}
 	return funcMinMaxBy(vs, xs, true)
 }
@@ -972,7 +972,7 @@ func funcMaxBy(v, x interface{}) interface{} {
 		return &expectedArrayError{x}
 	}
 	if len(vs) != len(xs) {
-		panic("length mismatch in max_by")
+		return &lengthMismatchError{"max_by", vs, xs}
 	}
 	return funcMinMaxBy(vs, xs, false)
 }
@@ -995,7 +995,7 @@ type sortItem struct {
 }
 
 func funcSortBy(v, x interface{}) interface{} {
-	items, err := sortItems(v, x)
+	items, err := sortItems("sort_by", v, x)
 	if err != nil {
 		return err
 	}
@@ -1007,7 +1007,7 @@ func funcSortBy(v, x interface{}) interface{} {
 }
 
 func funcGroupBy(v, x interface{}) interface{} {
-	items, err := sortItems(v, x)
+	items, err := sortItems("group_by", v, x)
 	if err != nil {
 		return err
 	}
@@ -1024,7 +1024,7 @@ func funcGroupBy(v, x interface{}) interface{} {
 }
 
 func funcUniqueBy(v, x interface{}) interface{} {
-	items, err := sortItems(v, x)
+	items, err := sortItems("unique_by", v, x)
 	if err != nil {
 		return err
 	}
@@ -1038,7 +1038,7 @@ func funcUniqueBy(v, x interface{}) interface{} {
 	return rs
 }
 
-func sortItems(v, x interface{}) ([]*sortItem, error) {
+func sortItems(name string, v, x interface{}) ([]*sortItem, error) {
 	vs, ok := v.([]interface{})
 	if !ok {
 		return nil, &expectedArrayError{v}
@@ -1048,7 +1048,7 @@ func sortItems(v, x interface{}) ([]*sortItem, error) {
 		return nil, &expectedArrayError{x}
 	}
 	if len(vs) != len(xs) {
-		panic("length mismatch")
+		return nil, &lengthMismatchError{name, vs, xs}
 	}
 	items := make([]*sortItem, len(vs))
 	for i, v := range vs {
