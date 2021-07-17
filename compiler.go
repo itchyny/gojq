@@ -96,7 +96,7 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 	scope := c.newScope()
 	c.scopes = []*scopeinfo{scope}
 	defer c.lazy(func() *code {
-		return &code{op: opscope, v: [3]int{scope.id, scope.variablecnt, 0}}
+		return &code{op: opscope, v: [2]int{scope.id, scope.variablecnt}}
 	})()
 	if c.moduleLoader != nil {
 		if moduleLoader, ok := c.moduleLoader.(interface {
@@ -284,7 +284,7 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	scope := c.newScope()
 	c.scopes = append(c.scopes, scope)
 	defer c.lazy(func() *code {
-		return &code{op: opscope, v: [3]int{scope.id, scope.variablecnt, len(e.Args)}}
+		return &code{op: opscope, v: [2]int{scope.id, scope.variablecnt}}
 	})()
 	if len(e.Args) > 0 {
 		v := c.newVariable()
@@ -1414,7 +1414,7 @@ L:
 		switch c.codes[i].op {
 		case opscope:
 			pcs = append(pcs, i)
-			if c.codes[i].v.([3]int)[2] == 0 {
+			if c.codes[i].v.([2]int)[1] == 0 {
 				targets[i] = true
 			}
 		case opcall:

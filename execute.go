@@ -194,7 +194,7 @@ loop:
 			pc, callpc, index = xs[0], pc, xs[1]
 			goto loop
 		case opscope:
-			xs := code.v.([3]int)
+			xs := code.v.([2]int)
 			var i, l int
 			if index == env.scopes.index {
 				i = index
