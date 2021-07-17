@@ -1697,12 +1697,26 @@
     128
     2147483648
 
-- name: function declaration and recursive call requiring tail call optimization
+- name: function declaration and recursive tail call
   args:
-    - 'def f: . as $x | $x, ($x + 1 | f); last(limit(100000; f))'
+    - 'def f: . as $x | $x, ($x + 1 | f); last(limit(100; f))'
   input: '0'
   expected: |
-    99999
+    99
+
+- name: function declaration and recursive tail call
+  args:
+    - 'def f: . as $x | $x, (if $x < 3 then $x + 1 | f else empty end), $x; f'
+  input: '0'
+  expected: |
+    0
+    1
+    2
+    3
+    3
+    2
+    1
+    0
 
 - name: function declaration with duplicate function names
   args:
