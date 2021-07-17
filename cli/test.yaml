@@ -1697,14 +1697,14 @@
     128
     2147483648
 
-- name: function declaration and recursive tail call
+- name: function declaration and recursive call
   args:
     - 'def f: . as $x | $x, ($x + 1 | f); last(limit(100; f))'
   input: '0'
   expected: |
     99
 
-- name: function declaration and recursive tail call
+- name: function declaration and recursive call
   args:
     - 'def f: . as $x | $x, (if $x < 3 then $x + 1 | f else empty end), $x; f'
   input: '0'
@@ -2522,6 +2522,18 @@
     1
     3
     6
+
+- name: label in recursive call
+  args:
+    - 'def f: label $x | if . < 5 then ., (. + 1 | f, break $x, .) else . end; f'
+  input: '0'
+  expected: |
+    0
+    1
+    2
+    3
+    4
+    5
 
 - name: duplicate label name
   args:
