@@ -245,6 +245,18 @@ func (c *compiler) pushVariable(name string) [2]int {
 	return v
 }
 
+func (c *compiler) lookupVariable(name string) ([2]int, error) {
+	for i := len(c.scopes) - 1; i >= 0; i-- {
+		s := c.scopes[i]
+		for j := len(s.variables) - 1; j >= 0; j-- {
+			if w := s.variables[j]; w.name == name {
+				return w.index, nil
+			}
+		}
+	}
+	return [2]int{}, &variableNotFoundError{name}
+}
+
 func (c *compiler) newScope() *scopeinfo {
 	i := c.scopecnt // do not use len(c.scopes) because it pops
 	c.scopecnt++
@@ -736,23 +748,10 @@ func (c *compiler) compileLabel(e *Label) error {
 	return c.compileQuery(e.Body)
 }
 
-func (c *compiler) lookupLabel(label string) ([2]int, error) {
-	name := "$%" + label[1:]
-	for i := len(c.scopes) - 1; i >= 0; i-- {
-		s := c.scopes[i]
-		for j := len(s.variables) - 1; j >= 0; j-- {
-			if w := s.variables[j]; w.name == name {
-				return w.index, nil
-			}
-		}
-	}
-	return [2]int{}, &breakError{label, nil}
-}
-
 func (c *compiler) compileBreak(label string) error {
-	v, err := c.lookupLabel(label)
+	v, err := c.lookupVariable("$%" + label[1:])
 	if err != nil {
-		return err
+		return &breakError{label, nil}
 	}
 	c.append(&code{op: oppop})
 	c.append(&code{op: opload, v: v})
@@ -849,42 +848,36 @@ func (c *compiler) compileIndex(e *Term, x *Index) error {
 }
 
 func (c *compiler) compileFunc(e *Func) error {
+	name := e.Name
 	for i := len(c.funcs) - 1; i >= 0; i-- {
-		if f := c.funcs[i]; f.name == e.Name && len(f.args) == len(e.Args) {
+		if f := c.funcs[i]; f.name == name && len(f.args) == len(e.Args) {
 			return c.compileCallPc(f, e.Args)
 		}
 	}
-	for i := len(c.scopes) - 1; i >= 0; i-- {
-		s := c.scopes[i]
-		for j := len(s.variables) - 1; j >= 0; j-- {
-			v := s.variables[j]
-			if v.name == e.Name && len(e.Args) == 0 {
-				if e.Name[0] == '$' {
-					c.append(&code{op: oppop})
-					c.append(&code{op: opload, v: v.index})
-				} else {
-					c.append(&code{op: opload, v: v.index})
-					c.append(&code{op: opcallpc})
+	if len(e.Args) == 0 {
+		if v, err := c.lookupVariable(name); err == nil {
+			if name[0] == '$' {
+				c.append(&code{op: oppop})
+				c.append(&code{op: opload, v: v})
+			} else {
+				c.append(&code{op: opload, v: v})
+				c.append(&code{op: opcallpc})
+			}
+			return nil
+		} else if name == "$ENV" || name == "env" {
+			env := make(map[string]interface{})
+			if c.environLoader != nil {
+				for _, kv := range c.environLoader() {
+					xs := strings.SplitN(kv, "=", 2)
+					env[xs[0]] = xs[1]
 				}
-				return nil
 			}
+			c.append(&code{op: opconst, v: env})
+			return nil
+		} else if name[0] == '$' {
+			return err
 		}
 	}
-	if (e.Name == "$ENV" || e.Name == "env") && len(e.Args) == 0 {
-		env := make(map[string]interface{})
-		if c.environLoader != nil {
-			for _, kv := range c.environLoader() {
-				xs := strings.SplitN(kv, "=", 2)
-				env[xs[0]] = xs[1]
-			}
-		}
-		c.append(&code{op: opconst, v: env})
-		return nil
-	}
-	if e.Name[0] == '$' {
-		return &variableNotFoundError{e.Name}
-	}
-	name := e.Name
 	if name[0] == '_' {
 		name = name[1:]
 	}
