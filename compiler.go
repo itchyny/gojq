@@ -736,17 +736,23 @@ func (c *compiler) compileLabel(e *Label) error {
 	return c.compileQuery(e.Body)
 }
 
-func (c *compiler) compileBreak(label string) error {
-	var v [2]int
-	name, scope, found := "$%"+label[1:], c.scopes[len(c.scopes)-1], false
-	for j := len(scope.variables) - 1; j >= 0; j-- {
-		if w := scope.variables[j]; w.name == name {
-			v, found = w.index, true
-			break
+func (c *compiler) lookupLabel(label string) ([2]int, error) {
+	name := "$%" + label[1:]
+	for i := len(c.scopes) - 1; i >= 0; i-- {
+		s := c.scopes[i]
+		for j := len(s.variables) - 1; j >= 0; j-- {
+			if w := s.variables[j]; w.name == name {
+				return w.index, nil
+			}
 		}
 	}
-	if !found {
-		return &breakError{label, nil}
+	return [2]int{}, &breakError{label, nil}
+}
+
+func (c *compiler) compileBreak(label string) error {
+	v, err := c.lookupLabel(label)
+	if err != nil {
+		return err
 	}
 	c.append(&code{op: oppop})
 	c.append(&code{op: opload, v: v})
