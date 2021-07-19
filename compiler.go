@@ -20,7 +20,6 @@ type compiler struct {
 	codeinfos     []codeinfo
 	scopes        []*scopeinfo
 	scopecnt      int
-	funcs         []*funcinfo
 }
 
 // Code is a compiled jq query.
@@ -68,9 +67,10 @@ type codeinfo struct {
 }
 
 type scopeinfo struct {
+	variables   []*varinfo
+	funcs       []*funcinfo
 	id          int
 	depth       int
-	variables   []varinfo
 	variablecnt int
 }
 
@@ -208,10 +208,10 @@ func (c *compiler) compileModule(q *Query, alias string) error {
 	}(len(scope.variables))
 	if alias != "" {
 		defer func(l int) {
-			for _, f := range c.funcs[l:] {
+			for _, f := range scope.funcs[l:] {
 				f.name = alias + "::" + f.name
 			}
-		}(len(c.funcs))
+		}(len(scope.funcs))
 	}
 	for _, i := range q.Imports {
 		if err := c.compileImport(i); err != nil {
@@ -241,7 +241,7 @@ func (c *compiler) pushVariable(name string) [2]int {
 	}
 	v := [2]int{s.id, s.variablecnt}
 	s.variablecnt++
-	s.variables = append(s.variables, varinfo{name, v, s.depth})
+	s.variables = append(s.variables, &varinfo{name, v, s.depth})
 	return v
 }
 
@@ -257,30 +257,53 @@ func (c *compiler) lookupVariable(name string) ([2]int, error) {
 	return [2]int{}, &variableNotFoundError{name}
 }
 
+func (c *compiler) lookupFuncOrVariable(name string) (*funcinfo, *varinfo) {
+	for i, isFunc := len(c.scopes)-1, name[0] != '$'; i >= 0; i-- {
+		s := c.scopes[i]
+		if isFunc {
+			for j := len(s.funcs) - 1; j >= 0; j-- {
+				if f := s.funcs[j]; f.name == name && len(f.args) == 0 {
+					return f, nil
+				}
+			}
+		}
+		for j := len(s.variables) - 1; j >= 0; j-- {
+			if v := s.variables[j]; v.name == name {
+				return nil, v
+			}
+		}
+	}
+	return nil, nil
+}
+
 func (c *compiler) newScope() *scopeinfo {
 	i := c.scopecnt // do not use len(c.scopes) because it pops
 	c.scopecnt++
-	return &scopeinfo{i, 0, nil, 0}
+	return &scopeinfo{id: i}
 }
 
 func (c *compiler) newScopeDepth() func() {
 	scope := c.scopes[len(c.scopes)-1]
-	l, m := len(scope.variables), len(c.funcs)
+	l, m := len(scope.variables), len(scope.funcs)
 	scope.depth++
 	return func() {
 		scope.depth--
 		scope.variables = scope.variables[:l]
-		c.funcs = c.funcs[:m]
+		scope.funcs = scope.funcs[:m]
 	}
 }
 
 func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
+	var scope *scopeinfo
 	if builtin {
-		for i := len(c.funcs) - 1; i >= 0; i-- {
-			if f := c.funcs[i]; f.name == e.Name && len(f.args) == len(e.Args) {
+		scope = c.scopes[0]
+		for i := len(scope.funcs) - 1; i >= 0; i-- {
+			if f := scope.funcs[i]; f.name == e.Name && len(f.args) == len(e.Args) {
 				return nil
 			}
 		}
+	} else {
+		scope = c.scopes[len(c.scopes)-1]
 	}
 	defer c.lazy(func() *code {
 		return &code{op: opjump, v: c.pc()}
@@ -288,12 +311,12 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	c.appendCodeInfo(e.Name)
 	defer c.appendCodeInfo("end of " + e.Name)
 	pc, argsorder := c.pc(), getArgsOrder(e.Args)
-	c.funcs = append(c.funcs, &funcinfo{e.Name, pc, e.Args, argsorder})
-	defer func(l, m int, variables []string) {
-		c.scopes, c.funcs, c.variables = c.scopes[:l], c.funcs[:m], variables
-	}(len(c.scopes), len(c.funcs), c.variables)
+	scope.funcs = append(scope.funcs, &funcinfo{e.Name, pc, e.Args, argsorder})
+	defer func(l int, variables []string) {
+		c.scopes, c.variables = c.scopes[:l], variables
+	}(len(c.scopes), c.variables)
 	c.variables = c.variables[len(c.variables):]
-	scope := c.newScope()
+	scope = c.newScope()
 	c.scopes = append(c.scopes, scope)
 	defer c.lazy(func() *code {
 		return &code{op: opscope, v: [2]int{scope.id, scope.variablecnt}}
@@ -849,18 +872,15 @@ func (c *compiler) compileIndex(e *Term, x *Index) error {
 
 func (c *compiler) compileFunc(e *Func) error {
 	name := e.Name
-	for i := len(c.funcs) - 1; i >= 0; i-- {
-		if f := c.funcs[i]; f.name == name && len(f.args) == len(e.Args) {
-			return c.compileCallPc(f, e.Args)
-		}
-	}
 	if len(e.Args) == 0 {
-		if v, err := c.lookupVariable(name); err == nil {
+		if f, v := c.lookupFuncOrVariable(name); f != nil {
+			return c.compileCallPc(f, e.Args)
+		} else if v != nil {
 			if name[0] == '$' {
 				c.append(&code{op: oppop})
-				c.append(&code{op: opload, v: v})
+				c.append(&code{op: opload, v: v.index})
 			} else {
-				c.append(&code{op: opload, v: v})
+				c.append(&code{op: opload, v: v.index})
 				c.append(&code{op: opcallpc})
 			}
 			return nil
@@ -875,7 +895,16 @@ func (c *compiler) compileFunc(e *Func) error {
 			c.append(&code{op: opconst, v: env})
 			return nil
 		} else if name[0] == '$' {
-			return err
+			return &variableNotFoundError{name}
+		}
+	} else {
+		for i := len(c.scopes) - 1; i >= 0; i-- {
+			s := c.scopes[i]
+			for j := len(s.funcs) - 1; j >= 0; j-- {
+				if f := s.funcs[j]; f.name == name && len(f.args) == len(e.Args) {
+					return c.compileCallPc(f, e.Args)
+				}
+			}
 		}
 	}
 	if name[0] == '_' {
@@ -889,8 +918,9 @@ func (c *compiler) compileFunc(e *Func) error {
 				}
 			}
 		}
-		for i := len(c.funcs) - 1; i >= 0; i-- {
-			if f := c.funcs[i]; f.name == e.Name && len(f.args) == len(e.Args) {
+		s := c.scopes[0]
+		for i := len(s.funcs) - 1; i >= 0; i-- {
+			if f := s.funcs[i]; f.name == e.Name && len(f.args) == len(e.Args) {
 				return c.compileCallPc(f, e.Args)
 			}
 		}
@@ -1355,7 +1385,8 @@ func (c *compiler) compileCallInternal(fn interface{}, args []*Query, vars map[i
 				j := len(c.codes) - 3
 				c.codes[j] = &code{op: opload, v: idx}
 				c.codes = c.codes[:j+1]
-				c.funcs = c.funcs[:len(c.funcs)-1]
+				s := c.scopes[len(c.scopes)-1]
+				s.funcs = s.funcs[:len(s.funcs)-1]
 				c.deleteCodeInfo(name)
 			case 3: // optimize one instruction argument (opscope, opX, opret)
 				j := len(c.codes) - 4
@@ -1367,7 +1398,8 @@ func (c *compiler) compileCallInternal(fn interface{}, args []*Query, vars map[i
 					c.codes[j+1] = c.codes[j+2]
 					c.codes = c.codes[:j+2]
 				}
-				c.funcs = c.funcs[:len(c.funcs)-1]
+				s := c.scopes[len(c.scopes)-1]
+				s.funcs = s.funcs[:len(s.funcs)-1]
 				c.deleteCodeInfo(name)
 			default:
 				c.append(&code{op: opload, v: idx})

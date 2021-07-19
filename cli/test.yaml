@@ -1725,6 +1725,14 @@
   expected: |
     30
 
+- name: function declaration with duplicate function names
+  args:
+    - '(def f(g): def g: 1; g; f(2)), (def g: 3; def f(g): g; f(4))'
+  input: '0'
+  expected: |
+    1
+    4
+
 - name: function declaration with duplicate argument names
   args:
     - 'def f(g;g): g; f(1;2)'
@@ -1738,6 +1746,24 @@
   input: 'null'
   expected: |
     2
+
+- name: function declaration with argument name conflict
+  args:
+    - 'def update: .[1:]; [range(3)] | while(length>0; update)'
+  input: 'null'
+  expected: |
+    [
+      0,
+      1,
+      2
+    ]
+    [
+      1,
+      2
+    ]
+    [
+      2
+    ]
 
 - name: function declaration with mixed argument types
   args:
