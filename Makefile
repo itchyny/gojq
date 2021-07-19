@@ -81,12 +81,12 @@ lint: $(GOBIN)/staticcheck
 $(GOBIN)/staticcheck:
 	cd && go get honnef.co/go/tools/cmd/staticcheck
 
-.PHONY: maligned
-maligned: $(GOBIN)/maligned
-	! maligned . 2>&1 | grep -v pointer | grep ^
+.PHONY: fieldalignment
+fieldalignment: $(GOBIN)/fieldalignment
+	! fieldalignment . 2>&1 | grep -v pointer | grep ^
 
-$(GOBIN)/maligned:
-	cd && go get github.com/mdempsky/maligned
+$(GOBIN)/fieldalignment:
+	cd && go get golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment
 
 .PHONY: check-tools
 check-tools:
