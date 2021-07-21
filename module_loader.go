@@ -16,7 +16,7 @@ type moduleLoader struct {
 
 // NewModuleLoader creates a new ModuleLoader reading local modules in the paths.
 func NewModuleLoader(paths []string) ModuleLoader {
-	return &moduleLoader{paths}
+	return &moduleLoader{expandHomeDir(paths)}
 }
 
 func (l *moduleLoader) LoadInitModules() ([]*Query, error) {
@@ -161,4 +161,20 @@ func searchPath(meta map[string]interface{}) string {
 		return s
 	}
 	return filepath.Join(filepath.Dir(path), s)
+}
+
+func expandHomeDir(paths []string) []string {
+	var homeDir string
+	var err error
+	for i, path := range paths {
+		if strings.HasPrefix(path, "~") {
+			if homeDir == "" && err == nil {
+				homeDir, err = os.UserHomeDir()
+			}
+			if homeDir != "" {
+				paths[i] = filepath.Join(homeDir, path[1:])
+			}
+		}
+	}
+	return paths
 }
