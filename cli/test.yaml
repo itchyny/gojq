@@ -5414,13 +5414,9 @@
     - -s
     - -R
     - '.'
-  input: |
-    null
-    false
-    foo
-    bar
+  input: "null\nfalse\r\nfoo\nbar"
   expected: |
-    "null\nfalse\nfoo\nbar\n"
+    "null\nfalse\r\nfoo\nbar"
 
 - name: slurp option with null input option
   args:

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"os"
 	"strings"
 
@@ -378,6 +379,37 @@ func (i *slurpInputIter) Name() string {
 	return i.iter.Name()
 }
 
+type readAllIter struct {
+	r     io.Reader
+	fname string
+	err   error
+}
+
+func newReadAllIter(r io.Reader, fname string) inputIter {
+	return &readAllIter{r: r, fname: fname}
+}
+
+func (i *readAllIter) Next() (interface{}, bool) {
+	if i.err != nil {
+		return nil, false
+	}
+	i.err = io.EOF
+	cnt, err := ioutil.ReadAll(i.r)
+	if err != nil {
+		return err, true
+	}
+	return string(cnt), true
+}
+
+func (i *readAllIter) Close() error {
+	i.err = io.EOF
+	return nil
+}
+
+func (i *readAllIter) Name() string {
+	return i.fname
+}
+
 type slurpRawInputIter struct {
 	iter inputIter
 	err  error
@@ -403,7 +435,7 @@ func (i *slurpRawInputIter) Next() (interface{}, bool) {
 		if i.err, ok = v.(error); ok {
 			return i.err, true
 		}
-		vs = append(vs, v.(string), "\n")
+		vs = append(vs, v.(string))
 	}
 }
 

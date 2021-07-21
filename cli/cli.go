@@ -299,7 +299,11 @@ func (cli *cli) createInputIter(args []string) (iter inputIter) {
 	var newIter func(io.Reader, string) inputIter
 	switch {
 	case cli.inputRaw:
-		newIter = newRawInputIter
+		if cli.inputSlurp {
+			newIter = newReadAllIter
+		} else {
+			newIter = newRawInputIter
+		}
 	case cli.inputStream:
 		newIter = newStreamInputIter
 	case cli.inputYAML:
