@@ -4910,6 +4910,14 @@
   expected: |
     "{\"foo\":\"bar\"}"
 
+- name: format strings @base64d with no padding
+  args:
+    - -R
+    - '@base64d'
+  input: 'eyJmb28iOiJiYXIifQ'
+  expected: |
+    "{\"foo\":\"bar\"}"
+
 - name: format strings not defined error
   args:
     - -n
