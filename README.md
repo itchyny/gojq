@@ -58,7 +58,7 @@ brew install gojq
 
 ### Build from source
 ```sh
-go get github.com/itchyny/gojq/cmd/gojq
+go install github.com/itchyny/gojq/cmd/gojq@latest
 ```
 
 ### Docker
