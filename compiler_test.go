@@ -130,7 +130,7 @@ func TestCodeCompile_OptimizeConstants(t *testing.T) {
 	}
 }
 
-func TestCodeCompile_OptimizeTailRec(t *testing.T) {
+func TestCodeCompile_OptimizeTailRec_Range(t *testing.T) {
 	query, err := gojq.Parse("range(10)")
 	if err != nil {
 		t.Fatal(err)
@@ -163,6 +163,48 @@ func TestCodeCompile_OptimizeTailRec(t *testing.T) {
 	}
 	if expected := 10; n != expected {
 		t.Errorf("expected: %v, got: %v", expected, n)
+	}
+}
+
+func TestCodeCompile_OptimizeTailRec_ScopeVar(t *testing.T) {
+	query, err := gojq.Parse("def f: . as $x | $x, (if $x < 3 then $x + 1 | f else empty end); f")
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, err := gojq.Compile(query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	codes := reflect.ValueOf(code).Elem().FieldByName("codes")
+	if got, expected := codes.Len(), 43; expected != got {
+		t.Errorf("expected: %v, got: %v", expected, got)
+	}
+	op1 := codes.Index(37).Elem().FieldByName("op") // call f by jump
+	op2 := codes.Index(38).Elem().FieldByName("op")
+	if got, expected := *(*int)(unsafe.Pointer(op2.UnsafeAddr())),
+		*(*int)(unsafe.Pointer(op1.UnsafeAddr())); expected != got {
+		t.Errorf("expected: %v, got: %v", expected, got)
+	}
+}
+
+func TestCodeCompile_OptimizeTailRec_CallRec(t *testing.T) {
+	query, err := gojq.Parse("def f: . as $x | $x, (if $x < 3 then $x + 1 | f else empty end), $x; f")
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, err := gojq.Compile(query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	codes := reflect.ValueOf(code).Elem().FieldByName("codes")
+	if got, expected := codes.Len(), 47; expected != got {
+		t.Errorf("expected: %v, got: %v", expected, got)
+	}
+	op1 := codes.Index(38).Elem().FieldByName("op") // callrec f
+	op2 := codes.Index(37).Elem().FieldByName("op") // call _add/2
+	if got, expected := *(*int)(unsafe.Pointer(op2.UnsafeAddr()))+1,
+		*(*int)(unsafe.Pointer(op1.UnsafeAddr())); expected != got {
+		t.Errorf("expected: %v, got: %v", expected, got)
 	}
 }
 

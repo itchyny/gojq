@@ -96,7 +96,7 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 	scope := c.newScope()
 	c.scopes = []*scopeinfo{scope}
 	defer c.lazy(func() *code {
-		return &code{op: opscope, v: [2]int{scope.id, scope.variablecnt}}
+		return &code{op: opscope, v: [3]int{scope.id, scope.variablecnt, 0}}
 	})()
 	if c.moduleLoader != nil {
 		if moduleLoader, ok := c.moduleLoader.(interface {
@@ -319,7 +319,7 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	scope = c.newScope()
 	c.scopes = append(c.scopes, scope)
 	defer c.lazy(func() *code {
-		return &code{op: opscope, v: [2]int{scope.id, scope.variablecnt}}
+		return &code{op: opscope, v: [3]int{scope.id, scope.variablecnt, len(e.Args)}}
 	})()
 	if len(e.Args) > 0 {
 		v := c.newVariable()
@@ -1439,28 +1439,42 @@ func (c *compiler) lazy(f func() *code) func() {
 
 func (c *compiler) optimizeTailRec() {
 	var pcs []int
-	targets := map[int]struct{}{}
+	scopes := map[int]struct{}{}
+	forked := map[int]struct{}{}
 L:
 	for i, l := 0, len(c.codes); i < l; i++ {
 		switch c.codes[i].op {
 		case opscope:
 			pcs = append(pcs, i)
-			if c.codes[i].v.([2]int)[1] == 0 {
-				targets[i] = struct{}{}
+			if c.codes[i].v.([3]int)[2] == 0 {
+				scopes[i] = struct{}{}
 			}
+		case opfork, opforktrybegin, opforkalt:
+			forked[c.codes[i].v.(int)] = struct{}{}
 		case opcall:
 			if j, ok := c.codes[i].v.(int); !ok ||
 				len(pcs) == 0 || pcs[len(pcs)-1] != j {
 				break
-			} else if _, ok := targets[j]; !ok {
+			} else if _, ok = scopes[j]; !ok {
 				break
 			}
+			canjump := true
 			for j := i + 1; j < l; {
 				switch c.codes[j].op {
 				case opjump:
 					j = c.codes[j].v.(int)
+					if canjump {
+						if _, ok := forked[j+1]; ok {
+							canjump = false
+						}
+					}
 				case opret:
-					c.codes[i] = &code{op: opjump, v: pcs[len(pcs)-1] + 1}
+					if canjump {
+						c.codes[i].op = opjump
+						c.codes[i].v = pcs[len(pcs)-1] + 1
+					} else {
+						c.codes[i].op = opcallrec
+					}
 					continue L
 				default:
 					continue L

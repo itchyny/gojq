@@ -75,7 +75,7 @@ func (env *env) debugCodes() {
 	for i, c := range env.codes {
 		pc := i
 		switch c.op {
-		case opcall:
+		case opcall, opcallrec:
 			if x, ok := c.v.(int); ok {
 				pc = x
 			}
@@ -87,9 +87,14 @@ func (env *env) debugCodes() {
 		}
 		var s string
 		if name := env.lookupInfoName(pc); name != "" {
-			if (c.op == opcall || c.op == opjump) && !strings.HasPrefix(name, "module ") {
-				s = "\t## call " + name
-			} else {
+			switch c.op {
+			case opcall, opcallrec, opjump:
+				if !strings.HasPrefix(name, "module ") {
+					s = "\t## call " + name
+					break
+				}
+				fallthrough
+			default:
 				s = "\t## " + name
 			}
 		}
@@ -114,7 +119,7 @@ func (env *env) debugState(pc int, backtrack bool) {
 		sb.WriteString(debugJSON(env.stack.data[xs[i]].value))
 	}
 	switch c.op {
-	case opcall:
+	case opcall, opcallrec:
 		if x, ok := c.v.(int); ok {
 			pc = x
 		}
@@ -125,9 +130,14 @@ func (env *env) debugState(pc int, backtrack bool) {
 		}
 	}
 	if name := env.lookupInfoName(pc); name != "" {
-		if (c.op == opcall || c.op == opjump) && !strings.HasPrefix(name, "module ") {
-			sb.WriteString("\t\t\t## call " + name)
-		} else {
+		switch c.op {
+		case opcall, opcallrec, opjump:
+			if !strings.HasPrefix(name, "module ") {
+				sb.WriteString("\t\t\t## call " + name)
+				break
+			}
+			fallthrough
+		default:
 			sb.WriteString("\t\t\t## " + name)
 		}
 	}
@@ -162,7 +172,8 @@ func (env *env) debugForks(pc int, op string) {
 }
 
 func debugOperand(c *code) string {
-	if c.op == opcall {
+	switch c.op {
+	case opcall, opcallrec:
 		switch v := c.v.(type) {
 		case int:
 			return debugJSON(v)
@@ -171,7 +182,7 @@ func debugOperand(c *code) string {
 		default:
 			panic(c)
 		}
-	} else {
+	default:
 		return debugJSON(c.v)
 	}
 }

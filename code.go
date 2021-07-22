@@ -26,6 +26,7 @@ const (
 	opjump
 	opjumpifnot
 	opcall
+	opcallrec
 	oppushpc
 	opcallpc
 	opscope
@@ -75,6 +76,8 @@ func (op opcode) String() string {
 		return "jumpifnot"
 	case opcall:
 		return "call"
+	case opcallrec:
+		return "callrec"
 	case oppushpc:
 		return "pushpc"
 	case opcallpc:

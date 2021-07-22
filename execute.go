@@ -187,6 +187,9 @@ loop:
 			default:
 				panic(v)
 			}
+		case opcallrec:
+			pc, callpc, index = code.v.(int), -pc, env.scopes.index
+			goto loop
 		case oppushpc:
 			env.push([2]int{code.v.(int), env.scopes.index})
 		case opcallpc:
@@ -194,10 +197,15 @@ loop:
 			pc, callpc, index = xs[0], pc, xs[1]
 			goto loop
 		case opscope:
-			xs := code.v.([2]int)
+			xs := code.v.([3]int)
 			var i, l int
 			if index == env.scopes.index {
-				i = index
+				if callpc >= 0 {
+					i = index
+				} else {
+					callpc = -callpc
+					i = env.scopes.top().(scope).saveindex
+				}
 			} else {
 				env.scopes.save(&i, &l)
 				env.scopes.index = index
