@@ -59,6 +59,13 @@
   expected: |
     " Hello, world! \r\n\t\f\b０ "
 
+- name: string query including newlines
+  args:
+    - "\"a\n\\(\"\nb\nc\n\")\nd\n\""
+  input: '0'
+  expected: |
+    "a\n\nb\nc\n\nd\n"
+
 - name: string query error
   args:
     - '. + "foo'
