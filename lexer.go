@@ -381,22 +381,15 @@ func (l *lexer) validNumber() bool {
 }
 
 func (l *lexer) scanString(start int) (int, string) {
-	var (
-		quote   bool
-		newline bool
-		str     string
-		err     error
-	)
-	unquote := func(src string, quote bool) (ret string, str string, err error) {
-		ret = src
+	var quote, newline bool
+	unquote := func(src string, quote bool) (string, error) {
 		if quote {
 			src = "\"" + src + "\""
 		}
 		if newline {
 			src = strings.ReplaceAll(src, "\n", "\\n")
 		}
-		str, err = strconv.Unquote(src)
-		return
+		return strconv.Unquote(src)
 	}
 	for i, m := l.offset, len(l.source); i < m; i++ {
 		ch := l.source[i]
@@ -409,7 +402,8 @@ func (l *lexer) scanString(start int) (int, string) {
 			if !quote {
 				if !l.inString {
 					l.offset = i + 1
-					l.token, str, err = unquote(l.source[start:l.offset], false)
+					l.token = l.source[start:l.offset]
+					str, err := unquote(l.token, false)
 					if err != nil {
 						return tokInvalid, ""
 					}
@@ -417,7 +411,8 @@ func (l *lexer) scanString(start int) (int, string) {
 				}
 				if i > l.offset {
 					l.offset = i
-					l.token, str, err = unquote(l.source[start:l.offset], true)
+					l.token = l.source[start:l.offset]
+					str, err := unquote(l.token, true)
 					if err != nil {
 						return tokInvalid, ""
 					}
@@ -433,7 +428,8 @@ func (l *lexer) scanString(start int) (int, string) {
 				if l.inString {
 					if i > l.offset+1 {
 						l.offset = i - 1
-						l.token, str, err = unquote(l.source[start:l.offset], true)
+						l.token = l.source[start:l.offset]
+						str, err := unquote(l.token, true)
 						if err != nil {
 							return tokInvalid, ""
 						}
