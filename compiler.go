@@ -81,9 +81,9 @@ type varinfo struct {
 }
 
 type funcinfo struct {
-	name string
-	pc   int
-	args []string
+	name   string
+	pc     int
+	argcnt int
 }
 
 // Compile compiles a query.
@@ -264,7 +264,7 @@ func (c *compiler) lookupFuncOrVariable(name string) (*funcinfo, *varinfo) {
 		s := c.scopes[i]
 		if isFunc {
 			for j := len(s.funcs) - 1; j >= 0; j-- {
-				if f := s.funcs[j]; f.name == name && len(f.args) == 0 {
+				if f := s.funcs[j]; f.name == name && f.argcnt == 0 {
 					return f, nil
 				}
 			}
@@ -300,7 +300,7 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	if builtin {
 		scope = c.scopes[0]
 		for i := len(scope.funcs) - 1; i >= 0; i-- {
-			if f := scope.funcs[i]; f.name == e.Name && len(f.args) == len(e.Args) {
+			if f := scope.funcs[i]; f.name == e.Name && f.argcnt == len(e.Args) {
 				return nil
 			}
 		}
@@ -313,7 +313,7 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	c.appendCodeInfo(e.Name)
 	defer c.appendCodeInfo("end of " + e.Name)
 	pc := c.pc()
-	scope.funcs = append(scope.funcs, &funcinfo{e.Name, pc, e.Args})
+	scope.funcs = append(scope.funcs, &funcinfo{e.Name, pc, len(e.Args)})
 	defer func(l int, variables []string) {
 		c.scopes, c.variables = c.scopes[:l], variables
 	}(len(c.scopes), c.variables)
@@ -893,7 +893,7 @@ func (c *compiler) compileFunc(e *Func) error {
 		for i := len(c.scopes) - 1; i >= 0; i-- {
 			s := c.scopes[i]
 			for j := len(s.funcs) - 1; j >= 0; j-- {
-				if f := s.funcs[j]; f.name == name && len(f.args) == len(e.Args) {
+				if f := s.funcs[j]; f.name == name && f.argcnt == len(e.Args) {
 					return c.compileCallPc(f, e.Args)
 				}
 			}
@@ -912,7 +912,7 @@ func (c *compiler) compileFunc(e *Func) error {
 		}
 		s := c.scopes[0]
 		for i := len(s.funcs) - 1; i >= 0; i-- {
-			if f := s.funcs[i]; f.name == e.Name && len(f.args) == len(e.Args) {
+			if f := s.funcs[i]; f.name == e.Name && f.argcnt == len(e.Args) {
 				return c.compileCallPc(f, e.Args)
 			}
 		}
