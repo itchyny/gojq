@@ -140,7 +140,7 @@ func TestCodeCompile_OptimizeTailRec_Range(t *testing.T) {
 		t.Fatal(err)
 	}
 	codes := reflect.ValueOf(code).Elem().FieldByName("codes")
-	if got, expected := codes.Len(), 85; expected != got {
+	if got, expected := codes.Len(), 103; expected != got {
 		t.Errorf("expected: %v, got: %v", expected, got)
 	}
 	op1 := codes.Index(1).Elem().FieldByName("op")

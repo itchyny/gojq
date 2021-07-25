@@ -1749,10 +1749,11 @@
 
 - name: function declaration with duplicate variable names
   args:
-    - 'def f($g;$g): $g; f(1;2)'
+    - 'def f($g;$g): $g; f(1;2,3)'
   input: 'null'
   expected: |
     2
+    3
 
 - name: function declaration with argument name conflict
   args:
@@ -1786,6 +1787,17 @@
     [111,211,112,212,121,221,122,222]
     [111,121,112,122,211,221,212,222]
     [111,112,121,122,211,212,221,222]
+
+- name: function declaration with function reference to value argument
+  args:
+    - -c
+    - 'def f($x; $y): [$x, x, $y, y]; f(1,2; 3,4)'
+  input: 'null'
+  expected: |
+    [1,1,2,3,3,4]
+    [1,1,2,4,3,4]
+    [2,1,2,3,3,4]
+    [2,1,2,4,3,4]
 
 - name: function declaration inside query
   args:
