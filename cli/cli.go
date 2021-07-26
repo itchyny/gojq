@@ -210,12 +210,7 @@ Synopsis:
 	}
 	modulePaths := opts.ModulePaths
 	if len(modulePaths) == 0 && addDefaultModulePaths {
-		modulePaths = []string{"", "../lib/jq", "lib"}
-		if homeDir, err := os.UserHomeDir(); err == nil {
-			modulePaths[0] = filepath.Join(homeDir, ".jq")
-		} else {
-			modulePaths = modulePaths[1:]
-		}
+		modulePaths = listDefaultModulePaths()
 	}
 	iter := cli.createInputIter(args)
 	defer iter.Close()
@@ -281,6 +276,23 @@ func adjustArgs(args []string) []string {
 		}
 	}
 	return args
+}
+
+func listDefaultModulePaths() []string {
+	modulePaths := []string{"", "../lib/gojq", "lib"}
+	if executable, err := os.Executable(); err == nil {
+		if executable, err := filepath.EvalSymlinks(executable); err == nil {
+			origin := filepath.Dir(executable)
+			modulePaths[1] = filepath.Join(origin, modulePaths[1])
+			modulePaths[2] = filepath.Join(origin, modulePaths[2])
+		}
+	}
+	if homeDir, err := os.UserHomeDir(); err == nil {
+		modulePaths[0] = filepath.Join(homeDir, ".jq")
+	} else {
+		modulePaths = modulePaths[1:]
+	}
+	return modulePaths
 }
 
 func slurpFile(name string) (interface{}, error) {
