@@ -270,6 +270,9 @@ func funcLength(v interface{}) interface{} {
 	case float64:
 		return math.Abs(v)
 	case *big.Int:
+		if v.Sign() >= 0 {
+			return v
+		}
 		return new(big.Int).Abs(v)
 	case nil:
 		return 0
