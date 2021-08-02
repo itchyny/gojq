@@ -129,12 +129,16 @@ func (err *exitCodeError) IsEmptyError() bool {
 	return err.value == nil
 }
 
+func (err *exitCodeError) Value() interface{} {
+	return err.value
+}
+
 func (err *exitCodeError) ExitCode() int {
 	return err.code
 }
 
-func (err *exitCodeError) Value() interface{} {
-	return err.value
+func (err *exitCodeError) IsHaltError() bool {
+	return err.halt
 }
 
 type funcContainsError struct {

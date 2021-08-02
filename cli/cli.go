@@ -425,7 +425,18 @@ func (cli *cli) funcStderr(v interface{}, _ []interface{}) interface{} {
 
 func (cli *cli) printError(err error) {
 	if er, ok := err.(interface{ IsEmptyError() bool }); !ok || !er.IsEmptyError() {
-		fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+		if er, ok := err.(interface{ IsHaltError() bool }); !ok || !er.IsHaltError() {
+			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+		} else if er, ok := err.(gojq.ValueError); ok {
+			v := er.Value()
+			if str, ok := v.(string); ok {
+				cli.errStream.Write([]byte(str))
+			} else {
+				bs, _ := gojq.Marshal(v)
+				cli.errStream.Write(bs)
+				cli.errStream.Write([]byte{'\n'})
+			}
+		}
 	}
 }
 

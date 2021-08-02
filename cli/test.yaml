@@ -4366,7 +4366,7 @@
     - 'halt_error'
   input: '1'
   error: |
-    error: 1
+    1
   exit_code: 5
 
 - name: halt_error/0 function
@@ -4374,7 +4374,7 @@
     - '0/0 | halt_error'
   input: 'null'
   error: |
-    error: null
+    null
   exit_code: 5
 
 - name: halt_error/0 function and try catch
@@ -4382,13 +4382,26 @@
     - 'range(5) | try halt_error catch .'
   input: 'null'
   error: |
-    error: 0
+    0
   exit_code: 5
 
 - name: halt_error/0 function with null input and try catch
   args:
     - 'try halt_error catch .'
   input: 'null'
+  exit_code: 5
+
+- name: halt_error/0 function with multiple input values
+  args:
+    - 'halt_error'
+  input: |
+    1
+    2
+    3
+  error: |
+    1
+    2
+    3
   exit_code: 5
 
 - name: halt_error/0 function and raw strings input option
@@ -4400,9 +4413,7 @@
     2
     3
   error: |
-    error: 1
-    error: 2
-    error: 3
+    123
   exit_code: 5
 
 - name: halt_error/1 function
