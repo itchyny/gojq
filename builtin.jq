@@ -113,14 +113,15 @@ def ascii_downcase:
 def ascii_upcase:
   explode | map(if 97 <= . and . <= 122 then . - 32 end) | implode;
 def walk(f):
-  . as $in
-    | if type == "object" then
-        reduce keys[] as $key ({}; . + { ($key): $in[$key] | walk(f) }) | f
-      elif type == "array" then
-        map(walk(f)) | f
-      else
-        f
-      end;
+  def w:
+    if type == "object" then
+      . as $in | reduce keys[] as $key ({}; . + { ($key): $in[$key] | w }) | f
+    elif type == "array" then
+      map(w) | f
+    else
+      f
+    end;
+  w;
 def transpose:
   if . == [] then
     []
