@@ -552,7 +552,7 @@ func (c *compiler) compileBind(b *Bind) error {
 		c.codes[len(c.codes)-2] = c.codes[len(c.codes)-1]
 		c.codes = c.codes[:len(c.codes)-1]
 	} else {
-		c.append(&code{op: opexpend}) // ref: compileQuery
+		c.append(&code{op: opexpend}) // ref: compileTermSuffix
 	}
 	return c.compileQuery(b.Body)
 }
