@@ -164,6 +164,7 @@ func init() {
 		"setpath":        argFunc2(funcSetpath),
 		"delpaths":       argFunc1(funcDelpaths),
 		"getpath":        argFunc1(funcGetpath),
+		"transpose":      argFunc0(funcTranspose),
 		"bsearch":        argFunc1(funcBsearch),
 		"gmtime":         argFunc0(funcGmtime),
 		"localtime":      argFunc0(funcLocaltime),
@@ -1393,6 +1394,39 @@ func funcGetpath(v, p interface{}) interface{} {
 		}
 	}
 	return v
+}
+
+func funcTranspose(v interface{}) interface{} {
+	vss, ok := v.([]interface{})
+	if !ok {
+		return &funcTypeError{"transpose", v}
+	}
+	if len(vss) == 0 {
+		return []interface{}{}
+	}
+	var l int
+	for _, vs := range vss {
+		vs, ok := vs.([]interface{})
+		if !ok {
+			return &funcTypeError{"transpose", v}
+		}
+		if k := len(vs); l < k {
+			l = k
+		}
+	}
+	wss := make([][]interface{}, l)
+	xs := make([]interface{}, l)
+	for i, k := 0, len(vss); i < l; i++ {
+		s := make([]interface{}, k)
+		wss[i] = s
+		xs[i] = s
+	}
+	for i, vs := range vss {
+		for j, v := range vs.([]interface{}) {
+			wss[j][i] = v
+		}
+	}
+	return xs
 }
 
 func funcBsearch(v, t interface{}) interface{} {

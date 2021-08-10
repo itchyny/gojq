@@ -122,16 +122,6 @@ def walk(f):
       f
     end;
   w;
-def transpose:
-  if . == [] then
-    []
-  else
-    . as $in
-      | (map(length) | max) as $max
-      | length as $length
-      | reduce range(0; $max) as $j
-          ([]; . + [reduce range(0; $length) as $i ([]; . + [ $in[$i][$j] ] )] )
-  end;
 
 def first: .[0];
 def first(g): label $out | g | ., break $out;
