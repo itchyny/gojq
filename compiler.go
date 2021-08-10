@@ -638,12 +638,17 @@ func (c *compiler) compileIf(e *If) error {
 	c.appendCodeInfo(e)
 	c.append(&code{op: opdup}) // duplicate the value for then or else clause
 	c.append(&code{op: opexpbegin})
+	pc := len(c.codes)
 	f := c.newScopeDepth()
 	if err := c.compileQuery(e.Cond); err != nil {
 		return err
 	}
 	f()
-	c.append(&code{op: opexpend})
+	if pc == len(c.codes) {
+		c.codes = c.codes[:pc-1]
+	} else {
+		c.append(&code{op: opexpend})
+	}
 	setjumpifnot := c.lazy(func() *code {
 		return &code{op: opjumpifnot, v: c.pc() + 1} // if falsy, skip then clause
 	})
