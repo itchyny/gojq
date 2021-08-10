@@ -649,6 +649,7 @@ func (c *compiler) compileIf(e *If) error {
 	} else {
 		c.append(&code{op: opexpend})
 	}
+	pcc := len(c.codes)
 	setjumpifnot := c.lazy(func() *code {
 		return &code{op: opjumpifnot, v: c.pc() + 1} // if falsy, skip then clause
 	})
@@ -666,6 +667,16 @@ func (c *compiler) compileIf(e *If) error {
 	}
 	if e.Else != nil {
 		defer c.newScopeDepth()()
+		defer func() {
+			// optimize constant results
+			//    opdup, ..., opjumpifnot, opconst, opjump, opconst
+			// => opnop, ..., opjumpifnot, oppush,  opjump, oppush
+			if pcc+4 == len(c.codes) && c.codes[pcc+1].op == opconst && c.codes[pcc+3].op == opconst {
+				c.codes[pc-2].op = opnop
+				c.codes[pcc+1].op = oppush
+				c.codes[pcc+3].op = oppush
+			}
+		}()
 		return c.compileQuery(e.Else)
 	}
 	return nil
