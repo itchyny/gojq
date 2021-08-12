@@ -154,7 +154,7 @@ func init() {
 		"yn":             mathFunc2("yn", funcYn),
 		"pow":            mathFunc2("pow", math.Pow),
 		"pow10":          mathFunc("pow10", funcExp10),
-		"fma":            mathFunc3("fma", funcFma),
+		"fma":            mathFunc3("fma", math.FMA),
 		"infinite":       argFunc0(funcInfinite),
 		"isfinite":       argFunc0(funcIsfinite),
 		"isinfinite":     argFunc0(funcIsinfinite),
@@ -1128,10 +1128,6 @@ func funcScalbln(l, r float64) float64 {
 
 func funcYn(l, r float64) float64 {
 	return math.Yn(int(l), r)
-}
-
-func funcFma(x, y, z float64) float64 {
-	return x*y + z
 }
 
 func funcInfinite(interface{}) interface{} {
