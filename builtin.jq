@@ -197,12 +197,12 @@ def test($re; $flags): _match($re; $flags; true);
 def capture($re): capture($re; null);
 def capture($re; $flags):
   match($re; $flags)
-    | [.captures | .[] | select(.name != null) | { (.name): .string }]
+    | [.captures[] | select(.name != null) | { (.name): .string }]
     | add // {};
 def scan($re): scan($re; null);
 def scan($re; $flags):
   match($re; "g" + $flags)
-    | if .captures|length > 0 then [ .captures | .[] | .string ] else .string end;
+    | if .captures|length > 0 then [.captures[].string] else .string end;
 def splits($re): splits($re; null);
 def splits($re; $flags): split($re; $flags) | .[];
 def sub($re; str): sub($re; str; null);
