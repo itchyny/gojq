@@ -1438,35 +1438,27 @@ func (c *compiler) lazy(f func() *code) func() {
 
 func (c *compiler) optimizeTailRec() {
 	var pcs []int
-	scopes := map[int]struct{}{}
-	forked := map[int]struct{}{}
+	scopes := map[int]bool{}
 L:
 	for i, l := 0, len(c.codes); i < l; i++ {
 		switch c.codes[i].op {
 		case opscope:
 			pcs = append(pcs, i)
-			if c.codes[i].v.([3]int)[2] == 0 {
-				scopes[i] = struct{}{}
+			if v := c.codes[i].v.([3]int); v[2] == 0 {
+				scopes[i] = v[1] == 0
 			}
-		case opfork, opforktrybegin, opforkalt:
-			forked[c.codes[i].v.(int)] = struct{}{}
 		case opcall:
+			var canjump bool
 			if j, ok := c.codes[i].v.(int); !ok ||
 				len(pcs) == 0 || pcs[len(pcs)-1] != j {
 				break
-			} else if _, ok = scopes[j]; !ok {
+			} else if canjump, ok = scopes[j]; !ok {
 				break
 			}
-			canjump := true
 			for j := i + 1; j < l; {
 				switch c.codes[j].op {
 				case opjump:
 					j = c.codes[j].v.(int)
-					if canjump {
-						if _, ok := forked[j+1]; ok {
-							canjump = false
-						}
-					}
 				case opret:
 					if canjump {
 						c.codes[i].op = opjump

@@ -1725,6 +1725,17 @@
     1
     0
 
+- name: function declaration and recursive call
+  args:
+    - 'def f: ., if . < 2 then . + (1,2) | f else empty end; f'
+  input: '0'
+  expected: |
+    0
+    1
+    2
+    3
+    2
+
 - name: function declaration with duplicate function names
   args:
     - 'def f(g): def f: def g: 3; g * 2; g * f; def f: . * 5; f(f)'
