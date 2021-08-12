@@ -4717,9 +4717,14 @@
 - name: scan function
   args:
     - -c
-    - 'scan("(b(c*)(d*))"), scan("(b(c*)(d*))"; "i")'
+    - 'scan("abc"), scan("abc"; "i"), scan("(b(c*)(d*))"), scan("(b(c*)(d*))"; "i")'
   input: '"abcdeABCCDDEabcce"'
   expected: |
+    "abc"
+    "abc"
+    "abc"
+    "ABC"
+    "abc"
     ["bcd","c","d"]
     ["bcc","cc",""]
     ["bcd","c","d"]
