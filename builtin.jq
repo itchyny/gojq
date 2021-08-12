@@ -208,13 +208,22 @@ def splits($re; $flags): split($re; $flags) | .[];
 def sub($re; str): sub($re; str; null);
 def sub($re; str; $flags):
   . as $in
-    | reduce match($re; $flags) as $r
-      ( ["", 0];
-        . as $x
-          | [$r | .captures | .[] | select(.name != null) | { (.name) : .string }]
-          | add // {}
-          | [$x[0] + $in[$x[1]:$r.offset] + str, $r.offset + $r.length] )
-    | .[0] + $in[.[1]:];
+    | def sub:
+        if .matches|length > 0
+        then
+          . as $x | .matches[0] as $r
+            | [$r.captures[] | select(.name != null) | { (.name): .string }]
+            | add // {}
+            | {
+                string: ($x.string + $in[$x.offset:$r.offset] + str),
+                offset: ($r.offset + $r.length),
+                matches: $x.matches[1:]
+              }
+            | sub
+        else
+          .string + $in[.offset:]
+        end;
+  { string: "", offset: 0, matches: [match($re; $flags)] } | sub;
 def gsub($re; str): sub($re; str; "g");
 def gsub($re; str; $flags): sub($re; str; $flags + "g");
 

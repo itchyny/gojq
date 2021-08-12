@@ -4750,21 +4750,28 @@
 
 - name: sub function
   args:
-    - 'sub("a"; "b"), sub("aaa"; "b"), sub("a(?<a>.)"; "\(.a)b\(.a)"; "ig"), sub("(?<foo>★)"; "\(.foo)☆\(.foo)")'
+    - 'sub("a"; "b"), sub("aaa"; "b"), sub("a"; "b","c"), sub("a(?<a>.)"; "\(.a)b\(.a)"; "ig"), sub("(?<foo>★)"; "\(.foo)☆\(.foo)"), sub("^"; "b")'
   input: '"abc☆★☆ABC"'
   expected: |
     "bbc☆★☆ABC"
     "abc☆★☆ABC"
+    "bbc☆★☆ABC"
+    "cbc☆★☆ABC"
     "bbbc☆★☆BbBC"
     "abc☆★☆★☆ABC"
+    "babc☆★☆ABC"
 
 - name: gsub function
   args:
-    - 'gsub("a"; "b"), gsub("a.c"; "b"), gsub("a(?<a>..)"; "\(.a+.a)"; "i"), gsub("(?<foo>★)"; "\(.foo)☆\(.foo)"), gsub("^"; "a")'
+    - 'gsub("a"; "b"), gsub("a.c"; "b"), gsub("a"; "b","c"), gsub("a(?<a>..)"; "\(.a+.a)"; "i"), gsub("(?<foo>★)"; "\(.foo)☆\(.foo)"), gsub("^"; "a")'
   input: '"abcABC☆★☆ABCabc"'
   expected: |
     "bbcABC☆★☆ABCbbc"
     "bABC☆★☆ABCb"
+    "bbcABC☆★☆ABCbbc"
+    "bbcABC☆★☆ABCcbc"
+    "cbcABC☆★☆ABCbbc"
+    "cbcABC☆★☆ABCcbc"
     "bcbcBCBC☆★☆BCBCbcbc"
     "abcABC☆★☆★☆ABCabc"
     "aabcABC☆★☆ABCabc"
