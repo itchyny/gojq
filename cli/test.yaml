@@ -1706,10 +1706,10 @@
 
 - name: function declaration and recursive call
   args:
-    - 'def f: . as $x | $x, ($x + 1 | f); last(limit(100; f))'
+    - 'def f: . as $x | $x, ($x + 1 | f); last(limit(100000; f))'
   input: '0'
   expected: |
-    99
+    99999
 
 - name: function declaration and recursive call
   args:
