@@ -185,7 +185,7 @@ def paths:
 def paths(f):
   . as $x | paths | select(. as $p | $x | getpath($p) | f);
 
-def fromdateiso8601: strptime("%Y-%m-%dT%H:%M:%SZ") | mktime;
+def fromdateiso8601: strptime("%Y-%m-%dT%H:%M:%S%z") | mktime;
 def todateiso8601: strftime("%Y-%m-%dT%H:%M:%SZ");
 def fromdate: fromdateiso8601;
 def todate: todateiso8601;

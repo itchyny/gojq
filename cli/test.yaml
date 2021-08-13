@@ -4157,11 +4157,11 @@
 - name: strptime, fromdate functions
   args:
     - -c
-    - 'strptime("%Y-%m-%dT%H:%M:%SZ"), fromdate'
+    - 'strptime("%Y-%m-%dT%H:%M:%S%z"), fromdate'
   input: |
     "2017-07-14T02:40:00Z"
-    "2019-09-07T21:02:03Z"
-    "2020-09-13T12:26:40Z"
+    "2019-09-08T06:02:03+0900"
+    "2020-09-13T07:26:40-05:00"
   expected: |
     [2017,6,14,2,40,0,5,194]
     1500000000
