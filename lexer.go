@@ -490,7 +490,7 @@ func (err *parseError) Token() (string, int) {
 	return err.token, err.offset
 }
 
-func (l *lexer) Error(e string) {
+func (l *lexer) Error(string) {
 	offset, token := l.offset, l.token
 	switch {
 	case l.tokenType == eof:
