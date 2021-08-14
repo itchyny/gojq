@@ -4,7 +4,7 @@ def map(f): [.[] | f];
 def to_entries: [keys[] as $k | {key: $k, value: .[$k]}];
 def from_entries:
   map({ (.key // .Key // .name // .Name): (if has("value") then .value else .Value end) })
-    | add | . //= {};
+    | add // {};
 def with_entries(f): to_entries | map(f) | from_entries;
 def select(f): if f then . else empty end;
 def recurse: recurse(.[]?);
