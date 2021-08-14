@@ -189,7 +189,7 @@ func argFunc0(fn func(interface{}) interface{}) function {
 	}
 }
 
-func argFunc1(fn func(interface{}, interface{}) interface{}) function {
+func argFunc1(fn func(_, _ interface{}) interface{}) function {
 	return function{
 		argcount1, false, func(v interface{}, args []interface{}) interface{} {
 			return fn(v, args[0])
@@ -197,7 +197,7 @@ func argFunc1(fn func(interface{}, interface{}) interface{}) function {
 	}
 }
 
-func argFunc2(fn func(interface{}, interface{}, interface{}) interface{}) function {
+func argFunc2(fn func(_, _, _ interface{}) interface{}) function {
 	return function{
 		argcount2, false, func(v interface{}, args []interface{}) interface{} {
 			return fn(v, args[0], args[1])
@@ -205,7 +205,7 @@ func argFunc2(fn func(interface{}, interface{}, interface{}) interface{}) functi
 	}
 }
 
-func argFunc3(fn func(interface{}, interface{}, interface{}, interface{}) interface{}) function {
+func argFunc3(fn func(_, _, _, _ interface{}) interface{}) function {
 	return function{
 		argcount3, false, func(v interface{}, args []interface{}) interface{} {
 			return fn(v, args[0], args[1], args[2])
@@ -213,7 +213,7 @@ func argFunc3(fn func(interface{}, interface{}, interface{}, interface{}) interf
 	}
 }
 
-func mathFunc(name string, f func(x float64) float64) function {
+func mathFunc(name string, f func(float64) float64) function {
 	return argFunc0(func(v interface{}) interface{} {
 		x, ok := toFloat(v)
 		if !ok {
@@ -223,7 +223,7 @@ func mathFunc(name string, f func(x float64) float64) function {
 	})
 }
 
-func mathFunc2(name string, g func(x, y float64) float64) function {
+func mathFunc2(name string, f func(_, _ float64) float64) function {
 	return argFunc2(func(_, x, y interface{}) interface{} {
 		l, ok := toFloat(x)
 		if !ok {
@@ -233,11 +233,11 @@ func mathFunc2(name string, g func(x, y float64) float64) function {
 		if !ok {
 			return &funcTypeError{name, y}
 		}
-		return g(l, r)
+		return f(l, r)
 	})
 }
 
-func mathFunc3(name string, g func(x, y, z float64) float64) function {
+func mathFunc3(name string, f func(_, _, _ float64) float64) function {
 	return argFunc3(func(_, a, b, c interface{}) interface{} {
 		x, ok := toFloat(a)
 		if !ok {
@@ -251,7 +251,7 @@ func mathFunc3(name string, g func(x, y, z float64) float64) function {
 		if !ok {
 			return &funcTypeError{name, c}
 		}
-		return g(x, y, z)
+		return f(x, y, z)
 	})
 }
 
@@ -934,7 +934,7 @@ func funcRindex(v, x interface{}) interface{} {
 	})
 }
 
-func indexFunc(v, x interface{}, f func([]interface{}, []interface{}) interface{}) interface{} {
+func indexFunc(v, x interface{}, f func(_, _ []interface{}) interface{}) interface{} {
 	switch v := v.(type) {
 	case nil:
 		return nil

@@ -210,13 +210,13 @@ func (op Operator) getFunc() string {
 
 func binopTypeSwitch(
 	l, r interface{},
-	callbackInts func(int, int) interface{},
-	callbackFloats func(float64, float64) interface{},
-	callbackBigInts func(*big.Int, *big.Int) interface{},
-	callbackStrings func(string, string) interface{},
-	callbackArrays func(l, r []interface{}) interface{},
-	callbackMaps func(l, r map[string]interface{}) interface{},
-	fallback func(interface{}, interface{}) interface{}) interface{} {
+	callbackInts func(_, _ int) interface{},
+	callbackFloats func(_, _ float64) interface{},
+	callbackBigInts func(_, _ *big.Int) interface{},
+	callbackStrings func(_, _ string) interface{},
+	callbackArrays func(_, _ []interface{}) interface{},
+	callbackMaps func(_, _ map[string]interface{}) interface{},
+	fallback func(_, _ interface{}) interface{}) interface{} {
 	switch l := l.(type) {
 	case int:
 		switch r := r.(type) {
