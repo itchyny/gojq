@@ -170,7 +170,9 @@ loop:
 				}
 				w := v[0].(func(interface{}, []interface{}) interface{})(x, args)
 				if e, ok := w.(error); ok {
-					err = e
+					if er, ok := e.(*exitCodeError); !ok || er.value != nil || er.halt {
+						err = e
+					}
 					break loop
 				}
 				env.push(w)
