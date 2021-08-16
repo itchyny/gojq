@@ -168,7 +168,7 @@ func TestWithEnvironLoader(t *testing.T) {
 	code, err := gojq.Compile(
 		query,
 		gojq.WithEnvironLoader(func() []string {
-			return []string{"foo=42", "bar=128"}
+			return []string{"foo=42", "bar=128", "baz", "qux=", "=0"}
 		}),
 	)
 	if err != nil {
@@ -180,7 +180,7 @@ func TestWithEnvironLoader(t *testing.T) {
 		if !ok {
 			break
 		}
-		expected := map[string]interface{}{"foo": "42", "bar": "128"}
+		expected := map[string]interface{}{"foo": "42", "bar": "128", "qux": ""}
 		if !reflect.DeepEqual(got, expected) {
 			t.Errorf("expected: %#v, got: %#v", expected, got)
 		}

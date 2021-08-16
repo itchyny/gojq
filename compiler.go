@@ -896,8 +896,9 @@ func (c *compiler) compileFunc(e *Func) error {
 			env := make(map[string]interface{})
 			if c.environLoader != nil {
 				for _, kv := range c.environLoader() {
-					xs := strings.SplitN(kv, "=", 2)
-					env[xs[0]] = xs[1]
+					if i := strings.IndexByte(kv, '='); i > 0 {
+						env[kv[:i]] = kv[i+1:]
+					}
 				}
 			}
 			c.append(&code{op: opconst, v: env})
