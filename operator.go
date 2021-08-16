@@ -491,7 +491,7 @@ func funcOpMod(_, l, r interface{}) interface{} {
 			if r.Sign() == 0 {
 				return &zeroModuloError{l, r}
 			}
-			return new(big.Int).Mod(l, r)
+			return new(big.Int).Rem(l, r)
 		},
 		func(l, r string) interface{} { return &binopTypeError{"modulo", l, r} },
 		func(l, r []interface{}) interface{} { return &binopTypeError{"modulo", l, r} },
