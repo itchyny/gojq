@@ -350,7 +350,7 @@ func (env *env) pop() interface{} {
 }
 
 func (env *env) pushfork(op opcode, pc int) {
-	f := &fork{op: op, pc: pc, expdepth: env.expdepth}
+	f := fork{op: op, pc: pc, expdepth: env.expdepth}
 	env.stack.save(&f.stackindex, &f.stacklimit)
 	env.scopes.save(&f.scopeindex, &f.scopelimit)
 	env.paths.save(&f.pathindex, &f.pathlimit)
@@ -358,7 +358,7 @@ func (env *env) pushfork(op opcode, pc int) {
 	env.debugForks(pc, ">>>")
 }
 
-func (env *env) popfork() *fork {
+func (env *env) popfork() fork {
 	f := env.forks[len(env.forks)-1]
 	env.debugForks(f.pc, "<<<")
 	env.forks, env.expdepth = env.forks[:len(env.forks)-1], f.expdepth

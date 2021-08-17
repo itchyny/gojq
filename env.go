@@ -10,7 +10,7 @@ type env struct {
 	values    []interface{}
 	codes     []*code
 	codeinfos []codeinfo
-	forks     []*fork
+	forks     []fork
 	backtrack bool
 	offset    int
 	expdepth  int
