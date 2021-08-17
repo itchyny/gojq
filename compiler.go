@@ -1302,18 +1302,18 @@ func (c *compiler) compileString(s *String, f *Func) error {
 	if f == nil {
 		f = &Func{Name: "tostring"}
 	}
-	e := s.Queries[0]
-	if e.Term.Str == nil {
-		e = &Query{Left: e, Op: OpPipe, Right: &Query{Term: &Term{Type: TermTypeFunc, Func: f}}}
-	}
-	for i := 1; i < len(s.Queries); i++ {
-		x := s.Queries[i]
-		if x.Term.Str == nil {
-			x = &Query{Left: x, Op: OpPipe, Right: &Query{Term: &Term{Type: TermTypeFunc, Func: f}}}
+	var q *Query
+	for _, e := range s.Queries {
+		if e.Term.Str == nil {
+			e = &Query{Left: e, Op: OpPipe, Right: &Query{Term: &Term{Type: TermTypeFunc, Func: f}}}
 		}
-		e = &Query{Left: e, Op: OpAdd, Right: x}
+		if q == nil {
+			q = e
+		} else {
+			q = &Query{Left: q, Op: OpAdd, Right: e}
+		}
 	}
-	return c.compileQuery(e)
+	return c.compileQuery(q)
 }
 
 func (c *compiler) compileTermSuffix(e *Term, s *Suffix) error {
