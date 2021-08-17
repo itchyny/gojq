@@ -5,7 +5,6 @@ CURRENT_REVISION := $(shell git rev-parse --short HEAD)
 BUILD_LDFLAGS := "-s -w -X github.com/itchyny/$(BIN)/cli.revision=$(CURRENT_REVISION)"
 GOBIN ?= $(shell go env GOPATH)/bin
 SHELL := /bin/bash
-export GO111MODULE=on
 
 .PHONY: all
 all: build
