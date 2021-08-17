@@ -100,7 +100,7 @@ clean:
 .PHONY: update
 update: export GOPROXY=direct
 update:
-	rm -f go.sum && go get -u -d ./... && go get github.com/mattn/go-runewidth@v0.0.9 && go mod tidy
+	rm -f go.sum && go get -u -d ./... && go get -d github.com/mattn/go-runewidth@v0.0.9 && go mod tidy
 	sed -i.bak '/require (/,/)/d' go.dev.mod && rm -f go.dev.{sum,mod.bak}
 	go get -u -d -modfile=go.dev.mod github.com/itchyny/{astgen,timefmt}-go && go generate
 
