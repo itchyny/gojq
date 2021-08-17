@@ -370,11 +370,11 @@ func (env *env) popfork() fork {
 
 func (env *env) index(v [2]int) int {
 	for id, i := v[0], env.scopes.index; i >= 0; {
-		if s := env.scopes.data[i].value.(scope); s.id == id {
+		s := env.scopes.data[i].value.(scope)
+		if s.id == id {
 			return s.offset + v[1]
-		} else {
-			i = s.outerindex
 		}
+		i = s.outerindex
 	}
 	panic("env.index")
 }
