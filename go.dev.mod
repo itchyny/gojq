@@ -1,6 +1,6 @@
 module github.com/itchyny/gojq
 
-go 1.14
+go 1.15
 
 require (
 	github.com/itchyny/astgen-go v0.0.0-20210521111535-120f8643907b // indirect
