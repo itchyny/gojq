@@ -29,10 +29,11 @@ func newEnv(ctx context.Context) *env {
 }
 
 type scope struct {
-	id        int
-	offset    int
-	pc        int
-	saveindex int
+	id         int
+	offset     int
+	pc         int
+	saveindex  int
+	outerindex int
 }
 
 type fork struct {

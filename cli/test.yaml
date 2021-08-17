@@ -1752,6 +1752,13 @@
     3
     2
 
+- name: function declaration and recursive call
+  args:
+    - '100000 as $x | def f: if . == $x then . else . + 1 | f end; f'
+  input: '0'
+  expected: |
+    100000
+
 - name: function declaration with duplicate function names
   args:
     - 'def f(g): def f: def g: 3; g * 2; g * f; def f: . * 5; f(f)'

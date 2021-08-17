@@ -200,19 +200,24 @@ loop:
 			goto loop
 		case opscope:
 			xs := code.v.([3]int)
-			var i, l int
+			var saveindex, outerindex, limit int
 			if index == env.scopes.index {
 				if callpc >= 0 {
-					i = index
+					saveindex = index
 				} else {
 					callpc = -callpc
-					i = env.scopes.top().(scope).saveindex
+					saveindex = env.scopes.top().(scope).saveindex
 				}
 			} else {
-				env.scopes.save(&i, &l)
+				env.scopes.save(&saveindex, &limit)
 				env.scopes.index = index
 			}
-			env.scopes.push(scope{xs[0], env.offset, callpc, i})
+			if outerindex = index; outerindex >= 0 {
+				if s := env.scopes.data[outerindex].value.(scope); s.id == xs[0] {
+					outerindex = s.outerindex
+				}
+			}
+			env.scopes.push(scope{xs[0], env.offset, callpc, saveindex, outerindex})
 			env.offset += xs[1]
 			if env.offset > len(env.values) {
 				vs := make([]interface{}, env.offset*2)
@@ -363,14 +368,15 @@ func (env *env) popfork() *fork {
 	return f
 }
 
-func (env *env) scopeOffset(id int) int {
-	return env.scopes.lookup(func(v interface{}) bool {
-		return v.(scope).id == id
-	}).(scope).offset
-}
-
 func (env *env) index(v [2]int) int {
-	return env.scopeOffset(v[0]) + v[1]
+	for id, i := v[0], env.scopes.index; i >= 0; {
+		if s := env.scopes.data[i].value.(scope); s.id == id {
+			return s.offset + v[1]
+		} else {
+			i = s.outerindex
+		}
+	}
+	panic("env.index")
 }
 
 type pathValue struct {
