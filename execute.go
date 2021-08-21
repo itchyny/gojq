@@ -190,7 +190,7 @@ loop:
 				panic(v)
 			}
 		case opcallrec:
-			pc, callpc, index = code.v.(int), -pc, env.scopes.index
+			pc, callpc, index = code.v.(int), -1, env.scopes.index
 			goto loop
 		case oppushpc:
 			env.push([2]int{code.v.(int), env.scopes.index})
