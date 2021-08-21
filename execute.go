@@ -205,8 +205,8 @@ loop:
 				if callpc >= 0 {
 					saveindex = index
 				} else {
-					callpc = -callpc
-					saveindex = env.scopes.top().(scope).saveindex
+					s := env.scopes.pop().(scope)
+					callpc, saveindex = s.pc, s.saveindex
 				}
 			} else {
 				env.scopes.save(&saveindex, &limit)
