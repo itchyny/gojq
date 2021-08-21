@@ -1,6 +1,8 @@
 package gojq
 
 import (
+	"encoding/json"
+	"fmt"
 	"math"
 	"math/big"
 	"reflect"
@@ -37,6 +39,62 @@ const (
 	OpUpdateMod
 	OpUpdateAlt
 )
+
+// OperatorFromString convert string to Operator or zero if not possible
+func OperatorFromString(s string) Operator {
+	switch s {
+	case "|":
+		return OpPipe
+	case ",":
+		return OpComma
+	case "+":
+		return OpAdd
+	case "-":
+		return OpSub
+	case "*":
+		return OpMul
+	case "/":
+		return OpDiv
+	case "%":
+		return OpMod
+	case "==":
+		return OpEq
+	case "!=":
+		return OpNe
+	case ">":
+		return OpGt
+	case "<":
+		return OpLt
+	case ">=":
+		return OpGe
+	case "<=":
+		return OpLe
+	case "and":
+		return OpAnd
+	case "or":
+		return OpOr
+	case "//":
+		return OpAlt
+	case "=":
+		return OpAssign
+	case "|=":
+		return OpModify
+	case "+=":
+		return OpUpdateAdd
+	case "-=":
+		return OpUpdateSub
+	case "*=":
+		return OpUpdateMul
+	case "/=":
+		return OpUpdateDiv
+	case "%=":
+		return OpUpdateMod
+	case "//=":
+		return OpUpdateAlt
+	default:
+		return 0
+	}
+}
 
 // String implements Stringer.
 func (op Operator) String() string {
@@ -90,7 +148,7 @@ func (op Operator) String() string {
 	case OpUpdateAlt:
 		return "//="
 	default:
-		panic(op)
+		return ""
 	}
 }
 
@@ -206,6 +264,27 @@ func (op Operator) getFunc() string {
 	default:
 		panic(op)
 	}
+}
+
+func (op Operator) MarshalJSON() ([]byte, error) {
+	if op == 0 {
+		return json.Marshal(nil)
+	}
+	return json.Marshal(op.String())
+}
+
+func (op *Operator) UnmarshalJSON(text []byte) error {
+	var s string
+	err := json.Unmarshal(text, &s)
+	if s == "" || err != nil {
+		*op = 0
+		return nil
+	}
+	*op = OperatorFromString(s)
+	if *op == 0 {
+		return fmt.Errorf("unknown operator %v", s)
+	}
+	return nil
 }
 
 func binopTypeSwitch(

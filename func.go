@@ -587,7 +587,7 @@ func funcFormat(v, x interface{}) interface{} {
 		if f == nil {
 			return &formatNotFoundError{fmt}
 		}
-		return internalFuncs[f.Name].callback(v, nil)
+		return internalFuncs[f.Name.Str].callback(v, nil)
 	default:
 		return &funcTypeError{"format", x}
 	}

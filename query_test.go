@@ -216,12 +216,18 @@ func TestQueryString(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r, err := gojq.Parse(q.String())
+	// done in three steps to normalize string format so that token positions
+	// can be compared properly
+	q2, err := gojq.Parse(q.String())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(q, r) {
-		t.Errorf("\n%v\n%v", q, r)
+	q3, err := gojq.Parse(q2.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(q2, q3) {
+		t.Errorf("\n%v\n%v", q2, q3)
 	}
 }
 

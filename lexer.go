@@ -16,6 +16,12 @@ type lexer struct {
 	err       error
 }
 
+type Token struct {
+	Str   string `json:"str,omitempty"`
+	Start int    `json:"start,omitempty"`
+	Stop  int    `json:"stop,omitempty"`
+}
+
 func newLexer(src string) *lexer {
 	return &lexer{source: src}
 }
@@ -47,17 +53,22 @@ var keywords = map[string]int{
 }
 
 func (l *lexer) Lex(lval *yySymType) (tokenType int) {
-	defer func() { l.tokenType = tokenType }()
+	lval.token = &Token{}
+	defer func() {
+		l.tokenType = tokenType
+		lval.token.Stop = l.offset
+	}()
 	if len(l.source) == l.offset {
 		l.token = ""
 		return eof
 	}
 	if l.inString {
 		tok, str := l.scanString(l.offset)
-		lval.token = str
+		lval.token.Str = str
 		return tok
 	}
 	ch, iseof := l.next()
+	lval.token.Start = l.offset - 1
 	if iseof {
 		l.token = ""
 		return eof
@@ -67,7 +78,7 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 		i := l.offset - 1
 		j, isModule := l.scanIdentOrModule()
 		l.token = l.source[i:j]
-		lval.token = l.token
+		lval.token.Str = l.token
 		if isModule {
 			return tokModuleIdent
 		}
@@ -83,7 +94,7 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 			return tokInvalid
 		}
 		l.token = l.source[i:j]
-		lval.token = l.token
+		lval.token.Str = l.token
 		return tokNumber
 	}
 	switch ch {
@@ -96,7 +107,7 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 			return tokRecurse
 		case isIdent(ch, false):
 			l.token = l.source[l.offset-1 : l.scanIdent()]
-			lval.token = l.token[1:]
+			lval.token.Str = l.token[1:]
 			return tokIndex
 		case isNumber(ch):
 			i := l.offset - 1
@@ -106,7 +117,7 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 				return tokInvalid
 			}
 			l.token = l.source[i:j]
-			lval.token = l.token
+			lval.token.Str = l.token
 			return tokNumber
 		default:
 			return '.'
@@ -116,7 +127,7 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 			i := l.offset - 1
 			j, isModule := l.scanIdentOrModule()
 			l.token = l.source[i:j]
-			lval.token = l.token
+			lval.token.Str = l.token
 			if isModule {
 				return tokModuleVariable
 			}
@@ -226,12 +237,12 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 	case '@':
 		if isIdent(l.peek(), true) {
 			l.token = l.source[l.offset-1 : l.scanIdent()]
-			lval.token = l.token
+			lval.token.Str = l.token
 			return tokFormat
 		}
 	case '"':
 		tok, str := l.scanString(l.offset - 1)
-		lval.token = str
+		lval.token.Str = str
 		return tok
 	default:
 		if ch >= utf8.RuneSelf {

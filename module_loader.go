@@ -128,8 +128,8 @@ func parseModule(path, cnt string) (*Query, error) {
 		i.Meta.KeyVals = append(
 			i.Meta.KeyVals,
 			&ConstObjectKeyVal{
-				Key: "$$path",
-				Val: &ConstTerm{Str: path},
+				Key: &Token{Str: "$$path"},
+				Val: &ConstTerm{Str: &Token{Str: path}},
 			},
 		)
 	}

@@ -20,7 +20,7 @@ func Parse(src string) (*Query, error) {
 type yySymType struct {
 	yys      int
 	value    interface{}
-	token    string
+	token    *Token
 	operator Operator
 }
 
@@ -876,19 +876,19 @@ yydefault:
 		yyDollar = yyS[yypt-8 : yypt+1]
 //line parser.go.y:122
 		{
-			yyVAL.value = &FuncDef{yyDollar[2].token, yyDollar[4].value.([]string), yyDollar[7].value.(*Query)}
+			yyVAL.value = &FuncDef{yyDollar[2].token, yyDollar[4].value.([]*Token), yyDollar[7].value.(*Query)}
 		}
 	case 16:
 		yyDollar = yyS[yypt-1 : yypt+1]
 //line parser.go.y:128
 		{
-			yyVAL.value = []string{yyDollar[1].token}
+			yyVAL.value = []*Token{yyDollar[1].token}
 		}
 	case 17:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line parser.go.y:132
 		{
-			yyVAL.value = append(yyDollar[1].value.([]string), yyDollar[3].token)
+			yyVAL.value = append(yyDollar[1].value.([]*Token), yyDollar[3].token)
 		}
 	case 18:
 		yyDollar = yyS[yypt-1 : yypt+1]

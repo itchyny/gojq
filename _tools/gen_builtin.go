@@ -44,12 +44,12 @@ func run(input, output string) error {
 		return err
 	}
 	for _, fd := range q.FuncDefs {
-		name := fd.Name
+		name := fd.Name.Str
 		if name[0] == '_' {
 			name = name[1:]
 		}
 		fd.Minify()
-		qs[name] = append(qs[fd.Name], fd)
+		qs[name] = append(qs[fd.Name.Str], fd)
 	}
 	t, err := astgen.Build(qs)
 	if err != nil {

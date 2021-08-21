@@ -13,7 +13,7 @@ func Parse(src string) (*Query, error) {
 
 %union {
   value    interface{}
-  token    string
+  token    *Token
   operator Operator
 }
 
@@ -120,17 +120,17 @@ funcdef
     }
     | tokDef tokIdent '(' funcdefargs ')' ':' query ';'
     {
-        $$ = &FuncDef{$2, $4.([]string), $7.(*Query)}
+        $$ = &FuncDef{$2, $4.([]*Token), $7.(*Query)}
     }
 
 funcdefargs
     : tokIdentVariable
     {
-        $$ = []string{$1}
+        $$ = []*Token{$1}
     }
     | funcdefargs ';' tokIdentVariable
     {
-        $$ = append($1.([]string), $3)
+        $$ = append($1.([]*Token), $3)
     }
 
 tokIdentVariable
