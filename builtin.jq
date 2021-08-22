@@ -22,10 +22,24 @@ def repeat(f):
   _repeat;
 def range($x): range(0; $x);
 def range($start; $end):
-  $start | while(. < $end; . + 1);
+  if $start | type != "number" then
+    $start | _type_error("range")
+  elif $end | type != "number" then
+    $end | _type_error("range")
+  else
+    $start | while(. < $end; . + 1)
+  end;
 def range($start; $end; $step):
-  if $step > 0 then $start | while(. < $end; . + $step)
-  elif $step < 0 then $start | while(. > $end; . + $step)
+  if $start | type != "number" then
+    $start | _type_error("range")
+  elif $end | type != "number" then
+    $end | _type_error("range")
+  elif $step | type != "number" then
+    $step | _type_error("range")
+  elif $step > 0 then
+    $start | while(. < $end; . + $step)
+  elif $step < 0 then
+    $start | while(. > $end; . + $step)
   else empty end;
 
 def _flatten($x):

@@ -1306,6 +1306,18 @@
     [5,5,5,4,5,5,5,5,5,5,6,3,6,4,2,6,5,4,3,2,1,6,3,6,4,2]
     [6,5,4,3,2,6,3,6,4,6,5,4,3,6,6,4,6,5,4,6,6,6,5,6,6,6]
 
+- name: range function error
+  args:
+    - '(null, "", [], {} | try range(.) catch .), try range(""; 0) catch ., try range(0; 1; []) catch .'
+  input: 'null'
+  expected: |
+    "range cannot be applied to: null"
+    "range cannot be applied to: string (\"\")"
+    "range cannot be applied to: array ([])"
+    "range cannot be applied to: object ({})"
+    "range cannot be applied to: string (\"\")"
+    "range cannot be applied to: array ([])"
+
 - name: tonumber function
   args:
     - 'tonumber'
