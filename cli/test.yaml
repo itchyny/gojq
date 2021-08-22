@@ -925,12 +925,25 @@
 
 - name: length function
   args:
-    - -c
-    - 'map(length),.'
-  input: '[42, -42, {"a":1,"b":2}, [3,4,5], "Hello, world", "１２３４５", null, -4722366482869645213696]'
+    - 'length'
+  input: |
+    42
+    -42
+    {"a":1,"b":2}
+    [3,4,5]
+    "Hello, world"
+    "１２３４５"
+    null
+    -4722366482869645213696
   expected: |
-    [42,42,2,3,12,5,0,4722366482869645213696]
-    [42,-42,{"a":1,"b":2},[3,4,5],"Hello, world","１２３４５",null,-4722366482869645213696]
+    42
+    42
+    2
+    3
+    12
+    5
+    0
+    4722366482869645213696
 
 - name: length function error
   args:
@@ -941,59 +954,60 @@
 
 - name: keys function
   args:
-    - '[.[]|keys]'
-  input: '[{"a":1,"b":2}, [3,4,5]]'
+    - 'keys'
+  input: |
+    {"a":1,"b":2}
+    [3,4,5]
   expected: |
     [
-      [
-        "a",
-        "b"
-      ],
-      [
-        0,
-        1,
-        2
-      ]
+      "a",
+      "b"
+    ]
+    [
+      0,
+      1,
+      2
     ]
 
 - name: utf8bytelength function
   args:
     - 'utf8bytelength'
-  input: '"☆１２３４５☆"'
+  input: '"" "☆１２３４５☆"'
   expected: |
+    0
     21
 
 - name: has function on objects
   args:
-    - 'map(has(.c[]))'
-  input: '[{"a":{"b":1},"c":["a","b"]}, {"c":["b","c"]}]'
+    - 'has(.c[])'
+  input: |
+    {"a":{"b":1},"c":["a","b"]}
+    {"c":["b","c"]}
   expected: |
-    [
-      true,
-      false,
-      false,
-      true
-    ]
+    true
+    false
+    false
+    true
 
 - name: has function on arrays
   args:
-    - 'map(has(2, nan, infinite, -infinite))'
-  input: '[[1, 2, 3], [1, 3]]'
+    - 'has(2, nan, infinite, -infinite)'
+  input: |
+    [1, 2, 3]
+    [1, 3]
   expected: |
-    [
-      true,
-      false,
-      false,
-      false,
-      false,
-      false,
-      false,
-      false
-    ]
+    true
+    false
+    false
+    false
+    false
+    false
+    false
+    false
 
 - name: has/0 is not defined
   args:
-    - 'map(has)'
+    - 'has'
   input: '[0]'
   error: |
     function not defined: has/0
@@ -1001,7 +1015,7 @@
 
 - name: has/2 is not defined
   args:
-    - 'map(has(1; 2))'
+    - 'has(1; 2)'
   input: '[0]'
   error: |
     function not defined: has/2
@@ -1016,25 +1030,21 @@
 
 - name: in function for object
   args:
-    - 'map(in({"foo": 42}))'
-  input: '["foo", "bar"]'
+    - 'in({"foo": 42})'
+  input: '"foo" "bar"'
   expected: |
-    [
-      true,
-      false
-    ]
+    true
+    false
 
 - name: in function for array
   args:
-    - 'map(in([3, 4]))'
-  input: '[-1, 0, 1, 2]'
+    - 'in([3, 4])'
+  input: '-1 0 1 2'
   expected: |
-    [
-      false,
-      true,
-      true,
-      false
-    ]
+    false
+    true
+    true
+    false
 
 - name: in function type error
   args:
@@ -1055,7 +1065,9 @@
   args:
     - -c
     - 'to_entries'
-  input: '[10, 20] {"a": 10, "b": []}'
+  input: |
+    [10, 20]
+    {"a": 10, "b": []}
   expected: |
     [{"key":0,"value":10},{"key":1,"value":20}]
     [{"key":"a","value":10},{"key":"b","value":[]}]
@@ -1079,15 +1091,30 @@
 - name: add function
   args:
     - -c
-    - 'map(add)'
-  input: '[[], [1,2,3], ["a","b","c"], [[3],[4,5],[6]], [{"a":1}, {"b":2}, {"a":3}],
-           {}, {"a":1,"b":9}, {"a":"a","b":"b","c":"c"}, {"a":[1],"b":[2],"c":[3],"d":[4]}]'
+    - 'add'
+  input: |
+    []
+    [1,2,3]
+    ["a","b","c"]
+    [[3],[4,5],[6]]
+    [{"a":1}, {"b":2}, {"a":3}]
+    {}
+    {"a":1,"b":9}
+    {"a":"a","b":"b","c":"c"}
+    {"a":[1],"b":[2],"c":[3],"d":[4]}
   expected: |
-    [null,6,"abc",[3,4,5,6],{"a":3,"b":2},null,10,"abc",[1,2,3,4]]
+    null
+    6
+    "abc"
+    [3,4,5,6]
+    {"a":3,"b":2}
+    null
+    10
+    "abc"
+    [1,2,3,4]
 
 - name: add function error
   args:
-    - -c
     - 'add'
   input: '[{}, [], {}]'
   error: |
@@ -1096,24 +1123,32 @@
 - name: flatten/0 function
   args:
     - -c
-    - 'map(flatten)'
-  input: '[[0, [[[[[1]]]]]], [0, [1, [2]], [1, [[3], 2]]]]'
+    - 'flatten'
+  input: |
+    [0, [[[[[1]]]]]]
+    [0, [1, [2]], [1, [[3], 2]]]
   expected: |
-    [[0,1],[0,1,2,1,3,2]]
+    [0,1]
+    [0,1,2,1,3,2]
 
 - name: flatten/1 function
   args:
     - -c
-    - 'map(flatten(2))'
-  input: '[[0, [[[[[1]]]]]], [0, [1, [2]], [1, [[3], 2]]]]'
+    - 'flatten(2)'
+  input: |
+    [0, [[[[[1]]]]]]
+    [0, [1, [2]], [1, [[3], 2]]]
   expected: |
-    [[0,[[[1]]]],[0,1,2,1,[3],2]]
+    [0,[[[1]]]]
+    [0,1,2,1,[3],2]
 
 - name: min, min_by, max, max_by functions
   args:
     - -c
     - '[min, min_by(.[1]), min_by(.[2]), max, max_by(.[1]), max_by(.[2])]'
-  input: '[] [[4,2,"a"],[3,1,"a"],[2,4,"a"],[1,3,"a"]]'
+  input: |
+    []
+    [[4,2,"a"],[3,1,"a"],[2,4,"a"],[1,3,"a"]]
   expected: |
     [null,null,null,null,null,null]
     [[1,3,"a"],[3,1,"a"],[4,2,"a"],[4,2,"a"],[2,4,"a"],[1,3,"a"]]
@@ -1136,7 +1171,9 @@
   args:
     - -c
     - 'unique, unique_by(length)'
-  input: '[7,3,5,1,4,2,5,3,6,1,7,4,3] ["cat", "dog", "hello", "world", "banana", "apple"]'
+  input: |
+    [7,3,5,1,4,2,5,3,6,1,7,4,3]
+    ["cat", "dog", "hello", "world", "banana", "apple"]
   expected: |
     [1,2,3,4,5,6,7]
     [1,2,3,4,5,6,7]
@@ -1254,27 +1291,42 @@
 
 - name: tonumber function
   args:
-    - 'map(tonumber)'
-  input: '["0", "12345", "-43210", "+4.2", "05", "9.", "+.123", "-.1", "1e-2", "2.e-2", 3.14]'
+    - 'tonumber'
+  input: |
+    "0"
+    "12345"
+    "-43210"
+    "+4.2"
+    "05"
+    "9."
+    "+.123"
+    "-.1"
+    "1e-2"
+    "2.e-2"
+    3.14
   expected: |
-    [
-      0,
-      12345,
-      -43210,
-      4.2,
-      5,
-      9,
-      0.123,
-      -0.1,
-      0.01,
-      0.02,
-      3.14
-    ]
+    0
+    12345
+    -43210
+    4.2
+    5
+    9
+    0.123
+    -0.1
+    0.01
+    0.02
+    3.14
 
 - name: tonumber function error
   args:
-    - '.[] | try tonumber catch .'
-  input: '["", ".", " ", "1a", ".e1", "-.e"]'
+    - 'try tonumber catch .'
+  input: |
+    ""
+    "."
+    " "
+    "1a"
+    ".e1"
+    "-.e"
   expected: |
     "invalid number: \"\""
     "invalid number: \".\""
@@ -1285,34 +1337,45 @@
 
 - name: tostring function
   args:
-    - 'map(tostring)'
-  input: '["foo bar", 3.14, {"foo": "-43210"}, false, [1,2,3], ["<&><>"]]'
+    - 'tostring'
+  input: |
+    "foo bar"
+    3.14
+    {"foo": "-43210"}
+    false
+    [1,2,3]
+    ["<&><>"]
   expected: |
-    [
-      "foo bar",
-      "3.14",
-      "{\"foo\":\"-43210\"}",
-      "false",
-      "[1,2,3]",
-      "[\"<&><>\"]"
-    ]
+    "foo bar"
+    "3.14"
+    "{\"foo\":\"-43210\"}"
+    "false"
+    "[1,2,3]"
+    "[\"<&><>\"]"
 
 - name: type function
   args:
-    - 'map(type)'
-  input: '[null, false, true, 0, 3.14, 4722366482869645213696, "foo", [], {}]'
+    - 'type'
+  input: |
+    null
+    false
+    true
+    0
+    3.14
+    4722366482869645213696
+    "foo"
+    []
+    {}
   expected: |
-    [
-      "null",
-      "boolean",
-      "boolean",
-      "number",
-      "number",
-      "number",
-      "string",
-      "array",
-      "object"
-    ]
+    "null"
+    "boolean"
+    "boolean"
+    "number"
+    "number"
+    "number"
+    "string"
+    "array"
+    "object"
 
 - name: reverse function
   args:
@@ -1410,7 +1473,11 @@
 - name: index, rindex functions on arrays
   args:
     - '[index(0, [1, 2]), rindex(0, [1, 2]), indices(0, [1, 2])]'
-  input: 'null [] [0] [0, 1, 2, 1, 2, 1, 0, 1, 2]'
+  input: |
+    null
+    []
+    [0]
+    [0, 1, 2, 1, 2, 1, 0, 1, 2]
   expected: |
     [
       null,
@@ -1482,16 +1549,19 @@
 
 - name: startswith function
   args:
-    - 'map(startswith("foo"))'
-  input: '["", "fo", "foo", "fooo", "barfoo"]'
+    - 'startswith("foo")'
+  input: |
+    ""
+    "fo"
+    "foo"
+    "fooo"
+    "barfoo"
   expected: |
-    [
-      false,
-      false,
-      true,
-      true,
-      false
-    ]
+    false
+    false
+    true
+    true
+    false
 
 - name: startswith function error
   args:
@@ -1503,16 +1573,19 @@
 
 - name: endswith function
   args:
-    - 'map(endswith("foo"))'
-  input: '["", "fo", "foo", "fooo", "barfoo"]'
+    - 'endswith("foo")'
+  input: |
+    ""
+    "fo"
+    "foo"
+    "fooo"
+    "barfoo"
   expected: |
-    [
-      false,
-      false,
-      true,
-      false,
-      true
-    ]
+    false
+    false
+    true
+    false
+    true
 
 - name: endswith function error
   args:
@@ -1636,7 +1709,9 @@
   args:
     - -c
     - 'transpose'
-  input: '[] [[1,2,3,[]],[4,"foo",{}],[5,6]]'
+  input: |
+    []
+    [[1,2,3,[]],[4,"foo",{}],[5,6]]
   expected: |
     []
     [[1,4,5],[2,"foo",6],[3,{},null],[[],null,null]]
@@ -2339,24 +2414,41 @@
 - name: explode function
   args:
     - -c
-    - 'map(explode)'
-  input: '["", "foo bar", "１２３４５", "\n\t"]'
+    - 'explode'
+  input: |
+    ""
+    "foo bar"
+    "１２３４５"
+    "\n\t"
   expected: |
-    [[],[102,111,111,32,98,97,114],[65297,65298,65299,65300,65301],[10,9]]
+    []
+    [102,111,111,32,98,97,114]
+    [65297,65298,65299,65300,65301]
+    [10,9]
 
 - name: implode function
   args:
-    - -c
-    - 'map(implode)'
-  input: '[[],[102,111,111,32,98,97,114],[65297,65298,65299,65300,65301],[10,9]]'
+    - 'implode'
+  input: |
+    []
+    [102,111,111,32,98,97,114]
+    [65297,65298,65299,65300,65301]
+    [10,9]
   expected: |
-    ["","foo bar","１２３４５","\n\t"]
+    ""
+    "foo bar"
+    "１２３４５"
+    "\n\t"
 
 - name: implode function error
   args:
-    - -c
-    - '.[] | try implode catch .'
-  input: '[[0],[-1],[1114112],[[]],[{}]]'
+    - 'try implode catch .'
+  input: |
+    [0]
+    [-1]
+    [1114112]
+    [[]]
+    [{}]
   expected: |
     "\u0000"
     "implode cannot be applied to: array ([-1])"
@@ -2366,15 +2458,15 @@
 
 - name: split/1 function
   args:
-    - 'map(split(", ","") | join("/"))'
-  input: '["a,b, c, d, e,f",", a,b, c, d, e,f, "]'
+    - 'split(", ","") | join("/")'
+  input: |
+    "a,b, c, d, e,f"
+    ", a,b, c, d, e,f, "
   expected: |
-    [
-      "a,b/c/d/e,f",
-      "a/,/b/,/ /c/,/ /d/,/ /e/,/f",
-      "/a,b/c/d/e,f/",
-      ",/ /a/,/b/,/ /c/,/ /d/,/ /e/,/f/,/ "
-    ]
+    "a,b/c/d/e,f"
+    "a/,/b/,/ /c/,/ /d/,/ /e/,/f"
+    "/a,b/c/d/e,f/"
+    ",/ /a/,/b/,/ /c/,/ /d/,/ /e/,/f/,/ "
 
 - name: condition
   args:
@@ -2434,13 +2526,13 @@
 
 - name: not function
   args:
-    - 'map(not)'
-  input: '[true, false]'
+    - 'not'
+  input: |
+    true
+    false
   expected: |
-    [
-      false,
-      true
-    ]
+    false
+    true
 
 - name: iterator in condition
   args:
@@ -2785,39 +2877,47 @@
 
 - name: tojson function
   args:
-    - 'map(tojson)'
-  input: '[1, null, false, "foo", ["foo"], {"a": [1,2,3]}]'
+    - 'tojson'
+  input: |
+    1
+    null
+    false
+    "foo"
+    ["foo"]
+    {"a": [1,2,3]}
   expected: |
-    [
-      "1",
-      "null",
-      "false",
-      "\"foo\"",
-      "[\"foo\"]",
-      "{\"a\":[1,2,3]}"
-    ]
+    "1"
+    "null"
+    "false"
+    "\"foo\""
+    "[\"foo\"]"
+    "{\"a\":[1,2,3]}"
 
 - name: fromjson function
   args:
-    - 'map(fromjson)'
-  input: '["1", "null", "false", "\"foo\"", "[\"foo\"]", "{\"a\":[1,2,3]}"]'
+    - 'fromjson'
+  input: |
+    "1"
+    "null"
+    "false"
+    "\"foo\""
+    "[\"foo\"]"
+    "{\"a\":[1,2,3]}"
   expected: |
+    1
+    null
+    false
+    "foo"
     [
-      1,
-      null,
-      false,
-      "foo",
-      [
-        "foo"
-      ],
-      {
-        "a": [
-          1,
-          2,
-          3
-        ]
-      }
+      "foo"
     ]
+    {
+      "a": [
+        1,
+        2,
+        3
+      ]
+    }
 
 - name: defining variable
   args:
@@ -2865,7 +2965,10 @@
 - name: binding an array
   args:
     - '. as [$i, $j] | [$j, $i]'
-  input: '[] [10] [20, 30]'
+  input: |
+    []
+    [10]
+    [20, 30]
   expected: |
     [
       null,
@@ -2883,7 +2986,10 @@
 - name: binding an array deeply
   args:
     - '. as [$i, [$j], [[$k]]] | [$i, $j, $k]'
-  input: '[] [10] [20, [30], [[40]]]'
+  input: |
+    []
+    [10]
+    [20, [30], [[40]]]
   expected: |
     [
       null,
@@ -2911,7 +3017,10 @@
 - name: binding an object
   args:
     - '. as {$foo, bar: $bar} | {$bar, $foo}'
-  input: '{} {"foo": 10} {"foo": 20, "bar": 30}'
+  input: |
+    {}
+    {"foo": 10}
+    {"foo": 20, "bar": 30}
   expected: |
     {
       "bar": null,
@@ -2929,7 +3038,10 @@
 - name: binding an object deeply
   args:
     - '. as {$foo, bar: {"baz": {$qux}, "": $quy}} | {$foo, $qux, $quy}'
-  input: '{} {"foo": 10} {"foo": 20, "bar": { "baz": { "qux": 30 }, "": -1 } }'
+  input: |
+    {}
+    {"foo": 10}
+    {"foo": 20, "bar": { "baz": { "qux": 30 }, "": -1 } }
   expected: |
     {
       "foo": null,
@@ -3213,7 +3325,11 @@
   args:
     - -c
     - '[all, any]'
-  input: '[] [false, false] [false, true] [true, true]'
+  input: |
+    []
+    [false, false]
+    [false, true]
+    [true, true]
   expected: |
     [true,false]
     [false,false]
@@ -3224,7 +3340,11 @@
   args:
     - -c
     - '[all(not), any(not)]'
-  input: '[] [false, false] [false, true] [true, true]'
+  input: |
+    []
+    [false, false]
+    [false, true]
+    [true, true]
   expected: |
     [true,false]
     [true,true]
@@ -3430,7 +3550,6 @@
     [-0.375,-0.25,-0.125,0,0.125,0.25,-0.75,-0.5,-0.25,0,0.25,0.5,-1.5,-1,-0.5,0,0.5,1,-3,-2,-1,0,1,2,-6,-4,-2,0,2,4,-12,-8,-4,0,4,8]
     [-0.037,-0.125,-1,1.7976931348623157e+308,1,0.125,0.1111,0.25,1,1.7976931348623157e+308,1,0.25,-0.3333,-0.5,-1,1.7976931348623157e+308,1,0.5,1,1,1,1,1,1,-3,-2,-1,0,1,2,9,4,1,0,1,4]
     [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,1.7976931348623157e+308,-1.7976931348623157e+308,1.7976931348623157e+308,-1.7976931348623157e+308,-1.7976931348623157e+308,-1.7976931348623157e+308,5.8215,-1.6507,0.7812,0.0883,-0.7812,-1.6507,1.1278,-0.6174,0.107,0.5104,-0.107,-0.6174]
-
 
 - name: fma/3 function
   args:
@@ -3718,7 +3837,9 @@
   args:
     - -c
     - '["foo",1] as $p | getpath($p), setpath($p; 2), delpaths([$p]), .'
-  input: '{"foo":[0,1]} {"bar":false}'
+  input: |
+    {"foo":[0,1]}
+    {"bar":false}
   expected: |
     1
     {"foo":[0,2]}
@@ -4274,7 +4395,9 @@
 - name: debug function
   args:
     - 'recurse(debug|.[]?)'
-  input: '[{}] [1,{"a":2}]'
+  input: |
+    [{}]
+    [1,{"a":2}]
   expected: |
     [
       {}
@@ -4302,7 +4425,10 @@
 - name: stderr function
   args:
     - 'recurse(stderr|.[]?)'
-  input: '[{}] [1,{"a":2}] "DEBUG:"'
+  input: |
+    [{}]
+    [1,{"a":2}]
+    "DEBUG:"
   expected: |
     [
       {}
