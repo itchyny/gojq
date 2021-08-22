@@ -1,8 +1,8 @@
 package gojq
 
 import (
+	"fmt"
 	"math/big"
-	"reflect"
 	"strconv"
 	"strings"
 )
@@ -329,28 +329,21 @@ func typeErrorPreview(v interface{}) string {
 }
 
 func typeof(v interface{}) (s string) {
-	if v == nil {
+	switch v := v.(type) {
+	case nil:
 		return "null"
-	}
-	k := reflect.TypeOf(v).Kind()
-	switch k {
-	case reflect.Array, reflect.Slice:
-		return "array"
-	case reflect.Map:
-		return "object"
-	case reflect.Bool:
+	case bool:
 		return "boolean"
-	case reflect.Int, reflect.Uint, reflect.Float64:
+	case int, float64, *big.Int:
 		return "number"
-	case reflect.String:
+	case string:
 		return "string"
-	case reflect.Ptr:
-		if _, ok := v.(*big.Int); ok {
-			return "number"
-		}
-		return "ptr"
+	case []interface{}:
+		return "array"
+	case map[string]interface{}:
+		return "object"
 	default:
-		return k.String()
+		panic(fmt.Sprintf("invalid value: %v", v))
 	}
 }
 

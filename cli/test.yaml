@@ -1300,12 +1300,14 @@
 - name: type function
   args:
     - 'map(type)'
-  input: '[null, false, true, 0, "foo", [], {}]'
+  input: '[null, false, true, 0, 3.14, 4722366482869645213696, "foo", [], {}]'
   expected: |
     [
       "null",
       "boolean",
       "boolean",
+      "number",
+      "number",
       "number",
       "string",
       "array",
