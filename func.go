@@ -764,7 +764,7 @@ func funcIndex(_, v, x interface{}) interface{} {
 		}
 	case map[string]interface{}:
 		if v == nil {
-			return v
+			return nil
 		}
 		start, ok := x["start"]
 		if !ok {
