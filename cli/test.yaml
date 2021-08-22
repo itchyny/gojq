@@ -1005,6 +1005,16 @@
     false
     false
 
+- name: has function against null
+  args:
+    - 'has(2, nan, infinite, -infinite)'
+  input: 'null'
+  expected: |
+    false
+    false
+    false
+    false
+
 - name: has/0 is not defined
   args:
     - 'has'
@@ -1044,6 +1054,13 @@
     false
     true
     true
+    false
+
+- name: in function for null
+  args:
+    - 'in(null)'
+  input: '0'
+  expected: |
     false
 
 - name: in function type error

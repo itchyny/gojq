@@ -332,6 +332,8 @@ func funcHas(v, x interface{}) interface{} {
 		default:
 			return &hasKeyTypeError{v, x}
 		}
+	case nil:
+		return false
 	default:
 		return &hasKeyTypeError{v, x}
 	}
