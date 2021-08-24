@@ -21,25 +21,25 @@ def repeat(f):
   def _repeat: f, _repeat;
   _repeat;
 def range($x): range(0; $x);
-def range($start; $end):
+def range($start; $stop):
   if $start | type != "number" then
     $start | _type_error("range")
-  elif $end | type != "number" then
-    $end | _type_error("range")
+  elif $stop | type != "number" then
+    $stop | _type_error("range")
   else
-    $start | while(. < $end; . + 1)
+    $start | while(. < $stop; . + 1)
   end;
-def range($start; $end; $step):
+def range($start; $stop; $step):
   if $start | type != "number" then
     $start | _type_error("range")
-  elif $end | type != "number" then
-    $end | _type_error("range")
+  elif $stop | type != "number" then
+    $stop | _type_error("range")
   elif $step | type != "number" then
     $step | _type_error("range")
   elif $step > 0 then
-    $start | while(. < $end; . + $step)
+    $start | while(. < $stop; . + $step)
   elif $step < 0 then
-    $start | while(. > $end; . + $step)
+    $start | while(. > $stop; . + $step)
   else empty end;
 
 def _flatten($x):
@@ -104,10 +104,14 @@ def endswith($x):
 def ltrimstr($x):
   if type == "string" and ($x|type == "string") and startswith($x) then
     .[$x | length:]
+  else
+    .
   end;
 def rtrimstr($x):
   if type == "string" and ($x|type == "string") and endswith($x) then
     .[:- ($x | length)]
+  else
+    .
   end;
 
 def combinations:
@@ -123,9 +127,9 @@ def join($x): reduce .[] as $i (null;
     ($i | if type | . == "boolean" or . == "number" then tostring else . // "" end)
   ) // "";
 def ascii_downcase:
-  explode | map(if 65 <= . and . <= 90 then . + 32 end) | implode;
+  explode | map(if 65 <= . and . <= 90 then . + 32 else . end) | implode;
 def ascii_upcase:
-  explode | map(if 97 <= . and . <= 122 then . - 32 end) | implode;
+  explode | map(if 97 <= . and . <= 122 then . - 32 else . end) | implode;
 def walk(f):
   def w:
     if type == "object" then
