@@ -332,7 +332,7 @@ loop:
 		}
 	}
 	if len(env.forks) > 0 {
-		pc, backtrack = env.popfork().pc, true
+		pc, backtrack = env.popfork(), true
 		goto loop
 	}
 	if err != nil {
@@ -358,14 +358,14 @@ func (env *env) pushfork(pc int) {
 	env.debugForks(pc, ">>>")
 }
 
-func (env *env) popfork() fork {
+func (env *env) popfork() int {
 	f := env.forks[len(env.forks)-1]
 	env.debugForks(f.pc, "<<<")
 	env.forks, env.expdepth = env.forks[:len(env.forks)-1], f.expdepth
 	env.stack.restore(f.stackindex, f.stacklimit)
 	env.scopes.restore(f.scopeindex, f.scopelimit)
 	env.paths.restore(f.pathindex, f.pathlimit)
-	return f
+	return f.pc
 }
 
 func (env *env) index(v [2]int) int {
