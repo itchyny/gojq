@@ -1,4 +1,4 @@
-- name: empty
+- name: empty input
   input: ''
   expected: ''
 
@@ -16,7 +16,7 @@
   expected: |
     128
 
-- name: number
+- name: number input
   args:
     - '.'
   input: '128'
@@ -45,7 +45,7 @@
         ^  invalid token "0.."
   exit_code: 3
 
-- name: string
+- name: string input
   args:
     - '.'
   input: '"Hello, world!\r\n\t\f\b\uff06"'
@@ -106,14 +106,14 @@
              ^  invalid token " \x "
   exit_code: 3
 
-- name: object
+- name: object input
   input: '{"foo": 128}'
   expected: |
     {
       "foo": 128
     }
 
-- name: object key and string escape
+- name: object input and string escape
   input: '{"foo\\u0000\\t\\n\\r\\u001f !\"#$/09:;<>?@AZ[\\\\]^_`az{|}~\\u007f": "<\\t\\n\\r>"}'
   expected: |
     {
@@ -127,14 +127,14 @@
   expected: |
     128
 
-- name: object index large number
+- name: object index with large number value
   args:
     - '.foo'
   input: '{"foo": 4722366482869645213696}'
   expected: |
     4722366482869645213696
 
-- name: keyword in object index
+- name: object index by keywords
   args:
     - '.and,.or,.try'
   input: '{"and":1,"or":2,"try":3}'
@@ -143,7 +143,7 @@
     2
     3
 
-- name: object index
+- name: object index by brackets
   args:
     - '.["foo"]'
   input: '{"foo": 128}'
@@ -165,14 +165,14 @@
   expected: |
     128
 
-- name: deep object index by query
+- name: object nested index by query
   args:
     - '.d[.a][.b][.c]'
   input: '{ "a": "b", "b": "c", "c": "d", "d": { "b": { "c": { "d": 128 } } } }'
   expected: |
     128
 
-- name: object index by iterator
+- name: object index by iterator after iterator
   args:
     - '.c[][.a[] + .b[]]'
   input: '{ "a": ["a", "b"], "b": ["c", "d"], "c": [{"ac": 1, "bc": 2, "ad": 3, "bd": 4}, {"ac": 5, "bc": 6, "ad": 7, "bd": 8}] }'
@@ -186,7 +186,7 @@
     4
     8
 
-- name: object index by string iterator
+- name: object index by string iterator after iterator
   args:
     - '.c[]."\(.a[])"'
   input: '{ "a": [0,1], "b": [0,2], "c": [{"0":1,"1":2},{"0":3,"1":4}] }'
@@ -196,7 +196,7 @@
     2
     4
 
-- name: object index after iterator
+- name: object index in object value
   args:
     - '{ message: .[].message }'
   input: '[ {"message": "Hello, world" } ]'
@@ -222,28 +222,28 @@
           ^  unexpected token "a"
   exit_code: 3
 
-- name: expected object but got number
+- name: expected object but got number error
   args:
     - '.foo.bar'
   input: '{"foo": 128}'
   error: |
     expected an object but got: number (128)
 
-- name: expected object but got string
+- name: expected object but got string error
   args:
     - '"a"+"☆"*100 | .foo'
   input: '0'
   error: |
     expected an object but got: string ("a☆☆☆☆☆☆☆☆ ...")
 
-- name: expected object in pipe
+- name: expected object error with pipe operator
   args:
     - '.foo|.bar'
   input: '{"foo": 128}'
   error: |
     expected an object but got: number (128)
 
-- name: expected object after iterator
+- name: expected object error after iterator
   args:
     - '.[]|.foo|.bar'
   input: '[128]'
@@ -257,33 +257,33 @@
   expected: |
     null
 
-- name: object optional
+- name: object optional index
   args:
     - '.foo?.bar?.baz?'
   input: '{"foo": 128}'
 
-- name: object optional error
+- name: object optional index error
   args:
     - '.foo.bar.baz?'
   input: '{"foo": 128}'
   error: |
     expected an object but got: number (128)
 
-- name: object optional after iterator error
+- name: object optional index after iterator error
   args:
     - '.[].foo?'
   input: '128'
   error: |
     cannot iterate over: number (128)
 
-- name: error after optional
+- name: error after optional operator
   args:
     - '1? | .foo'
   input: 'null'
   error: |
     expected an object but got: number (1)
 
-- name: error after optional with fork in try
+- name: error after optional operator with fork
   args:
     - '(1,2)? | .foo'
   input: 'null'
@@ -322,7 +322,7 @@
     []
     []
 
-- name: array index and slice with large number
+- name: array index and slice by large number
   args:
     - -c
     - '.[1e300], .[-1e300], .[-1e300:], .[1e300:], .[:-1e300], .[:1e300], .[-1e300:1e300], .[1e300:-1e300]'
@@ -337,7 +337,7 @@
     [16,32,48,64]
     []
 
-- name: array index and slice with infinite
+- name: array index and slice by infinite
   args:
     - -c
     - '.[infinite], .[-infinite], .[-infinite:], .[infinite:], .[:-infinite], .[:infinite], .[-infinite:infinite], .[infinite:-infinite]'
@@ -352,7 +352,7 @@
     [16,32,48,64]
     []
 
-- name: array and string slice with object
+- name: array and string slice by object
   args:
     - -c
     - '[.[{"start": (null,range(-3;4)), "end": (null,range(-3;4))}]]'
@@ -361,14 +361,14 @@
     [[0,1,2],[],[0],[0,1],[],[0],[0,1],[0,1,2],[0,1,2],[],[0],[0,1],[],[0],[0,1],[0,1,2],[1,2],[],[],[1],[],[],[1],[1,2],[2],[],[],[],[],[],[],[2],[0,1,2],[],[0],[0,1],[],[0],[0,1],[0,1,2],[1,2],[],[],[1],[],[],[1],[1,2],[2],[],[],[],[],[],[],[2],[],[],[],[],[],[],[],[]]
     ["abcde","ab","abc","abcd","","a","ab","abc","cde","","c","cd","","","","c","de","","","d","","","","","e","","","","","","","","abcde","ab","abc","abcd","","a","ab","abc","bcde","b","bc","bcd","","","b","bc","cde","","c","cd","","","","c","de","","","d","","","",""]
 
-- name: array slice with object against null
+- name: array slice by object against null
   args:
     - '.[{"start": 1, "end": 2}]'
   input: 'null'
   expected: |
     null
 
-- name: array slice with object error
+- name: array slice by object error
   args:
     - '.[{"start": 1}]'
   input: '[]'
@@ -382,7 +382,7 @@
   error: |
     expected a number for indexing an array but got: object ({})
 
-- name: array index and slice with large number
+- name: array index and slice by large integer
   args:
     - -c
     - '. as $x | 4722366482869645213696 as $y | $x[-$y], $x[$y], $x[-$y:], $x[:$y], $x[-$y:$y], $x[$y-$y], $x[$y/$y]'
@@ -396,7 +396,7 @@
     16
     32
 
-- name: iterator in array index
+- name: array nested index by iterator
   args:
     - -c
     - '[.[.[]],.[.[]:],.[:.[]],.[.[]:.[]],.[-.[]],.[--.[]]]'
@@ -433,7 +433,7 @@
     [2]
     [6]
 
-- name: expected array
+- name: expected array but got object error
   args:
     - '.[0:1]'
   input: '{"foo": 128}'
@@ -447,7 +447,14 @@
   expected: |
     null
 
-- name: array index with array
+- name: array slice against null
+  args:
+    - '.[0:1]'
+  input: 'null'
+  expected: |
+    null
+
+- name: array index by array
   args:
     - -c
     - '.[[1],[5,7,9],[],5,[3]]'
@@ -492,7 +499,7 @@
     [[1],[1]]
     [[[null],3],[[null],3]]
 
-- name: array construction with error funciton
+- name: array construction with error function
   args:
     - -c
     - '[error], [0, error, 1]'
@@ -501,14 +508,14 @@
     []
     [0,1]
 
-- name: array construction with halt_error funciton
+- name: array construction with halt_error function
   args:
     - -c
     - '[halt_error], [0, halt_error, 1]'
   input: 'null'
   exit_code: 5
 
-- name: iterator
+- name: array iterator
   args:
     - '.foo | .[] | .'
   input: '{"foo": [1,2,{"bar":[]},[3,4,5]]}'
@@ -524,19 +531,26 @@
       5
     ]
 
-- name: iterator optional
+- name: iterator with optional operator
   args:
     - '.[]?'
   input: '10'
 
-- name: iterator error
+- name: nested iterator
+  args:
+    - '.[][]'
+  input: '[[10]]'
+  expected: |
+    10
+
+- name: nested iterator error
   args:
     - '.[][]'
   input: '[10]'
   error: |
     cannot iterate over: number (10)
 
-- name: deep iterator optional
+- name: nested iterator with optional operator
   args:
     - '.[][]?'
   input: '[10]'
@@ -548,7 +562,7 @@
   expected: |
     128
 
-- name: object optional after iterator
+- name: object optional index after iterator
   args:
     - '[.[].name?]'
   input: '[ 1, { "name": 2 }, 3, { "name": 4 } ]'
@@ -567,7 +581,7 @@
       "baz": 128
     }
 
-- name: null values
+- name: null value
   args:
     - '.[] | null'
   input: '["a", 1, [], {}]'
@@ -587,7 +601,7 @@
     true
     false
 
-- name: empty value
+- name: empty function
   args:
     - '.[] | empty, empty, . + [empty,.][], [empty,.][] / 1, empty < ., . and empty, empty or .'
   input: '[0, 1]'
@@ -597,7 +611,18 @@
     2
     1
 
-- name: empty function
+- name: empty function in array construction
+  args:
+    - '[empty], [0, empty, 1]'
+  input: 'null'
+  expected: |
+    []
+    [
+      0,
+      1
+    ]
+
+- name: empty function in function declaration
   args:
     - 'def f: 1,empty,empty,2; f,f'
   input: '[0, 1]'
@@ -631,7 +656,7 @@
   expected: |
     {"":false,"bar":{"bar":["a","b"]},"foo":["a","b"]}
 
-- name: object construction shortcut
+- name: object construction shortcuts
   args:
     - '{foo,"bar",qux,quxx:.foo}'
   input: '{"foo": 1, "bar": 2, "baz": 3}'
@@ -653,7 +678,7 @@
       "foo": 1
     }
 
-- name: object construction with keyword
+- name: object construction by keywords
   args:
     - '{as, and, null, module}'
   input: '{"and": 1, "as": 2, "module": 3, "null": 4}'
@@ -665,7 +690,7 @@
       "null": 4
     }
 
-- name: object construction pipe in value
+- name: object construction with pipe in value
   args:
     - '{ "bar": { "baz": . } | . | select(true) }'
   input: '{ "foo": 100 }'
@@ -685,16 +710,17 @@
   expected: |
     {}
 
-- name: negate in object value
+- name: unary operators in object values
   args:
-    - '{ foo: -128 }'
+    - '{ x: -128, y: +128 }'
   input: '0'
   expected: |
     {
-      "foo": -128
+      "x": -128,
+      "y": 128
     }
 
-- name: iterator in object
+- name: iterator in object values
   args:
     - -c
     - '{ foo: .foo[], bar: .bar[] }'
@@ -718,7 +744,7 @@
     {"b":"a"}
     {"b":"b"}
 
-- name: binary operator in object key and value
+- name: binary operators in object key and value
   args:
     - -c
     - '{ (.[] + .[]): (.[] + .[]) }'
@@ -763,7 +789,7 @@
   error: |
     expected an object but got: number (10)
 
-- name: variable in object key
+- name: variable in object keys
   args:
     - '. as [$x, $y, $z] | {$x: 1, $y: 2, $z: 3}'
   input: '["a", "b", "c"]'
@@ -797,7 +823,7 @@
   error: |
     expected a string for object key but got: null
 
-- name: keyword in object key
+- name: keyword in object keys
   args:
     - -c
     - '{if:0,and:1,or:2,then:3,else:4,elif:5,end:6,as:7,def:8,reduce:9,foreach:10,try:11,catch:12,label:13,import:14,include:15,module:16}'
@@ -1290,10 +1316,10 @@
     []
     [5,2,-1,-4]
 
-- name: range function with iterators in argument
+- name: range function with iterators in arguments
   args:
     - -c
-    - '[range(-.; .+1)] | [range(.[]; .[]; .[])] | recurse(.[26:];.[0])|.[:26] | map(.+3)'
+    - '[range(-.; .+1)] | [range(.[]; .[]; .[])] | recurse(.[26:];.[0])[:26] | map(.+3)'
   input: '3'
   expected: |
     [0,0,0,0,1,0,0,0,1,2,0,2,0,0,1,2,3,0,2,0,3,0,1,2,3,4]
@@ -1368,17 +1394,21 @@
   args:
     - 'tostring'
   input: |
-    "foo bar"
-    3.14
-    {"foo": "-43210"}
+    null
     false
+    true
+    3.14
+    "foo bar"
+    {"foo": "-43210"}
     [1,2,3]
     ["<&><>"]
   expected: |
-    "foo bar"
-    "3.14"
-    "{\"foo\":\"-43210\"}"
+    "null"
     "false"
+    "true"
+    "3.14"
+    "foo bar"
+    "{\"foo\":\"-43210\"}"
     "[1,2,3]"
     "[\"<&><>\"]"
 
@@ -1769,7 +1799,7 @@
     function not defined: map/2
   exit_code: 3
 
-- name: function declaration
+- name: function declaration with an argument
   args:
     - 'def f(g): g | g; f(..)'
   input: '[0, 1]'
@@ -1783,7 +1813,7 @@
     0
     1
 
-- name: function declaration
+- name: function nested declaration
   args:
     - -c
     - 'def f: def g: .; g; f'
@@ -1791,7 +1821,7 @@
   expected: |
     [0,1]
 
-- name: function declaration
+- name: function declaration with call of another declared function
   args:
     - -c
     - 'def f: .,.; def g: [f,f]; f,g'
@@ -2277,7 +2307,7 @@
   expected: |
     [2,4]
 
-- name: subtract arrays
+- name: subtract arrays with large numbers
   args:
     - -c
     - '. as $x | [$x-$x] - [0]'
@@ -2595,7 +2625,7 @@
       "utf8bytelength cannot be applied to: boolean (false)"
     ]
 
-- name: try catch
+- name: try catch with function declaration
   args:
     - 'def f: fromjson; try {} | f catch ., 1'
   input: '0'
@@ -2760,7 +2790,7 @@
     2
     1
 
-- name: label and break in function argument
+- name: label and break in function argument with foreach
   args:
     - 'label $out | last(foreach range(0; 10) as $i ({x: 1}; if .x > 10 then break $out else .x += 1 end))'
   input: '0'
@@ -2781,7 +2811,7 @@
     4
     5
 
-- name: duplicate label name
+- name: duplicate label names
   args:
     - 'label $x | (label $x | break $x), .'
   input: '1'
@@ -2911,6 +2941,7 @@
     1
     null
     false
+    true
     "foo"
     ["foo"]
     {"a": [1,2,3]}
@@ -2918,6 +2949,7 @@
     "1"
     "null"
     "false"
+    "true"
     "\"foo\""
     "[\"foo\"]"
     "{\"a\":[1,2,3]}"
@@ -2929,6 +2961,7 @@
     "1"
     "null"
     "false"
+    "true"
     "\"foo\""
     "[\"foo\"]"
     "{\"a\":[1,2,3]}"
@@ -2936,6 +2969,7 @@
     1
     null
     false
+    true
     "foo"
     [
       "foo"
@@ -2948,7 +2982,7 @@
       ]
     }
 
-- name: defining variable
+- name: variable definition
   args:
     - '.foo.bar as $foo | .foo.bar as $bar | {$foo} + {bar: ($bar / 2)} * { baz: 20 }'
   input: '{ "foo": { "bar": 10 } }'
@@ -2959,7 +2993,7 @@
       "foo": 10
     }
 
-- name: defining variable
+- name: variable definition
   args:
     - '.ys as $ys | .xs[] | {a, b: $ys[.b]}'
   input: '{"xs": [{"a": "a0", "b": "b0"}, {"a": "a1", "b": "b1"}], "ys": {"b0": "bb0", "b1": "bb1"}}'
@@ -4024,6 +4058,14 @@
   expected: |
     {"x":1,"y":1}
 
+- name: assignment operator with select
+  args:
+    - -c
+    - '(.[] | select(.k == "b") | .v) = 0'
+  input: '[{"k": "a", "v": 1}, {"k": "b", "v": 2}, {"k": "c", "v": 3}]'
+  expected: |
+    [{"k":"a","v":1},{"k":"b","v":0},{"k":"c","v":3}]
+
 - name: modify operator
   args:
     - -c
@@ -4056,7 +4098,7 @@
   expected: |
     {"bar":48}
 
-- name: modify operator with empty
+- name: modify operator on array with empty function
   args:
     - -c
     - '(.[] | select(. % 2 > 0)) |= empty'
@@ -4064,7 +4106,7 @@
   expected: |
     [2,4]
 
-- name: modify operator with empty
+- name: modify operator on array with conditional empty function
   args:
     - -c
     - '[range(.)] | .[] |= if . % 2 == 0 then empty else [., -.] end'
@@ -4088,7 +4130,7 @@
   expected: |
     1
 
-- name: modify operator with try catch
+- name: modify operator with alternative operator
   args:
     - -c
     - '.foo |= (fromjson? // "x")'
@@ -4151,14 +4193,14 @@
     - 'error'
   input: 'null'
 
-- name: error/0 function and try catch
+- name: error/0 function on string and try catch
   args:
     - 'try error catch .'
   input: '"foo"'
   expected: |
     "foo"
 
-- name: error/0 function and try catch
+- name: error/0 function on values and try catch
   args:
     - 'null,1,[],{x:42} | try error catch .'
   input: '0'
@@ -4244,14 +4286,6 @@
   input: '{"a":{"b":0}}'
   expected: |
     0
-
-- name: path function with select
-  args:
-    - -c
-    - '(.[] | select(.k == "b") | .v) = 0'
-  input: '[{"k": "a", "v": 1}, {"k": "b", "v": 2}, {"k": "c", "v": 3}]'
-  expected: |
-    [{"k":"a","v":1},{"k":"b","v":0},{"k":"c","v":3}]
 
 - name: path function with select
   args:
@@ -4620,7 +4654,7 @@
     1
   exit_code: 5
 
-- name: halt_error/0 function
+- name: halt_error/0 function on nan
   args:
     - '0/0 | halt_error'
   input: 'null'
@@ -4729,7 +4763,7 @@
   error: |
     break
 
-- name: input function
+- name: input function with binomial operator
   args:
     - -n
     - 'input + input[0]'
@@ -5149,7 +5183,7 @@
   expected: |
     "1\tfoo\t\tfoo,\\n\"bar\"\\tba\\\\z"
 
-- name: format strings @csv with string interpolation
+- name: format strings @tsv with string interpolation
   args:
     - '@tsv "\(.),\(. + .)"'
   input: |
@@ -5203,7 +5237,7 @@
   expected: |
     "{\"foo\":\"bar\"}"
 
-- name: format strings @base64d with no padding
+- name: format strings @base64d without padding
   args:
     - -R
     - '@base64d'
@@ -5219,7 +5253,7 @@
     format not defined: @foo
   exit_code: 5
 
-- name: format strings not defined error
+- name: format strings not defined error with numeric characters
   args:
     - -n
     - '@0'
@@ -5498,7 +5532,7 @@
      ]
     }
 
-- name: indent option
+- name: indent option with value 0
   args:
     - --indent
     - '0'
@@ -5507,7 +5541,7 @@
   expected: |
     {"foo":["hello","world"]}
 
-- name: indent option
+- name: indent option with deeply nested array
   args:
     - --indent
     - '7'
@@ -5540,7 +5574,7 @@
            ]
     }
 
-- name: indent option error
+- name: indent option too many indentation count error
   args:
     - --indent
     - '10'
@@ -5549,7 +5583,7 @@
   error: |
     too many indentation count: 10
 
-- name: indent option error
+- name: indent option negative indentation count error
   args:
     - --indent
     - -1
@@ -6406,7 +6440,7 @@
         3 |   "abcde": :★★★★★★★★★★★★
                        ^  invalid character ':' looking for beginning of value
 
-- name: json file not found
+- name: json file not found error
   args:
     - '.'
     - 'testdata/1.json'
@@ -6635,7 +6669,7 @@
       "foo": "value 1"
     }
 
-- name: arg option error
+- name: arg option arguments count error
   args:
     - --arg
     - 'foo'
@@ -6645,7 +6679,7 @@
     expected 2 arguments for flag `--arg', but got option `--null-input'
   exit_code: 2
 
-- name: arg option error
+- name: arg option variable name error
   args:
     - --arg
     - 'f.oo'
@@ -6740,7 +6774,7 @@
       ]
     }
 
-- name: slurpfile option error
+- name: slurpfile option invalid json error
   args:
     - --slurpfile
     - 'foo'
@@ -6752,7 +6786,7 @@
         .foo.bar
         ^  invalid character '.' looking for beginning of value
 
-- name: slurpfile option error
+- name: slurpfile option invalid file error
   args:
     - --slurpfile
     - 'foo'
@@ -6813,7 +6847,7 @@
     }
     "1"
 
-- name: exit status option
+- name: exit status option with null result
   args:
     - -e
     - '.'
@@ -6822,14 +6856,14 @@
     null
   exit_code: 1
 
-- name: exit status option
+- name: exit status option with empty function
   args:
     - -e
     - 'empty'
   input: 'null'
   exit_code: 4
 
-- name: exit status long option
+- name: exit status long option with false result
   args:
     - --exit-status
     - '.'
@@ -6838,7 +6872,7 @@
     false
   exit_code: 1
 
-- name: exit status long option
+- name: exit status long option with true result
   args:
     - --exit-status
     - 'not'
@@ -6846,7 +6880,7 @@
   expected: |
     true
 
-- name: exit status long option
+- name: exit status long option with multiple results
   args:
     - --exit-status
     - '1,not,2'
@@ -6879,7 +6913,7 @@
   expected: |
     -1
 
-- name: query with leading hyphen after an argument
+- name: query with leading hyphen after a flag
   args:
     - -r
     - '-.'
@@ -6920,7 +6954,7 @@
   expected: |
     1
 
-- name: double dash with argument with leading hyphen
+- name: double dash with query with leading hyphen
   args:
     - '--'
     - '-.'
@@ -6928,7 +6962,7 @@
   expected: |
     -1
 
-- name: double dash with argument with leading -0
+- name: double dash with query with leading -0
   args:
     - '--'
     - '-0'
@@ -6936,7 +6970,7 @@
   expected: |
     0
 
-- name: double dash in arguments with leading -0
+- name: double dash with nul output option
   args:
     - '-0'
     - '--'
