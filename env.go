@@ -37,7 +37,6 @@ type scope struct {
 }
 
 type fork struct {
-	op         opcode
 	pc         int
 	stackindex int
 	stacklimit int

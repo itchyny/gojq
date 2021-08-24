@@ -80,7 +80,7 @@ loop:
 				pc, backtrack = code.v.(int), false
 				goto loop
 			} else {
-				env.pushfork(code.op, pc)
+				env.pushfork(pc)
 			}
 		case opforktrybegin:
 			if backtrack {
@@ -109,7 +109,7 @@ loop:
 				pc, backtrack, err = code.v.(int), false, nil
 				goto loop
 			} else {
-				env.pushfork(code.op, pc)
+				env.pushfork(pc)
 			}
 		case opforktryend:
 			if backtrack {
@@ -118,7 +118,7 @@ loop:
 				}
 				break loop
 			} else {
-				env.pushfork(code.op, pc)
+				env.pushfork(pc)
 			}
 		case opforkalt:
 			if backtrack {
@@ -128,7 +128,7 @@ loop:
 				pc, backtrack, err = code.v.(int), false, nil
 				goto loop
 			} else {
-				env.pushfork(code.op, pc)
+				env.pushfork(pc)
 			}
 		case opforklabel:
 			if backtrack {
@@ -139,7 +139,7 @@ loop:
 				break loop
 			} else {
 				env.push(env.label)
-				env.pushfork(code.op, pc)
+				env.pushfork(pc)
 				env.pop()
 				env.values[env.index(code.v.([2]int))] = env.label
 				env.label++
@@ -280,7 +280,7 @@ loop:
 				}
 				if w, ok := v.Next(); ok {
 					env.push(v)
-					env.pushfork(code.op, pc)
+					env.pushfork(pc)
 					env.pop()
 					if e, ok := w.(error); ok {
 						err = e
@@ -296,7 +296,7 @@ loop:
 			}
 			if len(xs) > 1 {
 				env.push(xs[1:])
-				env.pushfork(code.op, pc)
+				env.pushfork(pc)
 				env.pop()
 			}
 			env.push(xs[0].value)
@@ -349,8 +349,8 @@ func (env *env) pop() interface{} {
 	return env.stack.pop()
 }
 
-func (env *env) pushfork(op opcode, pc int) {
-	f := fork{op: op, pc: pc, expdepth: env.expdepth}
+func (env *env) pushfork(pc int) {
+	f := fork{pc: pc, expdepth: env.expdepth}
 	env.stack.save(&f.stackindex, &f.stacklimit)
 	env.scopes.save(&f.scopeindex, &f.scopelimit)
 	env.paths.save(&f.pathindex, &f.pathlimit)
