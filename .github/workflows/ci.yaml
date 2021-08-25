@@ -47,11 +47,11 @@ jobs:
           elif .command then .output += ($x + "\n" | sub(" +#.*"; ""))
           end
         ) | .results[] |
-            "if got=$(diff <(printf %s \(.output | @sh)) " +
-                     "<(\(.command | gsub("gojq"; "./gojq")) 2>&1)); then\n" +
-            "  echo ok: \(.command | @sh)\n" +
-            "else\n" +
-            "  echo ng: \(.command | @sh); echo \"$got\"; exit 1\n" +
-            "fi"
+          "if got=$(diff <(printf %s \(.output | @sh)) \\
+            <(\(.command | gsub("gojq"; "./gojq")) 2>&1)); then
+            echo ok: \(.command | @sh)
+          else
+            echo ng: \(.command | @sh); echo \"$got\"; exit 1
+          fi"
         ' README.md | bash
       shell: bash
