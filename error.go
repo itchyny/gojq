@@ -355,7 +355,7 @@ type limitedWriter struct {
 func (w *limitedWriter) Write(bs []byte) (int, error) {
 	n := copy(w.buf[w.off:], bs)
 	if w.off += n; w.off == len(w.buf) {
-		panic(true)
+		panic(nil)
 	}
 	return n, nil
 }
@@ -364,7 +364,7 @@ func (w *limitedWriter) WriteByte(b byte) error {
 	w.buf[w.off] = b
 	w.off++
 	if w.off == len(w.buf) {
-		panic(true)
+		panic(nil)
 	}
 	return nil
 }
@@ -372,7 +372,7 @@ func (w *limitedWriter) WriteByte(b byte) error {
 func (w *limitedWriter) WriteString(s string) (int, error) {
 	n := copy(w.buf[w.off:], s)
 	if w.off += n; w.off == len(w.buf) {
-		panic(true)
+		panic(nil)
 	}
 	return n, nil
 }
