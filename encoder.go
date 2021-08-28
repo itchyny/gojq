@@ -3,10 +3,12 @@ package gojq
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"math"
 	"math/big"
 	"sort"
 	"strconv"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -19,21 +21,23 @@ import (
 // '>' for embedding in HTML. These behaviors are based on the marshaler of jq
 // command and different from the standard library method json.Marshal.
 func Marshal(v interface{}) ([]byte, error) {
-	return jsonMarshalBytes(v), nil
+	var b bytes.Buffer
+	(&encoder{w: &b}).encode(v)
+	return b.Bytes(), nil
 }
 
 func jsonMarshal(v interface{}) string {
-	return string(jsonMarshalBytes(v))
-}
-
-func jsonMarshalBytes(v interface{}) []byte {
-	var b bytes.Buffer
-	(&encoder{w: &b}).encode(v)
-	return b.Bytes()
+	var sb strings.Builder
+	(&encoder{w: &sb}).encode(v)
+	return sb.String()
 }
 
 type encoder struct {
-	w   *bytes.Buffer
+	w interface {
+		io.Writer
+		io.ByteWriter
+		io.StringWriter
+	}
 	buf [64]byte
 }
 
