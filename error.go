@@ -347,11 +347,55 @@ func typeof(v interface{}) (s string) {
 	}
 }
 
+type limitedWriter struct {
+	buf []byte
+	off int
+}
+
+func (w *limitedWriter) Write(bs []byte) (int, error) {
+	n := copy(w.buf[w.off:], bs)
+	if w.off += n; w.off == len(w.buf) {
+		panic(true)
+	}
+	return n, nil
+}
+
+func (w *limitedWriter) WriteByte(b byte) error {
+	w.buf[w.off] = b
+	w.off++
+	if w.off == len(w.buf) {
+		panic(true)
+	}
+	return nil
+}
+
+func (w *limitedWriter) WriteString(s string) (int, error) {
+	n := copy(w.buf[w.off:], s)
+	if w.off += n; w.off == len(w.buf) {
+		panic(true)
+	}
+	return n, nil
+}
+
+func (w *limitedWriter) String() string {
+	return string(w.buf[:w.off])
+}
+
+func jsonLimitedMarshal(v interface{}, n int) (s string) {
+	w := &limitedWriter{buf: make([]byte, n)}
+	defer func() {
+		recover()
+		s = w.String()
+	}()
+	(&encoder{w: w}).encode(v)
+	return
+}
+
 func preview(v interface{}) string {
 	if v == nil {
 		return ""
 	}
-	s := jsonMarshal(v)
+	s := jsonLimitedMarshal(v, 32)
 	if l := 30; len(s) > l {
 		var trailing string
 		switch v.(type) {
