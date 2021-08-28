@@ -17,9 +17,10 @@ import (
 // This method only accepts limited types (nil, bool, int, float64, *big.Int,
 // string, []interface{} and map[string]interface{}) because these are the
 // possible types a gojq iterator can emit. This method marshals NaN to null,
-// truncates infinities to (+|-) math.MaxFloat64 and does not escape '<' and
-// '>' for embedding in HTML. These behaviors are based on the marshaler of jq
-// command and different from the standard library method json.Marshal.
+// truncates infinities to (+|-) math.MaxFloat64, uses \b and \f in strings,
+// and does not escape '<' and '>' for embedding in HTML. These behaviors are
+// based on the marshaler of jq command and different from Go standard library
+// method json.Marshal.
 func Marshal(v interface{}) ([]byte, error) {
 	var b bytes.Buffer
 	(&encoder{w: &b}).encode(v)
