@@ -94,9 +94,9 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 	}
 	scope := c.newScope()
 	c.scopes = []*scopeinfo{scope}
-	defer c.lazy(func() *code {
+	setscope := c.lazy(func() *code {
 		return &code{op: opscope, v: [3]int{scope.id, scope.variablecnt, 0}}
-	})()
+	})
 	if c.moduleLoader != nil {
 		if moduleLoader, ok := c.moduleLoader.(interface {
 			LoadInitModules() ([]*Query, error)
@@ -115,6 +115,7 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 	if err := c.compile(q); err != nil {
 		return nil, err
 	}
+	setscope()
 	c.optimizeTailRec()
 	c.optimizeJumps()
 	return &Code{
@@ -548,7 +549,7 @@ func (c *compiler) compileBind(b *Bind) error {
 	if len(b.Patterns) > 1 {
 		pc = c.pc()
 	}
-	if c.codes[len(c.codes)-2].op == opexpbegin {
+	if len(b.Patterns) == 1 && c.codes[len(c.codes)-2].op == opexpbegin {
 		c.codes[len(c.codes)-2] = c.codes[len(c.codes)-1]
 		c.codes = c.codes[:len(c.codes)-1]
 	} else {
@@ -1202,10 +1203,10 @@ func (c *compiler) compileArray(e *Array) error {
 	arr := c.newVariable()
 	c.append(&code{op: opstore, v: arr})
 	pc := len(c.codes)
-	c.append(&code{op: opnop})
+	c.append(&code{op: opfork})
 	defer func() {
 		if pc < len(c.codes) {
-			c.codes[pc] = &code{op: opfork, v: c.pc() - 2}
+			c.codes[pc].v = c.pc() - 2
 		}
 	}()
 	defer c.newScopeDepth()()
@@ -1433,7 +1434,7 @@ func (c *compiler) pc() int {
 
 func (c *compiler) lazy(f func() *code) func() {
 	i := len(c.codes)
-	c.codes = append(c.codes, &code{op: opnop})
+	c.codes = append(c.codes, nil)
 	return func() { c.codes[i] = f() }
 }
 

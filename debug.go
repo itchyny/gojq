@@ -39,7 +39,7 @@ func (c *compiler) appendCodeInfo(x interface{}) {
 		name = fmt.Sprint(x)
 	}
 	var diff int
-	if len(c.codes) > 0 && c.codes[len(c.codes)-1].op == opret && strings.HasPrefix(name, "end of ") {
+	if c.codes[len(c.codes)-1] != nil && c.codes[len(c.codes)-1].op == opret && strings.HasPrefix(name, "end of ") {
 		diff = -1
 	}
 	c.codeinfos = append(c.codeinfos, codeinfo{name, c.pc() + diff})
