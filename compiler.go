@@ -1221,12 +1221,12 @@ func (c *compiler) compileArray(e *Array) error {
 		return nil
 	}
 	// optimize constant arrays
-	l := e.Query.countCommaQueries()
-	if 3*l != len(c.codes)-pc-3 {
+	if (len(c.codes)-pc)%3 != 0 {
 		return nil
 	}
+	l := (len(c.codes) - pc - 3) / 3
 	for i := 0; i < l; i++ {
-		if (i > 0 && c.codes[pc+i].op != opfork) ||
+		if c.codes[pc+i].op != opfork ||
 			c.codes[pc+i*2+l].op != opconst ||
 			(i < l-1 && c.codes[pc+i*2+l+1].op != opjump) {
 			return nil

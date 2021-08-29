@@ -100,13 +100,6 @@ func (e *Query) toIndices() []interface{} {
 	return e.Term.toIndices()
 }
 
-func (e *Query) countCommaQueries() int {
-	if e.Op == OpComma {
-		return e.Left.countCommaQueries() + e.Right.countCommaQueries()
-	}
-	return 1
-}
-
 // Import ...
 type Import struct {
 	ImportPath  string
