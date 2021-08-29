@@ -130,8 +130,8 @@ func (c *compiler) compile(q *Query) error {
 		if !newLexer(name).validVarName() {
 			return &variableNameError{name}
 		}
-		v := c.pushVariable(name)
-		c.append(&code{op: opstore, v: v})
+		c.appendCodeInfo(name)
+		c.append(&code{op: opstore, v: c.pushVariable(name)})
 	}
 	for _, i := range q.Imports {
 		if err := c.compileImport(i); err != nil {
