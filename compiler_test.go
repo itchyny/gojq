@@ -176,11 +176,11 @@ func TestCodeCompile_OptimizeTailRec_CallRec(t *testing.T) {
 		t.Fatal(err)
 	}
 	codes := reflect.ValueOf(code).Elem().FieldByName("codes")
-	if got, expected := codes.Len(), 47; expected != got {
+	if got, expected := codes.Len(), 48; expected != got {
 		t.Errorf("expected: %v, got: %v", expected, got)
 	}
-	op1 := codes.Index(38).Elem().FieldByName("op") // callrec f
-	op2 := codes.Index(37).Elem().FieldByName("op") // call _add/2
+	op1 := codes.Index(39).Elem().FieldByName("op") // callrec f
+	op2 := codes.Index(38).Elem().FieldByName("op") // call _add/2
 	if got, expected := *(*int)(unsafe.Pointer(op2.UnsafeAddr()))+1,
 		*(*int)(unsafe.Pointer(op1.UnsafeAddr())); expected != got {
 		t.Errorf("expected: %v, got: %v", expected, got)

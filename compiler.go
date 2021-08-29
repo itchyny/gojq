@@ -550,8 +550,7 @@ func (c *compiler) compileBind(b *Bind) error {
 		pc = c.pc()
 	}
 	if len(b.Patterns) == 1 && c.codes[len(c.codes)-2].op == opexpbegin {
-		c.codes[len(c.codes)-2] = c.codes[len(c.codes)-1]
-		c.codes = c.codes[:len(c.codes)-1]
+		c.codes[len(c.codes)-2].op = opnop
 	} else {
 		c.append(&code{op: opexpend}) // ref: compileTermSuffix
 	}
