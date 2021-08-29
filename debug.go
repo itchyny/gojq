@@ -4,10 +4,10 @@
 package gojq
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -116,7 +116,7 @@ func (env *env) debugState(pc int, backtrack bool) {
 	}
 	for i := len(xs) - 1; i >= 0; i-- {
 		sb.WriteString("\t")
-		sb.WriteString(debugJSON(env.stack.data[xs[i]].value))
+		sb.WriteString(debugValue(env.stack.data[xs[i]].value))
 	}
 	switch c.op {
 	case opcall, opcallrec:
@@ -163,7 +163,7 @@ func (env *env) debugForks(pc int, op string) {
 		if i == len(env.forks)-1 {
 			sb.WriteByte('<')
 		}
-		fmt.Fprintf(&sb, "%d, %s", v.pc, debugJSON(env.stack.data[v.stackindex].value))
+		fmt.Fprintf(&sb, "%d, %s", v.pc, debugValue(env.stack.data[v.stackindex].value))
 		if i == len(env.forks)-1 {
 			sb.WriteByte('>')
 		}
@@ -176,22 +176,28 @@ func debugOperand(c *code) string {
 	case opcall, opcallrec:
 		switch v := c.v.(type) {
 		case int:
-			return debugJSON(v)
+			return strconv.Itoa(v)
 		case [3]interface{}:
 			return fmt.Sprintf("%s/%d", v[2], v[1])
 		default:
 			panic(c)
 		}
 	default:
-		return debugJSON(c.v)
+		return debugValue(c.v)
 	}
 }
 
-func debugJSON(v interface{}) string {
-	if _, ok := v.(Iter); ok {
+func debugValue(v interface{}) string {
+	switch v := v.(type) {
+	case Iter:
 		return fmt.Sprintf("gojq.Iter(%#v)", v)
+	case [2]int:
+		return fmt.Sprintf("[%d,%d]", v[0], v[1])
+	case [3]int:
+		return fmt.Sprintf("[%d,%d,%d]", v[0], v[1], v[2])
+	case [3]interface{}:
+		return fmt.Sprintf("[%v,%v,%v]", v[0], v[1], v[2])
+	default:
+		return previewValue(v)
 	}
-	var sb strings.Builder
-	json.NewEncoder(&sb).Encode(v)
-	return strings.TrimSpace(sb.String())
 }
