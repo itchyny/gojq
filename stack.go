@@ -44,10 +44,10 @@ func (s *stack) empty() bool {
 }
 
 func (s *stack) save(index, limit *int) {
-	if s.index >= s.limit {
+	*index, *limit = s.index, s.limit
+	if s.index > s.limit {
 		s.limit = s.index
 	}
-	*index, *limit = s.index, s.limit
 }
 
 func (s *stack) restore(index, limit int) {

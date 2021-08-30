@@ -205,8 +205,7 @@ loop:
 				if callpc >= 0 {
 					saveindex = index
 				} else {
-					s := env.scopes.pop().(scope)
-					callpc, saveindex = s.pc, s.saveindex
+					callpc, saveindex = env.popscope()
 				}
 			} else {
 				env.scopes.save(&saveindex, &limit)
@@ -228,8 +227,7 @@ loop:
 			if backtrack {
 				break loop
 			}
-			s := env.scopes.pop().(scope)
-			pc, env.scopes.index = s.pc, s.saveindex
+			pc, env.scopes.index = env.popscope()
 			if env.scopes.empty() {
 				return env.pop(), true
 			}
@@ -347,6 +345,15 @@ func (env *env) push(v interface{}) {
 
 func (env *env) pop() interface{} {
 	return env.stack.pop()
+}
+
+func (env *env) popscope() (int, int) {
+	free := env.scopes.index > env.scopes.limit
+	s := env.scopes.pop().(scope)
+	if free {
+		env.offset = s.offset
+	}
+	return s.pc, s.saveindex
 }
 
 func (env *env) pushfork(pc int) {
