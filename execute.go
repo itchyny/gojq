@@ -212,7 +212,7 @@ loop:
 				env.scopes.index = index
 			}
 			if outerindex = index; outerindex >= 0 {
-				if s := env.scopes.data[outerindex].value.(scope); s.id == xs[0] {
+				if s := env.scopes.data[outerindex].value; s.id == xs[0] {
 					outerindex = s.outerindex
 				}
 			}
@@ -349,7 +349,7 @@ func (env *env) pop() interface{} {
 
 func (env *env) popscope() (int, int) {
 	free := env.scopes.index > env.scopes.limit
-	s := env.scopes.pop().(scope)
+	s := env.scopes.pop()
 	if free {
 		env.offset = s.offset
 	}
@@ -377,7 +377,7 @@ func (env *env) popfork() int {
 
 func (env *env) index(v [2]int) int {
 	for id, i := v[0], env.scopes.index; i >= 0; {
-		s := env.scopes.data[i].value.(scope)
+		s := env.scopes.data[i].value
 		if s.id == id {
 			return s.offset + v[1]
 		}

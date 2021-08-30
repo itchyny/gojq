@@ -5,8 +5,8 @@ import "context"
 type env struct {
 	pc        int
 	stack     *stack
-	scopes    *stack
 	paths     *stack
+	scopes    *scopeStack
 	values    []interface{}
 	codes     []*code
 	codeinfos []codeinfo
@@ -22,8 +22,8 @@ type env struct {
 func newEnv(ctx context.Context) *env {
 	return &env{
 		stack:  newStack(),
-		scopes: newStack(),
 		paths:  newStack(),
+		scopes: newScopeStack(),
 		ctx:    ctx,
 	}
 }
