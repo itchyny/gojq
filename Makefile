@@ -25,7 +25,7 @@ builtin.go: builtin.jq parser.go.y parser.go query.go operator.go _tools/*
 	GOOS= GOARCH= go generate
 
 .SUFFIXES:
-parser.go: parser.go.y lexer.go $(GOBIN)/goyacc
+parser.go: parser.go.y $(GOBIN)/goyacc
 	goyacc -o $@ $<
 
 $(GOBIN)/goyacc:
