@@ -29,7 +29,7 @@ parser.go: parser.go.y $(GOBIN)/goyacc
 	goyacc -o $@ $<
 
 $(GOBIN)/goyacc:
-	@cd && go get golang.org/x/tools/cmd/goyacc
+	@go install golang.org/x/tools/cmd/goyacc@latest
 
 .PHONY: install
 install:
@@ -48,7 +48,7 @@ show-version: $(GOBIN)/gobump
 	@gobump show -r $(VERSION_PATH)
 
 $(GOBIN)/gobump:
-	@cd && go get github.com/x-motemen/gobump/cmd/gobump
+	@go install github.com/x-motemen/gobump/cmd/gobump@latest
 
 .PHONY: cross
 cross: $(GOBIN)/goxz CREDITS
@@ -56,14 +56,14 @@ cross: $(GOBIN)/goxz CREDITS
 		-build-ldflags=$(BUILD_LDFLAGS) ./cmd/$(BIN)
 
 $(GOBIN)/goxz:
-	cd && go get github.com/Songmu/goxz/cmd/goxz
+	go install github.com/Songmu/goxz/cmd/goxz@latest
 
 CREDITS: $(GOBIN)/gocredits go.sum
 	go mod tidy
 	gocredits -w .
 
 $(GOBIN)/gocredits:
-	cd && go get github.com/Songmu/gocredits/cmd/gocredits
+	go install github.com/Songmu/gocredits/cmd/gocredits@latest
 
 .PHONY: test
 test: build
@@ -75,14 +75,14 @@ lint: $(GOBIN)/staticcheck
 	staticcheck -tags debug ./...
 
 $(GOBIN)/staticcheck:
-	cd && go get honnef.co/go/tools/cmd/staticcheck
+	go install honnef.co/go/tools/cmd/staticcheck@latest
 
 .PHONY: fieldalignment
 fieldalignment: $(GOBIN)/fieldalignment
 	! fieldalignment . 2>&1 | grep -v pointer | grep ^
 
 $(GOBIN)/fieldalignment:
-	cd && go get golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment
+	go install golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment@latest
 
 .PHONY: check-tools
 check-tools:
@@ -119,4 +119,4 @@ upload: $(GOBIN)/ghr
 	ghr "v$(VERSION)" goxz
 
 $(GOBIN)/ghr:
-	cd && go get github.com/tcnksm/ghr
+	go install github.com/tcnksm/ghr@latest
