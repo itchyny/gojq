@@ -3,7 +3,7 @@
 * implement `input_filename` function for the command
 * fix priority bug of declared functions and arguments (`def g: 1; def f(g): g; f(2)`)
 * fix label handling to catch the correct break error (`first((0, 0) | first(0))`)
-* fix `null|error` and `error(null) to behave like `empty` (`null | [0, error, error(null), 1]`)
+* fix `null|error` and `error(null)` to behave like `empty` (`null | [0, error, error(null), 1]`)
 * fix integer division to keep precision when divisible (`1 / 1 * 1000000000000000000000`)
 * fix modulo operator on negative number and large number (`(-1) % 10000000000`)
 * fix combination of slurp (`--slurp`) and raw input option (`--raw-input`) to keep newlines
