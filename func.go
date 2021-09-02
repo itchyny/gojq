@@ -707,11 +707,10 @@ func funcToBase64(v interface{}) interface{} {
 func funcToBase64d(v interface{}) interface{} {
 	switch x := funcToString(v).(type) {
 	case string:
-		y, err := base64.RawStdEncoding.DecodeString(
-			strings.TrimRightFunc(x, func(r rune) bool {
-				return r == base64.StdPadding
-			}),
-		)
+		if i := strings.IndexRune(x, base64.StdPadding); i >= 0 {
+			x = x[:i]
+		}
+		y, err := base64.RawStdEncoding.DecodeString(x)
 		if err != nil {
 			return err
 		}
