@@ -28,8 +28,6 @@ jobs:
       if: matrix.os != 'macos-latest'
     - name: Lint
       run: make lint
-    - name: Check alignment
-      run: make fieldalignment
     - name: Check tools
       run: make check-tools
     - name: Check go generate

@@ -77,13 +77,6 @@ lint: $(GOBIN)/staticcheck
 $(GOBIN)/staticcheck:
 	go install honnef.co/go/tools/cmd/staticcheck@latest
 
-.PHONY: fieldalignment
-fieldalignment: $(GOBIN)/fieldalignment
-	! fieldalignment . 2>&1 | grep -v pointer | grep ^
-
-$(GOBIN)/fieldalignment:
-	go install golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment@latest
-
 .PHONY: check-tools
 check-tools:
 	go run _tools/print_builtin.go
