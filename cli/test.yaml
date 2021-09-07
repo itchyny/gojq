@@ -1306,15 +1306,24 @@
 - name: range function
   args:
     - -c
-    - '[range(.)], [range(. + 1)], [range(3; 5)], [range(0; 10; 3)], [range(0; 10; -1)], [range(5; -5; -3)]'
-  input: '3'
+    - '[range(.)], [range(range(.))], [range(3.5)], [range(3; 5)], [range(1.5; 4)],
+       [range(-5; -1.5)], [range(3.5; 5.5)], [range(-5.5; -3.5)], [range(0; 10; 3)],
+       [range(0; 10; -1)], [range(5; -5; -3)], [range(0.25; 9.5; 2.25)], [range(-5; -9.5; -1)]'
+  input: '5'
   expected: |
-    [0,1,2]
+    [0,1,2,3,4]
+    [0,0,1,0,1,2,0,1,2,3]
     [0,1,2,3]
     [3,4]
+    [1.5,2.5,3.5]
+    [-5,-4,-3,-2]
+    [3.5,4.5]
+    [-5.5,-4.5]
     [0,3,6,9]
     []
     [5,2,-1,-4]
+    [0.25,2.5,4.75,7,9.25]
+    [-5,-6,-7,-8,-9]
 
 - name: range function with iterators in arguments
   args:
