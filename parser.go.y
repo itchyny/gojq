@@ -550,9 +550,9 @@ objectval
     {
         $$ = &ObjectVal{[]*Query{{Term: $1.(*Term)}}}
     }
-    | term '|' objectval
+    | objectval '|' term
     {
-        $$ = &ObjectVal{prependQuery($3.(*ObjectVal).Queries, &Query{Term: $1.(*Term)})}
+        $$ = &ObjectVal{append($1.(*ObjectVal).Queries, &Query{Term: $3.(*Term)})}
     }
 
 constterm

@@ -1,12 +1,5 @@
 package gojq
 
-func prependQuery(xs []*Query, x *Query) []*Query {
-	xs = append(xs, nil)
-	copy(xs[1:], xs)
-	xs[0] = x
-	return xs
-}
-
 func prependImport(xs []*Import, x *Import) []*Import {
 	xs = append(xs, nil)
 	copy(xs[1:], xs)
