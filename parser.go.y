@@ -364,13 +364,17 @@ term
     {
         $$ = &Term{Type: TermTypeQuery, Query: $2.(*Query)}
     }
+    | '+' term
+    {
+        $$ = &Term{Type: TermTypeUnary, Unary: &Unary{OpAdd, $2.(*Term)}}
+    }
     | '-' term
     {
         $$ = &Term{Type: TermTypeUnary, Unary: &Unary{OpSub, $2.(*Term)}}
     }
-    | '+' term
+    | '{' '}'
     {
-        $$ = &Term{Type: TermTypeUnary, Unary: &Unary{OpAdd, $2.(*Term)}}
+        $$ = &Term{Type: TermTypeObject, Object: &Object{}}
     }
     | '{' objectkeyvals '}'
     {
@@ -380,17 +384,13 @@ term
     {
         $$ = &Term{Type: TermTypeObject, Object: &Object{$2.([]*ObjectKeyVal)}}
     }
-    | '{' '}'
+    | '[' ']'
     {
-        $$ = &Term{Type: TermTypeObject, Object: &Object{}}
+        $$ = &Term{Type: TermTypeArray, Array: &Array{}}
     }
     | '[' query ']'
     {
         $$ = &Term{Type: TermTypeArray, Array: &Array{$2.(*Query)}}
-    }
-    | '[' ']'
-    {
-        $$ = &Term{Type: TermTypeArray, Array: &Array{}}
     }
     | tokBreak tokVariable
     {
