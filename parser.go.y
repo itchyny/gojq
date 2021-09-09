@@ -20,7 +20,7 @@ func Parse(src string) (*Query, error) {
 %type<value> program moduleheader programbody imports import metaopt funcdefs funcdef funcdefargs query
 %type<value> bindpatterns pattern arraypatterns objectpatterns objectpattern
 %type<value> term string stringparts suffix args ifelifs ifelse trycatch
-%type<value> object objectkeyval objectval
+%type<value> objectkeyvals objectkeyval objectval
 %type<value> constterm constobject constobjectkeyvals constobjectkeyval constarray constarrayelems
 %type<token> tokIdentVariable tokIdentModuleIdent tokVariableModuleVariable tokKeyword objectkey
 %token<operator> tokAltOp tokUpdateOp tokDestAltOp tokOrOp tokAndOp tokCompareOp
@@ -372,9 +372,17 @@ term
     {
         $$ = &Term{Type: TermTypeUnary, Unary: &Unary{OpAdd, $2.(*Term)}}
     }
-    | '{' object '}'
+    | '{' objectkeyvals '}'
     {
         $$ = &Term{Type: TermTypeObject, Object: &Object{$2.([]*ObjectKeyVal)}}
+    }
+    | '{' objectkeyvals ',' '}'
+    {
+        $$ = &Term{Type: TermTypeObject, Object: &Object{$2.([]*ObjectKeyVal)}}
+    }
+    | '{' '}'
+    {
+        $$ = &Term{Type: TermTypeObject, Object: &Object{}}
     }
     | '[' query ']'
     {
@@ -504,18 +512,14 @@ trycatch
         $$ = $2
     }
 
-object
-    :
-    {
-        $$ = []*ObjectKeyVal(nil)
-    }
-    | objectkeyval
+objectkeyvals
+    : objectkeyval
     {
         $$ = []*ObjectKeyVal{$1.(*ObjectKeyVal)}
     }
-    | objectkeyval ',' object
+    | objectkeyvals ',' objectkeyval
     {
-        $$ = prependObjectKeyVal($3.([]*ObjectKeyVal), $1.(*ObjectKeyVal))
+        $$ = append($1.([]*ObjectKeyVal), $3.(*ObjectKeyVal))
     }
 
 objectkeyval
@@ -586,23 +590,27 @@ constterm
     }
 
 constobject
-    : '{' constobjectkeyvals '}'
+    : '{' '}'
+    {
+        $$ = &ConstObject{}
+    }
+    | '{' constobjectkeyvals '}'
+    {
+        $$ = &ConstObject{$2.([]*ConstObjectKeyVal)}
+    }
+    | '{' constobjectkeyvals ',' '}'
     {
         $$ = &ConstObject{$2.([]*ConstObjectKeyVal)}
     }
 
 constobjectkeyvals
-    :
-    {
-        $$ = []*ConstObjectKeyVal(nil)
-    }
-    | constobjectkeyval
+    : constobjectkeyval
     {
         $$ = []*ConstObjectKeyVal{$1.(*ConstObjectKeyVal)}
     }
-    | constobjectkeyval ',' constobjectkeyvals
+    | constobjectkeyvals ',' constobjectkeyval
     {
-        $$ = prependConstObjectKeyVal($3.([]*ConstObjectKeyVal), $1.(*ConstObjectKeyVal))
+        $$ = append($1.([]*ConstObjectKeyVal), $3.(*ConstObjectKeyVal))
     }
 
 constobjectkeyval
