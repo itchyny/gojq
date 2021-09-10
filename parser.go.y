@@ -9,6 +9,13 @@ func Parse(src string) (*Query, error) {
 	}
 	return l.result, nil
 }
+
+func prependFuncDef(xs []*FuncDef, x *FuncDef) []*FuncDef {
+	xs = append(xs, nil)
+	copy(xs[1:], xs)
+	xs[0] = x
+	return xs
+}
 %}
 
 %union {
@@ -81,9 +88,9 @@ imports
     {
         $$ = []*Import(nil)
     }
-    | import imports
+    | imports import
     {
-        $$ = prependImport($2.([]*Import), $1.(*Import))
+        $$ = append($1.([]*Import), $2.(*Import))
     }
 
 import
@@ -487,9 +494,9 @@ ifelifs
     {
         $$ = []*IfElif(nil)
     }
-    | tokElif query tokThen query ifelifs
+    | ifelifs tokElif query tokThen query
     {
-        $$ = prependIfElif($5.([]*IfElif), &IfElif{$2.(*Query), $4.(*Query)})
+        $$ = append($1.([]*IfElif), &IfElif{$3.(*Query), $5.(*Query)})
     }
 
 ifelse
