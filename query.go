@@ -426,8 +426,8 @@ type Index struct {
 	Name    string
 	Str     *String
 	Start   *Query
-	IsSlice bool
 	End     *Query
+	IsSlice bool
 }
 
 func (e *Index) String() string {
@@ -455,17 +455,16 @@ func (e *Index) writeSuffixTo(s *strings.Builder) {
 			e.Str.writeTo(s)
 		} else {
 			s.WriteByte('[')
-			if e.Start != nil {
-				e.Start.writeTo(s)
-				if e.IsSlice {
-					s.WriteByte(':')
-					if e.End != nil {
-						e.End.writeTo(s)
-					}
+			if e.IsSlice {
+				if e.Start != nil {
+					e.Start.writeTo(s)
 				}
-			} else if e.End != nil {
 				s.WriteByte(':')
-				e.End.writeTo(s)
+				if e.End != nil {
+					e.End.writeTo(s)
+				}
+			} else {
+				e.Start.writeTo(s)
 			}
 			s.WriteByte(']')
 		}

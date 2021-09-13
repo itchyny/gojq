@@ -1371,7 +1371,7 @@ yydefault:
 		yyDollar = yyS[yypt-4 : yypt+1]
 //line parser.go.y:474
 		{
-			yyVAL.value = &Suffix{Index: &Index{End: yyDollar[3].value.(*Query)}}
+			yyVAL.value = &Suffix{Index: &Index{End: yyDollar[3].value.(*Query), IsSlice: true}}
 		}
 	case 97:
 		yyDollar = yyS[yypt-5 : yypt+1]

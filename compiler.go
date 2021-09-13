@@ -866,16 +866,16 @@ func (c *compiler) compileIndex(e *Term, x *Index) error {
 	if x.Str != nil {
 		return c.compileCall("_index", []*Query{{Term: e}, {Term: &Term{Type: TermTypeString, Str: x.Str}}})
 	}
-	if x.Start != nil {
-		if x.IsSlice {
-			if x.End != nil {
-				return c.compileCall("_slice", []*Query{{Term: e}, x.End, x.Start})
-			}
-			return c.compileCall("_slice", []*Query{{Term: e}, {Term: &Term{Type: TermTypeNull}}, x.Start})
-		}
+	if !x.IsSlice {
 		return c.compileCall("_index", []*Query{{Term: e}, x.Start})
 	}
-	return c.compileCall("_slice", []*Query{{Term: e}, x.End, {Term: &Term{Type: TermTypeNull}}})
+	if x.Start == nil {
+		return c.compileCall("_slice", []*Query{{Term: e}, x.End, {Term: &Term{Type: TermTypeNull}}})
+	}
+	if x.End == nil {
+		return c.compileCall("_slice", []*Query{{Term: e}, {Term: &Term{Type: TermTypeNull}}, x.Start})
+	}
+	return c.compileCall("_slice", []*Query{{Term: e}, x.End, x.Start})
 }
 
 func (c *compiler) compileFunc(e *Func) error {
