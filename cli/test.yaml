@@ -6923,6 +6923,27 @@
   input: 'null'
   exit_code: 4
 
+- name: exit status long option with halt function
+  args:
+    - --exit-status
+    - 'halt'
+  input: 'false'
+  exit_code: 0
+
+- name: exit status long option with halt_error function
+  args:
+    - --exit-status
+    - 'halt_error(0)'
+  input: 'null'
+  exit_code: 0
+
+- name: exit status long option with halt_error function
+  args:
+    - --exit-status
+    - 'halt_error(42)'
+  input: 'null'
+  exit_code: 42
+
 - name: query with leading hyphen
   args:
     - '-.'

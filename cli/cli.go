@@ -199,7 +199,7 @@ Synopsis:
 	if opts.ExitStatus {
 		cli.exitCodeError = &exitCodeError{exitCodeNoValueErr}
 		defer func() {
-			if er, ok := err.(interface{ ExitCode() int }); !ok || er.ExitCode() == 0 {
+			if _, ok := err.(interface{ ExitCode() int }); !ok {
 				err = cli.exitCodeError
 			}
 		}()
