@@ -20,27 +20,9 @@ def until(cond; next):
 def repeat(f):
   def _repeat: f, _repeat;
   _repeat;
-def range($x): range(0; $x);
-def range($start; $end):
-  if $start | type != "number" then
-    $start | _type_error("range")
-  elif $end | type != "number" then
-    $end | _type_error("range")
-  else
-    $start | while(. < $end; . + 1)
-  end;
-def range($start; $end; $step):
-  if $start | type != "number" then
-    $start | _type_error("range")
-  elif $end | type != "number" then
-    $end | _type_error("range")
-  elif $step | type != "number" then
-    $step | _type_error("range")
-  elif $step > 0 then
-    $start | while(. < $end; . + $step)
-  elif $step < 0 then
-    $start | while(. > $end; . + $step)
-  else empty end;
+def range($end): _range(0; $end; 1);
+def range($start; $end): _range($start; $end; 1);
+def range($start; $end; $step): _range($start; $end; $step);
 
 def _flatten($x):
   reduce .[] as $i

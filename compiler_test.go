@@ -130,8 +130,8 @@ func TestCodeCompile_OptimizeConstants(t *testing.T) {
 	}
 }
 
-func TestCodeCompile_OptimizeTailRec_Range(t *testing.T) {
-	query, err := gojq.Parse("range(10)")
+func TestCodeCompile_OptimizeTailRec_While(t *testing.T) {
+	query, err := gojq.Parse("0 | while(. < 10; . + 1)")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,11 +140,11 @@ func TestCodeCompile_OptimizeTailRec_Range(t *testing.T) {
 		t.Fatal(err)
 	}
 	codes := reflect.ValueOf(code).Elem().FieldByName("codes")
-	if got, expected := codes.Len(), 141; expected != got {
+	if got, expected := codes.Len(), 48; expected != got {
 		t.Errorf("expected: %v, got: %v", expected, got)
 	}
-	op1 := codes.Index(1).Elem().FieldByName("op")
-	op2 := codes.Index(83).Elem().FieldByName("op") // test jump of _while
+	op1 := codes.Index(2).Elem().FieldByName("op")
+	op2 := codes.Index(21).Elem().FieldByName("op") // test jump of call _while
 	if got, expected := *(*int)(unsafe.Pointer(op2.UnsafeAddr())),
 		*(*int)(unsafe.Pointer(op1.UnsafeAddr())); expected != got {
 		t.Errorf("expected: %v, got: %v", expected, got)

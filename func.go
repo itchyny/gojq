@@ -89,6 +89,7 @@ func init() {
 		"_less":          argFunc2(funcOpLt),
 		"_greatereq":     argFunc2(funcOpGe),
 		"_lesseq":        argFunc2(funcOpLe),
+		"_range":         {argcount3, true, funcRange},
 		"_min_by":        argFunc1(funcMinBy),
 		"_max_by":        argFunc1(funcMaxBy),
 		"_sort_by":       argFunc1(funcSortBy),
@@ -954,6 +955,30 @@ func indexFunc(v, x interface{}, f func(_, _ []interface{}) interface{}) interfa
 	default:
 		return &expectedArrayError{v}
 	}
+}
+
+type rangeIter struct {
+	value, end, step interface{}
+}
+
+func (iter *rangeIter) Next() (interface{}, bool) {
+	if compare(iter.step, 0)*compare(iter.value, iter.end) >= 0 {
+		return nil, false
+	}
+	v := iter.value
+	iter.value = funcOpAdd(nil, v, iter.step)
+	return v, true
+}
+
+func funcRange(_ interface{}, xs []interface{}) interface{} {
+	for _, x := range xs {
+		switch x.(type) {
+		case int, float64, *big.Int:
+		default:
+			return &funcTypeError{"range", x}
+		}
+	}
+	return &rangeIter{xs[0], xs[1], xs[2]}
 }
 
 func funcMinBy(v, x interface{}) interface{} {
