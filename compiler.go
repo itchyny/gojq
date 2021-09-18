@@ -1350,12 +1350,19 @@ func (c *compiler) compileTermSuffix(e *Term, s *Suffix) error {
 }
 
 func (c *compiler) compileCall(name string, args []*Query) error {
-	return c.compileCallInternal(
-		[3]interface{}{internalFuncs[name].callback, len(args), name},
+	fn := internalFuncs[name]
+	if err := c.compileCallInternal(
+		[3]interface{}{fn.callback, len(args), name},
 		args,
 		true,
 		name == "_index" || name == "_slice",
-	)
+	); err != nil {
+		return err
+	}
+	if fn.iter {
+		c.append(&code{op: opeach})
+	}
+	return nil
 }
 
 func (c *compiler) compileCallPc(fn *funcinfo, args []*Query) error {
