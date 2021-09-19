@@ -10,6 +10,13 @@ func Parse(src string) (*Query, error) {
 	return l.result, nil
 }
 
+func reverseFuncDef(xs []*FuncDef) []*FuncDef {
+	for i, j := 0, len(xs)-1; i < j; i, j = i+1, j-1 {
+		xs[i], xs[j] = xs[j], xs[i]
+	}
+	return xs
+}
+
 func prependFuncDef(xs []*FuncDef, x *FuncDef) []*FuncDef {
 	xs = append(xs, nil)
 	copy(xs[1:], xs)
@@ -75,7 +82,7 @@ moduleheader
 programbody
     : imports funcdefs
     {
-        $$ = &Query{Imports: $1.([]*Import), FuncDefs: $2.([]*FuncDef), Term: &Term{Type: TermTypeIdentity}}
+        $$ = &Query{Imports: $1.([]*Import), FuncDefs: reverseFuncDef($2.([]*FuncDef)), Term: &Term{Type: TermTypeIdentity}}
     }
     | imports query
     {
@@ -117,7 +124,7 @@ funcdefs
     }
     | funcdef funcdefs
     {
-        $$ = prependFuncDef($2.([]*FuncDef), $1.(*FuncDef))
+        $$ = append($2.([]*FuncDef), $1.(*FuncDef))
     }
 
 funcdef
