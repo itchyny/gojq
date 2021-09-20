@@ -1772,12 +1772,46 @@
     "adbdcddde"
     "aebecedee"
 
-- name: join function error
+- name: join object
+  args:
+    - 'join(",")'
+  input: '{"a": null, "b": false, "c": true, "d": 0, "e": 1, "f": "", "g": "a", "h": "b", "i": "abc"}'
+  expected: |
+    ",false,true,0,1,,a,b,abc"
+
+- name: join object order
+  args:
+    - 'join(",")'
+  input: '{"d":4, "c":3, "b":2, "a":1}'
+  expected: |
+    "1,2,3,4"
+
+- name: join function error item
   args:
     - 'try join(",") catch .'
   input: '["1","2",[3,4,5]]'
   expected: |
-    "cannot add: string (\"1,2,\") and array ([3,4,5])"
+    "cannot join: array ([3,4,5])"
+
+- name: join function error input
+  args:
+    - '.[] | try join(",") catch .'
+  input: '[null, false, true, 1, "a"]'
+  expected: |
+    "cannot iterate over: null"
+    "cannot iterate over: boolean (false)"
+    "cannot iterate over: boolean (true)"
+    "cannot iterate over: number (1)"
+    "cannot iterate over: string (\"a\")"
+
+- name: join function non-string separator
+  args:
+    - '.[] | try join(1) catch .'
+  input: '[[],[1],[1,2]]'
+  expected: |
+    ""
+    "1"
+    "join cannot be applied to: number (1)"
 
 - name: ascii_downcase function
   args:

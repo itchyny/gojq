@@ -95,6 +95,7 @@ func init() {
 		"_sort_by":       argFunc1(funcSortBy),
 		"_group_by":      argFunc1(funcGroupBy),
 		"_unique_by":     argFunc1(funcUniqueBy),
+		"_join":          argFunc1(funcJoin),
 		"sin":            mathFunc("sin", math.Sin),
 		"cos":            mathFunc("cos", math.Cos),
 		"tan":            mathFunc("tan", math.Tan),
@@ -1070,6 +1071,42 @@ func funcUniqueBy(v, x interface{}) interface{} {
 		}
 	}
 	return rs
+}
+
+func funcJoin(v, x interface{}) interface{} {
+	vs, ok := v.([]interface{})
+	if !ok {
+		return &iteratorError{v}
+	}
+	if len(vs) == 0 {
+		return ""
+	}
+	sep, ok := x.(string)
+	if len(vs) > 1 && !ok {
+		return &funcTypeError{"join", x}
+	}
+
+	ss := make([]string, len(vs))
+	for i, e := range vs {
+		switch e := e.(type) {
+		case nil:
+			ss[i] = ""
+		case string:
+			ss[i] = e
+		case bool:
+			if e {
+				ss[i] = "true"
+			} else {
+				ss[i] = "false"
+			}
+		case int, float64, *big.Int:
+			ss[i] = jsonMarshal(e)
+		default:
+			return &unaryTypeError{name: "join", v: e}
+		}
+	}
+
+	return strings.Join(ss, sep)
 }
 
 func sortItems(name string, v, x interface{}) ([]*sortItem, error) {

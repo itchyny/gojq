@@ -100,10 +100,8 @@ def combinations:
   end;
 def combinations(n):
   . as $dot | [range(n) | $dot] | combinations;
-def join($x): reduce .[] as $i (null;
-    if . == null then "" else . + $x end +
-    ($i | if type | . == "boolean" or . == "number" then tostring else . // "" end)
-  ) // "";
+def join($x):
+  if type != "array" then [.[]] end | _join($x);
 def ascii_downcase:
   explode | map(if 65 <= . and . <= 90 then . + 32 end) | implode;
 def ascii_upcase:
