@@ -1076,7 +1076,7 @@ func funcUniqueBy(v, x interface{}) interface{} {
 func funcJoin(v, x interface{}) interface{} {
 	vs, ok := v.([]interface{})
 	if !ok {
-		return &iteratorError{v}
+		return &expectedArrayError{v}
 	}
 	if len(vs) == 0 {
 		return ""
@@ -1085,12 +1085,10 @@ func funcJoin(v, x interface{}) interface{} {
 	if len(vs) > 1 && !ok {
 		return &funcTypeError{"join", x}
 	}
-
 	ss := make([]string, len(vs))
 	for i, e := range vs {
 		switch e := e.(type) {
 		case nil:
-			ss[i] = ""
 		case string:
 			ss[i] = e
 		case bool:
@@ -1102,10 +1100,9 @@ func funcJoin(v, x interface{}) interface{} {
 		case int, float64, *big.Int:
 			ss[i] = jsonMarshal(e)
 		default:
-			return &unaryTypeError{name: "join", v: e}
+			return &unaryTypeError{"join", e}
 		}
 	}
-
 	return strings.Join(ss, sep)
 }
 
