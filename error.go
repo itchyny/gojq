@@ -328,7 +328,7 @@ func typeErrorPreview(v interface{}) string {
 	return typeof(v) + p
 }
 
-func typeof(v interface{}) (s string) {
+func typeof(v interface{}) string {
 	switch v := v.(type) {
 	case nil:
 		return "null"
