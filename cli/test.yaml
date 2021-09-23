@@ -5046,6 +5046,13 @@
     [{"captures":[{"length":1,"name":"foo","offset":2,"string":"c"},{"length":1,"name":null,"offset":3,"string":"d"}],"length":3,"offset":1,"string":"bcd"},{"captures":[{"length":1,"name":"foo","offset":9,"string":"c"},{"length":1,"name":null,"offset":10,"string":"d"}],"length":3,"offset":8,"string":"bcd"},{"captures":[{"length":1,"name":"foo","offset":16,"string":"C"},{"length":1,"name":null,"offset":17,"string":"D"}],"length":3,"offset":15,"string":"BCD"}]
     [{"captures":[{"length":0,"name":null,"offset":-1,"string":null},{"length":0,"name":null,"offset":-1,"string":null}],"length":3,"offset":1,"string":"bcd"}]
 
+- name: match function flag error
+  args:
+    - 'match("x"; "a")'
+  input: '""'
+  error: |
+    unsupported regular expression flag: "a"
+
 - name: test function
   args:
     - -c

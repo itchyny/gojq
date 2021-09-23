@@ -1703,6 +1703,11 @@ func funcMatch(v, re, fs, testing interface{}) interface{} {
 }
 
 func compileRegexp(re, flags string) (*regexp.Regexp, error) {
+	if strings.IndexFunc(flags, func(r rune) bool {
+		return r != 'g' && r != 'i' && r != 'm'
+	}) >= 0 {
+		return nil, fmt.Errorf("unsupported regular expression flag: %q", flags)
+	}
 	re = strings.ReplaceAll(re, "(?<", "(?P<")
 	if strings.ContainsRune(flags, 'i') {
 		re = "(?i)" + re
