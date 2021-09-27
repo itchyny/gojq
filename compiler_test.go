@@ -105,7 +105,7 @@ func ExampleCode_RunWithContext() {
 }
 
 func TestCodeCompile_OptimizeConstants(t *testing.T) {
-	query, err := gojq.Parse("[1,{foo:2},[3]]")
+	query, err := gojq.Parse(`[1,{foo:2,"bar":3},[4]]`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,7 +123,7 @@ func TestCodeCompile_OptimizeConstants(t *testing.T) {
 			break
 		}
 		if expected := []interface{}{
-			1, map[string]interface{}{"foo": 2}, []interface{}{3},
+			1, map[string]interface{}{"foo": 2, "bar": 3}, []interface{}{4},
 		}; !reflect.DeepEqual(got, expected) {
 			t.Errorf("expected: %v, got: %v", expected, got)
 		}
