@@ -362,8 +362,7 @@ func (w *limitedWriter) Write(bs []byte) (int, error) {
 
 func (w *limitedWriter) WriteByte(b byte) error {
 	w.buf[w.off] = b
-	w.off++
-	if w.off == len(w.buf) {
+	if w.off++; w.off == len(w.buf) {
 		panic(nil)
 	}
 	return nil
