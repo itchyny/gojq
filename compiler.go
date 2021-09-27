@@ -1101,38 +1101,22 @@ func (c *compiler) funcModulemeta(v interface{}, _ []interface{}) interface{} {
 
 func (c *compiler) compileObject(e *Object) error {
 	c.appendCodeInfo(e)
-	if len(e.KeyVals) == 0 {
-		c.append(&code{op: opconst, v: map[string]interface{}{}})
+
+	oc, ok := e.makeConst()
+	if ok {
+		c.append(&code{op: opconst, v: oc})
 		return nil
 	}
+
 	defer c.newScopeDepth()()
 	v := c.newVariable()
 	c.append(&code{op: opstore, v: v})
-	pc := len(c.codes)
 	for _, kv := range e.KeyVals {
 		if err := c.compileObjectKeyVal(v, kv); err != nil {
 			return err
 		}
 	}
 	c.append(&code{op: opobject, v: len(e.KeyVals)})
-	// optimize constant objects
-	l := len(e.KeyVals)
-	if pc+l*3+1 != len(c.codes) {
-		return nil
-	}
-	for i := 0; i < l; i++ {
-		if c.codes[pc+i*3].op != oppush ||
-			c.codes[pc+i*3+1].op != opload ||
-			c.codes[pc+i*3+2].op != opconst {
-			return nil
-		}
-	}
-	w := make(map[string]interface{}, l)
-	for i := 0; i < l; i++ {
-		w[c.codes[pc+i*3].v.(string)] = c.codes[pc+i*3+2].v
-	}
-	c.codes[pc-1] = &code{op: opconst, v: w}
-	c.codes = c.codes[:pc]
 	return nil
 }
 
@@ -1194,10 +1178,13 @@ func (c *compiler) compileObjectVal(e *ObjectVal) error {
 
 func (c *compiler) compileArray(e *Array) error {
 	c.appendCodeInfo(e)
-	if e.Query == nil {
-		c.append(&code{op: opconst, v: []interface{}{}})
+
+	ac, ok := e.makeConst()
+	if ok {
+		c.append(&code{op: opconst, v: ac})
 		return nil
 	}
+
 	c.append(&code{op: oppush, v: []interface{}{}})
 	arr := c.newVariable()
 	c.append(&code{op: opstore, v: arr})
@@ -1216,27 +1203,6 @@ func (c *compiler) compileArray(e *Array) error {
 	c.append(&code{op: opbacktrack})
 	c.append(&code{op: oppop})
 	c.append(&code{op: opload, v: arr})
-	if e.Query.Op == OpPipe {
-		return nil
-	}
-	// optimize constant arrays
-	if (len(c.codes)-pc)%3 != 0 {
-		return nil
-	}
-	l := (len(c.codes) - pc - 3) / 3
-	for i := 0; i < l; i++ {
-		if c.codes[pc+i].op != opfork ||
-			c.codes[pc+i*2+l].op != opconst ||
-			(i < l-1 && c.codes[pc+i*2+l+1].op != opjump) {
-			return nil
-		}
-	}
-	v := make([]interface{}, l)
-	for i := 0; i < l; i++ {
-		v[i] = c.codes[pc+i*2+l].v
-	}
-	c.codes[pc-2] = &code{op: opconst, v: v}
-	c.codes = c.codes[:pc-1]
 	return nil
 }
 

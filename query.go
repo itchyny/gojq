@@ -329,6 +329,33 @@ func (e *Term) toIndices() []interface{} {
 	}
 }
 
+func (e *Term) makeConst() (interface{}, bool) {
+	if e.SuffixList != nil {
+		return nil, false
+	}
+
+	switch e.Type {
+	case TermTypeNull:
+		return nil, true
+	case TermTypeTrue:
+		return true, true
+	case TermTypeFalse:
+		return false, true
+	case TermTypeNumber:
+		return normalizeNumbers(json.Number(e.Number)), true
+	case TermTypeString:
+		if e.Str.Queries == nil {
+			return e.Str.Str, true
+		}
+	case TermTypeArray:
+		return e.Array.makeConst()
+	case TermTypeObject:
+		return e.Object.makeConst()
+	}
+
+	return nil, false
+}
+
 // Unary ...
 type Unary struct {
 	Op   Operator
@@ -597,6 +624,23 @@ func (e *Object) minify() {
 	}
 }
 
+func (e *Object) makeConst() (map[string]interface{}, bool) {
+	if len(e.KeyVals) == 0 {
+		return map[string]interface{}{}, true
+	}
+
+	oc := make(map[string]interface{}, len(e.KeyVals))
+	for _, kv := range e.KeyVals {
+		kc, vc, ok := kv.makeConst()
+		if !ok {
+			return nil, false
+		}
+		oc[kc] = vc
+	}
+
+	return oc, true
+}
+
 // ObjectKeyVal ...
 type ObjectKeyVal struct {
 	Key           string
@@ -648,6 +692,26 @@ func (e *ObjectKeyVal) minify() {
 	}
 }
 
+func (e *ObjectKeyVal) makeConst() (string, interface{}, bool) {
+	kc := ""
+	if e.Key != "" && e.Key[0] != '$' {
+		kc = e.Key
+	}
+	if kc == "" {
+		if e.KeyString != nil {
+			kc = e.KeyString.Str
+		}
+	}
+	if kc == "" {
+		return "", nil, false
+	}
+	vc, ok := e.Val.makeConst()
+	if !ok {
+		return "", nil, false
+	}
+	return kc, vc, true
+}
+
 // ObjectVal ...
 type ObjectVal struct {
 	Queries []*Query
@@ -674,6 +738,17 @@ func (e *ObjectVal) minify() {
 	}
 }
 
+func (e *ObjectVal) makeConst() (interface{}, bool) {
+	if len(e.Queries) != 1 {
+		return nil, false
+	}
+	vq := e.Queries[0]
+	if vq.Term == nil {
+		return nil, false
+	}
+	return vq.Term.makeConst()
+}
+
 // Array ...
 type Array struct {
 	Query *Query
@@ -697,6 +772,44 @@ func (e *Array) minify() {
 	if e.Query != nil {
 		e.Query.minify()
 	}
+}
+
+func (e *Array) makeConst() (interface{}, bool) {
+	if e.Query == nil {
+		return []interface{}{}, true
+	}
+
+	ac := []interface{}{}
+	var t func(q *Query) bool
+	t = func(q *Query) bool {
+		if q.Op == OpComma {
+			if q.Left != nil {
+				if !t(q.Left) {
+					return false
+				}
+			}
+			if q.Right != nil {
+				if !t(q.Right) {
+					return false
+				}
+			}
+			return true
+		} else if q.Term != nil {
+			tc, ok := q.Term.makeConst()
+			if !ok {
+				return false
+			}
+			ac = append(ac, tc)
+			return true
+		}
+		return false
+	}
+
+	if !t(e.Query) {
+		return nil, false
+	}
+
+	return ac, true
 }
 
 // Suffix ...

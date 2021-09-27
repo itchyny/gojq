@@ -105,28 +105,52 @@ func ExampleCode_RunWithContext() {
 }
 
 func TestCodeCompile_OptimizeConstants(t *testing.T) {
-	query, err := gojq.Parse("[1,{foo:2},[3]]")
-	if err != nil {
-		t.Fatal(err)
+	testCases := []struct {
+		src      string
+		expected interface{}
+	}{
+		{`[1,{foo:2},[3]]`,
+			[]interface{}{
+				1, map[string]interface{}{"foo": 2}, []interface{}{3},
+			},
+		},
+		{`{a:1,b:2,c:3}`,
+			map[string]interface{}{"a": 1, "b": 2, "c": 3},
+		},
+		{`{"a":1,"b":2,"c":3}`,
+			map[string]interface{}{"a": 1, "b": 2, "c": 3},
+		},
+		{`{"a":1,b:2,"c":3}`,
+			map[string]interface{}{"a": 1, "b": 2, "c": 3},
+		},
+		{`{"a":["b", 1, 1.2, null, true, false]}`,
+			map[string]interface{}{"a": []interface{}{"b", 1, 1.2, nil, true, false}},
+		},
 	}
-	code, err := gojq.Compile(query)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got, expected := reflect.ValueOf(code).Elem().FieldByName("codes").Len(), 3; expected != got {
-		t.Errorf("expected: %v, got: %v", expected, got)
-	}
-	iter := code.Run(nil)
-	for {
-		got, ok := iter.Next()
-		if !ok {
-			break
-		}
-		if expected := []interface{}{
-			1, map[string]interface{}{"foo": 2}, []interface{}{3},
-		}; !reflect.DeepEqual(got, expected) {
-			t.Errorf("expected: %v, got: %v", expected, got)
-		}
+	for _, tC := range testCases {
+		t.Run(tC.src, func(t *testing.T) {
+			query, err := gojq.Parse(tC.src)
+			if err != nil {
+				t.Fatal(err)
+			}
+			code, err := gojq.Compile(query)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got, expected := reflect.ValueOf(code).Elem().FieldByName("codes").Len(), 3; expected != got {
+				t.Errorf("expected: %v, got: %v", expected, got)
+			}
+			iter := code.Run(nil)
+			for {
+				got, ok := iter.Next()
+				if !ok {
+					break
+				}
+				if expected := tC.expected; !reflect.DeepEqual(got, expected) {
+					t.Errorf("expected: %v, got: %v", expected, got)
+				}
+			}
+		})
 	}
 }
 
