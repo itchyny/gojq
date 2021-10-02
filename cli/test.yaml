@@ -4371,6 +4371,14 @@
   expected: |
     [0,"id"]
 
+- name: path function against nan
+  args:
+    - -c
+    - '[nan,{x:nan}] | path(.[1].x)'
+  input: 'null'
+  expected: |
+    [1,"x"]
+
 - name: path function nested
   args:
     - -c

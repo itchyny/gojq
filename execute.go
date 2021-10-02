@@ -3,7 +3,6 @@ package gojq
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"sort"
 )
 
@@ -242,7 +241,7 @@ loop:
 				xs = v
 			case []interface{}:
 				if !env.paths.empty() && env.expdepth == 0 &&
-					!reflect.DeepEqual(v, env.paths.top().(pathValue).value) {
+					!deepEqual(v, env.paths.top().(pathValue).value) {
 					err = &invalidPathIterError{v}
 					break loop
 				}
@@ -255,7 +254,7 @@ loop:
 				}
 			case map[string]interface{}:
 				if !env.paths.empty() && env.expdepth == 0 &&
-					!reflect.DeepEqual(v, env.paths.top().(pathValue).value) {
+					!deepEqual(v, env.paths.top().(pathValue).value) {
 					err = &invalidPathIterError{v}
 					break loop
 				}
@@ -318,7 +317,7 @@ loop:
 			}
 			env.pop()
 			x := env.pop()
-			if reflect.DeepEqual(x, env.paths.top().(pathValue).value) {
+			if deepEqual(x, env.paths.top().(pathValue).value) {
 				env.push(env.poppaths())
 				env.expdepth = env.paths.pop().(int)
 			} else {
@@ -395,21 +394,21 @@ func (env *env) pathEntries(name string, x interface{}, args []interface{}) ([]i
 	case "_index":
 		if env.expdepth > 0 {
 			return nil, nil
-		} else if !reflect.DeepEqual(args[0], env.paths.top().(pathValue).value) {
+		} else if !deepEqual(args[0], env.paths.top().(pathValue).value) {
 			return nil, &invalidPathError{x}
 		}
 		return []interface{}{args[1]}, nil
 	case "_slice":
 		if env.expdepth > 0 {
 			return nil, nil
-		} else if !reflect.DeepEqual(args[0], env.paths.top().(pathValue).value) {
+		} else if !deepEqual(args[0], env.paths.top().(pathValue).value) {
 			return nil, &invalidPathError{x}
 		}
 		return []interface{}{map[string]interface{}{"start": args[2], "end": args[1]}}, nil
 	case "getpath":
 		if env.expdepth > 0 {
 			return nil, nil
-		} else if !reflect.DeepEqual(x, env.paths.top().(pathValue).value) {
+		} else if !deepEqual(x, env.paths.top().(pathValue).value) {
 			return nil, &invalidPathError{x}
 		}
 		return args[0].([]interface{}), nil
