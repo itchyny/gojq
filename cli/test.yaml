@@ -2391,6 +2391,14 @@
   expected: |
     []
 
+- name: subtract arrays with nan
+  args:
+    - -c
+    - '[nan,{x:nan}] - [nan,{x:nan}]'
+  input: '1'
+  expected: |
+    [null,{"x":null}]
+
 - name: add object
   args:
     - -c

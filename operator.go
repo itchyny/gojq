@@ -3,7 +3,6 @@ package gojq
 import (
 	"math"
 	"math/big"
-	"reflect"
 	"strings"
 )
 
@@ -352,7 +351,7 @@ func funcOpSub(_, l, r interface{}) interface{} {
 			for _, v := range l {
 				var found bool
 				for _, w := range r {
-					if reflect.DeepEqual(normalizeNumbers(v), normalizeNumbers(w)) {
+					if compare(v, w) == 0 {
 						found = true
 						break
 					}
