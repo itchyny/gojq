@@ -1288,6 +1288,8 @@ func updatePaths(v interface{}, path []interface{}, w interface{}, delpaths bool
 			}
 			vs[x] = u
 			return vs, nil
+		case struct{}:
+			return v, nil
 		default:
 			return nil, &expectedObjectError{v}
 		}
@@ -1334,6 +1336,8 @@ func updatePaths(v interface{}, path []interface{}, w interface{}, delpaths bool
 			copy(vs, uu)
 			vs[y] = u
 			return vs, nil
+		case struct{}:
+			return v, nil
 		default:
 			return nil, &expectedArrayError{v}
 		}
@@ -1417,6 +1421,8 @@ func updatePaths(v interface{}, path []interface{}, w interface{}, delpaths bool
 			default:
 				return nil, &expectedArrayError{v}
 			}
+		case struct{}:
+			return v, nil
 		default:
 			return nil, &expectedArrayError{v}
 		}

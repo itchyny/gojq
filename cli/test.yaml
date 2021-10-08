@@ -3956,6 +3956,16 @@
   expected: |
     [1,2,4,5]
 
+- name: delpaths function with overlapped paths
+  args:
+    - -c
+    - 'delpaths([["x"],["x",0,"y"]], [["x",0],["x",0,"y"]], [["x"],["x",{"start":0}]])'
+  input: '{"x":[{"y":0}]}'
+  expected: |
+    {}
+    {"x":[]}
+    {}
+
 - name: getpath function
   args:
     - -c
