@@ -315,12 +315,16 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	defer c.appendCodeInfo("end of " + e.Name)
 	pc := c.pc()
 	scope.funcs = append(scope.funcs, &funcinfo{e.Name, pc, len(e.Args)})
-	defer func(l int, variables []string) {
-		c.scopes, c.variables = c.scopes[:l], variables
-	}(len(c.scopes), c.variables)
+	defer func(scopes []*scopeinfo, variables []string) {
+		c.scopes, c.variables = scopes, variables
+	}(c.scopes, c.variables)
 	c.variables = c.variables[len(c.variables):]
 	scope = c.newScope()
-	c.scopes = append(c.scopes, scope)
+	if builtin {
+		c.scopes = []*scopeinfo{c.scopes[0], scope}
+	} else {
+		c.scopes = append(c.scopes, scope)
+	}
 	defer c.lazy(func() *code {
 		return &code{op: opscope, v: [3]int{scope.id, scope.variablecnt, len(e.Args)}}
 	})()

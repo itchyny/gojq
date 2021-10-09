@@ -2029,6 +2029,15 @@
       2
     ]
 
+- name: function declaration with argument name conflict
+  args:
+    - 'def f($keys): with_entries(.key *= $keys); {x: 1} | f(3)'
+  input: 'null'
+  expected: |
+    {
+      "xxx": 1
+    }
+
 - name: function declaration with mixed argument types
   args:
     - -c
