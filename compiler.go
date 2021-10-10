@@ -675,7 +675,9 @@ func (c *compiler) compileIf(e *If) error {
 			// optimize constant results
 			//    opdup, ..., opjumpifnot, opconst, opjump, opconst
 			// => opnop, ..., opjumpifnot, oppush,  opjump, oppush
-			if pcc+4 == len(c.codes) && c.codes[pcc+1].op == opconst && c.codes[pcc+3].op == opconst {
+			if pcc+4 == len(c.codes) &&
+				c.codes[pcc+1] != nil && c.codes[pcc+1].op == opconst &&
+				c.codes[pcc+3] != nil && c.codes[pcc+3].op == opconst {
 				c.codes[pc-2].op = opnop
 				c.codes[pcc+1].op = oppush
 				c.codes[pcc+3].op = oppush
