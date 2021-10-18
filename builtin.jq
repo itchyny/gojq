@@ -107,15 +107,8 @@ def ascii_downcase:
 def ascii_upcase:
   explode | map(if 97 <= . and . <= 122 then . - 32 end) | implode;
 def walk(f):
-  def w:
-    if type == "object" then
-      . as $in | reduce keys[] as $key ({}; . + { ($key): $in[$key] | w }) | f
-    elif type == "array" then
-      map(w) | f
-    else
-      f
-    end;
-  w;
+  def _walk: if type | . == "array" or . == "object" then map_values(_walk) end | f;
+  _walk;
 
 def first: .[0];
 def first(g): label $out | g | ., break $out;
