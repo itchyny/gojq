@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -394,7 +393,7 @@ func (i *readAllIter) Next() (interface{}, bool) {
 		return nil, false
 	}
 	i.err = io.EOF
-	cnt, err := ioutil.ReadAll(i.r)
+	cnt, err := io.ReadAll(i.r)
 	if err != nil {
 		return err, true
 	}

@@ -6,7 +6,6 @@ import (
 	"go/ast"
 	"go/printer"
 	"go/token"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
@@ -34,7 +33,7 @@ func main() {
 }
 
 func run(input, output string) error {
-	cnt, err := ioutil.ReadFile(input)
+	cnt, err := os.ReadFile(input)
 	if err != nil {
 		return err
 	}

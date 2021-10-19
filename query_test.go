@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math"
 	"math/big"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -208,7 +208,7 @@ func TestQueryRun_Race(t *testing.T) {
 }
 
 func TestQueryString(t *testing.T) {
-	cnt, err := ioutil.ReadFile("builtin.jq")
+	cnt, err := os.ReadFile("builtin.jq")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -242,7 +242,7 @@ func BenchmarkRun(b *testing.B) {
 }
 
 func BenchmarkParse(b *testing.B) {
-	cnt, err := ioutil.ReadFile("builtin.jq")
+	cnt, err := os.ReadFile("builtin.jq")
 	if err != nil {
 		b.Fatal(err)
 	}

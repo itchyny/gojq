@@ -3,8 +3,8 @@ package gojq_test
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 	"reflect"
 	"sync"
 	"testing"
@@ -251,7 +251,7 @@ func TestCodeRun_Race(t *testing.T) {
 }
 
 func BenchmarkCompile(b *testing.B) {
-	cnt, err := ioutil.ReadFile("builtin.jq")
+	cnt, err := os.ReadFile("builtin.jq")
 	if err != nil {
 		b.Fatal(err)
 	}

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"sort"
@@ -12,7 +11,7 @@ import (
 )
 
 func main() {
-	cnt, err := ioutil.ReadFile("builtin.jq")
+	cnt, err := os.ReadFile("builtin.jq")
 	if err != nil {
 		panic(err)
 	}

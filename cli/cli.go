@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -170,7 +169,7 @@ Synopsis:
 		cli.argvalues = append(cli.argvalues, val)
 	}
 	for k, v := range opts.RawFile {
-		val, err := ioutil.ReadFile(v)
+		val, err := os.ReadFile(v)
 		if err != nil {
 			return err
 		}
@@ -185,7 +184,7 @@ Synopsis:
 	cli.argvalues = append(cli.argvalues, map[string]interface{}{"named": named})
 	var arg, fname string
 	if opts.FromFile != "" {
-		src, err := ioutil.ReadFile(opts.FromFile)
+		src, err := os.ReadFile(opts.FromFile)
 		if err != nil {
 			return err
 		}

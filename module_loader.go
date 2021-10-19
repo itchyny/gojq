@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -35,7 +34,7 @@ func (l *moduleLoader) LoadInitModules() ([]*Query, error) {
 		if fi.IsDir() {
 			continue
 		}
-		cnt, err := ioutil.ReadFile(path)
+		cnt, err := os.ReadFile(path)
 		if err != nil {
 			return nil, err
 		}
@@ -53,7 +52,7 @@ func (l *moduleLoader) LoadModuleWithMeta(name string, meta map[string]interface
 	if err != nil {
 		return nil, err
 	}
-	cnt, err := ioutil.ReadFile(path)
+	cnt, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +85,7 @@ func (l *moduleLoader) LoadJSONWithMeta(name string, meta map[string]interface{}
 			if _, err := f.Seek(0, io.SeekStart); err != nil {
 				return nil, err
 			}
-			cnt, er := ioutil.ReadAll(f)
+			cnt, er := io.ReadAll(f)
 			if er != nil {
 				return nil, er
 			}
