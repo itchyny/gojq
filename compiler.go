@@ -117,7 +117,7 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 	}
 	setscope()
 	c.optimizeTailRec()
-	c.optimizeJumps()
+	c.optimizeCodeOps()
 	return &Code{
 		variables: c.variables,
 		codes:     c.codes,
@@ -1498,22 +1498,26 @@ L:
 	}
 }
 
-func (c *compiler) optimizeJumps() {
-	for i := len(c.codes) - 1; i >= 0; i-- {
+func (c *compiler) optimizeCodeOps() {
+	for i, next := len(c.codes)-1, (*code)(nil); i >= 0; i-- {
 		code := c.codes[i]
-		if code.op != opjump {
-			continue
-		}
-		if code.v.(int)-1 == i {
-			c.codes[i].op = opnop
-			continue
-		}
-		for {
-			d := c.codes[code.v.(int)]
-			if d.op != opjump || code.v.(int) == d.v.(int) {
-				break
+		switch code.op {
+		case oppush, opdup, opload:
+			switch next.op {
+			case oppop:
+				code.op = opnop
+				next.op = opnop
+			case opconst:
+				code.op = opnop
+				next.op = oppush
 			}
-			code.v = d.v
+		case opjump, opjumpifnot:
+			if j := code.v.(int); j-1 == i {
+				code.op = opnop
+			} else if next = c.codes[j]; next.op == opjump {
+				code.v = next.v
+			}
 		}
+		next = code
 	}
 }
