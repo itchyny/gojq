@@ -27,6 +27,11 @@ func init() {
 	}
 }
 
+type codeinfo struct {
+	name string
+	pc   int
+}
+
 func (c *compiler) appendCodeInfo(x interface{}) {
 	if !debug {
 		return

@@ -61,11 +61,6 @@ func (c *Code) RunWithContext(ctx context.Context, v interface{}, values ...inte
 //  LoadJSONWithMeta(string, map[string]interface{}) (interface{}, error)
 type ModuleLoader interface{}
 
-type codeinfo struct {
-	name string
-	pc   int
-}
-
 type scopeinfo struct {
 	variables   []*varinfo
 	funcs       []*funcinfo

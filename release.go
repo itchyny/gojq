@@ -3,6 +3,8 @@
 
 package gojq
 
+type codeinfo struct{}
+
 func (c *compiler) appendCodeInfo(interface{}) {}
 
 func (c *compiler) deleteCodeInfo(string) {}
