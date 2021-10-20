@@ -29,8 +29,8 @@ def _flatten($x):
 def flatten($x):
   if $x < 0
   then error("flatten depth must not be negative")
-  else _flatten($x) end;
-def flatten: _flatten(-1);
+  else _flatten($x) // [] end;
+def flatten: _flatten(-1) // [];
 def min: min_by(.);
 def min_by(f): _min_by(map([f]));
 def max: max_by(.);
