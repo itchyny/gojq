@@ -16,6 +16,15 @@ func Parse(src string) (*Query, error) {
 	return l.result, nil
 }
 
+// Just like Parse, but panics if an error occurs.
+func MustParse(src string) (*Query) {
+	query, err := Parse(src)
+	if err != nil {
+		panic(err.Error())
+	}
+	return query
+}
+
 func reverseFuncDef(xs []*FuncDef) []*FuncDef {
 	for i, j := 0, len(xs)-1; i < j; i, j = i+1, j-1 {
 		xs[i], xs[j] = xs[j], xs[i]
