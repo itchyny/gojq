@@ -101,7 +101,7 @@ func parseFlags(args []string, opts interface{}) ([]string, error) {
 				val.Elem().SetInt(int64(v))
 			}
 		case reflect.Slice:
-			if i++; i >= len(args) {
+			if i++; i >= len(args) && !positional {
 				return nil, fmt.Errorf("expected argument for flag `%s'", arg)
 			}
 			for ; i < len(args); i++ {

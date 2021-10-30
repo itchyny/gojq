@@ -7052,6 +7052,17 @@
     "\"bar\""
     "{\"x\":1}"
 
+- name: args option without argument
+  args:
+    - '$ARGS'
+    - --args
+  input: '0'
+  expected: |
+    {
+      "named": {},
+      "positional": []
+    }
+
 - name: $ARGS variable with jsonargs option
   args:
     - '$ARGS | ., .positional[]'
@@ -7080,6 +7091,17 @@
     "bar"
     {
       "x": 1
+    }
+
+- name: jsonargs option without argument
+  args:
+    - '$ARGS'
+    - --jsonargs
+  input: '0'
+  expected: |
+    {
+      "named": {},
+      "positional": []
     }
 
 - name: jsonargs option parse error
