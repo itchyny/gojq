@@ -127,10 +127,11 @@ Usage:
 	defer func(x bool) { noColor = x }(noColor)
 	if opts.OutputColor || opts.OutputMono {
 		noColor = opts.OutputMono
-	} else if os.Getenv("NO_COLOR") != "" {
+	} else if os.Getenv("NO_COLOR") != "" || os.Getenv("TERM") == "dumb" {
 		noColor = true
 	} else {
-		noColor = !isTTY(cli.outStream)
+		f, ok := cli.outStream.(interface{ Fd() uintptr })
+		noColor = !(ok && (isatty.IsTerminal(f.Fd()) || isatty.IsCygwinTerminal(f.Fd())))
 	}
 	if !noColor {
 		if colors := os.Getenv("GOJQ_COLORS"); colors != "" {
@@ -433,13 +434,4 @@ func (cli *cli) printError(err error) {
 			}
 		}
 	}
-}
-
-// isTTY attempts to determine whether an output is a TTY.
-func isTTY(w io.Writer) bool {
-	if os.Getenv("TERM") == "dumb" {
-		return false
-	}
-	f, ok := w.(interface{ Fd() uintptr })
-	return ok && (isatty.IsTerminal(f.Fd()) || isatty.IsCygwinTerminal(f.Fd()))
 }
