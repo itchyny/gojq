@@ -155,15 +155,22 @@ func formatFlags(opts interface{}) string {
 			}
 			sb.WriteString("--")
 			sb.WriteString(flag)
-			if val.Field(i).Kind() == reflect.Bool {
+			switch val.Field(i).Kind() {
+			case reflect.Bool:
 				sb.WriteString(" ")
-			} else {
+			case reflect.Map:
+				if strings.HasSuffix(flag, "file") {
+					sb.WriteString(" name file")
+				} else {
+					sb.WriteString(" name value")
+				}
+			default:
 				sb.WriteString("=")
 			}
 		} else {
 			sb.WriteString("= ")
 		}
-		sb.WriteString(strings.Repeat(" ", 23-sb.Len()+m))
+		sb.WriteString(strings.Repeat(" ", 24-sb.Len()+m))
 		sb.WriteString(tag.Get("description"))
 		sb.WriteString("\n")
 	}
