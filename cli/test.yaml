@@ -5451,6 +5451,15 @@
   expected: |
     {"foo":["hello","world"]}
 
+- name: compact output long option with value
+  args:
+    - --compact-output=1
+    - '.'
+  input: '0'
+  error: |
+    boolean flag `--compact-output' cannot have an argument
+  exit_code: 2
+
 - name: raw string output option
   args:
     - -r
@@ -5710,8 +5719,7 @@
 
 - name: indent option too many indentation count error
   args:
-    - --indent
-    - '10'
+    - --indent=10
     - '.'
   input: '{ "foo": { "baz": ["hello", "world"] } }'
   error: |
@@ -5725,6 +5733,22 @@
   input: '{ "foo": { "baz": ["hello", "world"] } }'
   error: |
     negative indentation count: -1
+
+- name: indent option without argument
+  args:
+    - --indent
+  input: '0'
+  error: |
+    expected argument for flag `--indent'
+  exit_code: 2
+
+- name: indent option parse error
+  args:
+    - --indent=foo
+  input: '0'
+  error: |
+    invalid argument for flag `--indent': strconv.Atoi: parsing "foo": invalid syntax
+  exit_code: 2
 
 - name: tab option
   args:
@@ -6448,6 +6472,13 @@
     - 'testdata/3.jq'
   error: 'open testdata/3.jq:'
 
+- name: query file not specified
+  args:
+    - -f
+  error: |
+    expected argument for flag `-f'
+  exit_code: 2
+
 - name: invalid json eof
   input: '{'
   error: |
@@ -6709,12 +6740,20 @@
 - name: module directory option with same alias name
   args:
     - -c
-    - -L
-    - 'testdata'
+    - -Ltestdata
     - 'include "4"; import "6" as bar; bar::g'
   input: '1'
   expected: |
     [1,2,{"foo":42}]
+
+- name: module directory option without argument
+  args:
+    - -c
+    - -L
+  input: '0'
+  error: |
+    expected argument for flag `-L'
+  exit_code: 2
 
 - name: search directory in query
   args:
@@ -6806,11 +6845,16 @@
 - name: arg option arguments count error
   args:
     - --arg
-    - 'foo'
-    - --null-input
-    - '.'
   error: |
-    expected 2 arguments for flag `--arg', but got option `--null-input'
+    expected 2 arguments for flag `--arg'
+  exit_code: 2
+
+- name: arg option arguments count error
+  args:
+    - --arg
+    - 'foo'
+  error: |
+    expected 2 arguments for flag `--arg'
   exit_code: 2
 
 - name: arg option variable name error
@@ -7145,18 +7189,26 @@
           ^  unexpected token <EOF>
   exit_code: 3
 
-- name: invalid option error
+- name: short flags
   args:
-    - -q
+    - -cRr
+    - '.'
+  input: 'foo'
+  expected: |
+    foo
+
+- name: invalid short option error
+  args:
+    - -neq
     - '.'
   error: |
     unknown flag `q'
   exit_code: 2
 
-- name: invalid option error with leading -0
+- name: invalid long option error
   args:
-    - -0nep
+    - --qqq
     - '.'
   error: |
-    unknown flag `p'
+    unknown flag `--qqq'
   exit_code: 2

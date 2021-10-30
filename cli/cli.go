@@ -9,7 +9,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/itchyny/go-flags"
 	"github.com/mattn/go-isatty"
 
 	"github.com/itchyny/gojq"
@@ -71,12 +70,13 @@ type flagopts struct {
 	InputYAML     bool              `long:"yaml-input" description:"read input as YAML"`
 	FromFile      string            `short:"f" long:"from-file" description:"load query from file"`
 	ModulePaths   []string          `short:"L" description:"directory to search modules from"`
-	Args          map[string]string `long:"arg" description:"set variable to string value" count:"2" unquote:"false"`
-	ArgsJSON      map[string]string `long:"argjson" description:"set variable to JSON value" count:"2" unquote:"false"`
-	SlurpFile     map[string]string `long:"slurpfile" description:"set variable to the JSON contents of the file" count:"2" unquote:"false"`
-	RawFile       map[string]string `long:"rawfile" description:"set variable to the contents of the file" count:"2" unquote:"false"`
+	Args          map[string]string `long:"arg" description:"set variable to string value"`
+	ArgsJSON      map[string]string `long:"argjson" description:"set variable to JSON value"`
+	SlurpFile     map[string]string `long:"slurpfile" description:"set variable to the JSON contents of the file"`
+	RawFile       map[string]string `long:"rawfile" description:"set variable to the contents of the file"`
 	ExitStatus    bool              `short:"e" long:"exit-status" description:"exit 1 when the last value is false or null"`
 	Version       bool              `short:"v" long:"version" description:"print version"`
+	Help          bool              `short:"h" long:"help" description:"print this help"`
 }
 
 var addDefaultModulePaths = true
@@ -94,24 +94,25 @@ func (cli *cli) run(args []string) int {
 
 func (cli *cli) runInternal(args []string) (err error) {
 	var opts flagopts
-	args, err = flags.NewParser(
-		&opts, flags.HelpFlag|flags.PassDoubleDash,
-	).ParseArgs(adjustArgs(args))
+	args, err = parseFlags(args, &opts)
 	if err != nil {
-		if err, ok := err.(*flags.Error); ok && err.Type == flags.ErrHelp {
-			fmt.Fprintf(cli.outStream, `%[1]s - Go implementation of jq
+		return &flagParseError{err}
+	}
+	if opts.Help {
+		fmt.Fprintf(cli.outStream, `%[1]s - Go implementation of jq
 
 Version: %s (rev: %s/%s)
 
 Synopsis:
   %% echo '{"foo": 128}' | %[1]s '.foo'
 
+Usage:
+  %[1]s [OPTIONS]
+
 `,
-				name, version, revision, runtime.Version())
-			fmt.Fprintln(cli.outStream, err.Error())
-			return nil
-		}
-		return &flagParseError{err}
+			name, version, revision, runtime.Version())
+		fmt.Fprintln(cli.outStream, formatFlags(&opts))
+		return nil
 	}
 	if opts.Version {
 		fmt.Fprintf(cli.outStream, "%s %s (rev: %s/%s)\n", name, version, revision, runtime.Version())
@@ -251,30 +252,6 @@ Synopsis:
 		iter = newNullInputIter()
 	}
 	return cli.process(iter, code)
-}
-
-// insert double dash to recognize query with leading hyphen
-func adjustArgs(args []string) []string {
-	for i := len(args) - 1; i >= 0; i-- {
-		if arg := args[i]; strings.HasPrefix(arg, "-") {
-			if strings.ContainsAny(arg, " .|,$?+*/%=!<>@()[]") {
-				j, hasDoubleDash := i, false
-				for ; j >= 0; j-- {
-					if args[j] == "--" {
-						hasDoubleDash = true
-						break
-					}
-				}
-				if !hasDoubleDash {
-					args = append(args, "")
-					copy(args[i+1:], args[i:])
-					args[i] = "--"
-				}
-			}
-			break
-		}
-	}
-	return args
 }
 
 func listDefaultModulePaths() []string {

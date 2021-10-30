@@ -11,15 +11,15 @@ all: build
 
 .PHONY: build
 build:
-	go build -tags forceposix -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
+	go build -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
 
 .PHONY: build-dev
 build-dev: parser.go builtin.go
-	go build -tags forceposix -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
+	go build -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
 
 .PHONY: build-debug
 build-debug: parser.go builtin.go
-	go build -tags forceposix,debug -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
+	go build -tags debug -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
 
 builtin.go: builtin.jq parser.go.y parser.go query.go operator.go _tools/*
 	GOOS= GOARCH= go generate
@@ -33,15 +33,15 @@ $(GOBIN)/goyacc:
 
 .PHONY: install
 install:
-	go install -tags forceposix -ldflags=$(BUILD_LDFLAGS) ./...
+	go install -ldflags=$(BUILD_LDFLAGS) ./...
 
 .PHONY: install-dev
 install-dev: parser.go builtin.go
-	go install -tags forceposix -ldflags=$(BUILD_LDFLAGS) ./...
+	go install -ldflags=$(BUILD_LDFLAGS) ./...
 
 .PHONY: install-debug
 install-debug: parser.go builtin.go
-	go install -tags forceposix,debug -ldflags=$(BUILD_LDFLAGS) ./...
+	go install -tags debug -ldflags=$(BUILD_LDFLAGS) ./...
 
 .PHONY: show-version
 show-version: $(GOBIN)/gobump
