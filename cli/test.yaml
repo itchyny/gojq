@@ -7148,6 +7148,43 @@
         {"x":}
              ^  invalid character '}' looking for beginning of value
 
+- name: args with jsonargs option
+  args:
+    - -c
+    - '$ARGS'
+    - --args
+    - 1
+    - 2
+    - --jsonargs
+    - 1
+    - 2
+    - --args
+    - 1
+    - 2
+  input: '0'
+  expected: |
+    {"named":{},"positional":["1","2",1,2,"1","2"]}
+
+- name: args with jsonargs option
+  args:
+    - -c
+    - '$ARGS'
+    - --args
+    - 1
+    - 2
+    - --jsonargs
+    - 1
+    - 2
+    - --args
+    - 1
+    - 2
+    - --jsonargs
+    - 1
+    - 2
+  input: '0'
+  expected: |
+    {"named":{},"positional":["1","2",1,2,"1","2",1,2]}
+
 - name: exit status option with null result
   args:
     - -e

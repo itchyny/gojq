@@ -179,21 +179,28 @@ Usage:
 		cli.argnames = append(cli.argnames, "$"+k)
 		cli.argvalues = append(cli.argvalues, string(val))
 	}
-	for i, v := range opts.JSONArgs {
-		val, _ := newJSONInputIter(strings.NewReader(v.(string)), "--jsonargs").Next()
-		if err, ok := val.(error); ok {
-			return err
-		}
-		opts.JSONArgs[i] = val
-	}
 	named := make(map[string]interface{}, len(cli.argnames))
 	for i, name := range cli.argnames {
 		named[name[1:]] = cli.argvalues[i]
 	}
+	positional := opts.Args
+	for i, v := range opts.JSONArgs {
+		if v != struct{}{} {
+			val, _ := newJSONInputIter(strings.NewReader(v.(string)), "--jsonargs").Next()
+			if err, ok := val.(error); ok {
+				return err
+			}
+			if i < len(positional) {
+				positional[i] = val
+			} else {
+				positional = append(positional, val)
+			}
+		}
+	}
 	cli.argnames = append(cli.argnames, "$ARGS")
 	cli.argvalues = append(cli.argvalues, map[string]interface{}{
 		"named":      named,
-		"positional": append(opts.Args, opts.JSONArgs...),
+		"positional": positional,
 	})
 	var arg, fname string
 	if opts.FromFile != "" {
