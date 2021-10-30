@@ -26,6 +26,7 @@ func parseFlags(args []string, opts interface{}) ([]string, error) {
 		}
 	}
 	mapKeys := map[string]struct{}{}
+	var positionalVal reflect.Value
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
 		var (
@@ -35,7 +36,13 @@ func parseFlags(args []string, opts interface{}) ([]string, error) {
 			shortopts  string
 		)
 		if arg == "--" {
-			rest = append(rest, args[i+1:]...)
+			if positionalVal.IsValid() {
+				for _, arg := range args[i+1:] {
+					positionalVal.Set(reflect.Append(positionalVal, reflect.ValueOf(arg)))
+				}
+			} else {
+				rest = append(rest, args[i+1:]...)
+			}
 			break
 		}
 		if strings.HasPrefix(arg, "--") {
@@ -77,7 +84,11 @@ func parseFlags(args []string, opts interface{}) ([]string, error) {
 			}
 		}
 		if !ok {
-			rest = append(rest, arg)
+			if positionalVal.IsValid() && len(rest) > 0 {
+				positionalVal.Set(reflect.Append(positionalVal, reflect.ValueOf(arg)))
+			} else {
+				rest = append(rest, arg)
+			}
 			continue
 		}
 	S:
@@ -102,14 +113,13 @@ func parseFlags(args []string, opts interface{}) ([]string, error) {
 				val.Elem().SetInt(int64(v))
 			}
 		case reflect.Slice:
-			if i++; i >= len(args) && !positional {
-				return nil, fmt.Errorf("expected argument for flag `%s'", arg)
-			}
-			for ; i < len(args); i++ {
-				val.Set(reflect.Append(val, reflect.ValueOf(args[i])))
-				if !positional {
-					break
+			if positional {
+				positionalVal = val
+			} else {
+				if i++; i >= len(args) {
+					return nil, fmt.Errorf("expected argument for flag `%s'", arg)
 				}
+				val.Set(reflect.Append(val, reflect.ValueOf(args[i])))
 			}
 		case reflect.Map:
 			if i += 2; i >= len(args) {

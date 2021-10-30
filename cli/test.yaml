@@ -7067,6 +7067,33 @@
       "positional": []
     }
 
+- name: query and options after args option
+  args:
+    - --args
+    - '$ARGS'
+    - 1
+    - -n
+    - 2
+    - -c
+    - --
+    - 3
+    - --
+    - -c
+  input: '0'
+  expected: |
+    {"named":{},"positional":["1","2","3","--","-c"]}
+
+- name: double dash with args option
+  args:
+    - --args
+    - --
+    - 1
+    - 2
+    - 3
+  input: '0'
+  expected: |
+    0
+
 - name: $ARGS variable with jsonargs option
   args:
     - '$ARGS | ., .positional[]'
