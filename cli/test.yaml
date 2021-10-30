@@ -6898,19 +6898,23 @@
 - name: arg and argjson options
   args:
     - --arg
-    - 'foo'
-    - '"false"'
+    - 'x'
+    - '1'
     - --argjson
-    - 'bar'
-    - '{ "bar": 24 }'
-    - '{ $foo, $bar }'
-  input: '123'
+    - 'x'
+    - '1'
+    - --argjson
+    - 'y'
+    - '2'
+    - --arg
+    - 'y'
+    - '2'
+    - '{ $x, $y }'
+  input: '0'
   expected: |
     {
-      "bar": {
-        "bar": 24
-      },
-      "foo": "\"false\""
+      "x": "1",
+      "y": 2
     }
 
 - name: argjson option error

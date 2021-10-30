@@ -25,6 +25,7 @@ func parseFlags(args []string, opts interface{}) ([]string, error) {
 			shortToValue[flag] = val.Field(i)
 		}
 	}
+	mapKeys := map[string]struct{}{}
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
 		var (
@@ -117,7 +118,11 @@ func parseFlags(args []string, opts interface{}) ([]string, error) {
 			if val.IsNil() {
 				val.Set(reflect.MakeMap(val.Type()))
 			}
-			val.SetMapIndex(reflect.ValueOf(args[i-1]), reflect.ValueOf(args[i]))
+			name := args[i-1]
+			if _, ok := mapKeys[name]; !ok {
+				mapKeys[name] = struct{}{}
+				val.SetMapIndex(reflect.ValueOf(name), reflect.ValueOf(args[i]))
+			}
 		}
 	L:
 		if shortopts != "" {
