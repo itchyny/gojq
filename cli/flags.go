@@ -30,10 +30,9 @@ func parseFlags(args []string, opts interface{}) ([]string, error) {
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
 		var (
-			val        reflect.Value
-			ok         bool
-			positional bool
-			shortopts  string
+			val       reflect.Value
+			ok        bool
+			shortopts string
 		)
 		if arg == "--" {
 			if positionalVal.IsValid() {
@@ -46,9 +45,7 @@ func parseFlags(args []string, opts interface{}) ([]string, error) {
 			break
 		}
 		if strings.HasPrefix(arg, "--") {
-			if val, ok = longToValue[arg[2:]]; ok {
-				_, positional = longToPositional[arg[2:]]
-			} else {
+			if val, ok = longToValue[arg[2:]]; !ok {
 				if j := strings.IndexByte(arg, '='); j >= 0 {
 					if val, ok = longToValue[arg[2:j]]; ok {
 						if val.Kind() == reflect.Bool {
@@ -113,7 +110,7 @@ func parseFlags(args []string, opts interface{}) ([]string, error) {
 				val.Elem().SetInt(int64(v))
 			}
 		case reflect.Slice:
-			if positional {
+			if _, ok := longToPositional[arg[2:]]; ok {
 				positionalVal = val
 			} else {
 				if i++; i >= len(args) {
