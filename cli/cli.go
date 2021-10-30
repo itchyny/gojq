@@ -185,7 +185,7 @@ Usage:
 	}
 	positional := opts.Args
 	for i, v := range opts.JSONArgs {
-		if v != struct{}{} {
+		if v != nil {
 			val, _ := newJSONInputIter(strings.NewReader(v.(string)), "--jsonargs").Next()
 			if err, ok := val.(error); ok {
 				return err

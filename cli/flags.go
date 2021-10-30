@@ -113,7 +113,7 @@ func parseFlags(args []string, opts interface{}) ([]string, error) {
 			if _, ok := longToPositional[arg[2:]]; ok {
 				if positionalVal.IsValid() {
 					for positionalVal.Len() > val.Len() {
-						val.Set(reflect.Append(val, reflect.ValueOf(struct{}{})))
+						val.Set(reflect.Append(val, reflect.Zero(val.Type().Elem())))
 					}
 				}
 				positionalVal = val
