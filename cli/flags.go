@@ -180,9 +180,9 @@ func formatFlags(opts interface{}) string {
 				sb.WriteString("=")
 			}
 		} else {
-			sb.WriteString("= ")
+			sb.WriteString("=")
 		}
-		sb.WriteString(strings.Repeat(" ", 24-sb.Len()+m))
+		sb.WriteString("                       "[:24-sb.Len()+m])
 		sb.WriteString(tag.Get("description"))
 		sb.WriteString("\n")
 	}
