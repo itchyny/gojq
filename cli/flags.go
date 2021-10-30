@@ -177,7 +177,9 @@ func formatFlags(opts interface{}) string {
 					sb.WriteString(" name value")
 				}
 			default:
-				sb.WriteString("=")
+				if _, ok = tag.Lookup("positional"); !ok {
+					sb.WriteString("=")
+				}
 			}
 		} else {
 			sb.WriteString("=")
