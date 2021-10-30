@@ -70,8 +70,8 @@ type flagopts struct {
 	InputYAML     bool              `long:"yaml-input" description:"read input as YAML"`
 	FromFile      string            `short:"f" long:"from-file" description:"load query from file"`
 	ModulePaths   []string          `short:"L" description:"directory to search modules from"`
-	Args          map[string]string `long:"arg" description:"set variable to string value"`
-	ArgsJSON      map[string]string `long:"argjson" description:"set variable to JSON value"`
+	Arg           map[string]string `long:"arg" description:"set variable to string value"`
+	ArgJSON       map[string]string `long:"argjson" description:"set variable to JSON value"`
 	SlurpFile     map[string]string `long:"slurpfile" description:"set variable to the JSON contents of the file"`
 	RawFile       map[string]string `long:"rawfile" description:"set variable to the contents of the file"`
 	ExitStatus    bool              `short:"e" long:"exit-status" description:"exit 1 when the last value is false or null"`
@@ -149,11 +149,11 @@ Usage:
 	}
 	cli.inputRaw, cli.inputSlurp, cli.inputStream, cli.inputYAML =
 		opts.InputRaw, opts.InputSlurp, opts.InputStream, opts.InputYAML
-	for k, v := range opts.Args {
+	for k, v := range opts.Arg {
 		cli.argnames = append(cli.argnames, "$"+k)
 		cli.argvalues = append(cli.argvalues, v)
 	}
-	for k, v := range opts.ArgsJSON {
+	for k, v := range opts.ArgJSON {
 		val, _ := newJSONInputIter(strings.NewReader(v), "$"+k).Next()
 		if err, ok := val.(error); ok {
 			return err
