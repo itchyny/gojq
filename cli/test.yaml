@@ -7021,9 +7021,79 @@
           }
         ],
         "d": "{\"foo\":10}\n"
-      }
+      },
+      "positional": []
     }
     "1"
+
+- name: $ARGS variable with args option
+  args:
+    - --arg
+    - 'foo'
+    - 'value'
+    - '$ARGS | ., .positional[]'
+    - --args
+    - '1'
+    - '"bar"'
+    - '{"x":1}'
+  input: '0'
+  expected: |
+    {
+      "named": {
+        "foo": "value"
+      },
+      "positional": [
+        "1",
+        "\"bar\"",
+        "{\"x\":1}"
+      ]
+    }
+    "1"
+    "\"bar\""
+    "{\"x\":1}"
+
+- name: $ARGS variable with jsonargs option
+  args:
+    - '$ARGS | ., .positional[]'
+    - --arg
+    - 'foo'
+    - 'value'
+    - --jsonargs
+    - '1'
+    - '"bar"'
+    - '{"x":1}'
+  input: '0'
+  expected: |
+    {
+      "named": {
+        "foo": "value"
+      },
+      "positional": [
+        1,
+        "bar",
+        {
+          "x": 1
+        }
+      ]
+    }
+    1
+    "bar"
+    {
+      "x": 1
+    }
+
+- name: jsonargs option parse error
+  args:
+    - '$ARGS'
+    - --jsonargs
+    - '1'
+    - '"bar"'
+    - '{"x":}'
+  input: '0'
+  error: |
+    invalid json: --jsonargs
+        {"x":}
+             ^  invalid character '}' looking for beginning of value
 
 - name: exit status option with null result
   args:

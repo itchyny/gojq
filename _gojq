@@ -23,6 +23,8 @@ _gojq()
     '(--argjson)'--argjson'[set variable to JSON value]:variable name:' \
     '(--slurpfile)'--slurpfile'[set variable to the JSON contents of the file]:variable name:' \
     '(--rawfile)'--rawfile'[set variable to the contents of the file]:variable name:' \
+    '(--args)'--args'[consume remaining arguments as positional string values]' \
+    '(--jsonargs)'--jsonargs'[consume remaining arguments as positional JSON values]' \
     '(-e --exit-status)'{-e,--exit-status}'[exit 1 when the last value is false or null]' \
     '(-v --version)'{-v,--version}'[print version]' \
     '(-h --help)'{-h,--help}'[print help]' \

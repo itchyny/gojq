@@ -74,6 +74,8 @@ type flagopts struct {
 	ArgJSON       map[string]string `long:"argjson" description:"set variable to JSON value"`
 	SlurpFile     map[string]string `long:"slurpfile" description:"set variable to the JSON contents of the file"`
 	RawFile       map[string]string `long:"rawfile" description:"set variable to the contents of the file"`
+	Args          []interface{}     `long:"args" positional:"" description:"consume remaining arguments as positional string values"`
+	JSONArgs      []interface{}     `long:"jsonargs" positional:"" description:"consume remaining arguments as positional JSON values"`
 	ExitStatus    bool              `short:"e" long:"exit-status" description:"exit 1 when the last value is false or null"`
 	Version       bool              `short:"v" long:"version" description:"print version"`
 	Help          bool              `short:"h" long:"help" description:"print this help"`
@@ -177,12 +179,22 @@ Usage:
 		cli.argnames = append(cli.argnames, "$"+k)
 		cli.argvalues = append(cli.argvalues, string(val))
 	}
+	for i, v := range opts.JSONArgs {
+		val, _ := newJSONInputIter(strings.NewReader(v.(string)), "--jsonargs").Next()
+		if err, ok := val.(error); ok {
+			return err
+		}
+		opts.JSONArgs[i] = val
+	}
 	named := make(map[string]interface{}, len(cli.argnames))
 	for i, name := range cli.argnames {
 		named[name[1:]] = cli.argvalues[i]
 	}
 	cli.argnames = append(cli.argnames, "$ARGS")
-	cli.argvalues = append(cli.argvalues, map[string]interface{}{"named": named})
+	cli.argvalues = append(cli.argvalues, map[string]interface{}{
+		"named":      named,
+		"positional": append(opts.Args, opts.JSONArgs...),
+	})
 	var arg, fname string
 	if opts.FromFile != "" {
 		src, err := os.ReadFile(opts.FromFile)

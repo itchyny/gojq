@@ -12,10 +12,14 @@ func parseFlags(args []string, opts interface{}) ([]string, error) {
 	val := reflect.ValueOf(opts).Elem()
 	typ := val.Type()
 	longToValue := map[string]reflect.Value{}
+	longToPositional := map[string]struct{}{}
 	shortToValue := map[string]reflect.Value{}
 	for i, l := 0, val.NumField(); i < l; i++ {
 		if flag, ok := typ.Field(i).Tag.Lookup("long"); ok {
 			longToValue[flag] = val.Field(i)
+			if _, ok := typ.Field(i).Tag.Lookup("positional"); ok {
+				longToPositional[flag] = struct{}{}
+			}
 		}
 		if flag, ok := typ.Field(i).Tag.Lookup("short"); ok {
 			shortToValue[flag] = val.Field(i)
@@ -24,16 +28,19 @@ func parseFlags(args []string, opts interface{}) ([]string, error) {
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
 		var (
-			val       reflect.Value
-			ok        bool
-			shortopts string
+			val        reflect.Value
+			ok         bool
+			positional bool
+			shortopts  string
 		)
 		if arg == "--" {
 			rest = append(rest, args[i+1:]...)
 			break
 		}
 		if strings.HasPrefix(arg, "--") {
-			if val, ok = longToValue[arg[2:]]; !ok {
+			if val, ok = longToValue[arg[2:]]; ok {
+				_, positional = longToPositional[arg[2:]]
+			} else {
 				if j := strings.IndexByte(arg, '='); j >= 0 {
 					if val, ok = longToValue[arg[2:j]]; ok {
 						if val.Kind() == reflect.Bool {
@@ -97,7 +104,12 @@ func parseFlags(args []string, opts interface{}) ([]string, error) {
 			if i++; i >= len(args) {
 				return nil, fmt.Errorf("expected argument for flag `%s'", arg)
 			}
-			val.Set(reflect.Append(val, reflect.ValueOf(args[i])))
+			for ; i < len(args); i++ {
+				val.Set(reflect.Append(val, reflect.ValueOf(args[i])))
+				if !positional {
+					break
+				}
+			}
 		case reflect.Map:
 			if i += 2; i >= len(args) {
 				return nil, fmt.Errorf("expected 2 arguments for flag `%s'", arg)
