@@ -190,7 +190,7 @@ def splits($re; $flags): split($re; $flags) | .[];
 def sub($re; str): sub($re; str; null);
 def sub($re; str; $flags):
   . as $in
-    | def sub:
+    | def _sub:
         if .matches|length > 0
         then
           . as $x | .matches[0] as $r
@@ -201,11 +201,11 @@ def sub($re; str; $flags):
                 offset: ($r.offset + $r.length),
                 matches: $x.matches[1:]
               }
-            | sub
+            | _sub
         else
           .string + $in[.offset:]
         end;
-  { string: "", offset: 0, matches: [match($re; $flags)] } | sub;
+  { string: "", offset: 0, matches: [match($re; $flags)] } | _sub;
 def gsub($re; str): sub($re; str; "g");
 def gsub($re; str; $flags): sub($re; str; $flags + "g");
 
