@@ -6334,6 +6334,13 @@
   expected: |
     null
 
+- name: source query from file
+  args:
+    - -nf
+    - 'testdata/1.jq'
+  expected: |
+    null
+
 - name: source query from file long option
   args:
     - --null-input
