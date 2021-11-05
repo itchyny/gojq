@@ -516,6 +516,19 @@ func funcImplode(v interface{}) interface{} {
 	}
 }
 
+func implode(v []interface{}) interface{} {
+	var sb strings.Builder
+	sb.Grow(len(v))
+	for _, r := range v {
+		if r, ok := toInt(r); ok && 0 <= r && r <= utf8.MaxRune {
+			sb.WriteRune(rune(r))
+		} else {
+			return &funcTypeError{"implode", v}
+		}
+	}
+	return sb.String()
+}
+
 func funcSplit(v interface{}, args []interface{}) interface{} {
 	s, ok := v.(string)
 	if !ok {
@@ -548,19 +561,6 @@ func funcSplit(v interface{}, args []interface{}) interface{} {
 		xs[i] = s
 	}
 	return xs
-}
-
-func implode(v []interface{}) interface{} {
-	var sb strings.Builder
-	sb.Grow(len(v))
-	for _, r := range v {
-		if r, ok := toInt(r); ok && 0 <= r && r <= utf8.MaxRune {
-			sb.WriteRune(rune(r))
-		} else {
-			return &funcTypeError{"implode", v}
-		}
-	}
-	return sb.String()
 }
 
 func funcToJSON(v interface{}) interface{} {
