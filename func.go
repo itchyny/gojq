@@ -595,6 +595,32 @@ func funcFormat(v, x interface{}) interface{} {
 	}
 }
 
+var htmlEscaper = strings.NewReplacer(
+	`<`, "&lt;",
+	`>`, "&gt;",
+	`&`, "&amp;",
+	`'`, "&apos;",
+	`"`, "&quot;",
+)
+
+func funcToHTML(v interface{}) interface{} {
+	switch x := funcToString(v).(type) {
+	case string:
+		return htmlEscaper.Replace(x)
+	default:
+		return x
+	}
+}
+
+func funcToURI(v interface{}) interface{} {
+	switch x := funcToString(v).(type) {
+	case string:
+		return url.QueryEscape(x)
+	default:
+		return x
+	}
+}
+
 func funcToCSV(v interface{}) interface{} {
 	return funcToCSVTSV("csv", v, ",", func(s string) string {
 		return `"` + strings.ReplaceAll(s, `"`, `""`) + `"`
@@ -612,32 +638,6 @@ func funcToTSV(v interface{}) interface{} {
 	return funcToCSVTSV("tsv", v, "\t", func(s string) string {
 		return tsvEscaper.Replace(s)
 	})
-}
-
-func funcToSh(v interface{}) interface{} {
-	var xs []interface{}
-	if w, ok := v.([]interface{}); ok {
-		xs = w
-	} else {
-		xs = []interface{}{v}
-	}
-	var s strings.Builder
-	for i, x := range xs {
-		if i > 0 {
-			s.WriteByte(' ')
-		}
-		switch x := x.(type) {
-		case map[string]interface{}, []interface{}:
-			return &formatShError{x}
-		case string:
-			s.WriteByte('\'')
-			s.WriteString(strings.ReplaceAll(x, "'", `'\''`))
-			s.WriteByte('\'')
-		default:
-			s.WriteString(jsonMarshal(x))
-		}
-	}
-	return s.String()
 }
 
 func funcToCSVTSV(typ string, v interface{}, sep string, escape func(string) string) interface{} {
@@ -671,30 +671,30 @@ func toCSVTSV(typ string, v interface{}, escape func(string) string) (string, er
 	}
 }
 
-var htmlEscaper = strings.NewReplacer(
-	`<`, "&lt;",
-	`>`, "&gt;",
-	`&`, "&amp;",
-	`'`, "&apos;",
-	`"`, "&quot;",
-)
-
-func funcToHTML(v interface{}) interface{} {
-	switch x := funcToString(v).(type) {
-	case string:
-		return htmlEscaper.Replace(x)
-	default:
-		return x
+func funcToSh(v interface{}) interface{} {
+	var xs []interface{}
+	if w, ok := v.([]interface{}); ok {
+		xs = w
+	} else {
+		xs = []interface{}{v}
 	}
-}
-
-func funcToURI(v interface{}) interface{} {
-	switch x := funcToString(v).(type) {
-	case string:
-		return url.QueryEscape(x)
-	default:
-		return x
+	var s strings.Builder
+	for i, x := range xs {
+		if i > 0 {
+			s.WriteByte(' ')
+		}
+		switch x := x.(type) {
+		case map[string]interface{}, []interface{}:
+			return &formatShError{x}
+		case string:
+			s.WriteByte('\'')
+			s.WriteString(strings.ReplaceAll(x, "'", `'\''`))
+			s.WriteByte('\'')
+		default:
+			s.WriteString(jsonMarshal(x))
+		}
 	}
+	return s.String()
 }
 
 func funcToBase64(v interface{}) interface{} {
