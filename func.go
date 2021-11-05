@@ -1139,11 +1139,6 @@ func funcExp10(v float64) float64 {
 	return math.Pow(10, v)
 }
 
-func funcLgamma(v float64) float64 {
-	v, _ = math.Lgamma(v)
-	return v
-}
-
 func funcFrexp(v interface{}) interface{} {
 	x, ok := toFloat(v)
 	if !ok {
@@ -1160,6 +1155,11 @@ func funcModf(v interface{}) interface{} {
 	}
 	i, f := math.Modf(x)
 	return []interface{}{f, i}
+}
+
+func funcLgamma(v float64) float64 {
+	v, _ = math.Lgamma(v)
+	return v
 }
 
 func funcDrem(l, r float64) float64 {
