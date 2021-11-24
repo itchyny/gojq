@@ -4701,6 +4701,19 @@
     "testdata/1.json"
     "testdata/2.json"
 
+- name: input_filename function with null input option and json file arguments
+  args:
+    - -n
+    - '., inputs, (try input catch .) | input_filename'
+    - 'testdata/1.json'
+    - 'testdata/2.json'
+  input: '0'
+  expected: |
+    null
+    "testdata/1.json"
+    "testdata/2.json"
+    null
+
 - name: input_filename function with hyphen for stdin
   args:
     - 'input_filename'
