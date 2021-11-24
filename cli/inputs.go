@@ -167,6 +167,10 @@ func (i *filesInputIter) Next() (interface{}, bool) {
 		if i.file == nil {
 			if len(i.fnames) == 0 {
 				i.err = io.EOF
+				if i.iter != nil {
+					i.iter.Close()
+					i.iter = nil
+				}
 				return nil, false
 			}
 			fname := i.fnames[0]
