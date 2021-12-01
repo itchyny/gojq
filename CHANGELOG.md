@@ -1,4 +1,16 @@
 # Changelog
+## [v0.12.6](https://github.com/itchyny/gojq/compare/v0.12.5..v0.12.6) (2021-12-01)
+* implement options for consuming remaining arguments (`--arg`, `--argjson`, `$ARGS.positional`)
+* fix `delpaths` function with overlapped paths
+* fix `--exit-status` flag with `halt`, `halt_error` functions
+* fix `input_filename` function with null input option
+* fix path value validation for `nan`
+* fix crash on branch optimization (`if 0 then . else 0|0 end`)
+* add validation on regular expression flags to reject unsupported ones
+* improve performance of `range`, `join`, `flatten` functions
+* improve constant value optimization for object with quoted keys
+* remove dependency on forked `go-flags` package
+
 ## [v0.12.5](https://github.com/itchyny/gojq/compare/v0.12.4..v0.12.5) (2021-09-01)
 * implement `input_filename` function for the command
 * fix priority bug of declared functions and arguments (`def g: 1; def f(g): g; f(2)`)
