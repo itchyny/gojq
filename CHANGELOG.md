@@ -1,6 +1,6 @@
 # Changelog
 ## [v0.12.6](https://github.com/itchyny/gojq/compare/v0.12.5..v0.12.6) (2021-12-01)
-* implement options for consuming remaining arguments (`--arg`, `--argjson`, `$ARGS.positional`)
+* implement options for consuming remaining arguments (`--args`, `--jsonargs`, `$ARGS.positional`)
 * fix `delpaths` function with overlapped paths
 * fix `--exit-status` flag with `halt`, `halt_error` functions
 * fix `input_filename` function with null input option
