@@ -5010,6 +5010,48 @@
       ]
     ]
 
+- name: stream and slurp option with objects
+  args:
+    - --stream
+    - --slurp
+  input: '{"a":1} {"b":2} {"c":3}'
+  expected: |
+    [
+      [
+        [
+          "a"
+        ],
+        1
+      ],
+      [
+        [
+          "a"
+        ]
+      ],
+      [
+        [
+          "b"
+        ],
+        2
+      ],
+      [
+        [
+          "b"
+        ]
+      ],
+      [
+        [
+          "c"
+        ],
+        3
+      ],
+      [
+        [
+          "c"
+        ]
+      ]
+    ]
+
 - name: inputs function with raw input option
   args:
     - -n
