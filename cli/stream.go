@@ -65,17 +65,17 @@ func (s *jsonStream) next() (interface{}, error) {
 				if s.states[len(s.states)-1] == jsonStateArrayStart {
 					s.states[len(s.states)-1] = jsonStateArrayEmptyEnd
 					s.path = s.path[:len(s.path)-1]
-					return []interface{}{s.path, []interface{}{}}, nil
+					return []interface{}{s.copyPath(), []interface{}{}}, nil
 				}
 				s.states[len(s.states)-1] = jsonStateArrayEnd
-				return []interface{}{s.path}, nil
+				return []interface{}{s.copyPath()}, nil
 			case '}':
 				if s.states[len(s.states)-1] == jsonStateObjectStart {
 					s.states[len(s.states)-1] = jsonStateObjectEmptyEnd
-					return []interface{}{s.path, map[string]interface{}{}}, nil
+					return []interface{}{s.copyPath(), map[string]interface{}{}}, nil
 				}
 				s.states[len(s.states)-1] = jsonStateObjectEnd
-				return []interface{}{s.path}, nil
+				return []interface{}{s.copyPath()}, nil
 			default:
 				panic(d)
 			}
@@ -85,17 +85,21 @@ func (s *jsonStream) next() (interface{}, error) {
 				s.states[len(s.states)-1] = jsonStateArrayValue
 				fallthrough
 			case jsonStateArrayValue:
-				return []interface{}{s.path, token}, nil
+				return []interface{}{s.copyPath(), token}, nil
 			case jsonStateObjectStart, jsonStateObjectValue:
 				s.states[len(s.states)-1] = jsonStateObjectKey
 				s.path = append(s.path, token)
 			case jsonStateObjectKey:
 				s.states[len(s.states)-1] = jsonStateObjectValue
-				return []interface{}{s.path, token}, nil
+				return []interface{}{s.copyPath(), token}, nil
 			default:
 				s.states[len(s.states)-1] = jsonStateTopValue
-				return []interface{}{s.path, token}, nil
+				return []interface{}{s.copyPath(), token}, nil
 			}
 		}
 	}
+}
+
+func (s *jsonStream) copyPath() []interface{} {
+	return append(make([]interface{}, 0, len(s.path)), s.path...)
 }
