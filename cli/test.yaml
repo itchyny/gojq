@@ -4987,70 +4987,36 @@
     null
     "x"
 
+- name: inputs function with stream option
+  args:
+    - -n
+    - -c
+    - --stream
+    - '[inputs][]'
+  input: '{"a":1} {"b":2} {"c":3}'
+  expected: |
+    [["a"],1]
+    [["a"]]
+    [["b"],2]
+    [["b"]]
+    [["c"],3]
+    [["c"]]
+
 - name: inputs function with stream and slurp option
   args:
     - -n
+    - -c
     - --stream
     - --slurp
-    - 'inputs'
-  input: '1 2 3'
-  expected: |
-    [
-      [
-        [],
-        1
-      ],
-      [
-        [],
-        2
-      ],
-      [
-        [],
-        3
-      ]
-    ]
-
-- name: stream and slurp option with objects
-  args:
-    - --stream
-    - --slurp
+    - 'inputs[]'
   input: '{"a":1} {"b":2} {"c":3}'
   expected: |
-    [
-      [
-        [
-          "a"
-        ],
-        1
-      ],
-      [
-        [
-          "a"
-        ]
-      ],
-      [
-        [
-          "b"
-        ],
-        2
-      ],
-      [
-        [
-          "b"
-        ]
-      ],
-      [
-        [
-          "c"
-        ],
-        3
-      ],
-      [
-        [
-          "c"
-        ]
-      ]
-    ]
+    [["a"],1]
+    [["a"]]
+    [["b"],2]
+    [["b"]]
+    [["c"],3]
+    [["c"]]
 
 - name: inputs function with raw input option
   args:
@@ -6081,28 +6047,18 @@
 
 - name: stream option with slurp option
   args:
+    - -c
     - --stream
     - --slurp
-    - '.'
-  input: |
-    1
-    2
-    3
+    - '.[]'
+  input: '{"a":1} {"b":2} {"c":3}'
   expected: |
-    [
-      [
-        [],
-        1
-      ],
-      [
-        [],
-        2
-      ],
-      [
-        [],
-        3
-      ]
-    ]
+    [["a"],1]
+    [["a"]]
+    [["b"],2]
+    [["b"]]
+    [["c"],3]
+    [["c"]]
 
 - name: yaml input option
   args:
