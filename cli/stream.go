@@ -101,5 +101,7 @@ func (s *jsonStream) next() (interface{}, error) {
 }
 
 func (s *jsonStream) copyPath() []interface{} {
-	return append(make([]interface{}, 0, len(s.path)), s.path...)
+	path := make([]interface{}, len(s.path))
+	copy(path, s.path)
+	return path
 }
