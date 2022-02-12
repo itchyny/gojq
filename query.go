@@ -1015,7 +1015,7 @@ func (e *ConstTerm) toValue() interface{} {
 	} else if e.Array != nil {
 		return e.Array.toValue()
 	} else if e.Number != "" {
-		return normalizeNumbers(json.Number(e.Number))
+		return normalizeNumber(json.Number(e.Number))
 	} else if e.Null {
 		return nil
 	} else if e.True {

@@ -7,24 +7,28 @@ import (
 	"strings"
 )
 
+func normalizeNumber(v json.Number) interface{} {
+	if i, err := v.Int64(); err == nil && minInt <= i && i <= maxInt {
+		return int(i)
+	}
+	if strings.ContainsAny(v.String(), ".eE") {
+		if f, err := v.Float64(); err == nil {
+			return f
+		}
+	}
+	if bi, ok := new(big.Int).SetString(v.String(), 10); ok {
+		return bi
+	}
+	if strings.HasPrefix(v.String(), "-") {
+		return math.Inf(-1)
+	}
+	return math.Inf(1)
+}
+
 func normalizeNumbers(v interface{}) interface{} {
 	switch v := v.(type) {
 	case json.Number:
-		if i, err := v.Int64(); err == nil && minInt <= i && i <= maxInt {
-			return int(i)
-		}
-		if strings.ContainsAny(v.String(), ".eE") {
-			if f, err := v.Float64(); err == nil {
-				return f
-			}
-		}
-		if bi, ok := new(big.Int).SetString(v.String(), 10); ok {
-			return bi
-		}
-		if strings.HasPrefix(v.String(), "-") {
-			return math.Inf(-1)
-		}
-		return math.Inf(1)
+		return normalizeNumber(v)
 	case *big.Int:
 		if v.IsInt64() {
 			if i := v.Int64(); minInt <= i && i <= maxInt {

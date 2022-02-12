@@ -827,7 +827,7 @@ func (c *compiler) compileTerm(e *Term) error {
 	case TermTypeArray:
 		return c.compileArray(e.Array)
 	case TermTypeNumber:
-		v := normalizeNumbers(json.Number(e.Number))
+		v := normalizeNumber(json.Number(e.Number))
 		if err, ok := v.(error); ok {
 			return err
 		}

@@ -406,7 +406,7 @@ func funcToNumber(v interface{}) interface{} {
 		if !newLexer(v).validNumber() {
 			return fmt.Errorf("invalid number: %q", v)
 		}
-		return normalizeNumbers(json.Number(v))
+		return normalizeNumber(json.Number(v))
 	default:
 		return &funcTypeError{"tonumber", v}
 	}
