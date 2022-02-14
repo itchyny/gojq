@@ -47,7 +47,7 @@ func prependFuncDef(xs []*FuncDef, x *FuncDef) []*FuncDef {
 %token<token> tokTry tokCatch tokReduce tokForeach
 %token tokRecurse tokFuncDefPost tokTermPost tokEmptyCatch
 
-%nonassoc tokFuncDefPost tokTermPost tokEmptyCatch
+%nonassoc tokFuncDefPost tokTermPost
 %right '|'
 %left ','
 %right tokAltOp
@@ -57,7 +57,7 @@ func prependFuncDef(xs []*FuncDef, x *FuncDef) []*FuncDef {
 %nonassoc tokCompareOp
 %left '+' '-'
 %left '*' '/' '%'
-%nonassoc tokAs tokIndex '.' '?'
+%nonassoc tokAs tokIndex '.' '?' tokEmptyCatch
 %nonassoc '[' tokTry tokCatch
 
 %%
