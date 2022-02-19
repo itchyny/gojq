@@ -143,7 +143,11 @@ func parseFlags(args []string, opts interface{}) ([]string, error) {
 				return nil, fmt.Errorf("unknown flag `%s'", opt)
 			}
 			if val.Kind() != reflect.Bool && len(shortopts) > 1 {
-				args[i] = shortopts[1:]
+				if shortopts[1] == '=' {
+					args[i] = shortopts[2:]
+				} else {
+					args[i] = shortopts[1:]
+				}
 				i--
 				shortopts = ""
 			} else {

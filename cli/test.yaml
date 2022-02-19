@@ -6393,10 +6393,17 @@
   expected: |
     null
 
-- name: source query from file
+- name: source query from file short option in clumped options
   args:
     - -nf
     - 'testdata/1.jq'
+  expected: |
+    null
+
+- name: source query from file short option with equal sign
+  args:
+    - -n
+    - -f=testdata/1.jq
   expected: |
     null
 
@@ -6405,6 +6412,13 @@
     - --null-input
     - --from-file
     - 'testdata/1.jq'
+  expected: |
+    null
+
+- name: source query from file long option with equal sign
+  args:
+    - --null-input
+    - --from-file=testdata/1.jq
   expected: |
     null
 
@@ -6793,8 +6807,7 @@
 
 - name: module directory option json parse error
   args:
-    - -L
-    - 'testdata'
+    - -Ltestdata
     - 'import "4" as $x; $x'
   input: '0'
   error: |
@@ -6806,7 +6819,7 @@
 - name: module directory option with same alias name
   args:
     - -c
-    - -Ltestdata
+    - -L=testdata
     - 'include "4"; import "6" as bar; bar::g'
   input: '1'
   expected: |
@@ -7415,7 +7428,7 @@
           ^  unexpected token <EOF>
   exit_code: 3
 
-- name: short flags
+- name: short clumped options
   args:
     - -cRr
     - '.'
