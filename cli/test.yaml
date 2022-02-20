@@ -7438,7 +7438,15 @@
 
 - name: invalid short option error
   args:
-    - -neq
+    - -q
+    - '.'
+  error: |
+    unknown flag `q'
+  exit_code: 2
+
+- name: invalid short option error in clumped options
+  args:
+    - -nqe
     - '.'
   error: |
     unknown flag `q'

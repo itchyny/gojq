@@ -60,24 +60,22 @@ func parseFlags(args []string, opts interface{}) ([]string, error) {
 					return nil, fmt.Errorf("unknown flag `%s'", arg)
 				}
 			}
-		} else if arg > "-" && arg[0] == '-' {
-			if val, ok = shortToValue[arg[1:]]; !ok {
-				var skip bool
-				for i := 1; i < len(arg); i++ {
-					opt := arg[i : i+1]
-					if val, ok = shortToValue[opt]; ok {
-						if val.Kind() != reflect.Bool {
-							break
-						}
-					} else if !("A" <= opt && opt <= "Z" || "a" <= opt && opt <= "z") {
-						skip = true
+		} else if len(arg) > 1 && arg[0] == '-' {
+			var skip bool
+			for i := 1; i < len(arg); i++ {
+				opt := arg[i : i+1]
+				if val, ok = shortToValue[opt]; ok {
+					if val.Kind() != reflect.Bool {
 						break
 					}
+				} else if !("A" <= opt && opt <= "Z" || "a" <= opt && opt <= "z") {
+					skip = true
+					break
 				}
-				if !skip {
-					shortopts = arg[1:]
-					goto L
-				}
+			}
+			if !skip && (len(arg) > 2 || !ok) {
+				shortopts = arg[1:]
+				goto L
 			}
 		}
 		if !ok {
