@@ -3510,13 +3510,12 @@
     null
     null
 
-- name: first/1 function in first/1 argument
+- name: first/1 function nested
   args:
-    - 'first((null, null) | first(null)), isempty(first(null))'
+    - 'first((null, null) | first(null))'
   input: 'null'
   expected: |
     null
-    false
 
 - name: all/2 function in first/1 argument
   args:
@@ -3579,6 +3578,20 @@
   input: 'null'
   expected: |
     [true,false,false]
+
+- name: isempty function nested
+  args:
+    - 'isempty(isempty(empty))'
+  input: 'null'
+  expected: |
+    false
+
+- name: first/1 in isempty function
+  args:
+    - 'isempty(first(null))'
+  input: 'null'
+  expected: |
+    false
 
 - name: trigonometric functions
   args:
