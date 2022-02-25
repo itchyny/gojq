@@ -2687,6 +2687,20 @@
   expected: |
     1
 
+- name: condition with identity in then clause
+  args:
+    - 'if 0 then . else 0|0 end'
+  input: 'null'
+  expected: |
+    null
+
+- name: condition with identity in else clause
+  args:
+    - 'if 0 then 0|0 else . end'
+  input: 'null'
+  expected: |
+    0
+
 - name: condition with suffix
   args:
     - 'if . then 1 end []'
