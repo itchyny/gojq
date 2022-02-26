@@ -1331,14 +1331,14 @@ func (c *compiler) compileTermSuffix(e *Term, s *Suffix) error {
 		c.append(&code{op: opeach})
 		return nil
 	} else if s.Optional {
-		if len(e.SuffixList) > 1 || len(e.SuffixList) == 1 && !e.SuffixList[0].Iter {
+		if len(e.SuffixList) > 0 {
 			if u, ok := e.SuffixList[len(e.SuffixList)-1].toTerm(); ok {
 				t := *e // clone without changing e
 				(&t).SuffixList = t.SuffixList[:len(e.SuffixList)-1]
 				if err := c.compileTerm(&t); err != nil {
 					return err
 				}
-				return c.compileTermSuffix(u, s)
+				e = u
 			}
 		}
 		return c.compileTry(&Try{Body: &Query{Term: e}})

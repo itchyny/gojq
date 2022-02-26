@@ -535,7 +535,14 @@
 - name: iterator with optional operator
   args:
     - '.[]?'
-  input: '10'
+  input: '0'
+
+- name: iterator with optional operator after index error
+  args:
+    - '.x[]?'
+  input: '0'
+  error: |
+    expected an object but got: number (0)
 
 - name: nested iterator
   args:
