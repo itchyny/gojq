@@ -277,6 +277,13 @@
   error: |
     cannot iterate over: number (128)
 
+- name: object optional index with optional operator
+  args:
+    - '.foo??, .'
+  input: '0'
+  expected: |
+    0
+
 - name: error after optional operator
   args:
     - '1? | .foo'
