@@ -3555,7 +3555,7 @@
 - name: limit/2 function
   args:
     - -c
-    - '[limit(0,3,13; range(10000000000000))]'
+    - '[limit(0,3,13; range(infinite))]'
   input: 'null'
   expected: |
     [0,1,2,0,1,2,3,4,5,6,7,8,9,10,11,12]
@@ -3602,7 +3602,7 @@
 - name: isempty function
   args:
     - -c
-    - '[isempty(empty), isempty(range(10000000000000)), isempty(1,error("foo"))]'
+    - '[isempty(empty), isempty(range(infinite)), isempty(1,error("foo"))]'
   input: 'null'
   expected: |
     [true,false,false]
