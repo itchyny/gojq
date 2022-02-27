@@ -3852,35 +3852,43 @@
 - name: isfinite and isinfinite functions
   args:
     - -c
-    - '[infinite, pow(9; 999) | ., -., 1/., 1/(-.), nan, tostring | isfinite, isinfinite]'
+    - 'infinite | ., -., 1/., 1/(-.), nan, null, "", {}, [] | [., isfinite, isinfinite]'
   input: 'null'
   expected: |
-    [false,true,false,true,true,false,true,false,true,false,false,false,false,true,false,true,true,false,true,false,true,false,false,false]
+    [1.7976931348623157e+308,false,true]
+    [-1.7976931348623157e+308,false,true]
+    [0,true,false]
+    [-0,true,false]
+    [null,true,false]
+    [null,false,false]
+    ["",false,false]
+    [{},false,false]
+    [[],false,false]
 
 - name: finites function
   args:
-    - -c
-    - 'infinite, pow(9; 999), nan | ., -., 1/. | finites'
+    - 'nan, infinite, -infinite | ., -., 1/. | finites'
   input: 'null'
   expected: |
+    null
+    null
+    null
     0
-    0
-    null
-    null
-    null
+    -0
 
 - name: nan and isnan functions
   args:
     - -c
-    - 'nan, null, 0/0, 0/0.0, infinite-infinite, infinite/infinite | [., .+1, isnan]'
+    - 'nan, 0/0, 0/0, infinite-infinite, infinite/infinite, 0, null | [., .+1, isnan]'
   input: 'null'
   expected: |
     [null,null,true]
+    [null,null,true]
+    [null,null,true]
+    [null,null,true]
+    [null,null,true]
+    [0,1,false]
     [null,1,false]
-    [null,null,true]
-    [null,null,true]
-    [null,null,true]
-    [null,null,true]
 
 - name: nan and comparison
   args:
@@ -3895,8 +3903,7 @@
 
 - name: isnormal function
   args:
-    - -c
-    - 'infinite, pow(9; 999), nan, 9 | ., 1/. | isnormal'
+    - 'nan, infinite, -infinite, 9 | ., 1/. | isnormal'
   input: 'null'
   expected: |
     false
@@ -3911,25 +3918,20 @@
 - name: normals function
   args:
     - -c
-    - 'infinite, pow(9; 999), nan, "", [], {}, 0, 9 | normals'
+    - 'nan, infinite, -infinite, "", [], {}, 0, 9 | normals'
   input: 'null'
   expected: |
     9
 
-- name: stringify nan and inf
+- name: stringify nan and infinite
   args:
-    - '(2|asin),(1|atanh),(-1|atanh) | tojson,([]|join(",")),.'
+    - -c
+    - 'nan, infinite, -infinite | [., tostring]'
   input: 'null'
   expected: |
-    "null"
-    ""
-    null
-    "1.7976931348623157e+308"
-    ""
-    1.7976931348623157e+308
-    "-1.7976931348623157e+308"
-    ""
-    -1.7976931348623157e+308
+    [null,"null"]
+    [1.7976931348623157e+308,"1.7976931348623157e+308"]
+    [-1.7976931348623157e+308,"-1.7976931348623157e+308"]
 
 - name: truncate_stream function
   args:
