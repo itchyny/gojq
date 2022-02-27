@@ -3988,7 +3988,7 @@
 - name: setpath function negative index
   args:
     - -c
-    - 'setpath([-2,0,2][] as $x | [$x]; 4,5)'
+    - 'setpath(-2,0,2 | [.]; 4,5)'
   input: '[1,2,3]'
   expected: |
     [1,4,3]
@@ -5317,8 +5317,8 @@
 
 - name: format function
   args:
-    - -n
-    - '("html","uri","csv","tsv","sh","base64") as $x | [1,2,3] | format($x)'
+    - 'format("html","uri","csv","tsv","sh","base64")'
+  input: '[1,2,3]'
   expected: |
     "[1,2,3]"
     "%5B1%2C2%2C3%5D"
