@@ -1,4 +1,12 @@
 # Changelog
+## [v0.12.7](https://github.com/itchyny/gojq/compare/v0.12.6..v0.12.7) (2022-03-01)
+* fix precedence of try expression against operators (`try 0 * error(0)`)
+* fix iterator suffix with optional operator (`0 | .x[]?`)
+* fix stream option with slurp option or `input`, `inputs` functions
+* fix the command flag parser to support equal sign in short options with argument
+* fix string conversion of query including empty strings in module and import metadata
+* improve performance of `isempty` function
+
 ## [v0.12.6](https://github.com/itchyny/gojq/compare/v0.12.5..v0.12.6) (2021-12-01)
 * implement options for consuming remaining arguments (`--args`, `--jsonargs`, `$ARGS.positional`)
 * fix `delpaths` function with overlapped paths
