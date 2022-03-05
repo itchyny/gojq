@@ -1539,7 +1539,7 @@ func funcMktime(v interface{}) interface{} {
 		if err != nil {
 			return err
 		}
-		return float64(t.Unix())
+		return float64(t.Unix()) + float64(t.Nanosecond())/1e9
 	}
 	return &funcTypeError{"mktime", v}
 }
