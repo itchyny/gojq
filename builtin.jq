@@ -161,11 +161,8 @@ def _modify(ps; f):
       | . as $x | $x[0] | delpaths($x[1]);
 def map_values(f): .[] |= f;
 def del(f): delpaths([path(f)]);
-def paths:
-  path(recurse(if type | . == "array" or . == "object" then .[] else empty end))
-    | select(length > 0);
-def paths(f):
-  . as $x | paths | select(. as $p | $x | getpath($p) | f);
+def paths: path(..) | select(. != []);
+def paths(f): paths as $p | select(getpath($p) | f) | $p;
 
 def fromdateiso8601: strptime("%Y-%m-%dT%H:%M:%S%z") | mktime;
 def todateiso8601: strftime("%Y-%m-%dT%H:%M:%SZ");
