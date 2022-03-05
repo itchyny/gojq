@@ -52,7 +52,7 @@ $(GOBIN)/gobump:
 
 .PHONY: cross
 cross: $(GOBIN)/goxz CREDITS
-	goxz -n $(BIN) -pv=v$(VERSION) -include _$(BIN) -arch=amd64,arm64 \
+	goxz -n $(BIN) -pv=v$(VERSION) -include _$(BIN) \
 		-build-ldflags=$(BUILD_LDFLAGS) ./cmd/$(BIN)
 
 $(GOBIN)/goxz:
