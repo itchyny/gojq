@@ -1029,6 +1029,28 @@ type sortItem struct {
 	value, key interface{}
 }
 
+func sortItems(name string, v, x interface{}) ([]*sortItem, error) {
+	vs, ok := v.([]interface{})
+	if !ok {
+		return nil, &expectedArrayError{v}
+	}
+	xs, ok := x.([]interface{})
+	if !ok {
+		return nil, &expectedArrayError{x}
+	}
+	if len(vs) != len(xs) {
+		return nil, &lengthMismatchError{name, vs, xs}
+	}
+	items := make([]*sortItem, len(vs))
+	for i, v := range vs {
+		items[i] = &sortItem{v, xs[i]}
+	}
+	sort.SliceStable(items, func(i, j int) bool {
+		return compare(items[i].key, items[j].key) < 0
+	})
+	return items, nil
+}
+
 func funcSortBy(v, x interface{}) interface{} {
 	items, err := sortItems("sort_by", v, x)
 	if err != nil {
@@ -1104,28 +1126,6 @@ func funcJoin(v, x interface{}) interface{} {
 		}
 	}
 	return strings.Join(ss, sep)
-}
-
-func sortItems(name string, v, x interface{}) ([]*sortItem, error) {
-	vs, ok := v.([]interface{})
-	if !ok {
-		return nil, &expectedArrayError{v}
-	}
-	xs, ok := x.([]interface{})
-	if !ok {
-		return nil, &expectedArrayError{x}
-	}
-	if len(vs) != len(xs) {
-		return nil, &lengthMismatchError{name, vs, xs}
-	}
-	items := make([]*sortItem, len(vs))
-	for i, v := range vs {
-		items[i] = &sortItem{v, xs[i]}
-	}
-	sort.SliceStable(items, func(i, j int) bool {
-		return compare(items[i].key, items[j].key) < 0
-	})
-	return items, nil
 }
 
 func funcSignificand(v float64) float64 {
