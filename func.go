@@ -51,6 +51,7 @@ func init() {
 		"utf8bytelength": argFunc0(funcUtf8ByteLength),
 		"keys":           argFunc0(funcKeys),
 		"has":            argFunc1(funcHas),
+		"to_entries":     argFunc0(funcToEntries),
 		"add":            argFunc0(funcAdd),
 		"tonumber":       argFunc0(funcToNumber),
 		"tostring":       argFunc0(funcToString),
@@ -342,6 +343,25 @@ func funcHas(v, x interface{}) interface{} {
 		return false
 	default:
 		return &hasKeyTypeError{v, x}
+	}
+}
+
+func funcToEntries(v interface{}) interface{} {
+	switch v := v.(type) {
+	case []interface{}:
+		w := make([]interface{}, len(v))
+		for i, x := range v {
+			w[i] = map[string]interface{}{"key": i, "value": x}
+		}
+		return w
+	case map[string]interface{}:
+		w := make([]interface{}, len(v))
+		for i, k := range keys(v) {
+			w[i] = map[string]interface{}{"key": k, "value": v[k]}
+		}
+		return w
+	default:
+		return &funcTypeError{"to_entries", v}
 	}
 }
 

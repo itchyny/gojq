@@ -1,7 +1,6 @@
 def not: if . then false else true end;
 def in(xs): . as $x | xs | has($x);
 def map(f): [.[] | f];
-def to_entries: [keys[] as $k | {key: $k, value: .[$k]}];
 def from_entries:
   map({ (.key // .Key // .name // .Name): (if has("value") then .value else .Value end) })
     | add // {};
