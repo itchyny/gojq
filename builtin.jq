@@ -110,12 +110,12 @@ def first(g): label $out | g | ., break $out;
 def last: .[-1];
 def last(g): reduce g as $item (null; $item);
 def isempty(g): label $out | (g | false, break $out), true;
-def all: all(.[]; .);
+def all: all(.);
 def all(y): all(.[]; y);
-def all(g; y): isempty(g|y and empty);
-def any: any(.[]; .);
+def all(g; y): isempty(g | select(y | not));
+def any: any(.);
 def any(y): any(.[]; y);
-def any(g; y): isempty(g|y or empty) | not;
+def any(g; y): isempty(g | select(y)) | not;
 def limit($n; g):
   if $n > 0 then
     label $out
