@@ -302,21 +302,25 @@ func funcKeys(v interface{}) interface{} {
 		}
 		return w
 	case map[string]interface{}:
-		w := make([]string, len(v))
-		var i int
-		for k := range v {
+		w := make([]interface{}, len(v))
+		for i, k := range keys(v) {
 			w[i] = k
-			i++
 		}
-		sort.Strings(w)
-		u := make([]interface{}, len(v))
-		for i, x := range w {
-			u[i] = x
-		}
-		return u
+		return w
 	default:
 		return &funcTypeError{"keys", v}
 	}
+}
+
+func keys(v map[string]interface{}) []string {
+	w := make([]string, len(v))
+	var i int
+	for k := range v {
+		w[i] = k
+		i++
+	}
+	sort.Strings(w)
+	return w
 }
 
 func funcHas(v, x interface{}) interface{} {
@@ -342,19 +346,12 @@ func funcHas(v, x interface{}) interface{} {
 }
 
 func funcAdd(v interface{}) interface{} {
-	if vs, ok := v.(map[string]interface{}); ok {
-		xs := make([]string, len(vs))
-		var i int
-		for k := range vs {
-			xs[i] = k
-			i++
+	if w, ok := v.(map[string]interface{}); ok {
+		xs := make([]interface{}, len(w))
+		for i, k := range keys(w) {
+			xs[i] = w[k]
 		}
-		sort.Strings(xs)
-		us := make([]interface{}, len(vs))
-		for i, x := range xs {
-			us[i] = vs[x]
-		}
-		v = us
+		v = xs
 	}
 	vs, ok := v.([]interface{})
 	if !ok {
