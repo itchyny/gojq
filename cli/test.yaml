@@ -1134,9 +1134,9 @@
   args:
     - -c
     - 'from_entries'
-  input: '[{"key":"a", "value":1}, {"Key":"b", "Value":2}, {"name":"c", "value":3}, {"Name":"d", "Value":4}]'
+  input: '[{"key":"a","Key":"b","value":1},{"Key":"b","Value":2},{"key":null,"name":"c","Name":"d","value":3},{"Name":"d","value":null,"Value":4},{"key":"e"}]'
   expected: |
-    {"a":1,"b":2,"c":3,"d":4}
+    {"a":1,"b":2,"c":3,"d":null,"e":null}
 
 - name: with_entries function
   args:

@@ -1,9 +1,6 @@
 def not: if . then false else true end;
 def in(xs): . as $x | xs | has($x);
 def map(f): [.[] | f];
-def from_entries:
-  map({ (.key // .Key // .name // .Name): (if has("value") then .value else .Value end) })
-    | add // {};
 def with_entries(f): to_entries | map(f) | from_entries;
 def select(f): if f then . else empty end;
 def recurse: recurse(.[]?);

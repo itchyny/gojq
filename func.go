@@ -52,6 +52,7 @@ func init() {
 		"keys":           argFunc0(funcKeys),
 		"has":            argFunc1(funcHas),
 		"to_entries":     argFunc0(funcToEntries),
+		"from_entries":   argFunc0(funcFromEntries),
 		"add":            argFunc0(funcAdd),
 		"tonumber":       argFunc0(funcToNumber),
 		"tostring":       argFunc0(funcToString),
@@ -363,6 +364,41 @@ func funcToEntries(v interface{}) interface{} {
 	default:
 		return &funcTypeError{"to_entries", v}
 	}
+}
+
+func funcFromEntries(v interface{}) interface{} {
+	vs, ok := v.([]interface{})
+	if !ok {
+		return &funcTypeError{"from_entries", v}
+	}
+	w := make(map[string]interface{}, len(vs))
+	for _, x := range vs {
+		switch x := x.(type) {
+		case map[string]interface{}:
+			var (
+				key   string
+				value interface{}
+				ok    bool
+			)
+			for _, k := range [4]string{"key", "Key", "name", "Name"} {
+				if k, ok := x[k]; ok && k != nil {
+					if key, ok = k.(string); !ok {
+						return &expectedStringError{k}
+					}
+					break
+				}
+			}
+			for _, v := range [2]string{"value", "Value"} {
+				if value, ok = x[v]; ok {
+					break
+				}
+			}
+			w[key] = value
+		default:
+			return &funcTypeError{"from_entries", v}
+		}
+	}
+	return w
 }
 
 func funcAdd(v interface{}) interface{} {
