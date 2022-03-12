@@ -479,7 +479,7 @@ func funcType(v interface{}) interface{} {
 func funcReverse(v interface{}) interface{} {
 	vs, ok := v.([]interface{})
 	if !ok {
-		return &expectedArrayError{v}
+		return &funcTypeError{"reverse", v}
 	}
 	ws := make([]interface{}, len(vs))
 	for i, v := range vs {
