@@ -16,9 +16,9 @@ jobs:
         go: [1.17.x, 1.16.x]
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Setup Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v3
       with:
         go-version: ${{ matrix.go }}
     - name: Test
