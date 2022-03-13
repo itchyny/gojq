@@ -50,9 +50,6 @@ def values: select(. != null);
 def scalars: select(type | . != "array" and . != "object");
 def leaf_paths: paths(scalars);
 
-def indices($x): _indices($x);
-def index($x): _lindex($x);
-def rindex($x): _rindex($x);
 def inside(xs): . as $x | xs | contains($x);
 def startswith($x):
   if type == "string" then

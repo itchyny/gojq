@@ -59,6 +59,9 @@ func init() {
 		"type":           argFunc0(funcType),
 		"reverse":        argFunc0(funcReverse),
 		"contains":       argFunc1(funcContains),
+		"indices":        argFunc1(funcIndices),
+		"index":          argFunc1(funcIndex),
+		"rindex":         argFunc1(funcRindex),
 		"explode":        argFunc0(funcExplode),
 		"implode":        argFunc0(funcImplode),
 		"split":          {argcount1 | argcount2, false, funcSplit},
@@ -72,11 +75,8 @@ func init() {
 		"_tosh":          argFunc0(funcToSh),
 		"_tobase64":      argFunc0(funcToBase64),
 		"_tobase64d":     argFunc0(funcToBase64d),
-		"_index":         argFunc2(funcIndex),
+		"_index":         argFunc2(funcIndex2),
 		"_slice":         argFunc3(funcSlice),
-		"_indices":       argFunc1(funcIndices),
-		"_lindex":        argFunc1(funcLindex),
-		"_rindex":        argFunc1(funcRindex),
 		"_plus":          argFunc0(funcOpPlus),
 		"_negate":        argFunc0(funcOpNegate),
 		"_add":           argFunc2(funcOpAdd),
@@ -542,6 +542,94 @@ func funcContains(v, x interface{}) interface{} {
 	)
 }
 
+func funcIndices(v, x interface{}) interface{} {
+	return indexFunc(v, x, indices)
+}
+
+func indices(vs, xs []interface{}) interface{} {
+	var rs []interface{}
+	if len(xs) == 0 {
+		return rs
+	}
+	for i := 0; i < len(vs) && i < len(vs)-len(xs)+1; i++ {
+		var neq bool
+		for j, y := range xs {
+			if neq = compare(vs[i+j], y) != 0; neq {
+				break
+			}
+		}
+		if !neq {
+			rs = append(rs, i)
+		}
+	}
+	return rs
+}
+
+func funcIndex(v, x interface{}) interface{} {
+	return indexFunc(v, x, func(vs, xs []interface{}) interface{} {
+		if len(xs) == 0 {
+			return nil
+		}
+		for i := 0; i < len(vs) && i < len(vs)-len(xs)+1; i++ {
+			var neq bool
+			for j, y := range xs {
+				if neq = compare(vs[i+j], y) != 0; neq {
+					break
+				}
+			}
+			if !neq {
+				return i
+			}
+		}
+		return nil
+	})
+}
+
+func funcRindex(v, x interface{}) interface{} {
+	return indexFunc(v, x, func(vs, xs []interface{}) interface{} {
+		if len(xs) == 0 {
+			return nil
+		}
+		i := len(vs) - 1
+		if j := len(vs) - len(xs); j < i {
+			i = j
+		}
+		for ; i >= 0; i-- {
+			var neq bool
+			for j, y := range xs {
+				if neq = compare(vs[i+j], y) != 0; neq {
+					break
+				}
+			}
+			if !neq {
+				return i
+			}
+		}
+		return nil
+	})
+}
+
+func indexFunc(v, x interface{}, f func(_, _ []interface{}) interface{}) interface{} {
+	switch v := v.(type) {
+	case nil:
+		return nil
+	case []interface{}:
+		switch x := x.(type) {
+		case []interface{}:
+			return f(v, x)
+		default:
+			return f(v, []interface{}{x})
+		}
+	case string:
+		if x, ok := x.(string); ok {
+			return f(explode(v), explode(x))
+		}
+		return &expectedStringError{x}
+	default:
+		return &expectedArrayError{v}
+	}
+}
+
 func funcExplode(v interface{}) interface{} {
 	switch v := v.(type) {
 	case string:
@@ -775,7 +863,7 @@ func funcToBase64d(v interface{}) interface{} {
 	}
 }
 
-func funcIndex(_, v, x interface{}) interface{} {
+func funcIndex2(_, v, x interface{}) interface{} {
 	switch x := x.(type) {
 	case string:
 		switch v := v.(type) {
@@ -832,25 +920,6 @@ func funcIndex(_, v, x interface{}) interface{} {
 	default:
 		return &objectKeyNotStringError{x}
 	}
-}
-
-func indices(vs, xs []interface{}) interface{} {
-	var rs []interface{}
-	if len(xs) == 0 {
-		return rs
-	}
-	for i := 0; i < len(vs) && i < len(vs)-len(xs)+1; i++ {
-		var neq bool
-		for j, y := range xs {
-			if neq = compare(vs[i+j], y) != 0; neq {
-				break
-			}
-		}
-		if !neq {
-			rs = append(rs, i)
-		}
-	}
-	return rs
 }
 
 func funcSlice(_, v, end, start interface{}) (r interface{}) {
@@ -939,75 +1008,6 @@ func toIndex(a []interface{}, i int) int {
 		return i
 	default:
 		return -1
-	}
-}
-
-func funcIndices(v, x interface{}) interface{} {
-	return indexFunc(v, x, indices)
-}
-
-func funcLindex(v, x interface{}) interface{} {
-	return indexFunc(v, x, func(vs, xs []interface{}) interface{} {
-		if len(xs) == 0 {
-			return nil
-		}
-		for i := 0; i < len(vs) && i < len(vs)-len(xs)+1; i++ {
-			var neq bool
-			for j, y := range xs {
-				if neq = compare(vs[i+j], y) != 0; neq {
-					break
-				}
-			}
-			if !neq {
-				return i
-			}
-		}
-		return nil
-	})
-}
-
-func funcRindex(v, x interface{}) interface{} {
-	return indexFunc(v, x, func(vs, xs []interface{}) interface{} {
-		if len(xs) == 0 {
-			return nil
-		}
-		i := len(vs) - 1
-		if j := len(vs) - len(xs); j < i {
-			i = j
-		}
-		for ; i >= 0; i-- {
-			var neq bool
-			for j, y := range xs {
-				if neq = compare(vs[i+j], y) != 0; neq {
-					break
-				}
-			}
-			if !neq {
-				return i
-			}
-		}
-		return nil
-	})
-}
-
-func indexFunc(v, x interface{}, f func(_, _ []interface{}) interface{}) interface{} {
-	switch v := v.(type) {
-	case nil:
-		return nil
-	case []interface{}:
-		switch x := x.(type) {
-		case []interface{}:
-			return f(v, x)
-		default:
-			return f(v, []interface{}{x})
-		}
-	case string:
-		if x, ok := x.(string); ok {
-			return f(explode(v), explode(x))
-		}
-		return &expectedStringError{x}
-	default:
-		return &expectedArrayError{v}
 	}
 }
 
@@ -1503,7 +1503,7 @@ func funcGetpath(v, p interface{}) interface{} {
 		default:
 			return &getpathError{u, p}
 		}
-		v = funcIndex(nil, v, x)
+		v = funcIndex2(nil, v, x)
 		if _, ok := v.(error); ok {
 			return &getpathError{u, p}
 		}
