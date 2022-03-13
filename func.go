@@ -178,6 +178,7 @@ func init() {
 		"strptime":       argFunc1(funcStrptime),
 		"now":            argFunc0(funcNow),
 		"_match":         argFunc3(funcMatch),
+		"_capture":       argFunc0(funcCapture),
 		"error":          {argcount0 | argcount1, false, funcError},
 		"halt":           argFunc0(funcHalt),
 		"halt_error":     {argcount0 | argcount1, false, funcHaltError},
@@ -1779,6 +1780,27 @@ func compileRegexp(re, flags string) (*regexp.Regexp, error) {
 		return nil, fmt.Errorf("invalid regular expression %q: %s", re, err)
 	}
 	return r, nil
+}
+
+func funcCapture(v interface{}) interface{} {
+	vs, ok := v.(map[string]interface{})
+	if !ok {
+		return &expectedObjectError{v}
+	}
+	v = vs["captures"]
+	captures, ok := v.([]interface{})
+	if !ok {
+		return &expectedArrayError{v}
+	}
+	w := make(map[string]interface{}, len(captures))
+	for _, capture := range captures {
+		if capture, ok := capture.(map[string]interface{}); ok {
+			if name, ok := capture["name"].(string); ok {
+				w[name] = capture["string"]
+			}
+		}
+	}
+	return w
 }
 
 func funcError(v interface{}, args []interface{}) interface{} {

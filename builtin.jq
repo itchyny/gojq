@@ -167,10 +167,7 @@ def match($re; $flags): _match($re; $flags; false) | .[];
 def test($re): test($re; null);
 def test($re; $flags): _match($re; $flags; true);
 def capture($re): capture($re; null);
-def capture($re; $flags):
-  match($re; $flags)
-    | [.captures[] | select(.name != null) | { (.name): .string }]
-    | add // {};
+def capture($re; $flags): match($re; $flags) | _capture;
 def scan($re): scan($re; null);
 def scan($re; $flags):
   match($re; "g" + $flags)
@@ -179,19 +176,19 @@ def splits($re): splits($re; null);
 def splits($re; $flags): split($re; $flags) | .[];
 def sub($re; str): sub($re; str; null);
 def sub($re; str; $flags):
-  . as $in
+  . as $str
     | def _sub:
         if .matches|length > 0
         then
           .matches[-1] as $r
             | {
-                string: (([$r.captures[] | select(.name != null) | { (.name): .string }] | add // {} | str) + $in[$r.offset+$r.length:.offset] + .string),
+                string: (($r | _capture | str) + $str[$r.offset+$r.length:.offset] + .string),
                 offset: $r.offset,
-                matches: .matches[:-1]
+                matches: .matches[:-1],
               }
             | _sub
         else
-          $in[:.offset] + .string
+          $str[:.offset] + .string
         end;
   { string: "", matches: [match($re; $flags)] } | _sub;
 def gsub($re; str): sub($re; str; "g");
