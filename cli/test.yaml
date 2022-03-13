@@ -1134,7 +1134,7 @@
   args:
     - -c
     - 'from_entries'
-  input: '[{"key":"a","Key":"b","value":1},{"Key":"b","Value":2},{"key":null,"name":"c","Name":"d","value":3},{"Name":"d","value":null,"Value":4},{"key":"e"}]'
+  input: '[{"key":"a","Key":"b","value":1},{"Key":"b","Value":2},{"key":null,"name":"c","Name":"d","value":3},{"name":false,"Name":"d","value":null,"Value":4},{"key":"e"}]'
   expected: |
     {"a":1,"b":2,"c":3,"d":null,"e":null}
 

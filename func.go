@@ -381,9 +381,9 @@ func funcFromEntries(v interface{}) interface{} {
 				ok    bool
 			)
 			for _, k := range [4]string{"key", "Key", "name", "Name"} {
-				if k, ok := x[k]; ok && k != nil {
+				if k := x[k]; k != nil && k != false {
 					if key, ok = k.(string); !ok {
-						return &expectedStringError{k}
+						return &objectKeyNotStringError{k}
 					}
 					break
 				}
