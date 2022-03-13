@@ -183,19 +183,17 @@ def sub($re; str; $flags):
     | def _sub:
         if .matches|length > 0
         then
-          . as $x | .matches[0] as $r
-            | [$r.captures[] | select(.name != null) | { (.name): .string }]
-            | add // {}
+          .matches[-1] as $r
             | {
-                string: ($x.string + $in[$x.offset:$r.offset] + str),
-                offset: ($r.offset + $r.length),
-                matches: $x.matches[1:]
+                string: (([$r.captures[] | select(.name != null) | { (.name): .string }] | add // {} | str) + $in[$r.offset+$r.length:.offset] + .string),
+                offset: $r.offset,
+                matches: .matches[:-1]
               }
             | _sub
         else
-          .string + $in[.offset:]
+          $in[:.offset] + .string
         end;
-  { string: "", offset: 0, matches: [match($re; $flags)] } | _sub;
+  { string: "", matches: [match($re; $flags)] } | _sub;
 def gsub($re; str): sub($re; str; "g");
 def gsub($re; str; $flags): sub($re; str; $flags + "g");
 
