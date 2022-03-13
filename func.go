@@ -706,7 +706,7 @@ func funcToCSVTSV(typ string, v interface{}, sep string, escape func(string) str
 		}
 		return strings.Join(ys, sep)
 	default:
-		return &expectedArrayError{v}
+		return &funcTypeError{"@" + typ, v}
 	}
 }
 
