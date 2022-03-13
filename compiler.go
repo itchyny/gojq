@@ -304,12 +304,11 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 		scope = c.scopes[len(c.scopes)-1]
 	}
 	defer c.lazy(func() *code {
-		return &code{op: opjump, v: c.pc()}
+		return &code{op: opjump, v: len(c.codes)}
 	})()
 	c.appendCodeInfo(e.Name)
 	defer c.appendCodeInfo("end of " + e.Name)
-	pc := c.pc()
-	scope.funcs = append(scope.funcs, &funcinfo{e.Name, pc, len(e.Args)})
+	scope.funcs = append(scope.funcs, &funcinfo{e.Name, len(c.codes), len(e.Args)})
 	defer func(scopes []*scopeinfo, variables []string) {
 		c.scopes, c.variables = scopes, variables
 	}(c.scopes, c.variables)
@@ -425,14 +424,14 @@ func (c *compiler) compileQuery(e *Query) error {
 
 func (c *compiler) compileComma(l, r *Query) error {
 	setfork := c.lazy(func() *code {
-		return &code{op: opfork, v: c.pc() + 1}
+		return &code{op: opfork, v: len(c.codes) + 1}
 	})
 	if err := c.compileQuery(l); err != nil {
 		return err
 	}
 	setfork()
 	defer c.lazy(func() *code {
-		return &code{op: opjump, v: c.pc()}
+		return &code{op: opjump, v: len(c.codes)}
 	})()
 	return c.compileQuery(r)
 }
@@ -442,23 +441,23 @@ func (c *compiler) compileAlt(l, r *Query) error {
 	found := c.newVariable()
 	c.append(&code{op: opstore, v: found})
 	setfork := c.lazy(func() *code {
-		return &code{op: opfork, v: c.pc()} // opload found
+		return &code{op: opfork, v: len(c.codes)} // opload found
 	})
 	if err := c.compileQuery(l); err != nil {
 		return err
 	}
 	c.append(&code{op: opdup})
-	c.append(&code{op: opjumpifnot, v: c.pc() + 4}) // oppop
-	c.append(&code{op: oppush, v: true})            // found some value
+	c.append(&code{op: opjumpifnot, v: len(c.codes) + 4}) // oppop
+	c.append(&code{op: oppush, v: true})                  // found some value
 	c.append(&code{op: opstore, v: found})
 	defer c.lazy(func() *code {
-		return &code{op: opjump, v: c.pc()} // ret
+		return &code{op: opjump, v: len(c.codes)} // ret
 	})()
 	c.append(&code{op: oppop})
 	c.append(&code{op: opbacktrack})
 	setfork()
 	c.append(&code{op: opload, v: found})
-	c.append(&code{op: opjumpifnot, v: c.pc() + 3})
+	c.append(&code{op: opjumpifnot, v: len(c.codes) + 3})
 	c.append(&code{op: opbacktrack}) // if found, backtrack
 	c.append(&code{op: oppop})
 	return c.compileQuery(r)
@@ -542,11 +541,11 @@ func (c *compiler) compileBind(b *Bind) error {
 			defer c.lazy(func() *code {
 				return &code{op: opjump, v: pc}
 			})()
-			pcc = c.pc()
+			pcc = len(c.codes)
 		}
 	}
 	if len(b.Patterns) > 1 {
-		pc = c.pc()
+		pc = len(c.codes)
 	}
 	if len(b.Patterns) == 1 && c.codes[len(c.codes)-2].op == opexpbegin {
 		c.codes[len(c.codes)-2].op = opnop
@@ -650,7 +649,7 @@ func (c *compiler) compileIf(e *If) error {
 	}
 	pcc := len(c.codes)
 	setjumpifnot := c.lazy(func() *code {
-		return &code{op: opjumpifnot, v: c.pc() + 1} // if falsy, skip then clause
+		return &code{op: opjumpifnot, v: len(c.codes) + 1} // if falsy, skip then clause
 	})
 	f = c.newScopeDepth()
 	if err := c.compileQuery(e.Then); err != nil {
@@ -659,7 +658,7 @@ func (c *compiler) compileIf(e *If) error {
 	f()
 	setjumpifnot()
 	defer c.lazy(func() *code {
-		return &code{op: opjump, v: c.pc()} // jump to ret after else clause
+		return &code{op: opjump, v: len(c.codes)} // jump to ret after else clause
 	})()
 	if len(e.Elif) > 0 {
 		return c.compileIf(&If{e.Elif[0].Cond, e.Elif[0].Then, e.Elif[1:], e.Else})
@@ -686,7 +685,7 @@ func (c *compiler) compileIf(e *If) error {
 func (c *compiler) compileTry(e *Try) error {
 	c.appendCodeInfo(e)
 	setforktrybegin := c.lazy(func() *code {
-		return &code{op: opforktrybegin, v: c.pc()}
+		return &code{op: opforktrybegin, v: len(c.codes)}
 	})
 	f := c.newScopeDepth()
 	if err := c.compileQuery(e.Body); err != nil {
@@ -695,7 +694,7 @@ func (c *compiler) compileTry(e *Try) error {
 	f()
 	c.append(&code{op: opforktryend})
 	defer c.lazy(func() *code {
-		return &code{op: opjump, v: c.pc()}
+		return &code{op: opjump, v: len(c.codes)}
 	})()
 	setforktrybegin()
 	if e.Catch != nil {
@@ -710,7 +709,7 @@ func (c *compiler) compileReduce(e *Reduce) error {
 	c.appendCodeInfo(e)
 	defer c.newScopeDepth()()
 	defer c.lazy(func() *code {
-		return &code{op: opfork, v: c.pc() - 2}
+		return &code{op: opfork, v: len(c.codes) - 2}
 	})()
 	c.append(&code{op: opdup})
 	v := c.newVariable()
@@ -1210,7 +1209,7 @@ func (c *compiler) compileArray(e *Array) error {
 	c.append(&code{op: opfork})
 	defer func() {
 		if pc < len(c.codes) {
-			c.codes[pc].v = c.pc() - 2
+			c.codes[pc].v = len(c.codes) - 2
 		}
 	}()
 	defer c.newScopeDepth()()
@@ -1386,13 +1385,13 @@ func (c *compiler) compileCallInternal(
 		c.append(&code{op: opexpbegin})
 	}
 	for i := len(args) - 1; i >= 0; i-- {
-		pc := c.pc() + 1 // skip opjump (ref: compileFuncDef)
+		pc := len(c.codes) + 1 // skip opjump (ref: compileFuncDef)
 		name := "lambda:" + strconv.Itoa(pc)
 		if err := c.compileFuncDef(&FuncDef{Name: name, Body: args[i]}, false); err != nil {
 			return err
 		}
 		if internal {
-			switch c.pc() - pc {
+			switch len(c.codes) - pc {
 			case 2: // optimize identity argument (opscope, opret)
 				j := len(c.codes) - 3
 				c.codes[j] = &code{op: opload, v: idx}
@@ -1437,10 +1436,6 @@ func (c *compiler) compileCallInternal(
 
 func (c *compiler) append(code *code) {
 	c.codes = append(c.codes, code)
-}
-
-func (c *compiler) pc() int {
-	return len(c.codes)
 }
 
 func (c *compiler) lazy(f func() *code) func() {

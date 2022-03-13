@@ -47,7 +47,7 @@ func (c *compiler) appendCodeInfo(x interface{}) {
 	if c.codes[len(c.codes)-1] != nil && c.codes[len(c.codes)-1].op == opret && strings.HasPrefix(name, "end of ") {
 		diff = -1
 	}
-	c.codeinfos = append(c.codeinfos, codeinfo{name, c.pc() + diff})
+	c.codeinfos = append(c.codeinfos, codeinfo{name, len(c.codes) + diff})
 }
 
 func (c *compiler) deleteCodeInfo(name string) {
