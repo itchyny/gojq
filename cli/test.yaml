@@ -1138,6 +1138,14 @@
   expected: |
     {"a":1,"b":2,"c":3,"d":null,"e":null}
 
+- name: from_entries function missing key
+  args:
+    - -c
+    - 'from_entries'
+  input: '[{"value":1}]'
+  error: |
+    expected a string for object key but got: null
+
 - name: with_entries function
   args:
     - -c

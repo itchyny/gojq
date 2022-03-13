@@ -389,6 +389,9 @@ func funcFromEntries(v interface{}) interface{} {
 					break
 				}
 			}
+			if !ok {
+				return &objectKeyNotStringError{nil}
+			}
 			for _, v := range [2]string{"value", "Value"} {
 				if value, ok = x[v]; ok {
 					break
