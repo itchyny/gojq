@@ -20,13 +20,11 @@ def range($end): _range(0; $end; 1);
 def range($start; $end): _range($start; $end; 1);
 def range($start; $end; $step): _range($start; $end; $step);
 
-def _flatten($x):
-  map(if type == "array" and $x != 0 then _flatten($x - 1) else [.] end) | add;
 def flatten($x):
   if $x < 0
   then error("flatten depth must not be negative")
-  else _flatten($x) // [] end;
-def flatten: _flatten(-1) // [];
+  else if type != "array" then [.[]] end | _flatten($x) end;
+def flatten: if type != "array" then [.[]] end | _flatten(-1);
 def min: min_by(.);
 def min_by(f): _min_by(map([f]));
 def max: max_by(.);

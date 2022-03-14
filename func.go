@@ -91,6 +91,7 @@ func init() {
 		"_less":          argFunc2(funcOpLt),
 		"_greatereq":     argFunc2(funcOpGe),
 		"_lesseq":        argFunc2(funcOpLe),
+		"_flatten":       argFunc1(funcFlatten),
 		"_range":         {argcount3, true, funcRange},
 		"_min_by":        argFunc1(funcMinBy),
 		"_max_by":        argFunc1(funcMaxBy),
@@ -1013,6 +1014,29 @@ func toIndex(a []interface{}, i int) int {
 	default:
 		return -1
 	}
+}
+
+func funcFlatten(v, x interface{}) interface{} {
+	vs, ok := v.([]interface{})
+	if !ok {
+		return &expectedArrayError{v}
+	}
+	depth, ok := toFloat(x)
+	if !ok {
+		return &funcTypeError{"flatten", x}
+	}
+	return flatten(nil, vs, depth)
+}
+
+func flatten(xs, vs []interface{}, depth float64) []interface{} {
+	for _, v := range vs {
+		if vs, ok := v.([]interface{}); ok && depth != 0 {
+			xs = flatten(xs, vs, depth-1)
+		} else {
+			xs = append(xs, v)
+		}
+	}
+	return xs
 }
 
 type rangeIter struct {
