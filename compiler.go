@@ -540,8 +540,7 @@ func (c *compiler) compileBind(b *Bind) error {
 				c.append(&code{op: opstore, v: v})
 			}
 		}
-		vs, err = c.compilePattern(p)
-		if err != nil {
+		if vs, err = c.compilePattern(vs[:0], p); err != nil {
 			return err
 		}
 		if i < len(b.Patterns)-1 {
@@ -562,14 +561,14 @@ func (c *compiler) compileBind(b *Bind) error {
 	return c.compileQuery(b.Body)
 }
 
-func (c *compiler) compilePattern(p *Pattern) ([][2]int, error) {
+func (c *compiler) compilePattern(vs [][2]int, p *Pattern) ([][2]int, error) {
+	var err error
 	c.appendCodeInfo(p)
 	if p.Name != "" {
 		v := c.pushVariable(p.Name)
 		c.append(&code{op: opstore, v: v})
-		return [][2]int{v}, nil
+		return append(vs, v), nil
 	} else if len(p.Array) > 0 {
-		var vs [][2]int
 		v := c.newVariable()
 		c.append(&code{op: opstore, v: v})
 		for i, p := range p.Array {
@@ -578,15 +577,12 @@ func (c *compiler) compilePattern(p *Pattern) ([][2]int, error) {
 			c.append(&code{op: opload, v: v})
 			// ref: compileCall
 			c.append(&code{op: opcall, v: [3]interface{}{internalFuncs["_index"].callback, 2, "_index"}})
-			ns, err := c.compilePattern(p)
-			if err != nil {
+			if vs, err = c.compilePattern(vs, p); err != nil {
 				return nil, err
 			}
-			vs = append(vs, ns...)
 		}
 		return vs, nil
 	} else if len(p.Object) > 0 {
-		var vs [][2]int
 		v := c.newVariable()
 		c.append(&code{op: opstore, v: v})
 		for _, kv := range p.Object {
@@ -619,18 +615,14 @@ func (c *compiler) compilePattern(p *Pattern) ([][2]int, error) {
 				if kv.Val != nil {
 					c.append(&code{op: opdup})
 				}
-				ns, err := c.compilePattern(&Pattern{Name: name})
-				if err != nil {
+				if vs, err = c.compilePattern(vs, &Pattern{Name: name}); err != nil {
 					return nil, err
 				}
-				vs = append(vs, ns...)
 			}
 			if kv.Val != nil {
-				ns, err := c.compilePattern(kv.Val)
-				if err != nil {
+				if vs, err = c.compilePattern(vs, kv.Val); err != nil {
 					return nil, err
 				}
-				vs = append(vs, ns...)
 			}
 		}
 		return vs, nil
@@ -729,7 +721,7 @@ func (c *compiler) compileReduce(e *Reduce) error {
 	if err := c.compileTerm(e.Term); err != nil {
 		return err
 	}
-	if _, err := c.compilePattern(e.Pattern); err != nil {
+	if _, err := c.compilePattern(nil, e.Pattern); err != nil {
 		return err
 	}
 	c.append(&code{op: opload, v: v})
@@ -759,7 +751,7 @@ func (c *compiler) compileForeach(e *Foreach) error {
 	if err := c.compileTerm(e.Term); err != nil {
 		return err
 	}
-	if _, err := c.compilePattern(e.Pattern); err != nil {
+	if _, err := c.compilePattern(nil, e.Pattern); err != nil {
 		return err
 	}
 	c.append(&code{op: opload, v: v})
