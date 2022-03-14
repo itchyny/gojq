@@ -18,6 +18,7 @@ type compiler struct {
 	inputIter     Iter
 	codes         []*code
 	codeinfos     []codeinfo
+	builtinScope  *scopeinfo
 	scopes        []*scopeinfo
 	scopecnt      int
 }
@@ -87,6 +88,7 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 	for _, opt := range options {
 		opt(c)
 	}
+	c.builtinScope = c.newScope()
 	scope := c.newScope()
 	c.scopes = []*scopeinfo{scope}
 	setscope := c.lazy(func() *code {
@@ -274,6 +276,16 @@ func (c *compiler) lookupFuncOrVariable(name string) (*funcinfo, *varinfo) {
 	return nil, nil
 }
 
+func (c *compiler) lookupBuiltin(name string, argcnt int) *funcinfo {
+	s := c.builtinScope
+	for i := len(s.funcs) - 1; i >= 0; i-- {
+		if f := s.funcs[i]; f.name == name && f.argcnt == argcnt {
+			return f
+		}
+	}
+	return nil
+}
+
 func (c *compiler) newScope() *scopeinfo {
 	i := c.scopecnt // do not use len(c.scopes) because it pops
 	c.scopecnt++
@@ -294,12 +306,10 @@ func (c *compiler) newScopeDepth() func() {
 func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	var scope *scopeinfo
 	if builtin {
-		scope = c.scopes[0]
-		for i := len(scope.funcs) - 1; i >= 0; i-- {
-			if f := scope.funcs[i]; f.name == e.Name && f.argcnt == len(e.Args) {
-				return nil
-			}
+		if f := c.lookupBuiltin(e.Name, len(e.Args)); f != nil {
+			return nil
 		}
+		scope = c.builtinScope
 	} else {
 		scope = c.scopes[len(c.scopes)-1]
 	}
@@ -315,7 +325,7 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	c.variables = c.variables[len(c.variables):]
 	scope = c.newScope()
 	if builtin {
-		c.scopes = []*scopeinfo{c.scopes[0], scope}
+		c.scopes = []*scopeinfo{c.builtinScope, scope}
 	} else {
 		c.scopes = append(c.scopes, scope)
 	}
@@ -916,6 +926,9 @@ func (c *compiler) compileFunc(e *Func) error {
 			}
 		}
 	}
+	if f := c.lookupBuiltin(name, len(e.Args)); f != nil {
+		return c.compileCallPc(f, e.Args)
+	}
 	if name[0] == '_' {
 		name = name[1:]
 	}
@@ -925,13 +938,11 @@ func (c *compiler) compileFunc(e *Func) error {
 				if err := c.compileFuncDef(fd, true); err != nil {
 					return err
 				}
+				break
 			}
 		}
-		s := c.scopes[0]
-		for i := len(s.funcs) - 1; i >= 0; i-- {
-			if f := s.funcs[i]; f.name == e.Name && f.argcnt == len(e.Args) {
-				return c.compileCallPc(f, e.Args)
-			}
+		if f := c.lookupBuiltin(e.Name, len(e.Args)); f != nil {
+			return c.compileCallPc(f, e.Args)
 		}
 	}
 	if fn, ok := internalFuncs[e.Name]; ok && fn.accept(len(e.Args)) {

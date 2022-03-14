@@ -2062,6 +2062,23 @@
     2
     3
 
+- name: function declaration with builtin function name conflict
+  args:
+    - 'def empty: . % 2; range(5) | select(empty > 0)'
+  input: 'null'
+  expected: |
+    1
+    3
+
+- name: function declaration with builtin function name conflict
+  args:
+    - 'def select(f): f; null, 0 | numbers, select(.)'
+  input: 'null'
+  expected: |
+    null
+    0
+    0
+
 - name: function declaration with argument name conflict
   args:
     - 'def update: .[1:]; [range(3)] | while(length>0; update)'
