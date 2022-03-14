@@ -21,12 +21,8 @@ func main() {
 		panic(err)
 	}
 	for _, fd := range q.FuncDefs {
-		name := fd.Name
-		if name[0] == '_' {
-			name = name[1:]
-		}
 		fd.Minify()
-		fds[name] = append(fds[fd.Name], fd)
+		fds[fd.Name] = append(fds[fd.Name], fd)
 	}
 	count := len(fds)
 	names, i := make([]string, count), 0

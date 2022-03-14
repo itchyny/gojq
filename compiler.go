@@ -306,9 +306,6 @@ func (c *compiler) newScopeDepth() func() {
 func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 	var scope *scopeinfo
 	if builtin {
-		if f := c.lookupBuiltin(e.Name, len(e.Args)); f != nil {
-			return nil
-		}
 		scope = c.builtinScope
 	} else {
 		scope = c.scopes[len(c.scopes)-1]
@@ -929,9 +926,6 @@ func (c *compiler) compileFunc(e *Func) error {
 	if f := c.lookupBuiltin(name, len(e.Args)); f != nil {
 		return c.compileCallPc(f, e.Args)
 	}
-	if name[0] == '_' {
-		name = name[1:]
-	}
 	if fds, ok := builtinFuncDefs[name]; ok {
 		for _, fd := range fds {
 			if len(fd.Args) == len(e.Args) {
@@ -941,25 +935,25 @@ func (c *compiler) compileFunc(e *Func) error {
 				break
 			}
 		}
-		if f := c.lookupBuiltin(e.Name, len(e.Args)); f != nil {
+		if f := c.lookupBuiltin(name, len(e.Args)); f != nil {
 			return c.compileCallPc(f, e.Args)
 		}
 	}
-	if fn, ok := internalFuncs[e.Name]; ok && fn.accept(len(e.Args)) {
-		switch e.Name {
+	if fn, ok := internalFuncs[name]; ok && fn.accept(len(e.Args)) {
+		switch name {
 		case "empty":
 			c.append(&code{op: opbacktrack})
 			return nil
 		case "path":
 			c.append(&code{op: oppathbegin})
-			if err := c.compileCall(e.Name, e.Args); err != nil {
+			if err := c.compileCall(name, e.Args); err != nil {
 				return err
 			}
 			c.codes[len(c.codes)-1] = &code{op: oppathend}
 			return nil
 		case "builtins":
 			return c.compileCallInternal(
-				[3]interface{}{c.funcBuiltins, 0, e.Name},
+				[3]interface{}{c.funcBuiltins, 0, name},
 				e.Args,
 				true,
 				false,
@@ -969,25 +963,25 @@ func (c *compiler) compileFunc(e *Func) error {
 				return &inputNotAllowedError{}
 			}
 			return c.compileCallInternal(
-				[3]interface{}{c.funcInput, 0, e.Name},
+				[3]interface{}{c.funcInput, 0, name},
 				e.Args,
 				true,
 				false,
 			)
 		case "modulemeta":
 			return c.compileCallInternal(
-				[3]interface{}{c.funcModulemeta, 0, e.Name},
+				[3]interface{}{c.funcModulemeta, 0, name},
 				e.Args,
 				true,
 				false,
 			)
 		default:
-			return c.compileCall(e.Name, e.Args)
+			return c.compileCall(name, e.Args)
 		}
 	}
-	if fn, ok := c.customFuncs[e.Name]; ok && fn.accept(len(e.Args)) {
+	if fn, ok := c.customFuncs[name]; ok && fn.accept(len(e.Args)) {
 		if err := c.compileCallInternal(
-			[3]interface{}{fn.callback, len(e.Args), e.Name},
+			[3]interface{}{fn.callback, len(e.Args), name},
 			e.Args,
 			true,
 			false,
