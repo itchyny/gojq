@@ -382,7 +382,7 @@ func (l *lexer) validNumber() bool {
 
 func (l *lexer) scanString(start int) (int, string) {
 	var decode bool
-	var controls, newline int
+	var controls, newlines int
 	unquote := func(src string, quote bool) (string, error) {
 		if !decode {
 			if quote {
@@ -391,10 +391,10 @@ func (l *lexer) scanString(start int) (int, string) {
 			return src[1 : len(src)-1], nil
 		}
 		var buf []byte
-		if !quote && controls == 0 && newline == 0 {
+		if !quote && controls == 0 && newlines == 0 {
 			buf = []byte(src)
 		} else {
-			buf = escapeControls(src, quote, controls, newline)
+			buf = quoteAndEscape(src, quote, controls, newlines)
 		}
 		if err := json.Unmarshal(buf, &src); err != nil {
 			return "", err
@@ -410,7 +410,7 @@ func (l *lexer) scanString(start int) (int, string) {
 			}
 			quote = !quote
 		case '\n':
-			newline++
+			newlines++
 		case '"':
 			if !quote {
 				if !l.inString {
@@ -481,8 +481,8 @@ func (l *lexer) scanString(start int) (int, string) {
 	return tokInvalid, ""
 }
 
-func escapeControls(src string, quote bool, controls, newline int) []byte {
-	size := len(src) + controls*5 + newline
+func quoteAndEscape(src string, quote bool, controls, newlines int) []byte {
+	size := len(src) + controls*5 + newlines
 	if quote {
 		size += 2
 	}
