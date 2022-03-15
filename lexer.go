@@ -1,7 +1,7 @@
 package gojq
 
 import (
-	"strconv"
+	"encoding/json"
 	"strings"
 	"unicode/utf8"
 )
@@ -381,23 +381,36 @@ func (l *lexer) validNumber() bool {
 }
 
 func (l *lexer) scanString(start int) (int, string) {
-	var quote, newline bool
+	var decode bool
+	var controls, newline int
 	unquote := func(src string, quote bool) (string, error) {
-		if quote {
-			src = "\"" + src + "\""
+		if !decode {
+			if quote {
+				return src, nil
+			}
+			return src[1 : len(src)-1], nil
 		}
-		if newline {
-			src = strings.ReplaceAll(src, "\n", "\\n")
+		var buf []byte
+		if !quote && controls == 0 && newline == 0 {
+			buf = []byte(src)
+		} else {
+			buf = escapeControls(src, quote, controls, newline)
 		}
-		return strconv.Unquote(src)
+		if err := json.Unmarshal(buf, &src); err != nil {
+			return "", err
+		}
+		return src, nil
 	}
-	for i, m := l.offset, len(l.source); i < m; i++ {
+	for i, m, quote := l.offset, len(l.source), false; i < m; i++ {
 		ch := l.source[i]
 		switch ch {
 		case '\\':
+			if quote {
+				decode = true
+			}
 			quote = !quote
 		case '\n':
-			newline = true
+			newline++
 		case '"':
 			if !quote {
 				if !l.inString {
@@ -423,6 +436,7 @@ func (l *lexer) scanString(start int) (int, string) {
 				return tokStringEnd, ""
 			}
 			quote = false
+			decode = true
 		case '(':
 			if quote {
 				if l.inString {
@@ -445,18 +459,56 @@ func (l *lexer) scanString(start int) (int, string) {
 		default:
 			if quote {
 				if !('a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' ||
-					'0' <= ch && ch <= '9' || ch == '\'' || ch == '"') {
+					'0' <= ch && ch <= '9' || ch == '"' || ch == '/') {
 					l.offset = i + 1
 					l.token = l.source[l.offset-2 : l.offset]
 					return tokInvalid, ""
 				}
 				quote = false
+				decode = true
+			} else {
+				if !decode {
+					decode = ch > '~'
+				}
+				if ch < ' ' { // ref: unquoteBytes in encoding/json
+					controls++
+				}
 			}
 		}
 	}
 	l.offset = len(l.source)
 	l.token = l.source[start:l.offset]
 	return tokInvalid, ""
+}
+
+func escapeControls(src string, quote bool, controls, newline int) []byte {
+	size := len(src) + controls*5 + newline
+	if quote {
+		size += 2
+	}
+	buf := make([]byte, size)
+	var j int
+	if quote {
+		buf[0] = '"'
+		buf[len(buf)-1] = '"'
+		j++
+	}
+	for i := 0; i < len(src); i++ {
+		if ch := src[i]; ch == '\n' {
+			copy(buf[j:], `\n`)
+			j += 2
+		} else if ch < ' ' {
+			const hex = "0123456789abcdef"
+			copy(buf[j:], `\u00`)
+			buf[j+4] = hex[ch>>4]
+			buf[j+5] = hex[ch&0xF]
+			j += 6
+		} else {
+			buf[j] = ch
+			j++
+		}
+	}
+	return buf
 }
 
 type parseError struct {
@@ -481,7 +533,7 @@ func (err *parseError) Error() string {
 			message = "\"" + err.token + "\""
 		}
 	default:
-		message = strconv.Quote(string(rune(err.tokenType)))
+		message = jsonMarshal(string(rune(err.tokenType)))
 	}
 	return prefix + " token " + message
 }

@@ -33,6 +33,10 @@ func jsonMarshal(v interface{}) string {
 	return sb.String()
 }
 
+func jsonEncodeString(sb *strings.Builder, v string) {
+	(&encoder{w: sb}).encodeString(v)
+}
+
 type encoder struct {
 	w interface {
 		io.Writer

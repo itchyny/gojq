@@ -3,7 +3,6 @@ package gojq
 import (
 	"context"
 	"encoding/json"
-	"strconv"
 	"strings"
 )
 
@@ -117,12 +116,12 @@ func (e *Import) String() string {
 func (e *Import) writeTo(s *strings.Builder) {
 	if e.ImportPath != "" {
 		s.WriteString("import ")
-		s.WriteString(strconv.Quote(e.ImportPath))
+		jsonEncodeString(s, e.ImportPath)
 		s.WriteString(" as ")
 		s.WriteString(e.ImportAlias)
 	} else {
 		s.WriteString("include ")
-		s.WriteString(strconv.Quote(e.IncludePath))
+		jsonEncodeString(s, e.IncludePath)
 	}
 	if e.Meta != nil {
 		s.WriteByte(' ')
@@ -543,7 +542,7 @@ func (e *String) String() string {
 
 func (e *String) writeTo(s *strings.Builder) {
 	if e.Queries == nil {
-		s.WriteString(strconv.Quote(e.Str))
+		jsonEncodeString(s, e.Str)
 		return
 	}
 	s.WriteByte('"')
@@ -1005,7 +1004,7 @@ func (e *ConstTerm) writeTo(s *strings.Builder) {
 	} else if e.False {
 		s.WriteString("false")
 	} else {
-		s.WriteString(strconv.Quote(e.Str))
+		jsonEncodeString(s, e.Str)
 	}
 }
 

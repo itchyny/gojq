@@ -49,16 +49,16 @@
 - name: string input
   args:
     - '.'
-  input: '"Hello, world!\r\n\t\f\b\uff06"'
+  input: '"Hello, world! \r\n\t\f\b\"\\\/\uff06"'
   expected: |
-    "Hello, world!\r\n\t\f\b＆"
+    "Hello, world! \r\n\t\f\b\"\\/＆"
 
 - name: string query
   args:
-    - '" Hello, world! \r\n\t\f\b\uff10 "'
+    - '" Hello, world! \r\n\t\f\b\"\\\/\uff10 "'
   input: '0'
   expected: |
-    " Hello, world! \r\n\t\f\b０ "
+    " Hello, world! \r\n\t\f\b\"\\/０ "
 
 - name: string query including newlines
   args:
@@ -66,6 +66,23 @@
   input: '0'
   expected: |
     "a\n\nb\nc\n\nd\n"
+
+- name: string query including control characters
+  args:
+    - "\"\x01\x07\x0f\\n\", \"\x7f\\n\""
+  input: '0'
+  expected: |
+    "\u0001\u0007\u000f\n"
+    "\u007f\n"
+
+- name: string query including surrogate pairs
+  args:
+    - '"\ud83d\ude04" | length, utf8bytelength, explode[]'
+  input: '0'
+  expected: |
+    1
+    4
+    128516
 
 - name: string query error
   args:
@@ -105,6 +122,16 @@
     invalid query: "\(1) \x "
         "\(1) \x "
              ^  invalid token " \x "
+  exit_code: 3
+
+- name: string query error
+  args:
+    - '"\a"'
+  input: '0'
+  error: |
+    invalid query: "\a"
+        "\a"
+        ^  invalid token "\a"
   exit_code: 3
 
 - name: object input
