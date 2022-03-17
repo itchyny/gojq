@@ -18,9 +18,9 @@ import (
 // string, []interface{} and map[string]interface{}) because these are the
 // possible types a gojq iterator can emit. This method marshals NaN to null,
 // truncates infinities to (+|-) math.MaxFloat64, uses \b and \f in strings,
-// and does not escape '<' and '>' for embedding in HTML. These behaviors are
-// based on the marshaler of jq command and different from Go standard library
-// method json.Marshal.
+// and does not escape '<', '>', '&', '\u2028', and '\u2029'. These behaviors
+// are based on the marshaler of jq command, and different from json.Marshal in
+// the Go standard library. Note that the result is not safe to embed in HTML.
 func Marshal(v interface{}) ([]byte, error) {
 	var b bytes.Buffer
 	(&encoder{w: &b}).encode(v)
