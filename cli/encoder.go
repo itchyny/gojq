@@ -99,7 +99,7 @@ func (e *encoder) encodeString(s string, color []byte) {
 	start := 0
 	for i := 0; i < len(s); {
 		if b := s[i]; b < utf8.RuneSelf {
-			if ']' <= b && b <= '~' || '#' <= b && b <= '[' || b == ' ' || b == '!' {
+			if ' ' <= b && b <= '~' && b != '"' && b != '\\' {
 				i++
 				continue
 			}
