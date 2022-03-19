@@ -397,16 +397,6 @@ func (l *lexer) scanString(start int) (int, string) {
 			buf = quoteAndEscape(src, quote, controls, newlines)
 		}
 		if err := json.Unmarshal(buf, &src); err != nil {
-			if err, ok := err.(*json.SyntaxError); ok &&
-				strings.Contains(err.Error(), "escape") {
-				if i := strings.LastIndexByte(src[:err.Offset-1], '\\'); i > 0 {
-					if int(err.Offset) > i+2 && !isIdent(src[err.Offset-1], true) {
-						err.Offset--
-					}
-					l.token = src[i:err.Offset]
-					l.offset += int(err.Offset) - len(src)
-				}
-			}
 			return "", err
 		}
 		return src, nil
@@ -419,7 +409,17 @@ func (l *lexer) scanString(start int) (int, string) {
 				break
 			}
 			switch l.source[i] {
-			case '"', '/', '\\', 'b', 'f', 'n', 'r', 't', 'u':
+			case 'u':
+				for j := 1; j <= 4; j++ {
+					if i+j >= len(l.source) || !isHex(l.source[i+j]) {
+						l.offset = i + j
+						l.token = l.source[i-1 : l.offset]
+						return tokInvalid, ""
+					}
+				}
+				i += 4
+				fallthrough
+			case '"', '/', '\\', 'b', 'f', 'n', 'r', 't':
 				decode = true
 			case '(':
 				if !l.inString {
@@ -570,6 +570,12 @@ func isIdent(ch byte, tail bool) bool {
 	return 'a' <= ch && ch <= 'z' ||
 		'A' <= ch && ch <= 'Z' || ch == '_' ||
 		tail && isNumber(ch)
+}
+
+func isHex(ch byte) bool {
+	return 'a' <= ch && ch <= 'f' ||
+		'A' <= ch && ch <= 'F' ||
+		isNumber(ch)
 }
 
 func isNumber(ch byte) bool {

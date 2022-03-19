@@ -116,12 +116,22 @@
 
 - name: string query error
   args:
+    - "\"\n\\u\n\""
+  input: 'null'
+  error: |
+    invalid query: <arg>:2
+        2 | \u
+            ^  invalid escape sequence "\u" in string literal
+  exit_code: 3
+
+- name: string query error
+  args:
     - '"\u'
   input: 'null'
   error: |
     invalid query: "\u
         "\u
-        ^  invalid token "\u
+         ^  invalid escape sequence "\u" in string literal
   exit_code: 3
 
 - name: string query error
@@ -181,7 +191,7 @@
   error: |
     invalid query: "\uAAGA"
         "\uAAGA"
-         ^  invalid escape sequence "\uAAG" in string literal
+         ^  invalid escape sequence "\uAA" in string literal
   exit_code: 3
 
 - name: string query error
@@ -191,7 +201,7 @@
   error: |
     invalid query: "\ufffg"
         "\ufffg"
-         ^  invalid escape sequence "\ufffg" in string literal
+         ^  invalid escape sequence "\ufff" in string literal
   exit_code: 3
 
 - name: string query error
@@ -232,6 +242,16 @@
     invalid query: "\a"
         "\a"
          ^  invalid escape sequence "\a" in string literal
+  exit_code: 3
+
+- name: string query error
+  args:
+    - '"\u\('
+  input: 'null'
+  error: |
+    invalid query: "\u\(
+        "\u\(
+         ^  invalid escape sequence "\u" in string literal
   exit_code: 3
 
 - name: object input
