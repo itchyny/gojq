@@ -411,72 +411,63 @@ func (l *lexer) scanString(start int) (int, string) {
 		}
 		return src, nil
 	}
-	for i, m, quote := l.offset, len(l.source), false; i < m; i++ {
+	for i := l.offset; i < len(l.source); i++ {
 		ch := l.source[i]
 		switch ch {
 		case '\\':
-			if quote {
+			if i++; i >= len(l.source) {
+				break
+			}
+			switch l.source[i] {
+			case '"', '/', '\\', 'b', 'f', 'n', 'r', 't', 'u':
 				decode = true
-			}
-			quote = !quote
-		case '\n':
-			newlines++
-		case '"':
-			if !quote {
+			case '(':
 				if !l.inString {
-					l.offset = i + 1
-					l.token = l.source[start:l.offset]
-					str, err := unquote(l.token, false)
-					if err != nil {
-						return tokInvalid, ""
-					}
-					return tokString, str
+					l.inString = true
+					return tokStringStart, ""
 				}
-				if i > l.offset {
-					l.offset = i
-					l.token = l.source[start:l.offset]
-					str, err := unquote(l.token, true)
-					if err != nil {
-						return tokInvalid, ""
-					}
-					return tokString, str
-				}
-				l.inString = false
-				l.offset = i + 1
-				return tokStringEnd, ""
-			}
-			quote = false
-			decode = true
-		case '(':
-			if quote {
-				if l.inString {
-					if i > l.offset+1 {
-						l.offset = i - 1
-						l.token = l.source[start:l.offset]
-						str, err := unquote(l.token, true)
-						if err != nil {
-							return tokInvalid, ""
-						}
-						return tokString, str
-					}
-					l.offset = i + 1
+				if i == l.offset+1 {
+					l.offset += 2
 					l.inString = false
 					return tokStringQuery, ""
 				}
-				l.inString = true
-				return tokStringStart, ""
-			}
-		case 'b', 'f', 'n', 'r', 't', 'u', '/':
-			if quote {
-				quote = false
-				decode = true
-			}
-		default:
-			if quote {
+				l.offset = i - 1
+				l.token = l.source[start:l.offset]
+				str, err := unquote(l.token, true)
+				if err != nil {
+					return tokInvalid, ""
+				}
+				return tokString, str
+			default:
 				l.offset = i + 1
 				l.token = l.source[l.offset-2 : l.offset]
 				return tokInvalid, ""
 			}
+		case '\n':
+			newlines++
+		case '"':
+			if !l.inString {
+				l.offset = i + 1
+				l.token = l.source[start:l.offset]
+				str, err := unquote(l.token, false)
+				if err != nil {
+					return tokInvalid, ""
+				}
+				return tokString, str
+			}
+			if i > l.offset {
+				l.offset = i
+				l.token = l.source[start:l.offset]
+				str, err := unquote(l.token, true)
+				if err != nil {
+					return tokInvalid, ""
+				}
+				return tokString, str
+			}
+			l.inString = false
+			l.offset = i + 1
+			return tokStringEnd, ""
+		default:
 			if !decode {
 				decode = ch > '~'
 			}
