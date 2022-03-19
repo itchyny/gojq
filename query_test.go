@@ -137,7 +137,7 @@ func TestQueryRun_InvalidPathError(t *testing.T) {
 
 func TestQueryRun_Strings(t *testing.T) {
 	query, err := gojq.Parse(
-		"[\"\x00\\\\\", \"\x1f\\\\\", \"\n\\n\n\\(\"\\n\")\n\\n\", \"\x7f\", \"\x80\", \"\\ud83d\\ude04\" | explode[]]",
+		"[\"\x00\\\\\", \"\x1f\\\"\", \"\n\\n\n\\(\"\\n\")\n\\n\", \"\\/\", \"\x7f\", \"\x80\", \"\\ud83d\\ude04\" | explode[]]",
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -151,8 +151,8 @@ func TestQueryRun_Strings(t *testing.T) {
 		if err, ok := v.(error); ok {
 			t.Fatal(err)
 		}
-		if expected := []interface{}{0x00, int('\\'), 0x1f, int('\\'), int('\n'), int('\n'), int('\n'),
-			int('\n'), int('\n'), int('\n'), 0x7f, 0xfffd, 128516}; !reflect.DeepEqual(v, expected) {
+		if expected := []interface{}{0x00, int('\\'), 0x1f, int('"'), int('\n'), int('\n'), int('\n'),
+			int('\n'), int('\n'), int('\n'), int('/'), 0x7f, 0xfffd, 128516}; !reflect.DeepEqual(v, expected) {
 			t.Errorf("expected: %v, got: %v", expected, v)
 		}
 	}

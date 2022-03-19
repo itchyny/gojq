@@ -56,21 +56,21 @@
 - name: string query
   args:
     - '" Hello, world! \r\n\t\f\b\"\\\/\uff10 "'
-  input: '0'
+  input: 'null'
   expected: |
     " Hello, world! \r\n\t\f\b\"\\/０ "
 
 - name: string query including newlines
   args:
     - "\"a\n\\(\"\nb\nc\n\")\nd\n\""
-  input: '0'
+  input: 'null'
   expected: |
     "a\n\nb\nc\n\nd\n"
 
 - name: string query including control characters
   args:
     - "\"\x01\x07\x0f\\n\", \"\x7f\\n\""
-  input: '0'
+  input: 'null'
   expected: |
     "\u0001\u0007\u000f\n"
     "\u007f\n"
@@ -78,7 +78,7 @@
 - name: string query including surrogate pairs
   args:
     - '"\ud83d\ude04" | length, utf8bytelength, explode[]'
-  input: '0'
+  input: 'null'
   expected: |
     1
     4
@@ -87,7 +87,7 @@
 - name: string query error
   args:
     - '. + "foo'
-  input: '0'
+  input: 'null'
   error: |
     invalid query: . + "foo
         . + "foo
@@ -97,41 +97,141 @@
 - name: string query error
   args:
     - '"foo\,bar"'
-  input: '0'
+  input: 'null'
   error: |
     invalid query: "foo\,bar"
         "foo\,bar"
-            ^  invalid token "\,"
+            ^  invalid escape sequence "\," in string literal
   exit_code: 3
 
 - name: string query error
   args:
-    - '"\u "'
-  input: '0'
+    - '"\u"'
+  input: 'null'
   error: |
-    invalid query: "\u "
-        "\u "
-        ^  invalid token "\u "
+    invalid query: "\u"
+        "\u"
+         ^  invalid escape sequence "\u" in string literal
+  exit_code: 3
+
+- name: string query error
+  args:
+    - '"\u'
+  input: 'null'
+  error: |
+    invalid query: "\u
+        "\u
+        ^  invalid token "\u
+  exit_code: 3
+
+- name: string query error
+  args:
+    - '"\'
+  input: 'null'
+  error: |
+    invalid query: "\
+        "\
+        ^  invalid token "\
+  exit_code: 3
+
+- name: string query error
+  args:
+    - '"\"'
+  input: 'null'
+  error: |
+    invalid query: "\"
+        "\"
+        ^  invalid token "\"
+  exit_code: 3
+
+- name: string query error
+  args:
+    - '"\u````"'
+  input: 'null'
+  error: |
+    invalid query: "\u````"
+        "\u````"
+         ^  invalid escape sequence "\u" in string literal
+  exit_code: 3
+
+- name: string query error
+  args:
+    - '"\uAA\uAA"'
+  input: 'null'
+  error: |
+    invalid query: "\uAA\uAA"
+        "\uAA\uAA"
+         ^  invalid escape sequence "\uAA" in string literal
+  exit_code: 3
+
+- name: string query error
+  args:
+    - '"\uAA@AA"'
+  input: 'null'
+  error: |
+    invalid query: "\uAA@AA"
+        "\uAA@AA"
+         ^  invalid escape sequence "\uAA" in string literal
+  exit_code: 3
+
+- name: string query error
+  args:
+    - '"\uAAGA"'
+  input: 'null'
+  error: |
+    invalid query: "\uAAGA"
+        "\uAAGA"
+         ^  invalid escape sequence "\uAAG" in string literal
+  exit_code: 3
+
+- name: string query error
+  args:
+    - '"\ufffg"'
+  input: 'null'
+  error: |
+    invalid query: "\ufffg"
+        "\ufffg"
+         ^  invalid escape sequence "\ufffg" in string literal
+  exit_code: 3
+
+- name: string query error
+  args:
+    - '"0\u00:00"'
+  input: 'null'
+  error: |
+    invalid query: "0\u00:00"
+        "0\u00:00"
+          ^  invalid escape sequence "\u00" in string literal
+  exit_code: 3
+
+- name: string query error
+  args:
+    - '"0\u0000\u000/0"'
+  input: 'null'
+  error: |
+    invalid query: "0\u0000\u000/0"
+        "0\u0000\u000/0"
+                ^  invalid escape sequence "\u000" in string literal
   exit_code: 3
 
 - name: string query error
   args:
     - '"\(1) \x "'
-  input: '0'
+  input: 'null'
   error: |
     invalid query: "\(1) \x "
         "\(1) \x "
-             ^  invalid token " \x "
+              ^  invalid escape sequence "\x" in string literal
   exit_code: 3
 
 - name: string query error
   args:
     - '"\a"'
-  input: '0'
+  input: 'null'
   error: |
     invalid query: "\a"
         "\a"
-        ^  invalid token "\a"
+         ^  invalid escape sequence "\a" in string literal
   exit_code: 3
 
 - name: object input
@@ -6583,6 +6683,16 @@
     invalid query: foo☆
         foo☆
            ^  unexpected token "☆"
+  exit_code: 3
+
+- name: invalid query
+  args:
+    - "\\/"
+  input: '{}'
+  error: |
+    invalid query: \/
+        \/
+        ^  unexpected token "\\"
   exit_code: 3
 
 - name: invalid query

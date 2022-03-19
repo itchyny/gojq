@@ -397,6 +397,16 @@ func (l *lexer) scanString(start int) (int, string) {
 			buf = quoteAndEscape(src, quote, controls, newlines)
 		}
 		if err := json.Unmarshal(buf, &src); err != nil {
+			if err, ok := err.(*json.SyntaxError); ok &&
+				strings.Contains(err.Error(), "escape") {
+				if i := strings.LastIndexByte(src[:err.Offset-1], '\\'); i > 0 {
+					if int(err.Offset) > i+2 && !isIdent(src[err.Offset-1], true) {
+						err.Offset--
+					}
+					l.token = src[i:err.Offset]
+					l.offset += int(err.Offset) - len(src)
+				}
+			}
 			return "", err
 		}
 		return src, nil
@@ -456,23 +466,22 @@ func (l *lexer) scanString(start int) (int, string) {
 				l.inString = true
 				return tokStringStart, ""
 			}
-		default:
+		case 'b', 'f', 'n', 'r', 't', 'u', '/':
 			if quote {
-				if !('a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' ||
-					'0' <= ch && ch <= '9' || ch == '"' || ch == '/') {
-					l.offset = i + 1
-					l.token = l.source[l.offset-2 : l.offset]
-					return tokInvalid, ""
-				}
 				quote = false
 				decode = true
-			} else {
-				if !decode {
-					decode = ch > '~'
-				}
-				if ch < ' ' { // ref: unquoteBytes in encoding/json
-					controls++
-				}
+			}
+		default:
+			if quote {
+				l.offset = i + 1
+				l.token = l.source[l.offset-2 : l.offset]
+				return tokInvalid, ""
+			}
+			if !decode {
+				decode = ch > '~'
+			}
+			if ch < ' ' { // ref: unquoteBytes in encoding/json
+				controls++
 			}
 		}
 	}
@@ -527,10 +536,12 @@ func (err *parseError) Error() string {
 		prefix = "invalid"
 		fallthrough
 	case err.tokenType >= utf8.RuneSelf:
-		if strings.HasPrefix(err.token, "\"") {
+		if strings.HasPrefix(err.token, `"`) {
 			message = err.token
+		} else if len(err.token) >= 2 && err.token[0] == '\\' {
+			return `invalid escape sequence "` + err.token + `" in string literal`
 		} else {
-			message = "\"" + err.token + "\""
+			message = `"` + err.token + `"`
 		}
 	default:
 		message = jsonMarshal(string(rune(err.tokenType)))
