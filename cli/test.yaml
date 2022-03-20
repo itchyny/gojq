@@ -91,7 +91,7 @@
   error: |
     invalid query: . + "foo
         . + "foo
-            ^  invalid token "foo
+                ^  unterminated string literal
   exit_code: 3
 
 - name: string query error
@@ -141,7 +141,7 @@
   error: |
     invalid query: "\
         "\
-        ^  invalid token "\
+          ^  unterminated string literal
   exit_code: 3
 
 - name: string query error
@@ -151,7 +151,7 @@
   error: |
     invalid query: "\"
         "\"
-        ^  invalid token "\"
+           ^  unterminated string literal
   exit_code: 3
 
 - name: string query error

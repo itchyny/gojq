@@ -2,7 +2,6 @@ package gojq
 
 import (
 	"encoding/json"
-	"strings"
 	"unicode/utf8"
 )
 
@@ -414,7 +413,7 @@ func (l *lexer) scanString(start int) (int, string) {
 					if i+j >= len(l.source) || !isHex(l.source[i+j]) {
 						l.offset = i + j
 						l.token = l.source[i-1 : l.offset]
-						return tokInvalid, ""
+						return tokInvalidEscape, ""
 					}
 				}
 				i += 4
@@ -441,7 +440,7 @@ func (l *lexer) scanString(start int) (int, string) {
 			default:
 				l.offset = i + 1
 				l.token = l.source[l.offset-2 : l.offset]
-				return tokInvalid, ""
+				return tokInvalidEscape, ""
 			}
 		case '\n':
 			newlines++
@@ -478,7 +477,7 @@ func (l *lexer) scanString(start int) (int, string) {
 	}
 	l.offset = len(l.source)
 	l.token = l.source[start:l.offset]
-	return tokInvalid, ""
+	return tokUnterminatedString, ""
 }
 
 func quoteAndEscape(src string, quote bool, controls, newlines int) []byte {
@@ -518,26 +517,24 @@ type parseError struct {
 }
 
 func (err *parseError) Error() string {
-	var message string
-	prefix := "unexpected"
-	switch {
-	case err.tokenType == eof:
-		message = "<EOF>"
-	case err.tokenType == tokInvalid:
-		prefix = "invalid"
-		fallthrough
-	case err.tokenType >= utf8.RuneSelf:
-		if strings.HasPrefix(err.token, `"`) {
-			message = err.token
-		} else if len(err.token) >= 2 && err.token[0] == '\\' {
-			return `invalid escape sequence "` + err.token + `" in string literal`
-		} else {
-			message = `"` + err.token + `"`
-		}
+	switch err.tokenType {
+	case eof:
+		return "unexpected token <EOF>"
+	case tokInvalid:
+		return "invalid token " + jsonMarshal(err.token)
+	case tokInvalidEscape:
+		return `invalid escape sequence "` + err.token + `" in string literal`
+	case tokUnterminatedString:
+		return "unterminated string literal"
 	default:
-		message = jsonMarshal(string(rune(err.tokenType)))
+		var message string
+		if err.tokenType >= utf8.RuneSelf {
+			message = jsonMarshal(err.token)
+		} else {
+			message = jsonMarshal(string(rune(err.tokenType)))
+		}
+		return "unexpected token " + message
 	}
-	return prefix + " token " + message
 }
 
 func (err *parseError) Token() (string, int) {
@@ -547,7 +544,7 @@ func (err *parseError) Token() (string, int) {
 func (l *lexer) Error(string) {
 	offset, token := l.offset, l.token
 	switch {
-	case l.tokenType == eof:
+	case l.tokenType == eof || l.tokenType == tokUnterminatedString:
 		offset++
 	case l.tokenType >= utf8.RuneSelf:
 		offset -= len(token) - 1
