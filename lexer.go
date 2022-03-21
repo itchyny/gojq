@@ -381,7 +381,7 @@ func (l *lexer) validNumber() bool {
 
 func (l *lexer) scanString(start int) (int, string) {
 	var decode bool
-	var controls, newlines int
+	var controls int
 	unquote := func(src string, quote bool) (string, error) {
 		if !decode {
 			if quote {
@@ -390,10 +390,10 @@ func (l *lexer) scanString(start int) (int, string) {
 			return src[1 : len(src)-1], nil
 		}
 		var buf []byte
-		if !quote && controls == 0 && newlines == 0 {
+		if !quote && controls == 0 {
 			buf = []byte(src)
 		} else {
-			buf = quoteAndEscape(src, quote, controls, newlines)
+			buf = quoteAndEscape(src, quote, controls)
 		}
 		if err := json.Unmarshal(buf, &src); err != nil {
 			return "", err
@@ -442,8 +442,6 @@ func (l *lexer) scanString(start int) (int, string) {
 				l.token = l.source[l.offset-2 : l.offset]
 				return tokInvalidEscape, ""
 			}
-		case '\n':
-			newlines++
 		case '"':
 			if !l.inString {
 				l.offset = i + 1
@@ -480,8 +478,8 @@ func (l *lexer) scanString(start int) (int, string) {
 	return tokUnterminatedString, ""
 }
 
-func quoteAndEscape(src string, quote bool, controls, newlines int) []byte {
-	size := len(src) + controls*5 + newlines
+func quoteAndEscape(src string, quote bool, controls int) []byte {
+	size := len(src) + controls*5
 	if quote {
 		size += 2
 	}
@@ -493,10 +491,7 @@ func quoteAndEscape(src string, quote bool, controls, newlines int) []byte {
 		j++
 	}
 	for i := 0; i < len(src); i++ {
-		if ch := src[i]; ch == '\n' {
-			copy(buf[j:], `\n`)
-			j += 2
-		} else if ch < ' ' {
+		if ch := src[i]; ch < ' ' {
 			const hex = "0123456789abcdef"
 			copy(buf[j:], `\u00`)
 			buf[j+4] = hex[ch>>4]

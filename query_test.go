@@ -137,7 +137,8 @@ func TestQueryRun_InvalidPathError(t *testing.T) {
 
 func TestQueryRun_Strings(t *testing.T) {
 	query, err := gojq.Parse(
-		"[\"\x00\\\\\", \"\x1f\\\"\", \"\n\\n\n\\(\"\\n\")\n\\n\", \"\\/\", \"\x7f\", \"\x80\", \"\\ud83d\\ude04\" | explode[]]",
+		"[\"\x00\\\\\", \"\x1f\\\"\", \"\n\\n\n\\(\"\\n\")\n\\n\", " +
+			"\"\\/\", \"\x7f\", \"\x80\", \"\\ud83d\\ude04\" | explode[]]",
 	)
 	if err != nil {
 		t.Fatal(err)
