@@ -93,10 +93,14 @@ func init() {
 		"_lesseq":        argFunc2(funcOpLe),
 		"_flatten":       argFunc1(funcFlatten),
 		"_range":         {argcount3, true, funcRange},
+		"min":            argFunc0(funcMin),
 		"_min_by":        argFunc1(funcMinBy),
+		"max":            argFunc0(funcMax),
 		"_max_by":        argFunc1(funcMaxBy),
+		"sort":           argFunc0(funcSort),
 		"_sort_by":       argFunc1(funcSortBy),
 		"_group_by":      argFunc1(funcGroupBy),
+		"unique":         argFunc0(funcUnique),
 		"_unique_by":     argFunc1(funcUniqueBy),
 		"_join":          argFunc1(funcJoin),
 		"sin":            mathFunc("sin", math.Sin),
@@ -1063,14 +1067,22 @@ func funcRange(_ interface{}, xs []interface{}) interface{} {
 	return &rangeIter{xs[0], xs[1], xs[2]}
 }
 
+func funcMin(v interface{}) interface{} {
+	vs, ok := v.([]interface{})
+	if !ok {
+		return &funcTypeError{"min", v}
+	}
+	return funcMinMaxBy(vs, vs, true)
+}
+
 func funcMinBy(v, x interface{}) interface{} {
 	vs, ok := v.([]interface{})
 	if !ok {
-		return &expectedArrayError{v}
+		return &funcTypeError{"min_by", v}
 	}
 	xs, ok := x.([]interface{})
 	if !ok {
-		return &expectedArrayError{x}
+		return &funcTypeError{"min_by", x}
 	}
 	if len(vs) != len(xs) {
 		return &lengthMismatchError{"min_by", vs, xs}
@@ -1078,14 +1090,22 @@ func funcMinBy(v, x interface{}) interface{} {
 	return funcMinMaxBy(vs, xs, true)
 }
 
+func funcMax(v interface{}) interface{} {
+	vs, ok := v.([]interface{})
+	if !ok {
+		return &funcTypeError{"max", v}
+	}
+	return funcMinMaxBy(vs, vs, false)
+}
+
 func funcMaxBy(v, x interface{}) interface{} {
 	vs, ok := v.([]interface{})
 	if !ok {
-		return &expectedArrayError{v}
+		return &funcTypeError{"max_by", v}
 	}
 	xs, ok := x.([]interface{})
 	if !ok {
-		return &expectedArrayError{x}
+		return &funcTypeError{"max_by", x}
 	}
 	if len(vs) != len(xs) {
 		return &lengthMismatchError{"max_by", vs, xs}
@@ -1099,7 +1119,7 @@ func funcMinMaxBy(vs, xs []interface{}, isMin bool) interface{} {
 	}
 	i, j, x := 0, 0, xs[0]
 	for i++; i < len(xs); i++ {
-		if (compare(x, xs[i]) > 0) == isMin {
+		if compare(x, xs[i]) > 0 == isMin {
 			j, x = i, xs[i]
 		}
 	}
@@ -1113,11 +1133,11 @@ type sortItem struct {
 func sortItems(name string, v, x interface{}) ([]*sortItem, error) {
 	vs, ok := v.([]interface{})
 	if !ok {
-		return nil, &expectedArrayError{v}
+		return nil, &funcTypeError{name, v}
 	}
 	xs, ok := x.([]interface{})
 	if !ok {
-		return nil, &expectedArrayError{x}
+		return nil, &funcTypeError{name, x}
 	}
 	if len(vs) != len(xs) {
 		return nil, &lengthMismatchError{name, vs, xs}
@@ -1132,8 +1152,16 @@ func sortItems(name string, v, x interface{}) ([]*sortItem, error) {
 	return items, nil
 }
 
+func funcSort(v interface{}) interface{} {
+	return sortBy("sort", v, v)
+}
+
 func funcSortBy(v, x interface{}) interface{} {
-	items, err := sortItems("sort_by", v, x)
+	return sortBy("sort_by", v, x)
+}
+
+func sortBy(name string, v, x interface{}) interface{} {
+	items, err := sortItems(name, v, x)
 	if err != nil {
 		return err
 	}
@@ -1161,8 +1189,16 @@ func funcGroupBy(v, x interface{}) interface{} {
 	return rs
 }
 
+func funcUnique(v interface{}) interface{} {
+	return uniqueBy("unique", v, v)
+}
+
 func funcUniqueBy(v, x interface{}) interface{} {
-	items, err := sortItems("unique_by", v, x)
+	return uniqueBy("unique_by", v, x)
+}
+
+func uniqueBy(name string, v, x interface{}) interface{} {
+	items, err := sortItems(name, v, x)
 	if err != nil {
 		return err
 	}

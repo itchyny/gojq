@@ -1409,6 +1409,16 @@
     ["apple","banana","cat","dog","hello","world"]
     ["cat","hello","banana"]
 
+- name: min, max, sort, unique functions error
+  args:
+    - 'try min catch ., try max catch ., try sort catch ., try unique catch .'
+  input: '0'
+  expected: |
+    "min cannot be applied to: number (0)"
+    "max cannot be applied to: number (0)"
+    "sort cannot be applied to: number (0)"
+    "unique cannot be applied to: number (0)"
+
 - name: arrays, objects, iterables, booleans, numbers, strings, nulls, values, scalars functions
   args:
     - -c

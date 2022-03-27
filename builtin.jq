@@ -25,14 +25,10 @@ def flatten($x):
   then error("flatten depth must not be negative")
   else if type != "array" then [.[]] end | _flatten($x) end;
 def flatten: if type != "array" then [.[]] end | _flatten(-1);
-def min: min_by(.);
 def min_by(f): _min_by(map([f]));
-def max: max_by(.);
 def max_by(f): _max_by(map([f]));
-def sort: sort_by(.);
 def sort_by(f): _sort_by(map([f]));
 def group_by(f): _group_by(map([f]));
-def unique: unique_by(.);
 def unique_by(f): _unique_by(map([f]));
 
 def arrays: select(type == "array");
