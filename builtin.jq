@@ -45,15 +45,6 @@ def scalars: select(type | . != "array" and . != "object");
 def leaf_paths: paths(scalars);
 
 def inside(xs): . as $x | xs | contains($x);
-def ltrimstr($x):
-  if type == "string" and ($x|type == "string") and startswith($x) then
-    .[$x | length:]
-  end;
-def rtrimstr($x):
-  if type == "string" and ($x|type == "string") and endswith($x) then
-    .[:- ($x | length)]
-  end;
-
 def combinations:
   if length == 0 then
     []

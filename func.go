@@ -64,6 +64,8 @@ func init() {
 		"rindex":         argFunc1(funcRindex),
 		"startswith":     argFunc1(funcStartsWith),
 		"endswith":       argFunc1(funcEndsWith),
+		"ltrimstr":       argFunc1(funcLtrimstr),
+		"rtrimstr":       argFunc1(funcRtrimstr),
 		"explode":        argFunc0(funcExplode),
 		"implode":        argFunc0(funcImplode),
 		"split":          {argcount1 | argcount2, false, funcSplit},
@@ -662,6 +664,30 @@ func funcEndsWith(v, x interface{}) interface{} {
 		return &funcTypeError{"endswith", x}
 	}
 	return strings.HasSuffix(s, t)
+}
+
+func funcLtrimstr(v, x interface{}) interface{} {
+	s, ok := v.(string)
+	if !ok {
+		return v
+	}
+	t, ok := x.(string)
+	if !ok {
+		return v
+	}
+	return strings.TrimPrefix(s, t)
+}
+
+func funcRtrimstr(v, x interface{}) interface{} {
+	s, ok := v.(string)
+	if !ok {
+		return v
+	}
+	t, ok := x.(string)
+	if !ok {
+		return v
+	}
+	return strings.TrimSuffix(s, t)
 }
 
 func funcExplode(v interface{}) interface{} {
