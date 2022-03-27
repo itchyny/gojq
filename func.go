@@ -62,6 +62,8 @@ func init() {
 		"indices":        argFunc1(funcIndices),
 		"index":          argFunc1(funcIndex),
 		"rindex":         argFunc1(funcRindex),
+		"startswith":     argFunc1(funcStartsWith),
+		"endswith":       argFunc1(funcEndsWith),
 		"explode":        argFunc0(funcExplode),
 		"implode":        argFunc0(funcImplode),
 		"split":          {argcount1 | argcount2, false, funcSplit},
@@ -637,6 +639,30 @@ func indexFunc(v, x interface{}, f func(_, _ []interface{}) interface{}) interfa
 	default:
 		return &expectedArrayError{v}
 	}
+}
+
+func funcStartsWith(v, x interface{}) interface{} {
+	s, ok := v.(string)
+	if !ok {
+		return &funcTypeError{"startswith", v}
+	}
+	t, ok := x.(string)
+	if !ok {
+		return &funcTypeError{"startswith", x}
+	}
+	return strings.HasPrefix(s, t)
+}
+
+func funcEndsWith(v, x interface{}) interface{} {
+	s, ok := v.(string)
+	if !ok {
+		return &funcTypeError{"endswith", v}
+	}
+	t, ok := x.(string)
+	if !ok {
+		return &funcTypeError{"endswith", x}
+	}
+	return strings.HasSuffix(s, t)
 }
 
 func funcExplode(v interface{}) interface{} {
