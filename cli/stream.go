@@ -1,6 +1,9 @@
 package cli
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"io"
+)
 
 type jsonStream struct {
 	dec    *json.Decoder
@@ -44,6 +47,9 @@ func (s *jsonStream) next() (interface{}, error) {
 	for {
 		token, err := s.dec.Token()
 		if err != nil {
+			if err == io.EOF && s.states[len(s.states)-1] != jsonStateTopValue {
+				err = io.ErrUnexpectedEOF
+			}
 			return nil, err
 		}
 		if d, ok := token.(json.Delim); ok {

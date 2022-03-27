@@ -6303,6 +6303,13 @@
     [["z",0]]
     [["z"]]
 
+- name: stream option with empty input
+  args:
+    - --stream
+    - '.'
+  input: ''
+  expected: ''
+
 - name: stream option with null input option
   args:
     - -n
@@ -6340,6 +6347,19 @@
     [["b"]]
     [["c"],3]
     [["c"]]
+
+- name: stream option with unterminated input
+  args:
+    - -c
+    - --stream
+    - '.'
+  input: '{"a":1,'
+  expected: |
+    [["a"],1]
+  error: |
+    invalid json: <stdin>
+        {"a":1,
+               ^  unexpected EOF
 
 - name: yaml input option
   args:
