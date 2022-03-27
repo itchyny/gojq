@@ -1072,7 +1072,7 @@ func funcMin(v interface{}) interface{} {
 	if !ok {
 		return &funcTypeError{"min", v}
 	}
-	return funcMinMaxBy(vs, vs, true)
+	return minMaxBy(vs, vs, true)
 }
 
 func funcMinBy(v, x interface{}) interface{} {
@@ -1087,7 +1087,7 @@ func funcMinBy(v, x interface{}) interface{} {
 	if len(vs) != len(xs) {
 		return &lengthMismatchError{"min_by", vs, xs}
 	}
-	return funcMinMaxBy(vs, xs, true)
+	return minMaxBy(vs, xs, true)
 }
 
 func funcMax(v interface{}) interface{} {
@@ -1095,7 +1095,7 @@ func funcMax(v interface{}) interface{} {
 	if !ok {
 		return &funcTypeError{"max", v}
 	}
-	return funcMinMaxBy(vs, vs, false)
+	return minMaxBy(vs, vs, false)
 }
 
 func funcMaxBy(v, x interface{}) interface{} {
@@ -1110,10 +1110,10 @@ func funcMaxBy(v, x interface{}) interface{} {
 	if len(vs) != len(xs) {
 		return &lengthMismatchError{"max_by", vs, xs}
 	}
-	return funcMinMaxBy(vs, xs, false)
+	return minMaxBy(vs, xs, false)
 }
 
-func funcMinMaxBy(vs, xs []interface{}, isMin bool) interface{} {
+func minMaxBy(vs, xs []interface{}, isMin bool) interface{} {
 	if len(vs) == 0 {
 		return nil
 	}
