@@ -3,6 +3,7 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -105,8 +106,8 @@ type jsonParseError struct {
 func (err *jsonParseError) Error() string {
 	var prefix, linestr string
 	var line, col int
-	fname, errmsg := err.fname, err.err.Error()
-	if errmsg == "unexpected EOF" {
+	fname := err.fname
+	if err.err == io.ErrUnexpectedEOF {
 		linestr = strings.TrimRight(err.contents, "\n\r")
 		if i := strings.LastIndexAny(linestr, "\n\r"); i >= 0 {
 			linestr = linestr[i:]
@@ -124,7 +125,7 @@ func (err *jsonParseError) Error() string {
 	}
 	return "invalid json: " + fname + "\n" +
 		"    " + prefix + linestr + "\n" +
-		"    " + strings.Repeat(" ", len(prefix)+col) + "^  " + errmsg
+		"    " + strings.Repeat(" ", len(prefix)+col) + "^  " + err.err.Error()
 }
 
 type yamlParseError struct {
