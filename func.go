@@ -189,7 +189,6 @@ func init() {
 		"error":          {argcount0 | argcount1, false, funcError},
 		"halt":           argFunc0(funcHalt),
 		"halt_error":     {argcount0 | argcount1, false, funcHaltError},
-		"_type_error":    argFunc1(internalfuncTypeError),
 	}
 }
 
@@ -1916,13 +1915,6 @@ func funcHaltError(v interface{}, args []interface{}) interface{} {
 		}
 	}
 	return &exitCodeError{v, code, true}
-}
-
-func internalfuncTypeError(v, x interface{}) interface{} {
-	if x, ok := x.(string); ok {
-		return &funcTypeError{x, v}
-	}
-	return &funcTypeError{"_type_error", v}
 }
 
 func toInt(x interface{}) (int, bool) {
