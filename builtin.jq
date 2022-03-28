@@ -71,7 +71,7 @@ def limit($n; g):
   if $n > 0 then
     label $out
       | foreach g as $item
-        ($n; .-1; $item, if . <= 0 then break $out else empty end)
+        ($n; . - 1; $item, if . <= 0 then break $out else empty end)
   elif $n == 0 then
     empty
   else
@@ -84,7 +84,7 @@ def nth($n; g):
   else
     label $out
       | foreach g as $item
-        ($n; .-1; . < 0 or empty | $item, break $out)
+        ($n + 1; . - 1; if . <= 0 then $item, break $out else empty end)
   end;
 
 def truncate_stream(f):
