@@ -20,11 +20,6 @@ def range($end): _range(0; $end; 1);
 def range($start; $end): _range($start; $end; 1);
 def range($start; $end; $step): _range($start; $end; $step);
 
-def flatten($x):
-  if $x < 0
-  then error("flatten depth must not be negative")
-  else if type != "array" then [.[]] end | _flatten($x) end;
-def flatten: if type != "array" then [.[]] end | _flatten(-1);
 def min_by(f): _min_by(map([f]));
 def max_by(f): _max_by(map([f]));
 def sort_by(f): _sort_by(map([f]));
@@ -53,8 +48,6 @@ def combinations:
   end;
 def combinations(n):
   . as $dot | [range(n) | $dot] | combinations;
-def join($x):
-  if type != "array" then [.[]] end | _join($x);
 def ascii_downcase:
   explode | map(if 65 <= . and . <= 90 then . + 32 end) | implode;
 def ascii_upcase:

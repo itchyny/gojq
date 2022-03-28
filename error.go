@@ -157,6 +157,22 @@ func (err *hasKeyTypeError) Error() string {
 	return "cannot check whether " + typeErrorPreview(err.l) + " has a key: " + typeErrorPreview(err.r)
 }
 
+type flattenDepthError struct {
+	v float64
+}
+
+func (err *flattenDepthError) Error() string {
+	return "flatten depth must not be negative: " + typeErrorPreview(err.v)
+}
+
+type joinTypeError struct {
+	v interface{}
+}
+
+func (err *joinTypeError) Error() string {
+	return "cannot join: " + typeErrorPreview(err.v)
+}
+
 type unaryTypeError struct {
 	name string
 	v    interface{}

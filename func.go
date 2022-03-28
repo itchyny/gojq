@@ -95,7 +95,7 @@ func init() {
 		"_less":          argFunc2(funcOpLt),
 		"_greatereq":     argFunc2(funcOpGe),
 		"_lesseq":        argFunc2(funcOpLe),
-		"_flatten":       argFunc1(funcFlatten),
+		"flatten":        {argcount0 | argcount1, false, funcFlatten},
 		"_range":         {argcount3, true, funcRange},
 		"min":            argFunc0(funcMin),
 		"_min_by":        argFunc1(funcMinBy),
@@ -106,7 +106,7 @@ func init() {
 		"_group_by":      argFunc1(funcGroupBy),
 		"unique":         argFunc0(funcUnique),
 		"_unique_by":     argFunc1(funcUniqueBy),
-		"_join":          argFunc1(funcJoin),
+		"join":           argFunc1(funcJoin),
 		"sin":            mathFunc("sin", math.Sin),
 		"cos":            mathFunc("cos", math.Cos),
 		"tan":            mathFunc("tan", math.Tan),
@@ -334,6 +334,21 @@ func keys(v map[string]interface{}) []string {
 	return w
 }
 
+func values(v interface{}) ([]interface{}, bool) {
+	switch v := v.(type) {
+	case []interface{}:
+		return v, true
+	case map[string]interface{}:
+		vs := make([]interface{}, len(v))
+		for i, k := range keys(v) {
+			vs[i] = v[k]
+		}
+		return vs, true
+	default:
+		return nil, false
+	}
+}
+
 func funcHas(v, x interface{}) interface{} {
 	switch v := v.(type) {
 	case []interface{}:
@@ -414,14 +429,7 @@ func funcFromEntries(v interface{}) interface{} {
 }
 
 func funcAdd(v interface{}) interface{} {
-	if w, ok := v.(map[string]interface{}); ok {
-		xs := make([]interface{}, len(w))
-		for i, k := range keys(w) {
-			xs[i] = w[k]
-		}
-		v = xs
-	}
-	vs, ok := v.([]interface{})
+	vs, ok := values(v)
 	if !ok {
 		return &funcTypeError{"add", v}
 	}
@@ -1071,14 +1079,22 @@ func toIndex(a []interface{}, i int) int {
 	}
 }
 
-func funcFlatten(v, x interface{}) interface{} {
-	vs, ok := v.([]interface{})
+func funcFlatten(v interface{}, args []interface{}) interface{} {
+	vs, ok := values(v)
 	if !ok {
-		return &expectedArrayError{v}
+		return &funcTypeError{"flatten", v}
 	}
-	depth, ok := toFloat(x)
-	if !ok {
-		return &funcTypeError{"flatten", x}
+	var depth float64
+	if len(args) == 0 {
+		depth = -1
+	} else {
+		depth, ok = toFloat(args[0])
+		if !ok {
+			return &funcTypeError{"flatten", args[0]}
+		}
+		if depth < 0 {
+			return &flattenDepthError{depth}
+		}
 	}
 	return flatten(nil, vs, depth)
 }
@@ -1264,9 +1280,9 @@ func uniqueBy(name string, v, x interface{}) interface{} {
 }
 
 func funcJoin(v, x interface{}) interface{} {
-	vs, ok := v.([]interface{})
+	vs, ok := values(v)
 	if !ok {
-		return &expectedArrayError{v}
+		return &funcTypeError{"join", v}
 	}
 	if len(vs) == 0 {
 		return ""
@@ -1290,7 +1306,7 @@ func funcJoin(v, x interface{}) interface{} {
 		case int, float64, *big.Int:
 			ss[i] = jsonMarshal(e)
 		default:
-			return &unaryTypeError{"join", e}
+			return &joinTypeError{e}
 		}
 	}
 	return strings.Join(ss, sep)

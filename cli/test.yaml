@@ -1348,6 +1348,16 @@
     [0,1,2,1,3,2]
     [1,2,3]
 
+- name: flatten/0 function error
+  args:
+    - 'flatten, flatten("")'
+  input: '0 [[]]'
+  expected: |
+    []
+  error: |
+    flatten cannot be applied to: number (0)
+    flatten cannot be applied to: string ("")
+
 - name: flatten/1 function
   args:
     - -c
@@ -1370,6 +1380,13 @@
     [[1],[[2]],[[[3]]]]
     [1,2,3]
     [1,2,[3]]
+
+- name: flatten/1 function depth error
+  args:
+    - 'flatten(-1)'
+  input: '[]'
+  error: |
+    flatten depth must not be negative: number (-1)
 
 - name: min, min_by, max, max_by functions
   args:
@@ -2006,11 +2023,11 @@
     - '.[] | try join(",") catch .'
   input: '[null, false, true, 1, "a"]'
   expected: |
-    "cannot iterate over: null"
-    "cannot iterate over: boolean (false)"
-    "cannot iterate over: boolean (true)"
-    "cannot iterate over: number (1)"
-    "cannot iterate over: string (\"a\")"
+    "join cannot be applied to: null"
+    "join cannot be applied to: boolean (false)"
+    "join cannot be applied to: boolean (true)"
+    "join cannot be applied to: number (1)"
+    "join cannot be applied to: string (\"a\")"
 
 - name: join function non-string separator
   args:
