@@ -558,7 +558,9 @@ func funcContains(v, x interface{}) interface{} {
 			}
 			return true
 		},
-		func(l, r interface{}) interface{} { return &funcContainsError{l, r} },
+		func(l, r interface{}) interface{} {
+			return &containsTypeError{l, r}
+		},
 	)
 }
 

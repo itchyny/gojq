@@ -141,11 +141,11 @@ func (err *exitCodeError) IsHaltError() bool {
 	return err.halt
 }
 
-type funcContainsError struct {
+type containsTypeError struct {
 	l, r interface{}
 }
 
-func (err *funcContainsError) Error() string {
+func (err *containsTypeError) Error() string {
 	return "cannot check contains(" + previewValue(err.r) + "): " + typeErrorPreview(err.l)
 }
 
