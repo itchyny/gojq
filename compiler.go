@@ -1378,7 +1378,7 @@ func (c *compiler) compileCallInternal(
 	}
 	idx := c.newVariable()
 	c.append(&code{op: opstore, v: idx})
-	if indexing && len(args) > 1 {
+	if indexing {
 		c.append(&code{op: opexpbegin})
 	}
 	for i := len(args) - 1; i >= 0; i-- {
@@ -1426,7 +1426,11 @@ func (c *compiler) compileCallInternal(
 			}
 		}
 	}
-	c.append(&code{op: opload, v: idx})
+	if indexing {
+		c.append(&code{op: oppush, v: nil})
+	} else {
+		c.append(&code{op: opload, v: idx})
+	}
 	c.append(&code{op: opcall, v: fn})
 	return nil
 }
