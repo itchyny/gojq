@@ -3728,10 +3728,10 @@
 - name: first/1, last/1, nth functions
   args:
     - -c
-    - '[first(.[]), last(.[]), nth(0), nth(3), nth(0;.[]), nth(3;.[]), nth(5;.[]), nth(9; range(infinite))]'
+    - '[first(.[]), last(.[]), nth(0,3,5), nth(0,3,5;.[]), nth(9; range(infinite))]'
   input: '[1,2,3,4,5]'
   expected: |
-    [1,5,1,4,1,4,9]
+    [1,5,1,4,null,1,4,9]
 
 - name: first/1 function with optional operator
   args:
