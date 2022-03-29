@@ -4715,7 +4715,7 @@
 - name: path function nested
   args:
     - -c
-    - 'path(.a[path(.b)[0]])'
+    - 'path(.a[path(.b[.a:.b])[0]])'
   input: '{"a":{"b":0}}'
   expected: |
     ["a","b"]
