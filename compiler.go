@@ -574,7 +574,7 @@ func (c *compiler) compilePattern(vs [][2]int, p *Pattern) ([][2]int, error) {
 		for i, p := range p.Array {
 			c.append(&code{op: oppush, v: i})
 			c.append(&code{op: opload, v: v})
-			c.append(&code{op: opload, v: v})
+			c.append(&code{op: oppush, v: nil})
 			// ref: compileCall
 			c.append(&code{op: opcall, v: [3]interface{}{internalFuncs["_index"].callback, 2, "_index"}})
 			if vs, err = c.compilePattern(vs, p); err != nil {
@@ -608,7 +608,7 @@ func (c *compiler) compilePattern(vs [][2]int, p *Pattern) ([][2]int, error) {
 				}
 			}
 			c.append(&code{op: opload, v: v})
-			c.append(&code{op: opload, v: v})
+			c.append(&code{op: oppush, v: nil})
 			// ref: compileCall
 			c.append(&code{op: opcall, v: [3]interface{}{internalFuncs["_index"].callback, 2, "_index"}})
 			if name != "" {
@@ -1150,7 +1150,7 @@ func (c *compiler) compileObjectKeyVal(v [2]int, kv *ObjectKeyVal) error {
 		}
 		c.append(&code{op: opdup})
 		c.append(&code{op: opload, v: v})
-		c.append(&code{op: opload, v: v})
+		c.append(&code{op: oppush, v: nil})
 		// ref: compileCall
 		c.append(&code{op: opcall, v: [3]interface{}{internalFuncs["_index"].callback, 2, "_index"}})
 		return nil
