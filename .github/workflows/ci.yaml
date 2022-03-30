@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        go: [1.17.x, 1.16.x]
+        go: [1.18.x, 1.17.x, 1.16.x]
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -28,6 +28,7 @@ jobs:
       if: matrix.os != 'macos-latest'
     - name: Lint
       run: make lint
+      if: matrix.go >= '1.18.x'
     - name: Check tools
       run: make check-tools
     - name: Check go generate
