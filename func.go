@@ -504,19 +504,6 @@ func funcReverse(v interface{}) interface{} {
 }
 
 func funcContains(v, x interface{}) interface{} {
-	switch v := v.(type) {
-	case nil:
-		if x == nil {
-			return true
-		}
-	case bool:
-		switch x := x.(type) {
-		case bool:
-			if v == x {
-				return true
-			}
-		}
-	}
 	return binopTypeSwitch(v, x,
 		func(l, r int) interface{} { return l == r },
 		func(l, r float64) interface{} { return l == r },
@@ -554,6 +541,9 @@ func funcContains(v, x interface{}) interface{} {
 			return true
 		},
 		func(l, r interface{}) interface{} {
+			if l == r {
+				return true
+			}
 			return &containsTypeError{l, r}
 		},
 	)
