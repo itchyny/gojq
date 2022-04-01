@@ -307,26 +307,30 @@ func funcOpNegate(v interface{}) interface{} {
 }
 
 func funcOpAdd(_, l, r interface{}) interface{} {
-	if l == nil {
-		return r
-	} else if r == nil {
-		return l
-	}
 	return binopTypeSwitch(l, r,
 		func(l, r int) interface{} { return l + r },
 		func(l, r float64) interface{} { return l + r },
 		func(l, r *big.Int) interface{} { return new(big.Int).Add(l, r) },
 		func(l, r string) interface{} { return l + r },
 		func(l, r []interface{}) interface{} {
-			if len(r) == 0 {
-				return l
-			} else if len(l) == 0 {
+			if len(l) == 0 {
 				return r
 			}
-			v := make([]interface{}, 0, len(l)+len(r))
-			return append(append(v, l...), r...)
+			if len(r) == 0 {
+				return l
+			}
+			v := make([]interface{}, len(l)+len(r))
+			copy(v, l)
+			copy(v[len(l):], r)
+			return v
 		},
 		func(l, r map[string]interface{}) interface{} {
+			if len(l) == 0 {
+				return r
+			}
+			if len(r) == 0 {
+				return l
+			}
 			m := make(map[string]interface{}, len(l)+len(r))
 			for k, v := range l {
 				m[k] = v
@@ -336,7 +340,15 @@ func funcOpAdd(_, l, r interface{}) interface{} {
 			}
 			return m
 		},
-		func(l, r interface{}) interface{} { return &binopTypeError{"add", l, r} },
+		func(l, r interface{}) interface{} {
+			if l == nil {
+				return r
+			}
+			if r == nil {
+				return l
+			}
+			return &binopTypeError{"add", l, r}
+		},
 	)
 }
 
