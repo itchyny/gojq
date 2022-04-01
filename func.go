@@ -1568,9 +1568,7 @@ func funcGetpath(v, p interface{}) interface{} {
 	u := v
 	for _, x := range keys {
 		switch v.(type) {
-		case map[string]interface{}:
-		case []interface{}:
-		case nil:
+		case nil, map[string]interface{}, []interface{}:
 		default:
 			return &getpathError{u, p}
 		}
