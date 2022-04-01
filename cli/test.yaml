@@ -1328,6 +1328,19 @@
     "abc"
     [1,2,3,4]
 
+- name: add function with a variable
+  args:
+    - '. as $x | [$x, {y:1}] | add, $x'
+  input: '{"x":0}'
+  expected: |
+    {
+      "x": 0,
+      "y": 1
+    }
+    {
+      "x": 0
+    }
+
 - name: add function error
   args:
     - 'add'
