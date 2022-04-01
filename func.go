@@ -194,34 +194,34 @@ func init() {
 	}
 }
 
-func argFunc0(fn func(interface{}) interface{}) function {
+func argFunc0(f func(interface{}) interface{}) function {
 	return function{
 		argcount0, false, func(v interface{}, _ []interface{}) interface{} {
-			return fn(v)
+			return f(v)
 		},
 	}
 }
 
-func argFunc1(fn func(_, _ interface{}) interface{}) function {
+func argFunc1(f func(_, _ interface{}) interface{}) function {
 	return function{
 		argcount1, false, func(v interface{}, args []interface{}) interface{} {
-			return fn(v, args[0])
+			return f(v, args[0])
 		},
 	}
 }
 
-func argFunc2(fn func(_, _, _ interface{}) interface{}) function {
+func argFunc2(f func(_, _, _ interface{}) interface{}) function {
 	return function{
 		argcount2, false, func(v interface{}, args []interface{}) interface{} {
-			return fn(v, args[0], args[1])
+			return f(v, args[0], args[1])
 		},
 	}
 }
 
-func argFunc3(fn func(_, _, _, _ interface{}) interface{}) function {
+func argFunc3(f func(_, _, _, _ interface{}) interface{}) function {
 	return function{
 		argcount3, false, func(v interface{}, args []interface{}) interface{} {
-			return fn(v, args[0], args[1], args[2])
+			return f(v, args[0], args[1], args[2])
 		},
 	}
 }
