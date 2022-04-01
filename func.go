@@ -937,16 +937,10 @@ func funcIndex2(_, v, x interface{}) interface{} {
 		case []interface{}:
 			return index(i, v)
 		case string:
-			switch v := index(i, explode(v)).(type) {
-			case []interface{}:
-				return implode(v)
-			case int:
+			if v, ok := index(i, explode(v)).(int); ok {
 				return implode([]interface{}{v})
-			case nil:
-				return ""
-			default:
-				panic(v)
 			}
+			return ""
 		default:
 			return &expectedArrayError{v}
 		}
@@ -989,16 +983,8 @@ func funcSlice(_, v, e, s interface{}) (r interface{}) {
 	if s, ok := v.(string); ok {
 		v = explode(s)
 		defer func() {
-			switch s := r.(type) {
-			case []interface{}:
-				r = implode(s)
-			case int:
-				r = implode([]interface{}{s})
-			case nil:
-				r = ""
-			case error:
-			default:
-				panic(r)
+			if v, ok := r.([]interface{}); ok {
+				r = implode(v)
 			}
 		}()
 	}
