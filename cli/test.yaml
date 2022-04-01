@@ -2780,7 +2780,7 @@
     "111111101111111110000000010000000010000000010000000010000000010000000010000000010111111110111111110111111110111111110111"
     "111110111111110111111110"
 
-- name: comparison operators does not associate
+- name: comparison operators associativity error
   args:
     - '. == . == .'
   input: '1'
@@ -4616,7 +4616,7 @@
     {"foo":1}
     {"foo":2}
 
-- name: update operators does not associate
+- name: update operators associativity error
   args:
     - '. += 1 -= 2'
   input: '1'
