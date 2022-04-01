@@ -268,21 +268,21 @@
       "foo\\u0000\\t\\n\\r\\u001f !\"#$/09:;<>?@AZ[\\\\]^_`az{|}~\\u007f": "<\\t\\n\\r>"
     }
 
-- name: object index
+- name: object indexing
   args:
     - '.foo'
   input: '{"foo": 128}'
   expected: |
     128
 
-- name: object index with large number value
+- name: object indexing with large number value
   args:
     - '.foo'
   input: '{"foo": 4722366482869645213696}'
   expected: |
     4722366482869645213696
 
-- name: object index by keywords
+- name: object indexing by keywords
   args:
     - '.and,.or,.try'
   input: '{"and":1,"or":2,"try":3}'
@@ -291,14 +291,14 @@
     2
     3
 
-- name: object index by brackets
+- name: object indexing by brackets
   args:
     - '.["foo"]'
   input: '{"foo": 128}'
   expected: |
     128
 
-- name: object index by string
+- name: object indexing by string
   args:
     - '."2\(.foo[])3"'
   input: '{"foo":[1,2],"213":3,"223":6}'
@@ -306,21 +306,21 @@
     3
     6
 
-- name: object index by query
+- name: object indexing by query
   args:
     - '.c[.a + .b]'
   input: '{ "a": "b", "b": "c", "c": {"bc": 128} }'
   expected: |
     128
 
-- name: object nested index by query
+- name: object nested indexing by query
   args:
     - '.d[.a][.b][.c]'
   input: '{ "a": "b", "b": "c", "c": "d", "d": { "b": { "c": { "d": 128 } } } }'
   expected: |
     128
 
-- name: object index by iterator after iterator
+- name: object indexing by iterator after iterator
   args:
     - '.c[][.a[] + .b[]]'
   input: '{ "a": ["a", "b"], "b": ["c", "d"], "c": [{"ac": 1, "bc": 2, "ad": 3, "bd": 4}, {"ac": 5, "bc": 6, "ad": 7, "bd": 8}] }'
@@ -334,7 +334,7 @@
     4
     8
 
-- name: object index by string iterator after iterator
+- name: object indexing by string iterator after iterator
   args:
     - '.c[]."\(.a[])"'
   input: '{ "a": [0,1], "b": [0,2], "c": [{"0":1,"1":2},{"0":3,"1":4}] }'
@@ -344,7 +344,7 @@
     2
     4
 
-- name: object index in object value
+- name: object indexing in object value
   args:
     - '{ message: .[].message }'
   input: '[ {"message": "Hello, world" } ]'
@@ -353,28 +353,28 @@
       "message": "Hello, world"
     }
 
-- name: object index error
+- name: object indexing error
   args:
     - '.[.a + .b]'
   input: '{"a": 10, "b": 20}'
   error: |
     expected an array but got: object ({"a":10,"b":20})
 
-- name: object index value error
+- name: object indexing value error
   args:
     - '.["foo"]'
   input: '[]'
   error: |
     expected an object but got: array ([])
 
-- name: object index key error
+- name: object indexing key error
   args:
     - '.[null]'
   input: '{}'
   error: |
     expected a string for object key but got: null
 
-- name: object index syntax error
+- name: object indexing syntax error
   args:
     - '. a'
   input: '{}'
@@ -412,33 +412,33 @@
   error: |
     expected an object but got: number (128)
 
-- name: object index against null
+- name: object indexing against null
   args:
     - '.foo.bar.baz'
   input: 'null'
   expected: |
     null
 
-- name: object optional index
+- name: object optional indexing
   args:
     - '.foo?.bar?.baz?'
   input: '{"foo": 128}'
 
-- name: object optional index error
+- name: object optional indexing error
   args:
     - '.foo.bar.baz?'
   input: '{"foo": 128}'
   error: |
     expected an object but got: number (128)
 
-- name: object optional index after iterator error
+- name: object optional indexing after iterator error
   args:
     - '.[].foo?'
   input: '128'
   error: |
     cannot iterate over: number (128)
 
-- name: object optional index with optional operator
+- name: object optional indexing with optional operator
   args:
     - '.foo??, .'
   input: '0'
@@ -459,7 +459,7 @@
   error: |
     expected an object but got: number (1)
 
-- name: array index
+- name: array indexing
   args:
     - '.[-4,-3,-2,-1,0,1,2,3,nan]'
   input: '[0, 1, 2]'
@@ -474,7 +474,7 @@
     null
     null
 
-- name: array slice
+- name: array slicing
   args:
     - -c
     - '[.[-4,-3,-2,-1,0,1,2,3:]], [.[:-4,-3,-2,-1,0,1,2,3]], [.[-1,0,1,2,3:-1,0,1,2,3]]'
@@ -484,7 +484,7 @@
     [[],[],[0],[0,1],[],[0],[0,1],[0,1,2]]
     [[],[],[],[],[2],[0,1],[],[0],[0,1],[0,1,2],[1],[],[],[1],[1,2],[],[],[],[],[2],[],[],[],[],[]]
 
-- name: array index and slice by large number
+- name: array indexing and slicing by large number
   args:
     - -c
     - '.[1e300,-1e300], .[-1e300,1e300:], .[:-1e300,1e300], .[-1e300:1e300], .[1e300:-1e300]'
@@ -499,7 +499,7 @@
     [0,1,2]
     []
 
-- name: array index and slice by large integer
+- name: array indexing and slicing by large integer
   args:
     - -c
     - '. as $x | 4722366482869645213696 as $y | $x[$y,-$y], $x[-$y,$y:], $x[:-$y,$y], $x[-$y:$y], $x[$y-$y], $x[$y/$y]'
@@ -515,7 +515,7 @@
     0
     1
 
-- name: array index and slice by infinite
+- name: array indexing and slicing by infinite
   args:
     - -c
     - '.[infinite,-infinite], .[-infinite,infinite:], .[:-infinite,infinite], .[-infinite:infinite], .[infinite:-infinite]'
@@ -530,7 +530,7 @@
     [0,1,2]
     []
 
-- name: array and string slice by object
+- name: array and string slicing by object
   args:
     - -c
     - '[.[{"start": (null,range(-3;4)), "end": (null,range(-3;4))}]]'
@@ -539,28 +539,28 @@
     [[0,1,2],[],[0],[0,1],[],[0],[0,1],[0,1,2],[0,1,2],[],[0],[0,1],[],[0],[0,1],[0,1,2],[1,2],[],[],[1],[],[],[1],[1,2],[2],[],[],[],[],[],[],[2],[0,1,2],[],[0],[0,1],[],[0],[0,1],[0,1,2],[1,2],[],[],[1],[],[],[1],[1,2],[2],[],[],[],[],[],[],[2],[],[],[],[],[],[],[],[]]
     ["abcde","ab","abc","abcd","","a","ab","abc","cde","","c","cd","","","","c","de","","","d","","","","","e","","","","","","","","abcde","ab","abc","abcd","","a","ab","abc","bcde","b","bc","bcd","","","b","bc","cde","","c","cd","","","","c","de","","","d","","","",""]
 
-- name: array slice by object against null
+- name: array slicing by object against null
   args:
     - '.[{"start": 1, "end": 2}]'
   input: 'null'
   expected: |
     null
 
-- name: array slice by object error
+- name: array slicing by object error
   args:
     - '.[{"start": 1}]'
   input: '[]'
   error: |
     expected "start" and "end" for slicing but got: object ({"start":1})
 
-- name: array slice against string error
+- name: array slicing against string error
   args:
     - '""[:{}]'
   input: '0'
   error: |
     expected a number for indexing an array but got: object ({})
 
-- name: array nested index by iterator
+- name: array nested indexing by iterator
   args:
     - -c
     - '[.[.[]],.[.[]:],.[:.[]],.[.[]:.[]],.[-.[]],.[--.[]]]'
@@ -568,7 +568,7 @@
   expected: |
     [0,1,2,[0,1,2],[1,2],[2],[],[0],[0,1],[],[0],[0,1],[],[],[1],[],[],[],0,2,1,0,1,2]
 
-- name: array index by iterator
+- name: array indexing by iterator
   args:
     - '.c[][.a[] + .b[]]'
   input: '{ "a": [0,1], "b": [0,2], "c": [[1,2,3,4],[5,6,7,8]] }'
@@ -582,7 +582,7 @@
     4
     8
 
-- name: array slice by iterator
+- name: array slicing by iterator
   args:
     - -c
     - '.c[][.a[] : .b[]]'
@@ -604,21 +604,21 @@
   error: |
     expected an array but got: object ({"foo":128})
 
-- name: array index against null
+- name: array indexing against null
   args:
     - '.[0]'
   input: 'null'
   expected: |
     null
 
-- name: array slice against null
+- name: array slicing against null
   args:
     - '.[0:1]'
   input: 'null'
   expected: |
     null
 
-- name: array index by array
+- name: array indexing by array
   args:
     - -c
     - '.[[1],[5,7,9],[],5,[3]]'
@@ -630,28 +630,28 @@
     8
     [1,9]
 
-- name: array index not number error
+- name: array indexing not number error
   args:
     - '.[true]'
   input: '[]'
   error: |
     expected a number for indexing an array but got: boolean (true)
 
-- name: array slice start error
+- name: array slicing start error
   args:
     - '.["":]'
   input: '[]'
   error: |
     expected a number for indexing an array but got: string ("")
 
-- name: array slice end error
+- name: array slicing end error
   args:
     - '.[:{}]'
   input: '[]'
   error: |
     expected a number for indexing an array but got: object ({})
 
-- name: string index and slice
+- name: string indexing and slicing
   args:
     - -c
     - '[.[-5],.[-1],.[0],.[3],.[4],.[6],.[2:4],.[-4:-2]]'
@@ -707,7 +707,7 @@
     - '.[]?'
   input: '0'
 
-- name: iterator with optional operator after index error
+- name: iterator with optional operator after indexing error
   args:
     - '.x[]?'
   input: '0'
@@ -740,7 +740,7 @@
   expected: |
     128
 
-- name: object optional index after iterator
+- name: object optional indexing after iterator
   args:
     - '[.[].name?]'
   input: '[ 1, { "name": 2 }, 3, { "name": 4 } ]'
@@ -3041,7 +3041,7 @@
     error: 0
   exit_code: 5
 
-- name: try and index precedence
+- name: try and indexing precedence
   args:
     - 'try 0 .[error(0)]'
   input: 'null'
@@ -4402,7 +4402,7 @@
     {"bar":[1]}
     {"bar":[0],"foo":[0,1,4]}
 
-- name: del function with slice
+- name: del function with array slicing
   args:
     - -c
     - 'del(.[1], .[-6], .[2], .[-3:9])'
@@ -4426,7 +4426,7 @@
   expected: |
     [3,1,3]
 
-- name: assignment operator against array with slice
+- name: assignment operator against array with slicing
   args:
     - -c
     - '.[2:4] = ([], [0], [4,3,2]), .[1:-1] = [3,2], .[2:0] = [.[]], .[10:] = [1],
