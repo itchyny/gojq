@@ -4233,6 +4233,14 @@
 - name: setpath function error
   args:
     - -c
+    - 'setpath([-1]; 10)'
+  input: '[]'
+  error: |
+    setpath cannot be applied to: number (-1)
+
+- name: setpath function error
+  args:
+    - -c
     - 'setpath(["a","b","c"]; 10)'
   input: '{"a":{"b":[]}}'
   error: |
