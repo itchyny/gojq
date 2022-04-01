@@ -360,6 +360,20 @@
   error: |
     expected an array but got: object ({"a":10,"b":20})
 
+- name: object index value error
+  args:
+    - '.["foo"]'
+  input: '[]'
+  error: |
+    expected an object but got: array ([])
+
+- name: object index key error
+  args:
+    - '.[null]'
+  input: '{}'
+  error: |
+    expected a string for object key but got: null
+
 - name: object index syntax error
   args:
     - '. a'
@@ -616,12 +630,12 @@
     8
     [1,9]
 
-- name: array index error
+- name: array index not number error
   args:
-    - '.["foo"]'
+    - '.[true]'
   input: '[]'
   error: |
-    expected an object but got: array ([])
+    expected a number for indexing an array but got: boolean (true)
 
 - name: array slice start error
   args:

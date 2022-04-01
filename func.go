@@ -967,7 +967,12 @@ func funcIndex2(_, v, x interface{}) interface{} {
 		}
 		return funcSlice(nil, v, end, start)
 	default:
-		return &objectKeyNotStringError{x}
+		switch v.(type) {
+		case []interface{}:
+			return &arrayIndexNotNumberError{x}
+		default:
+			return &objectKeyNotStringError{x}
+		}
 	}
 }
 
