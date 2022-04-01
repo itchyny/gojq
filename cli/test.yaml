@@ -447,64 +447,73 @@
 
 - name: array index
   args:
-    - '.[-5], .[-1], .[0], .[2], .[3], .[4], .[nan]'
-  input: '[16, 32, 48, 64]'
+    - '.[-4,-3,-2,-1,0,1,2,3,nan]'
+  input: '[0, 1, 2]'
   expected: |
     null
-    64
-    16
-    48
-    64
+    0
+    1
+    2
+    0
+    1
+    2
     null
     null
 
 - name: array slice
   args:
     - -c
-    - '.[2:], .[:2], .[1:3], .[0:4], .[2:1], .[-2:], .[:-2], .[-2:-1], .[-10:], .[:10], .[10:], .[:-10]'
-  input: '[16, 32, 48, 64]'
+    - '[.[-4,-3,-2,-1,0,1,2,3:]], [.[:-4,-3,-2,-1,0,1,2,3]], [.[-1,0,1,2,3:-1,0,1,2,3]]'
+  input: '[0, 1, 2]'
   expected: |
-    [48,64]
-    [16,32]
-    [32,48]
-    [16,32,48,64]
-    []
-    [48,64]
-    [16,32]
-    [48]
-    [16,32,48,64]
-    [16,32,48,64]
-    []
-    []
+    [[0,1,2],[0,1,2],[1,2],[2],[0,1,2],[1,2],[2],[]]
+    [[],[],[0],[0,1],[],[0],[0,1],[0,1,2]]
+    [[],[],[],[],[2],[0,1],[],[0],[0,1],[0,1,2],[1],[],[],[1],[1,2],[],[],[],[],[2],[],[],[],[],[]]
 
 - name: array index and slice by large number
   args:
     - -c
-    - '.[1e300], .[-1e300], .[-1e300:], .[1e300:], .[:-1e300], .[:1e300], .[-1e300:1e300], .[1e300:-1e300]'
-  input: '[16, 32, 48, 64]'
+    - '.[1e300,-1e300], .[-1e300,1e300:], .[:-1e300,1e300], .[-1e300:1e300], .[1e300:-1e300]'
+  input: '[0, 1, 2]'
   expected: |
     null
     null
-    [16,32,48,64]
+    [0,1,2]
     []
     []
-    [16,32,48,64]
-    [16,32,48,64]
+    [0,1,2]
+    [0,1,2]
     []
+
+- name: array index and slice by large integer
+  args:
+    - -c
+    - '. as $x | 4722366482869645213696 as $y | $x[$y,-$y], $x[-$y,$y:], $x[:-$y,$y], $x[-$y:$y], $x[$y-$y], $x[$y/$y]'
+  input: '[0, 1, 2]'
+  expected: |
+    null
+    null
+    [0,1,2]
+    []
+    []
+    [0,1,2]
+    [0,1,2]
+    0
+    1
 
 - name: array index and slice by infinite
   args:
     - -c
-    - '.[infinite], .[-infinite], .[-infinite:], .[infinite:], .[:-infinite], .[:infinite], .[-infinite:infinite], .[infinite:-infinite]'
-  input: '[16, 32, 48, 64]'
+    - '.[infinite,-infinite], .[-infinite,infinite:], .[:-infinite,infinite], .[-infinite:infinite], .[infinite:-infinite]'
+  input: '[0, 1, 2]'
   expected: |
     null
     null
-    [16,32,48,64]
+    [0,1,2]
     []
     []
-    [16,32,48,64]
-    [16,32,48,64]
+    [0,1,2]
+    [0,1,2]
     []
 
 - name: array and string slice by object
@@ -536,20 +545,6 @@
   input: '0'
   error: |
     expected a number for indexing an array but got: object ({})
-
-- name: array index and slice by large integer
-  args:
-    - -c
-    - '. as $x | 4722366482869645213696 as $y | $x[-$y], $x[$y], $x[-$y:], $x[:$y], $x[-$y:$y], $x[$y-$y], $x[$y/$y]'
-  input: '[16, 32, 48, 64]'
-  expected: |
-    null
-    null
-    [16,32,48,64]
-    [16,32,48,64]
-    [16,32,48,64]
-    16
-    32
 
 - name: array nested index by iterator
   args:
@@ -628,7 +623,14 @@
   error: |
     expected an object but got: array ([])
 
-- name: array slice error
+- name: array slice start error
+  args:
+    - '.["":]'
+  input: '[]'
+  error: |
+    expected a number for indexing an array but got: string ("")
+
+- name: array slice end error
   args:
     - '.[:{}]'
   input: '[]'
