@@ -355,20 +355,15 @@ func funcHas(v, x interface{}) interface{} {
 		if x, ok := toInt(x); ok {
 			return 0 <= x && x < len(v)
 		}
-		return &hasKeyTypeError{v, x}
 	case map[string]interface{}:
-		switch x := x.(type) {
-		case string:
+		if x, ok := x.(string); ok {
 			_, ok := v[x]
 			return ok
-		default:
-			return &hasKeyTypeError{v, x}
 		}
 	case nil:
 		return false
-	default:
-		return &hasKeyTypeError{v, x}
 	}
+	return &hasKeyTypeError{v, x}
 }
 
 func funcToEntries(v interface{}) interface{} {
