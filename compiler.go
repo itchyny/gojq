@@ -1376,8 +1376,8 @@ func (c *compiler) compileCallInternal(
 		c.append(&code{op: opcall, v: fn})
 		return nil
 	}
-	idx := c.newVariable()
-	c.append(&code{op: opstore, v: idx})
+	v := c.newVariable()
+	c.append(&code{op: opstore, v: v})
 	if indexing {
 		c.append(&code{op: opexpbegin})
 	}
@@ -1391,7 +1391,7 @@ func (c *compiler) compileCallInternal(
 			switch len(c.codes) - pc {
 			case 2: // optimize identity argument (opscope, opret)
 				j := len(c.codes) - 3
-				c.codes[j] = &code{op: opload, v: idx}
+				c.codes[j] = &code{op: opload, v: v}
 				c.codes = c.codes[:j+1]
 				s := c.scopes[len(c.scopes)-1]
 				s.funcs = s.funcs[:len(s.funcs)-1]
@@ -1402,7 +1402,7 @@ func (c *compiler) compileCallInternal(
 					c.codes[j] = &code{op: oppush, v: c.codes[j+2].v}
 					c.codes = c.codes[:j+1]
 				} else {
-					c.codes[j] = &code{op: opload, v: idx}
+					c.codes[j] = &code{op: opload, v: v}
 					c.codes[j+1] = c.codes[j+2]
 					c.codes = c.codes[:j+2]
 				}
@@ -1410,7 +1410,7 @@ func (c *compiler) compileCallInternal(
 				s.funcs = s.funcs[:len(s.funcs)-1]
 				c.deleteCodeInfo(name)
 			default:
-				c.append(&code{op: opload, v: idx})
+				c.append(&code{op: opload, v: v})
 				c.append(&code{op: oppushpc, v: pc})
 				c.append(&code{op: opcallpc})
 			}
@@ -1429,7 +1429,7 @@ func (c *compiler) compileCallInternal(
 	if indexing {
 		c.append(&code{op: oppush, v: nil})
 	} else {
-		c.append(&code{op: opload, v: idx})
+		c.append(&code{op: opload, v: v})
 	}
 	c.append(&code{op: opcall, v: fn})
 	return nil
