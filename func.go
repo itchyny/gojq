@@ -695,7 +695,7 @@ func funcExplode(v interface{}) interface{} {
 }
 
 func explode(s string) []interface{} {
-	rs := []int32(s)
+	rs := []rune(s)
 	xs := make([]interface{}, len(rs))
 	for i, r := range rs {
 		xs[i] = int(r)
