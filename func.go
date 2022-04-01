@@ -930,14 +930,14 @@ func funcIndex2(_, v, x interface{}) interface{} {
 			return &expectedObjectError{v}
 		}
 	case int, float64, *big.Int:
-		idx, _ := toInt(x)
+		i, _ := toInt(x)
 		switch v := v.(type) {
 		case nil:
 			return nil
 		case []interface{}:
-			return funcIndexSlice(nil, nil, &idx, v)
+			return index(i, v)
 		case string:
-			switch v := funcIndexSlice(nil, nil, &idx, explode(v)).(type) {
+			switch v := index(i, explode(v)).(type) {
 			case []interface{}:
 				return implode(v)
 			case int:
@@ -977,9 +977,17 @@ func funcIndex2(_, v, x interface{}) interface{} {
 	}
 }
 
-func funcSlice(_, v, end, start interface{}) (r interface{}) {
-	if w, ok := v.(string); ok {
-		v = explode(w)
+func index(i int, vs []interface{}) interface{} {
+	i = clampIndex(i, -1, len(vs))
+	if 0 <= i && i < len(vs) {
+		return vs[i]
+	}
+	return nil
+}
+
+func funcSlice(_, v, e, s interface{}) (r interface{}) {
+	if s, ok := v.(string); ok {
+		v = explode(s)
 		defer func() {
 			switch s := r.(type) {
 			case []interface{}:
@@ -998,71 +1006,39 @@ func funcSlice(_, v, end, start interface{}) (r interface{}) {
 	case nil:
 		return nil
 	case []interface{}:
-		if start != nil {
-			if start, ok := toInt(start); ok {
-				if end != nil {
-					if end, ok := toInt(end); ok {
-						return funcIndexSlice(&start, &end, nil, v)
-					}
-					return &arrayIndexNotNumberError{end}
-				}
-				return funcIndexSlice(&start, nil, nil, v)
+		var start, end int
+		if s != nil {
+			if i, ok := toInt(s); ok {
+				start = clampIndex(i, 0, len(v))
+			} else {
+				return &arrayIndexNotNumberError{s}
 			}
-			return &arrayIndexNotNumberError{start}
 		}
-		if end != nil {
-			if end, ok := toInt(end); ok {
-				return funcIndexSlice(nil, &end, nil, v)
+		if e != nil {
+			if i, ok := toInt(e); ok {
+				end = clampIndex(i, start, len(v))
+			} else {
+				return &arrayIndexNotNumberError{e}
 			}
-			return &arrayIndexNotNumberError{end}
+		} else {
+			end = len(v)
 		}
-		return v
+		return v[start:end]
 	default:
 		return &expectedArrayError{v}
 	}
 }
 
-func funcIndexSlice(start, end, index *int, a []interface{}) interface{} {
-	aa := a
-	if index != nil {
-		i := toIndex(aa, *index)
-		if i < 0 {
-			return nil
-		}
-		return a[i]
+func clampIndex(i, min, max int) int {
+	if i < 0 {
+		i += max
 	}
-	if end != nil {
-		i := toIndex(aa, *end)
-		if i == -1 {
-			i = len(a)
-		} else if i == -2 {
-			i = 0
-		}
-		a = a[:i]
-	}
-	if start != nil {
-		i := toIndex(aa, *start)
-		if i == -1 || len(a) < i {
-			i = len(a)
-		} else if i == -2 {
-			i = 0
-		}
-		a = a[i:]
-	}
-	return a
-}
-
-func toIndex(a []interface{}, i int) int {
-	l := len(a)
-	switch {
-	case i < -l:
-		return -2
-	case i < 0:
-		return l + i
-	case i < l:
+	if i < min {
+		return min
+	} else if i < max {
 		return i
-	default:
-		return -1
+	} else {
+		return max
 	}
 }
 
@@ -1527,30 +1503,16 @@ func updatePaths(v interface{}, path []interface{}, w interface{}, delpaths bool
 		switch uu := v.(type) {
 		case []interface{}:
 			var start, end int
-			if x, ok := toInt(x["start"]); ok {
-				x := toIndex(uu, x)
-				if x > len(uu) || x == -1 {
-					start = len(uu)
-				} else if x == -2 {
-					start = 0
-				} else {
-					start = x
-				}
+			if i, ok := toInt(x["start"]); ok {
+				start = clampIndex(i, 0, len(uu))
 			}
-			if x, ok := toInt(x["end"]); ok {
-				x := toIndex(uu, x)
-				if x == -1 {
-					end = len(uu)
-				} else if x < start {
-					end = start
-				} else {
-					end = x
-				}
+			if i, ok := toInt(x["end"]); ok {
+				end = clampIndex(i, start, len(uu))
 			} else {
 				end = len(uu)
 			}
 			if delpaths {
-				if start >= end {
+				if start == end {
 					return uu, nil
 				}
 				if len(path) > 1 {
