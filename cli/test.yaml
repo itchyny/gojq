@@ -6876,19 +6876,28 @@
     expected argument for flag `-f'
   exit_code: 2
 
-- name: invalid json eof
+- name: invalid json unexpected eof error
   input: '{'
   error: |
     invalid json: <stdin>
         {
          ^  unexpected EOF
 
-- name: invalid json eof with multibyte characters
+- name: invalid json unexpected eof error with multibyte characters
   input: '{ "１２３４５":'
   error: |
     invalid json: <stdin>
         { "１２３４５":
                        ^  unexpected EOF
+
+- name: invalid json unexpected eof error with multiple lines
+  input: |
+    [0
+    ,[
+  error: |
+    invalid json: <stdin>:2
+        2 | ,[
+              ^  unexpected EOF
 
 - name: invalid json invalid character with multibyte characters
   input: |

@@ -109,19 +109,19 @@ func (err *jsonParseError) Error() string {
 	fname := err.fname
 	if err.err == io.ErrUnexpectedEOF {
 		linestr = strings.TrimRight(err.contents, "\n\r")
-		if i := strings.LastIndexAny(linestr, "\n\r"); i >= 0 {
-			linestr = linestr[i:]
+		if i := strings.LastIndexByte(linestr, '\n'); i >= 0 {
+			line = strings.Count(linestr[:i+1], "\n") + 1
+			linestr = linestr[i+1:]
 		}
 		col = runewidth.StringWidth(linestr)
 	} else if er, ok := err.err.(*json.SyntaxError); ok {
 		linestr, line, col = getLineByOffset(
 			trimLastInvalidRune(err.contents), int(er.Offset),
 		)
-		if i := strings.IndexAny(err.contents, "\n\r"); i >= 0 && i < len(err.contents)-1 {
-			line += err.line
-			fname += ":" + strconv.Itoa(line)
-			prefix = strconv.Itoa(line) + " | "
-		}
+	}
+	if line += err.line; line > 1 {
+		fname += ":" + strconv.Itoa(line)
+		prefix = strconv.Itoa(line) + " | "
 	}
 	return "invalid json: " + fname + "\n" +
 		"    " + prefix + linestr + "\n" +
