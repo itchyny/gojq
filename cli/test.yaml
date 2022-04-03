@@ -6978,7 +6978,7 @@
     - 'testdata/8.json'
   error: |
     invalid json: testdata/8.json
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ,, 1, 1, 1, 1, 1, 1, 
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, , 1, 1, 1, 1, 1, 1, 1
                                                    ^  invalid character ',' looking for beginning of value
 
 - name: json file error json
