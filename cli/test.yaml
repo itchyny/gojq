@@ -6978,7 +6978,7 @@
     - 'testdata/8.json'
   error: |
     invalid json: testdata/8.json
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ,, 1, 1, 1, 1, 1, 1, 1
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ,, 1, 1, 1, 1, 1, 1, 
                                                    ^  invalid character ',' looking for beginning of value
 
 - name: json file error json
@@ -6987,8 +6987,8 @@
     - 'testdata/9.json'
   error: |
     invalid json: testdata/9.json:3
-        3 | ", "０", "０", "０", "０", , "０", "０"]
-                                       ^  invalid character ',' looking for beginning of value
+        3 | ０", "０", "０", "０", "０", "０", "０", , "０", "０"]
+                                                     ^  invalid character ',' looking for beginning of value
 
 - name: json file error json with multibyte character in the error line
   args:
