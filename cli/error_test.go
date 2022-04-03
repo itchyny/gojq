@@ -18,7 +18,7 @@ func generateString(size int) string {
 func TestGetLineByOffset(t *testing.T) {
 	numbers := generateString(500)
 	var testCases = []struct {
-		contents     string
+		str          string
 		offset       int
 		linestr      string
 		line, column int
@@ -138,17 +138,17 @@ func TestGetLineByOffset(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		var name string
-		if len(tc.contents) > 20 {
-			name = tc.contents[:20] + "..."
+		if len(tc.str) > 20 {
+			name = tc.str[:20] + "..."
 		} else {
-			name = tc.contents
+			name = tc.str
 		}
 		t.Run(name+","+strconv.Itoa(tc.offset), func(t *testing.T) {
-			linestr, line, column := getLineByOffset(tc.contents, tc.offset)
+			linestr, line, column := getLineByOffset(tc.str, tc.offset)
 			if linestr != tc.linestr || line != tc.line || column != tc.column {
 				t.Errorf("getLineByOffset(%q, %d):\n"+
 					"     got: %q, %d, %d\n"+
-					"expected: %q, %d, %d", tc.contents, tc.offset,
+					"expected: %q, %d, %d", tc.str, tc.offset,
 					linestr, line, column, tc.linestr, tc.line, tc.column)
 			}
 		})
@@ -157,9 +157,9 @@ func TestGetLineByOffset(t *testing.T) {
 
 func TestGetLineByLine(t *testing.T) {
 	var testCases = []struct {
-		contents string
-		line     int
-		linestr  string
+		str     string
+		line    int
+		linestr string
 	}{
 		{
 			"", 0,
@@ -211,12 +211,12 @@ func TestGetLineByLine(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.contents+","+strconv.Itoa(tc.line), func(t *testing.T) {
-			linestr := getLineByLine(tc.contents, tc.line)
+		t.Run(tc.str+","+strconv.Itoa(tc.line), func(t *testing.T) {
+			linestr := getLineByLine(tc.str, tc.line)
 			if linestr != tc.linestr {
 				t.Errorf("getLineByLine(%q, %d):\n"+
 					"     got: %q\n"+
-					"expected: %q", tc.contents, tc.line, linestr, tc.linestr)
+					"expected: %q", tc.str, tc.line, linestr, tc.linestr)
 			}
 		})
 	}
