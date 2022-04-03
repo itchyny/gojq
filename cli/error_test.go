@@ -7,12 +7,12 @@ import (
 )
 
 func generateString(size int) string {
-	var bs strings.Builder
-	bs.Grow(size)
+	var sb strings.Builder
+	sb.Grow(size)
 	for i, j := 0, 0; i < size; i, j = i+1, (i+j)%256 {
-		bs.WriteByte(byte(j%10 | '0'))
+		sb.WriteByte(byte(j%10 | '0'))
 	}
-	return bs.String()
+	return sb.String()
 }
 
 func TestGetLineByOffset(t *testing.T) {

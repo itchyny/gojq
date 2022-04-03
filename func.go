@@ -874,23 +874,23 @@ func funcToSh(v interface{}) interface{} {
 	} else {
 		xs = []interface{}{v}
 	}
-	var s strings.Builder
+	var sb strings.Builder
 	for i, x := range xs {
 		if i > 0 {
-			s.WriteByte(' ')
+			sb.WriteByte(' ')
 		}
 		switch x := x.(type) {
 		case map[string]interface{}, []interface{}:
 			return &formatShError{x}
 		case string:
-			s.WriteByte('\'')
-			s.WriteString(strings.ReplaceAll(x, "'", `'\''`))
-			s.WriteByte('\'')
+			sb.WriteByte('\'')
+			sb.WriteString(strings.ReplaceAll(x, "'", `'\''`))
+			sb.WriteByte('\'')
 		default:
-			s.WriteString(jsonMarshal(x))
+			sb.WriteString(jsonMarshal(x))
 		}
 	}
-	return s.String()
+	return sb.String()
 }
 
 func funcToBase64(v interface{}) interface{} {

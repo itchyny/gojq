@@ -32,13 +32,13 @@ func main() {
 	}
 	sort.Strings(names)
 	for _, n := range names {
-		var s strings.Builder
+		var sb strings.Builder
 		for _, fd := range fds[n] {
-			fmt.Fprintf(&s, "%s ", fd)
+			fmt.Fprintf(&sb, "%s ", fd)
 		}
-		q, err := gojq.Parse(s.String())
+		q, err := gojq.Parse(sb.String())
 		if err != nil {
-			panic(fmt.Sprintf("%s: %s", err, s.String()))
+			panic(fmt.Sprintf("%s: %s", err, sb.String()))
 		}
 		for _, fd := range q.FuncDefs {
 			fd.Minify()
@@ -47,7 +47,7 @@ func main() {
 			fmt.Printf("failed: %s: %s %s\n", n, q.FuncDefs, fds[n])
 			continue
 		}
-		fmt.Printf("ok: %s: %s\n", n, s.String())
+		fmt.Printf("ok: %s: %s\n", n, sb.String())
 		count--
 	}
 	if count > 0 {
