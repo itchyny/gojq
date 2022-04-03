@@ -113,6 +113,10 @@ func (err *jsonParseError) Error() string {
 			line = strings.Count(linestr[:i+1], "\n") + 1
 			linestr = linestr[i+1:]
 		}
+		if len(linestr) > 80 {
+			skip := len(trimLastInvalidRune(linestr[:len(linestr)-80]))
+			linestr = linestr[skip:]
+		}
 		col = runewidth.StringWidth(linestr)
 	} else if er, ok := err.err.(*json.SyntaxError); ok {
 		linestr, line, col = getLineByOffset(
