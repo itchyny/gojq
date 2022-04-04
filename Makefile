@@ -19,7 +19,7 @@ build-dev: parser.go builtin.go
 
 .PHONY: build-debug
 build-debug: parser.go builtin.go
-	go build -tags debug -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
+	go build -tags gojq_debug -ldflags=$(BUILD_LDFLAGS) -o $(BIN) ./cmd/$(BIN)
 
 builtin.go: builtin.jq parser.go.y parser.go query.go operator.go _tools/*
 	GOOS= GOARCH= go generate
@@ -41,7 +41,7 @@ install-dev: parser.go builtin.go
 
 .PHONY: install-debug
 install-debug: parser.go builtin.go
-	go install -tags debug -ldflags=$(BUILD_LDFLAGS) ./...
+	go install -tags gojq_debug -ldflags=$(BUILD_LDFLAGS) ./...
 
 .PHONY: show-version
 show-version: $(GOBIN)/gobump
@@ -72,7 +72,7 @@ test: build
 .PHONY: lint
 lint: $(GOBIN)/staticcheck
 	go vet ./...
-	staticcheck -checks all,-ST1000 -tags debug ./...
+	staticcheck -checks all,-ST1000 -tags gojq_debug ./...
 
 $(GOBIN)/staticcheck:
 	go install honnef.co/go/tools/cmd/staticcheck@latest
