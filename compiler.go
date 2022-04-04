@@ -192,8 +192,11 @@ func (c *compiler) compileImport(i *Import) error {
 		}
 	}
 	c.appendCodeInfo("module " + path)
-	defer c.appendCodeInfo("end of module " + path)
-	return c.compileModule(q, alias)
+	if err = c.compileModule(q, alias); err != nil {
+		return err
+	}
+	c.appendCodeInfo("end of module " + path)
+	return nil
 }
 
 func (c *compiler) compileModule(q *Query, alias string) error {
@@ -314,7 +317,6 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 		return &code{op: opjump, v: len(c.codes)}
 	})()
 	c.appendCodeInfo(e.Name)
-	defer c.appendCodeInfo("end of " + e.Name)
 	scope.funcs = append(scope.funcs, &funcinfo{e.Name, len(c.codes), len(e.Args)})
 	defer func(scopes []*scopeinfo, variables []string) {
 		c.scopes, c.variables = scopes, variables
@@ -357,7 +359,11 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 		}
 		c.append(&code{op: opload, v: v})
 	}
-	return c.compile(e.Body)
+	if err := c.compile(e.Body); err != nil {
+		return err
+	}
+	c.appendCodeInfo("end of " + e.Name)
+	return nil
 }
 
 func (c *compiler) compileQuery(e *Query) error {
