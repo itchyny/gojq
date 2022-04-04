@@ -79,7 +79,7 @@ func (err *queryParseError) Error() string {
 	if e, ok := err.err.(interface{ Token() (string, int) }); ok {
 		_, offset := e.Token()
 		linestr, line, column := getLineByOffset(err.contents, offset)
-		if strings.HasPrefix(err.fname, "<arg>") && !strings.ContainsAny(err.contents, "\r\n") {
+		if strings.HasPrefix(err.fname, "<arg>") && indexNewline(err.contents) < 0 {
 			return fmt.Sprintf("invalid %s: %s\n    %s\n%s    ^  %s",
 				err.typ, err.contents, linestr, strings.Repeat(" ", column), err.err)
 		}
@@ -226,7 +226,7 @@ func (ss *stringScanner) next() (line string, start int, ok bool) {
 	}
 	start, ok = ss.offset, true
 	line = ss.str[start:]
-	i := strings.IndexAny(line, "\r\n")
+	i := indexNewline(line)
 	if i < 0 {
 		ss.offset = len(ss.str)
 		return
@@ -236,5 +236,16 @@ func (ss *stringScanner) next() (line string, start int, ok bool) {
 		i++
 	}
 	ss.offset += i + 1
+	return
+}
+
+// Faster than strings.IndexAny(str, "\r\n").
+func indexNewline(str string) (i int) {
+	if i = strings.IndexByte(str, '\n'); i >= 0 {
+		str = str[:i]
+	}
+	if j := strings.IndexByte(str, '\r'); j >= 0 {
+		i = j
+	}
 	return
 }
