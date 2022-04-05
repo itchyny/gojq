@@ -4449,7 +4449,7 @@
     [1,9,5]
     [9]
 
-- name: assignment operator deeply
+- name: assignment operator with object and array indexing
   args:
     - -c
     - '.foo.[0].bar.[1] = 1'
@@ -4457,7 +4457,7 @@
   expected: |
     {"foo":[{"bar":[null,1]}]}
 
-- name: assignment operator deeply
+- name: assignment operator against array with suffix array indexing
   args:
     - -c
     - '.[2][2] = 1'
@@ -4465,13 +4465,37 @@
   expected: |
     [1,null,[null,null,1]]
 
-- name: assignment operator deeply
+- name: assignment operator against array with suffix object indexing
+  args:
+    - -c
+    - '.[2].foo = 1'
+  input: '[1]'
+  expected: |
+    [1,null,{"foo":1}]
+
+- name: assignment operator against object with multiple suffix indexing
   args:
     - -c
     - '.foo[2].bar = 2'
   input: '{"foo":[1], "bar":3}'
   expected: |
     {"bar":3,"foo":[1,null,{"bar":2}]}
+
+- name: assignment operator with query and suffix object indexing
+  args:
+    - -c
+    - '(.foo).bar = 1'
+  input: 'null'
+  expected: |
+    {"foo":{"bar":1}}
+
+- name: assignment operator with object indexing and iterator suffix
+  args:
+    - -c
+    - '.foo[].bar = 1'
+  input: '{"foo":[null,null]}'
+  expected: |
+    {"foo":[{"bar":1},{"bar":1}]}
 
 - name: assignment operator query
   args:
