@@ -161,18 +161,23 @@ func getLineByOffset(str string, offset int) (linestr string, line, column int) 
 		offset = len(linestr)
 	} else if offset > 0 {
 		offset--
+	} else {
+		offset = 0
 	}
 	if offset > 48 {
 		skip := len(trimLastInvalidRune(linestr[:offset-48]))
 		linestr = linestr[skip:]
 		offset -= skip
-	} else if offset > 0 {
-		offset = len(trimLastInvalidRune(linestr[:offset]))
 	}
 	if len(linestr) > 64 {
 		linestr = linestr[:64]
 	}
 	linestr = trimLastInvalidRune(linestr)
+	if offset > len(linestr) {
+		offset = len(linestr)
+	} else {
+		offset = len(trimLastInvalidRune(linestr[:offset]))
+	}
 	column = runewidth.StringWidth(linestr[:offset])
 	return
 }

@@ -28,6 +28,10 @@ func TestGetLineByOffset(t *testing.T) {
 			"", 0, 0,
 		},
 		{
+			"abc", -1,
+			"abc", 1, 0,
+		},
+		{
 			"abc", 0,
 			"abc", 1, 0,
 		},
@@ -112,6 +116,18 @@ func TestGetLineByOffset(t *testing.T) {
 			"０１２", 2, 2,
 		},
 		{
+			"abc\n０１２\nghi", 10,
+			"０１２", 2, 2,
+		},
+		{
+			"abc\n０１２\nghi", 11,
+			"０１２", 2, 4,
+		},
+		{
+			"abc\ndef\xef\xbc\nghi", 10,
+			"def", 2, 3,
+		},
+		{
 			numbers, 0,
 			numbers[:64], 1, 0,
 		},
@@ -163,6 +179,10 @@ func TestGetLineByLine(t *testing.T) {
 	}{
 		{
 			"", 0,
+			"",
+		},
+		{
+			"abc", -1,
 			"",
 		},
 		{
