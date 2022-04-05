@@ -92,11 +92,11 @@ func (e *Query) minify() {
 	}
 }
 
-func (e *Query) toIndices() []interface{} {
-	if e.FuncDefs != nil || e.Right != nil || e.Term == nil {
+func (e *Query) toIndices(xs []interface{}) []interface{} {
+	if e.Term == nil {
 		return nil
 	}
-	return e.Term.toIndices()
+	return e.Term.toIndices(xs)
 }
 
 // Import ...
@@ -307,22 +307,19 @@ func (e *Term) toFunc() string {
 	}
 }
 
-func (e *Term) toIndices() []interface{} {
+func (e *Term) toIndices(xs []interface{}) []interface{} {
 	if e.Index != nil {
-		xs := e.Index.toIndices()
-		if xs == nil {
+		if xs = e.Index.toIndices(xs); xs == nil {
 			return nil
 		}
 		for _, s := range e.SuffixList {
-			x := s.toIndices()
-			if x == nil {
+			if xs = s.toIndices(xs); xs == nil {
 				return nil
 			}
-			xs = append(xs, x...)
 		}
 		return xs
 	} else if e.Query != nil && len(e.SuffixList) == 0 {
-		return e.Query.toIndices()
+		return e.Query.toIndices(xs)
 	} else {
 		return nil
 	}
@@ -482,11 +479,11 @@ func (e *Index) minify() {
 	}
 }
 
-func (e *Index) toIndices() []interface{} {
+func (e *Index) toIndices(xs []interface{}) []interface{} {
 	if e.Name == "" {
 		return nil
 	}
-	return []interface{}{e.Name}
+	return append(xs, e.Name)
 }
 
 // Func ...
@@ -746,11 +743,11 @@ func (e *Suffix) toTerm() (*Term, bool) {
 	}
 }
 
-func (e *Suffix) toIndices() []interface{} {
+func (e *Suffix) toIndices(xs []interface{}) []interface{} {
 	if e.Index == nil {
 		return nil
 	}
-	return e.Index.toIndices()
+	return e.Index.toIndices(xs)
 }
 
 // Bind ...
