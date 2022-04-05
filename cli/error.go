@@ -79,7 +79,7 @@ func (err *queryParseError) Error() string {
 	if e, ok := err.err.(interface{ Token() (string, int) }); ok {
 		_, offset := e.Token()
 		linestr, line, column := getLineByOffset(err.contents, offset)
-		if strings.HasPrefix(err.fname, "<arg>") && indexNewline(err.contents) < 0 {
+		if strings.HasPrefix(err.fname, "<arg>") && !containsNewline(err.contents) {
 			return fmt.Sprintf("invalid %s: %s\n    %s\n%s    ^  %s",
 				err.typ, err.contents, linestr, strings.Repeat(" ", column), err.err)
 		}
@@ -237,6 +237,12 @@ func (ss *stringScanner) next() (line string, start int, ok bool) {
 	}
 	ss.offset += i + 1
 	return
+}
+
+// Faster than strings.ContainsAny(str, "\r\n").
+func containsNewline(str string) bool {
+	return strings.IndexByte(str, '\n') >= 0 ||
+		strings.IndexByte(str, '\r') >= 0
 }
 
 // Faster than strings.IndexAny(str, "\r\n").
