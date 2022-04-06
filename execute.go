@@ -289,6 +289,7 @@ loop:
 				break loop
 			default:
 				err = &iteratorError{v}
+				env.push(emptyIter{})
 				break loop
 			}
 			if len(xs) > 1 {

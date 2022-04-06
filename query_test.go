@@ -135,6 +135,27 @@ func TestQueryRun_InvalidPathError(t *testing.T) {
 	}
 }
 
+func TestQueryRun_IteratorError(t *testing.T) {
+	query, err := gojq.Parse(".[]")
+	if err != nil {
+		t.Fatal(err)
+	}
+	iter := query.Run(nil)
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if err, ok := v.(error); ok {
+			if expected := "cannot iterate over: null"; err.Error() != expected {
+				t.Errorf("expected: %v, got: %v", expected, err)
+			}
+		} else {
+			t.Errorf("errors should occur")
+		}
+	}
+}
+
 func TestQueryRun_Strings(t *testing.T) {
 	query, err := gojq.Parse(
 		"[\"\x00\\\\\", \"\x1f\\\"\", \"\n\\n\n\\(\"\\n\")\n\\n\", " +
