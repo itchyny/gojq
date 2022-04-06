@@ -391,8 +391,8 @@ func funcFromEntries(v interface{}) interface{} {
 		return &funcTypeError{"from_entries", v}
 	}
 	w := make(map[string]interface{}, len(vs))
-	for _, x := range vs {
-		switch x := x.(type) {
+	for _, v := range vs {
+		switch v := v.(type) {
 		case map[string]interface{}:
 			var (
 				key   string
@@ -400,7 +400,7 @@ func funcFromEntries(v interface{}) interface{} {
 				ok    bool
 			)
 			for _, k := range [4]string{"key", "Key", "name", "Name"} {
-				if k := x[k]; k != nil && k != false {
+				if k := v[k]; k != nil && k != false {
 					if key, ok = k.(string); !ok {
 						return &objectKeyNotStringError{k}
 					}
@@ -410,8 +410,8 @@ func funcFromEntries(v interface{}) interface{} {
 			if !ok {
 				return &objectKeyNotStringError{nil}
 			}
-			for _, v := range [2]string{"value", "Value"} {
-				if value, ok = x[v]; ok {
+			for _, k := range [2]string{"value", "Value"} {
+				if value, ok = v[k]; ok {
 					break
 				}
 			}
@@ -560,8 +560,8 @@ func indices(vs, xs []interface{}) interface{} {
 	}
 	for i := 0; i < len(vs) && i < len(vs)-len(xs)+1; i++ {
 		var neq bool
-		for j, y := range xs {
-			if neq = compare(vs[i+j], y) != 0; neq {
+		for j, x := range xs {
+			if neq = compare(vs[i+j], x) != 0; neq {
 				break
 			}
 		}
@@ -579,8 +579,8 @@ func funcIndex(v, x interface{}) interface{} {
 		}
 		for i := 0; i < len(vs) && i < len(vs)-len(xs)+1; i++ {
 			var neq bool
-			for j, y := range xs {
-				if neq = compare(vs[i+j], y) != 0; neq {
+			for j, x := range xs {
+				if neq = compare(vs[i+j], x) != 0; neq {
 					break
 				}
 			}
@@ -603,8 +603,8 @@ func funcRindex(v, x interface{}) interface{} {
 		}
 		for ; i >= 0; i-- {
 			var neq bool
-			for j, y := range xs {
-				if neq = compare(vs[i+j], y) != 0; neq {
+			for j, x := range xs {
+				if neq = compare(vs[i+j], x) != 0; neq {
 					break
 				}
 			}
@@ -713,14 +713,14 @@ func funcImplode(v interface{}) interface{} {
 	}
 }
 
-func implode(v []interface{}) interface{} {
+func implode(vs []interface{}) interface{} {
 	var sb strings.Builder
-	sb.Grow(len(v))
-	for _, r := range v {
-		if r, ok := toInt(r); ok && 0 <= r && r <= utf8.MaxRune {
+	sb.Grow(len(vs))
+	for _, v := range vs {
+		if r, ok := toInt(v); ok && 0 <= r && r <= utf8.MaxRune {
 			sb.WriteRune(rune(r))
 		} else {
-			return &funcTypeError{"implode", v}
+			return &funcTypeError{"implode", vs}
 		}
 	}
 	return sb.String()
@@ -1252,21 +1252,21 @@ func funcJoin(v, x interface{}) interface{} {
 		return &funcTypeError{"join", x}
 	}
 	ss := make([]string, len(vs))
-	for i, e := range vs {
-		switch e := e.(type) {
+	for i, v := range vs {
+		switch v := v.(type) {
 		case nil:
 		case string:
-			ss[i] = e
+			ss[i] = v
 		case bool:
-			if e {
+			if v {
 				ss[i] = "true"
 			} else {
 				ss[i] = "false"
 			}
 		case int, float64, *big.Int:
-			ss[i] = jsonMarshal(e)
+			ss[i] = jsonMarshal(v)
 		default:
-			return &joinTypeError{e}
+			return &joinTypeError{v}
 		}
 	}
 	return strings.Join(ss, sep)
