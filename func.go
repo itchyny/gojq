@@ -936,12 +936,14 @@ func funcIndex2(_, v, x interface{}) interface{} {
 		case nil:
 			return nil
 		case []interface{}:
-			return index(i, v)
+			return index(v, i)
 		case string:
-			if v, ok := index(i, explode(v)).(int); ok {
-				return implode([]interface{}{v})
+			switch v := index(explode(v), i).(type) {
+			case int:
+				return string(rune(v))
+			default:
+				return nil
 			}
-			return nil
 		default:
 			return &expectedArrayError{v}
 		}
@@ -977,7 +979,7 @@ func funcIndex2(_, v, x interface{}) interface{} {
 	}
 }
 
-func index(i int, vs []interface{}) interface{} {
+func index(vs []interface{}, i int) interface{} {
 	i = clampIndex(i, -1, len(vs))
 	if 0 <= i && i < len(vs) {
 		return vs[i]
@@ -986,39 +988,42 @@ func index(i int, vs []interface{}) interface{} {
 }
 
 func funcSlice(_, v, e, s interface{}) (r interface{}) {
-	if s, ok := v.(string); ok {
-		v = explode(s)
-		defer func() {
-			if v, ok := r.([]interface{}); ok {
-				r = implode(v)
-			}
-		}()
-	}
 	switch v := v.(type) {
 	case nil:
 		return nil
 	case []interface{}:
-		var start, end int
-		if s != nil {
-			if i, ok := toInt(s); ok {
-				start = clampIndex(i, 0, len(v))
-			} else {
-				return &arrayIndexNotNumberError{s}
-			}
+		return slice(v, e, s)
+	case string:
+		switch v := slice(explode(v), e, s).(type) {
+		case []interface{}:
+			return implode(v)
+		default:
+			return v
 		}
-		if e != nil {
-			if i, ok := toInt(e); ok {
-				end = clampIndex(i, start, len(v))
-			} else {
-				return &arrayIndexNotNumberError{e}
-			}
-		} else {
-			end = len(v)
-		}
-		return v[start:end]
 	default:
 		return &expectedArrayError{v}
 	}
+}
+
+func slice(vs []interface{}, e, s interface{}) interface{} {
+	var start, end int
+	if s != nil {
+		if i, ok := toInt(s); ok {
+			start = clampIndex(i, 0, len(vs))
+		} else {
+			return &arrayIndexNotNumberError{s}
+		}
+	}
+	if e != nil {
+		if i, ok := toInt(e); ok {
+			end = clampIndex(i, start, len(vs))
+		} else {
+			return &arrayIndexNotNumberError{e}
+		}
+	} else {
+		end = len(vs)
+	}
+	return vs[start:end]
 }
 
 func clampIndex(i, min, max int) int {
