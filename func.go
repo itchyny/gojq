@@ -941,7 +941,7 @@ func funcIndex2(_, v, x interface{}) interface{} {
 			if v, ok := index(i, explode(v)).(int); ok {
 				return implode([]interface{}{v})
 			}
-			return ""
+			return nil
 		default:
 			return &expectedArrayError{v}
 		}
