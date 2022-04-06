@@ -173,7 +173,7 @@ func getLineByOffset(str string, offset int) (linestr string, line, column int) 
 		linestr = linestr[:64]
 	}
 	linestr = trimLastInvalidRune(linestr)
-	if offset > len(linestr) {
+	if offset >= len(linestr) {
 		offset = len(linestr)
 	} else {
 		offset = len(trimLastInvalidRune(linestr[:offset]))
