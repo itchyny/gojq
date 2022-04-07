@@ -435,7 +435,7 @@ func (e *Index) String() string {
 func (e *Index) writeTo(s *strings.Builder) {
 	if l := s.Len(); l > 0 {
 		// ". .x" != "..x" and "0 .x" != "0.x"
-		if c := s.String()[l-1]; c == '.' || '0' <= c && c <= '9' {
+		if c := s.String()[l-1]; c == '.' || isNumber(c) {
 			s.WriteByte(' ')
 		}
 	}
@@ -446,24 +446,22 @@ func (e *Index) writeTo(s *strings.Builder) {
 func (e *Index) writeSuffixTo(s *strings.Builder) {
 	if e.Name != "" {
 		s.WriteString(e.Name)
+	} else if e.Str != nil {
+		e.Str.writeTo(s)
 	} else {
-		if e.Str != nil {
-			e.Str.writeTo(s)
-		} else {
-			s.WriteByte('[')
-			if e.IsSlice {
-				if e.Start != nil {
-					e.Start.writeTo(s)
-				}
-				s.WriteByte(':')
-				if e.End != nil {
-					e.End.writeTo(s)
-				}
-			} else {
+		s.WriteByte('[')
+		if e.IsSlice {
+			if e.Start != nil {
 				e.Start.writeTo(s)
 			}
-			s.WriteByte(']')
+			s.WriteByte(':')
+			if e.End != nil {
+				e.End.writeTo(s)
+			}
+		} else {
+			e.Start.writeTo(s)
 		}
+		s.WriteByte(']')
 	}
 }
 
