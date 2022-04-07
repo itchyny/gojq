@@ -833,9 +833,6 @@ func (c *compiler) compileTerm(e *Term) error {
 		return c.compileArray(e.Array)
 	case TermTypeNumber:
 		v := normalizeNumber(json.Number(e.Number))
-		if err, ok := v.(error); ok {
-			return err
-		}
 		c.append(&code{op: opconst, v: v})
 		return nil
 	case TermTypeUnary:
