@@ -114,6 +114,27 @@ func TestQueryRun_ObjectError(t *testing.T) {
 	}
 }
 
+func TestQueryRun_IndexError(t *testing.T) {
+	query, err := gojq.Parse(".foo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	iter := query.Run([]interface{}{0})
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if err, ok := v.(error); ok {
+			if expected := "expected an object but got: array ([0])"; !strings.Contains(err.Error(), expected) {
+				t.Errorf("expected: %v, got: %v", expected, err)
+			}
+		} else {
+			t.Errorf("errors should occur")
+		}
+	}
+}
+
 func TestQueryRun_InvalidPathError(t *testing.T) {
 	query, err := gojq.Parse(". + 1, path(. + 1)")
 	if err != nil {

@@ -300,9 +300,13 @@
 
 - name: object indexing by string
   args:
-    - '."2\(.foo[])3"'
+    - '."foo", ."2\(.foo[])3"'
   input: '{"foo":[1,2],"213":3,"223":6}'
   expected: |
+    [
+      1,
+      2
+    ]
     3
     6
 

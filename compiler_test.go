@@ -130,6 +130,30 @@ func TestCodeCompile_OptimizeConstants(t *testing.T) {
 	}
 }
 
+func TestCodeCompile_OptimizeIndex(t *testing.T) {
+	query, err := gojq.Parse(`.foo."bar".["baz"].[0].""`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, err := gojq.Compile(query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, expected := reflect.ValueOf(code).Elem().FieldByName("codes").Len(), 7; expected != got {
+		t.Errorf("expected: %v, got: %v", expected, got)
+	}
+	iter := code.Run(nil)
+	for {
+		got, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if got != nil {
+			t.Errorf("expected: %v, got: %v", nil, got)
+		}
+	}
+}
+
 func TestCodeCompile_OptimizeTailRec_While(t *testing.T) {
 	query, err := gojq.Parse("0 | while(. < 10; . + 1)")
 	if err != nil {

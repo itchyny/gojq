@@ -153,6 +153,20 @@ loop:
 				pc = code.v.(int)
 				goto loop
 			}
+		case opindex:
+			if backtrack {
+				break loop
+			}
+			p, v := code.v, env.pop()
+			w := funcIndex2(nil, v, p)
+			if e, ok := w.(error); ok {
+				err = e
+				break loop
+			}
+			env.push(w)
+			if !env.paths.empty() && env.expdepth == 0 {
+				env.paths.push(pathValue{path: p, value: w})
+			}
 		case opcall:
 			if backtrack {
 				break loop

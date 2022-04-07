@@ -92,6 +92,13 @@ func (e *Query) minify() {
 	}
 }
 
+func (e *Query) toIndexKey() interface{} {
+	if e.Term == nil {
+		return nil
+	}
+	return e.Term.toIndexKey()
+}
+
 func (e *Query) toIndices(xs []interface{}) []interface{} {
 	if e.Term == nil {
 		return nil
@@ -307,6 +314,20 @@ func (e *Term) toFunc() string {
 	}
 }
 
+func (e *Term) toIndexKey() interface{} {
+	switch e.Type {
+	case TermTypeNumber:
+		return normalizeNumber(json.Number(e.Number))
+	case TermTypeString:
+		if e.Str.Queries == nil {
+			return e.Str.Str
+		}
+		return nil
+	default:
+		return nil
+	}
+}
+
 func (e *Term) toIndices(xs []interface{}) []interface{} {
 	if e.Index != nil {
 		if xs = e.Index.toIndices(xs); xs == nil {
@@ -475,6 +496,19 @@ func (e *Index) minify() {
 	if e.End != nil {
 		e.End.minify()
 	}
+}
+
+func (e *Index) toIndexKey() interface{} {
+	if e.Name != "" {
+		return e.Name
+	} else if e.Str != nil {
+		if e.Str.Queries == nil {
+			return e.Str.Str
+		}
+	} else if !e.IsSlice {
+		return e.Start.toIndexKey()
+	}
+	return nil
 }
 
 func (e *Index) toIndices(xs []interface{}) []interface{} {

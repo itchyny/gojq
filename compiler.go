@@ -865,10 +865,15 @@ func (c *compiler) compileTerm(e *Term) error {
 }
 
 func (c *compiler) compileIndex(e *Term, x *Index) error {
-	c.appendCodeInfo(x)
-	if x.Name != "" {
-		return c.compileCall("_index", []*Query{{Term: e}, {Term: &Term{Type: TermTypeString, Str: &String{Str: x.Name}}}})
+	if k := x.toIndexKey(); k != nil {
+		if err := c.compileTerm(e); err != nil {
+			return err
+		}
+		c.appendCodeInfo(x)
+		c.append(&code{op: opindex, v: k})
+		return nil
 	}
+	c.appendCodeInfo(x)
 	if x.Str != nil {
 		return c.compileCall("_index", []*Query{{Term: e}, {Term: &Term{Type: TermTypeString, Str: x.Str}}})
 	}
