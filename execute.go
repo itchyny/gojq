@@ -2,6 +2,8 @@ package gojq
 
 import (
 	"context"
+	"math"
+	"reflect"
 	"sort"
 )
 
@@ -418,7 +420,20 @@ type pathValue struct {
 }
 
 func (env *env) pathIntact(v interface{}) bool {
-	return deepEqual(v, env.paths.top().(pathValue).value)
+	w := env.paths.top().(pathValue).value
+	switch v := v.(type) {
+	case []interface{}, map[string]interface{}:
+		switch w.(type) {
+		case []interface{}, map[string]interface{}:
+			v, w := reflect.ValueOf(v), reflect.ValueOf(w)
+			return v.Pointer() == w.Pointer() && v.Len() == w.Len()
+		}
+	case float64:
+		if w, ok := w.(float64); ok {
+			return v == w || math.IsNaN(v) && math.IsNaN(w)
+		}
+	}
+	return v == w
 }
 
 func (env *env) poppaths() []interface{} {

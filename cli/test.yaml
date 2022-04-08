@@ -4795,30 +4795,46 @@
 - name: path function error with object indexing
   args:
     - 'path({}.x)'
-  input: 'null'
+  input: '{}'
   error: |
     invalid path against: object ({})
 
 - name: path function error with array indexing
   args:
-    - 'path([][0 + 0])'
-  input: 'null'
+    - 'path([0][0 + 0])'
+  input: '[0]'
   error: |
-    invalid path against: array ([])
+    invalid path against: array ([0])
 
 - name: path function error with array slicing
   args:
-    - 'path([][0:1])'
-  input: 'null'
+    - 'path([0][0:1])'
+  input: '[0]'
   error: |
-    invalid path against: array ([])
+    invalid path against: array ([0])
 
 - name: path function error with getpath function
   args:
     - 'path({} | getpath([]))'
-  input: 'null'
+  input: '{}'
   error: |
     invalid path against: object ({})
+
+- name: path function with binding array slicing
+  args:
+    - '.[:1] as $x | path($x.[0])'
+  input: '[0]'
+  expected: |
+    [
+      0
+    ]
+
+- name: path function error with binding array slicing
+  args:
+    - '.[:0] as $x | path($x.[0])'
+  input: '[0]'
+  error: |
+    invalid path against: array ([])
 
 - name: path function with error function
   args:
@@ -4844,15 +4860,15 @@
 
 - name: path function iterate error of array
   args:
-    - 'map(select(.a == 0))[].b = 10'
-  input: '[{"a":0},{"a":1}]'
+    - '[.[]][].a = 1'
+  input: '[{"a":0}]'
   error: |
     invalid path on iterating against: array ([{"a":0}])
 
 - name: path function iterate error of object
   args:
     - '{}[] = 10'
-  input: 'null'
+  input: '{}'
   error: |
     invalid path on iterating against: object ({})
 
