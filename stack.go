@@ -43,11 +43,12 @@ func (s *stack) empty() bool {
 	return s.index < 0
 }
 
-func (s *stack) save(index, limit *int) {
-	*index, *limit = s.index, s.limit
+func (s *stack) save() (index, limit int) {
+	index, limit = s.index, s.limit
 	if s.index > s.limit {
 		s.limit = s.index
 	}
+	return
 }
 
 func (s *stack) restore(index, limit int) {

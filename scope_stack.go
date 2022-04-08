@@ -39,11 +39,12 @@ func (s *scopeStack) empty() bool {
 	return s.index < 0
 }
 
-func (s *scopeStack) save(index, limit *int) {
-	*index, *limit = s.index, s.limit
+func (s *scopeStack) save() (index, limit int) {
+	index, limit = s.index, s.limit
 	if s.index > s.limit {
 		s.limit = s.index
 	}
+	return
 }
 
 func (s *scopeStack) restore(index, limit int) {

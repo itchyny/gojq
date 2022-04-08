@@ -235,7 +235,7 @@ loop:
 			goto loop
 		case opscope:
 			xs := code.v.([3]int)
-			var saveindex, outerindex, limit int
+			var saveindex, outerindex int
 			if index == env.scopes.index {
 				if callpc >= 0 {
 					saveindex = index
@@ -243,7 +243,7 @@ loop:
 					callpc, saveindex = env.popscope()
 				}
 			} else {
-				env.scopes.save(&saveindex, &limit)
+				saveindex, _ = env.scopes.save()
 				env.scopes.index = index
 			}
 			if outerindex = index; outerindex >= 0 {
@@ -387,9 +387,9 @@ func (env *env) popscope() (int, int) {
 
 func (env *env) pushfork(pc int) {
 	f := fork{pc: pc, expdepth: env.expdepth}
-	env.stack.save(&f.stackindex, &f.stacklimit)
-	env.scopes.save(&f.scopeindex, &f.scopelimit)
-	env.paths.save(&f.pathindex, &f.pathlimit)
+	f.stackindex, f.stacklimit = env.stack.save()
+	f.scopeindex, f.scopelimit = env.scopes.save()
+	f.pathindex, f.pathlimit = env.paths.save()
 	env.forks = append(env.forks, f)
 	env.debugForks(pc, ">>>")
 }
