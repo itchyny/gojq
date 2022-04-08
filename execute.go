@@ -2,7 +2,6 @@ package gojq
 
 import (
 	"context"
-	"fmt"
 	"sort"
 )
 
@@ -165,7 +164,7 @@ loop:
 			}
 			env.push(w)
 			if !env.paths.empty() && env.expdepth == 0 {
-				if !deepEqual(v, env.paths.top().(pathValue).value) {
+				if !env.pathIntact(v) {
 					err = &invalidPathError{v}
 					break loop
 				}
@@ -193,14 +192,31 @@ loop:
 					break loop
 				}
 				env.push(w)
-				if !env.paths.empty() {
-					var ps []interface{}
-					ps, err = env.pathEntries(v[2].(string), x, args)
-					if err != nil {
-						break loop
-					}
-					for _, p := range ps {
-						env.paths.push(pathValue{path: p, value: w})
+				if !env.paths.empty() && env.expdepth == 0 {
+					switch v[2].(string) {
+					case "_index":
+						if x = args[0]; !env.pathIntact(x) {
+							err = &invalidPathError{x}
+							break loop
+						}
+						env.paths.push(pathValue{path: args[1], value: w})
+					case "_slice":
+						if x = args[0]; !env.pathIntact(x) {
+							err = &invalidPathError{x}
+							break loop
+						}
+						env.paths.push(pathValue{
+							path:  map[string]interface{}{"start": args[2], "end": args[1]},
+							value: w,
+						})
+					case "getpath":
+						if !env.pathIntact(x) {
+							err = &invalidPathError{x}
+							break loop
+						}
+						for _, p := range args[0].([]interface{}) {
+							env.paths.push(pathValue{path: p, value: w})
+						}
 					}
 				}
 			default:
@@ -258,8 +274,7 @@ loop:
 			case []pathValue:
 				xs = v
 			case []interface{}:
-				if !env.paths.empty() && env.expdepth == 0 &&
-					!deepEqual(v, env.paths.top().(pathValue).value) {
+				if !env.paths.empty() && env.expdepth == 0 && !env.pathIntact(v) {
 					err = &invalidPathIterError{v}
 					break loop
 				}
@@ -271,8 +286,7 @@ loop:
 					xs[i] = pathValue{path: i, value: v}
 				}
 			case map[string]interface{}:
-				if !env.paths.empty() && env.expdepth == 0 &&
-					!deepEqual(v, env.paths.top().(pathValue).value) {
+				if !env.paths.empty() && env.expdepth == 0 && !env.pathIntact(v) {
 					err = &invalidPathIterError{v}
 					break loop
 				}
@@ -331,18 +345,13 @@ loop:
 			if backtrack {
 				break loop
 			}
-			if env.expdepth > 0 {
-				panic(fmt.Sprintf("unexpected expdepth: %d", env.expdepth))
-			}
 			env.pop()
-			x := env.pop()
-			if deepEqual(x, env.paths.top().(pathValue).value) {
-				env.push(env.poppaths())
-				env.expdepth = env.paths.pop().(int)
-			} else {
-				err = &invalidPathError{x}
+			if v := env.pop(); !env.pathIntact(v) {
+				err = &invalidPathError{v}
 				break loop
 			}
+			env.push(env.poppaths())
+			env.expdepth = env.paths.pop().(int)
 		default:
 			panic(code.op)
 		}
@@ -408,32 +417,8 @@ type pathValue struct {
 	path, value interface{}
 }
 
-func (env *env) pathEntries(name string, x interface{}, args []interface{}) ([]interface{}, error) {
-	switch name {
-	case "_index":
-		if env.expdepth > 0 {
-			return nil, nil
-		} else if !deepEqual(args[0], env.paths.top().(pathValue).value) {
-			return nil, &invalidPathError{args[0]}
-		}
-		return []interface{}{args[1]}, nil
-	case "_slice":
-		if env.expdepth > 0 {
-			return nil, nil
-		} else if !deepEqual(args[0], env.paths.top().(pathValue).value) {
-			return nil, &invalidPathError{args[0]}
-		}
-		return []interface{}{map[string]interface{}{"start": args[2], "end": args[1]}}, nil
-	case "getpath":
-		if env.expdepth > 0 {
-			return nil, nil
-		} else if !deepEqual(x, env.paths.top().(pathValue).value) {
-			return nil, &invalidPathError{x}
-		}
-		return args[0].([]interface{}), nil
-	default:
-		return nil, nil
-	}
+func (env *env) pathIntact(v interface{}) bool {
+	return deepEqual(v, env.paths.top().(pathValue).value)
 }
 
 func (env *env) poppaths() []interface{} {
