@@ -43,9 +43,9 @@ loop:
 		case oppop:
 			env.pop()
 		case opdup:
-			x := env.pop()
-			env.push(x)
-			env.push(x)
+			v := env.pop()
+			env.push(v)
+			env.push(v)
 		case opconst:
 			env.pop()
 			env.push(code.v)
