@@ -165,6 +165,10 @@ loop:
 			}
 			env.push(w)
 			if !env.paths.empty() && env.expdepth == 0 {
+				if !deepEqual(v, env.paths.top().(pathValue).value) {
+					err = &invalidPathError{v}
+					break loop
+				}
 				env.paths.push(pathValue{path: p, value: w})
 			}
 		case opcall:
@@ -410,14 +414,14 @@ func (env *env) pathEntries(name string, x interface{}, args []interface{}) ([]i
 		if env.expdepth > 0 {
 			return nil, nil
 		} else if !deepEqual(args[0], env.paths.top().(pathValue).value) {
-			return nil, &invalidPathError{x}
+			return nil, &invalidPathError{args[0]}
 		}
 		return []interface{}{args[1]}, nil
 	case "_slice":
 		if env.expdepth > 0 {
 			return nil, nil
 		} else if !deepEqual(args[0], env.paths.top().(pathValue).value) {
-			return nil, &invalidPathError{x}
+			return nil, &invalidPathError{args[0]}
 		}
 		return []interface{}{map[string]interface{}{"start": args[2], "end": args[1]}}, nil
 	case "getpath":
