@@ -514,31 +514,23 @@ func funcContains(v, x interface{}) interface{} {
 		func(l, r *big.Int) interface{} { return l.Cmp(r) == 0 },
 		func(l, r string) interface{} { return strings.Contains(l, r) },
 		func(l, r []interface{}) interface{} {
-			for _, x := range r {
-				var found bool
-				for _, y := range l {
-					if funcContains(y, x) == true {
-						found = true
-						break
+		R:
+			for _, r := range r {
+				for _, l := range l {
+					if funcContains(l, r) == true {
+						continue R
 					}
 				}
-				if !found {
-					return false
-				}
+				return false
 			}
 			return true
 		},
 		func(l, r map[string]interface{}) interface{} {
-			for k, rk := range r {
-				lk, ok := l[k]
-				if !ok {
-					return false
-				}
-				c := funcContains(lk, rk)
-				if _, ok := c.(error); ok {
-					return false
-				}
-				if c == false {
+			if len(l) < len(r) {
+				return false
+			}
+			for k, r := range r {
+				if l, ok := l[k]; !ok || funcContains(l, r) != true {
 					return false
 				}
 			}
