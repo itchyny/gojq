@@ -220,11 +220,7 @@ func binopTypeSwitch(
 	case int:
 		switch r := r.(type) {
 		case int:
-			if minHalfInt <= l && l <= maxHalfInt &&
-				minHalfInt <= r && r <= maxHalfInt {
-				return callbackInts(l, r)
-			}
-			return callbackBigInts(big.NewInt(int64(l)), big.NewInt(int64(r)))
+			return callbackInts(l, r)
 		case float64:
 			return callbackFloats(float64(l), r)
 		case *big.Int:
@@ -308,7 +304,13 @@ func funcOpNegate(v interface{}) interface{} {
 
 func funcOpAdd(_, l, r interface{}) interface{} {
 	return binopTypeSwitch(l, r,
-		func(l, r int) interface{} { return l + r },
+		func(l, r int) interface{} {
+			if v := l + r; (v >= l) == (r >= 0) {
+				return v
+			}
+			x, y := big.NewInt(int64(l)), big.NewInt(int64(r))
+			return x.Add(x, y)
+		},
 		func(l, r float64) interface{} { return l + r },
 		func(l, r *big.Int) interface{} { return new(big.Int).Add(l, r) },
 		func(l, r string) interface{} { return l + r },
@@ -354,7 +356,13 @@ func funcOpAdd(_, l, r interface{}) interface{} {
 
 func funcOpSub(_, l, r interface{}) interface{} {
 	return binopTypeSwitch(l, r,
-		func(l, r int) interface{} { return l - r },
+		func(l, r int) interface{} {
+			if v := l - r; (v <= l) == (r >= 0) {
+				return v
+			}
+			x, y := big.NewInt(int64(l)), big.NewInt(int64(r))
+			return x.Sub(x, y)
+		},
 		func(l, r float64) interface{} { return l - r },
 		func(l, r *big.Int) interface{} { return new(big.Int).Sub(l, r) },
 		func(l, r string) interface{} { return &binopTypeError{"subtract", l, r} },
@@ -381,7 +389,13 @@ func funcOpSub(_, l, r interface{}) interface{} {
 
 func funcOpMul(_, l, r interface{}) interface{} {
 	return binopTypeSwitch(l, r,
-		func(l, r int) interface{} { return l * r },
+		func(l, r int) interface{} {
+			if v := l * r; v == 0 || v/r == l {
+				return v
+			}
+			x, y := big.NewInt(int64(l)), big.NewInt(int64(r))
+			return x.Mul(x, y)
+		},
 		func(l, r float64) interface{} { return l * r },
 		func(l, r *big.Int) interface{} { return new(big.Int).Mul(l, r) },
 		func(l, r string) interface{} { return &binopTypeError{"multiply", l, r} },

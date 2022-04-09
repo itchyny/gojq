@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/big"
 	"reflect"
 	"testing"
 
@@ -96,7 +95,7 @@ func (*moduleLoaderJSON) LoadJSON(name string) (interface{}, error) {
 func TestWithModuleLoader_JSON(t *testing.T) {
 	query, err := gojq.Parse(`
 		import "module1" as $m;
-		[$m, $m[1]*$m[2]*1000000000000]
+		[$m, $m[1]*$m[2]]
 	`)
 	if err != nil {
 		t.Fatal(err)
@@ -114,10 +113,7 @@ func TestWithModuleLoader_JSON(t *testing.T) {
 		if !ok {
 			break
 		}
-		if expected := []interface{}{
-			[]interface{}{1.0, 42, 123},
-			big.NewInt(5166000000000000),
-		}; !reflect.DeepEqual(got, expected) {
+		if expected := []interface{}{[]interface{}{1.0, 42, 123}, 5166}; !reflect.DeepEqual(got, expected) {
 			t.Errorf("expected: %v, got: %v", expected, got)
 		}
 	}
