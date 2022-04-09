@@ -359,7 +359,7 @@ func typeof(v interface{}) string {
 	case map[string]interface{}:
 		return "object"
 	default:
-		panic(fmt.Sprintf("invalid value: %v", v))
+		panic(fmt.Sprintf("invalid type: %T (%v)", v, v))
 	}
 }
 

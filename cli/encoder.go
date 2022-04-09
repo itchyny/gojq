@@ -56,7 +56,7 @@ func (e *encoder) encode(v interface{}) {
 	case map[string]interface{}:
 		e.encodeMap(v)
 	default:
-		panic(fmt.Sprintf("invalid value: %v", v))
+		panic(fmt.Sprintf("invalid type: %T (%v)", v, v))
 	}
 	if e.w.Len() > 8*1024 {
 		e.out.Write(e.w.Bytes())
