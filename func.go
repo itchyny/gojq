@@ -474,10 +474,14 @@ func funcToNumber(v interface{}) interface{} {
 		if !newLexer(v).validNumber() {
 			return fmt.Errorf("invalid number: %q", v)
 		}
-		return normalizeNumber(json.Number(v))
+		return toNumber(v)
 	default:
 		return &funcTypeError{"tonumber", v}
 	}
+}
+
+func toNumber(v string) interface{} {
+	return normalizeNumber(json.Number(v))
 }
 
 func funcToString(v interface{}) interface{} {

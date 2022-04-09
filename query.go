@@ -2,7 +2,6 @@ package gojq
 
 import (
 	"context"
-	"encoding/json"
 	"strings"
 )
 
@@ -317,7 +316,9 @@ func (e *Term) toFunc() string {
 func (e *Term) toIndexKey() interface{} {
 	switch e.Type {
 	case TermTypeNumber:
-		return normalizeNumber(json.Number(e.Number))
+		return toNumber(e.Number)
+	case TermTypeUnary:
+		return e.Unary.toNumber()
 	case TermTypeString:
 		if e.Str.Queries == nil {
 			return e.Str.Str
@@ -346,6 +347,13 @@ func (e *Term) toIndices(xs []interface{}) []interface{} {
 	}
 }
 
+func (e *Term) toNumber() interface{} {
+	if e.Type == TermTypeNumber {
+		return toNumber(e.Number)
+	}
+	return nil
+}
+
 // Unary ...
 type Unary struct {
 	Op   Operator
@@ -365,6 +373,14 @@ func (e *Unary) writeTo(s *strings.Builder) {
 
 func (e *Unary) minify() {
 	e.Term.minify()
+}
+
+func (e *Unary) toNumber() interface{} {
+	v := e.Term.toNumber()
+	if v != nil && e.Op == OpSub {
+		v = funcOpNegate(v)
+	}
+	return v
 }
 
 // Pattern ...
@@ -1043,7 +1059,7 @@ func (e *ConstTerm) toValue() interface{} {
 	} else if e.Array != nil {
 		return e.Array.toValue()
 	} else if e.Number != "" {
-		return normalizeNumber(json.Number(e.Number))
+		return toNumber(e.Number)
 	} else if e.Null {
 		return nil
 	} else if e.True {

@@ -2,7 +2,6 @@ package gojq
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -832,8 +831,7 @@ func (c *compiler) compileTerm(e *Term) error {
 	case TermTypeArray:
 		return c.compileArray(e.Array)
 	case TermTypeNumber:
-		v := normalizeNumber(json.Number(e.Number))
-		c.append(&code{op: opconst, v: v})
+		c.append(&code{op: opconst, v: toNumber(e.Number)})
 		return nil
 	case TermTypeUnary:
 		return c.compileUnary(e.Unary)
@@ -1252,6 +1250,10 @@ func (c *compiler) compileArray(e *Array) error {
 
 func (c *compiler) compileUnary(e *Unary) error {
 	c.appendCodeInfo(e)
+	if v := e.toNumber(); v != nil {
+		c.append(&code{op: opconst, v: v})
+		return nil
+	}
 	if err := c.compileTerm(e.Term); err != nil {
 		return err
 	}
