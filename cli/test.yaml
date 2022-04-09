@@ -2573,7 +2573,7 @@
 
 - name: multiply strings
   args:
-    - '[-1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.7, 10, 9444732965739290427392 / 4722366482869645213696, 1000000000, infinite, -infinite, nan, -1e300, 1e300][] * "abc"'
+    - '[-1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.7, 10, 9444732965739290427392 / 4722366482869645213696, 100000000, infinite, -infinite, nan, -1e300, 1e300][] * "abc"'
   input: 'null'
   expected: |
     null
@@ -4511,10 +4511,10 @@
 
 - name: assignment operator array index limit error
   args:
-    - '.[100000000] = 1'
+    - '.[200000000] = 1'
   input: '[]'
   error: |
-    array index too large: 100000000
+    array index too large: 200000000
 
 - name: assignment operator with error function
   args:

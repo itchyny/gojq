@@ -1457,7 +1457,7 @@ func updatePaths(v interface{}, path []interface{}, w interface{}, delpaths bool
 				if delpaths {
 					return v, nil
 				}
-				if y > 0x3ffffff {
+				if y >= 0x8000000 {
 					return nil, &arrayIndexTooLargeError{y}
 				}
 				l = y + 1
