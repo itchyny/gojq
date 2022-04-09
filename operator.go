@@ -367,20 +367,17 @@ func funcOpSub(_, l, r interface{}) interface{} {
 		func(l, r *big.Int) interface{} { return new(big.Int).Sub(l, r) },
 		func(l, r string) interface{} { return &binopTypeError{"subtract", l, r} },
 		func(l, r []interface{}) interface{} {
-			a := make([]interface{}, 0, len(l))
-			for _, v := range l {
-				var found bool
-				for _, w := range r {
-					if compare(v, w) == 0 {
-						found = true
-						break
+			v := make([]interface{}, 0, len(l))
+		L:
+			for _, l := range l {
+				for _, r := range r {
+					if compare(l, r) == 0 {
+						continue L
 					}
 				}
-				if !found {
-					a = append(a, v)
-				}
+				v = append(v, l)
 			}
-			return a
+			return v
 		},
 		func(l, r map[string]interface{}) interface{} { return &binopTypeError{"subtract", l, r} },
 		func(l, r interface{}) interface{} { return &binopTypeError{"subtract", l, r} },
