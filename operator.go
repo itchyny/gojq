@@ -387,7 +387,7 @@ func funcOpSub(_, l, r interface{}) interface{} {
 func funcOpMul(_, l, r interface{}) interface{} {
 	return binopTypeSwitch(l, r,
 		func(l, r int) interface{} {
-			if v := l * r; v == 0 || v/r == l {
+			if v := l * r; r == 0 || v/r == l {
 				return v
 			}
 			x, y := big.NewInt(int64(l)), big.NewInt(int64(r))
