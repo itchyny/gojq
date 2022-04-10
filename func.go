@@ -934,12 +934,7 @@ func funcIndex2(_, v, x interface{}) interface{} {
 		case []interface{}:
 			return index(v, i)
 		case string:
-			switch v := index(explode(v), i).(type) {
-			case int:
-				return string(rune(v))
-			default:
-				return nil
-			}
+			return indexString(v, i)
 		default:
 			return &expectedArrayError{v}
 		}
@@ -979,6 +974,19 @@ func index(vs []interface{}, i int) interface{} {
 	i = clampIndex(i, -1, len(vs))
 	if 0 <= i && i < len(vs) {
 		return vs[i]
+	}
+	return nil
+}
+
+func indexString(s string, i int) interface{} {
+	l := len([]rune(s))
+	i = clampIndex(i, -1, l)
+	if 0 <= i && i < l {
+		for _, r := range s {
+			if i--; i < 0 {
+				return string(r)
+			}
+		}
 	}
 	return nil
 }
