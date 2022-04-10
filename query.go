@@ -330,21 +330,24 @@ func (e *Term) toIndexKey() interface{} {
 }
 
 func (e *Term) toIndices(xs []interface{}) []interface{} {
-	if e.Index != nil {
+	switch e.Type {
+	case TermTypeIndex:
 		if xs = e.Index.toIndices(xs); xs == nil {
 			return nil
 		}
-		for _, s := range e.SuffixList {
-			if xs = s.toIndices(xs); xs == nil {
-				return nil
-			}
+	case TermTypeQuery:
+		if xs = e.Query.toIndices(xs); xs == nil {
+			return nil
 		}
-		return xs
-	} else if e.Query != nil && len(e.SuffixList) == 0 {
-		return e.Query.toIndices(xs)
-	} else {
+	default:
 		return nil
 	}
+	for _, s := range e.SuffixList {
+		if xs = s.toIndices(xs); xs == nil {
+			return nil
+		}
+	}
+	return xs
 }
 
 func (e *Term) toNumber() interface{} {
@@ -528,10 +531,10 @@ func (e *Index) toIndexKey() interface{} {
 }
 
 func (e *Index) toIndices(xs []interface{}) []interface{} {
-	if e.Name == "" {
-		return nil
+	if k := e.toIndexKey(); k != nil {
+		return append(xs, k)
 	}
-	return append(xs, e.Name)
+	return nil
 }
 
 // Func ...

@@ -478,8 +478,8 @@ func (c *compiler) compileAlt(l, r *Query) error {
 func (c *compiler) compileQueryUpdate(l, r *Query, op Operator) error {
 	switch op {
 	case OpAssign:
-		// optimize assignment operator with object indexing
-		//   .foo.bar = f => setpath(["foo","bar"]; f)
+		// optimize assignment operator with object and array indexing
+		//   .foo.[0] = f => setpath(["foo",0]; f)
 		if xs := l.toIndices(nil); xs != nil {
 			// ref: compileCall
 			v := c.newVariable()

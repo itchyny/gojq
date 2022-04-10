@@ -154,6 +154,36 @@ func TestCodeCompile_OptimizeIndex(t *testing.T) {
 	}
 }
 
+func TestCodeCompile_OptimizeIndexAssign(t *testing.T) {
+	query, err := gojq.Parse(`.foo."bar".["baz"].[0]."" = 0`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, err := gojq.Compile(query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, expected := reflect.ValueOf(code).Elem().FieldByName("codes").Len(), 8; expected != got {
+		t.Errorf("expected: %v, got: %v", expected, got)
+	}
+	iter := code.Run(nil)
+	for {
+		got, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if expected := map[string]interface{}{
+			"foo": map[string]interface{}{
+				"bar": map[string]interface{}{
+					"baz": []interface{}{map[string]interface{}{"": 0}},
+				},
+			},
+		}; !reflect.DeepEqual(got, expected) {
+			t.Errorf("expected: %v, got: %v", expected, got)
+		}
+	}
+}
+
 func TestCodeCompile_OptimizeTailRec_While(t *testing.T) {
 	query, err := gojq.Parse("0 | while(. < 10; . + 1)")
 	if err != nil {
