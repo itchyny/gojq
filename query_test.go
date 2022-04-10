@@ -177,6 +177,22 @@ func TestQueryRun_IteratorError(t *testing.T) {
 	}
 }
 
+func TestQueryRun_TypePanic(t *testing.T) {
+	defer func() { recover() }()
+	query, err := gojq.Parse("type")
+	if err != nil {
+		t.Fatal(err)
+	}
+	iter := query.Run(struct{}{})
+	for {
+		_, ok := iter.Next()
+		if !ok {
+			break
+		}
+	}
+	t.Errorf("panic should occur")
+}
+
 func TestQueryRun_Strings(t *testing.T) {
 	query, err := gojq.Parse(
 		"[\"\x00\\\\\", \"\x1f\\\"\", \"\n\\n\n\\(\"\\n\")\n\\n\", " +
