@@ -7,16 +7,7 @@ import (
 
 func compare(l, r interface{}) int {
 	return binopTypeSwitch(l, r,
-		func(l, r int) interface{} {
-			switch {
-			case l < r:
-				return -1
-			case l == r:
-				return 0
-			default:
-				return 1
-			}
-		},
+		compareInt,
 		func(l, r float64) interface{} {
 			switch {
 			case l < r || math.IsNaN(l):
@@ -41,20 +32,16 @@ func compare(l, r interface{}) int {
 			}
 		},
 		func(l, r []interface{}) interface{} {
-			for i := 0; ; i++ {
-				if i >= len(l) {
-					if i >= len(r) {
-						return 0
-					}
-					return -1
-				}
-				if i >= len(r) {
-					return 1
-				}
+			n := len(l)
+			if len(r) < n {
+				n = len(r)
+			}
+			for i := 0; i < n; i++ {
 				if cmp := compare(l[i], r[i]); cmp != 0 {
 					return cmp
 				}
 			}
+			return compareInt(len(l), len(r))
 		},
 		func(l, r map[string]interface{}) interface{} {
 			lk, rk := funcKeys(l), funcKeys(r)
@@ -69,28 +56,31 @@ func compare(l, r interface{}) int {
 			return 0
 		},
 		func(l, r interface{}) interface{} {
-			ln, rn := getTypeOrdNum(l), getTypeOrdNum(r)
-			switch {
-			case ln < rn:
-				return -1
-			case ln == rn:
-				return 0
-			default:
-				return 1
-			}
+			return compareInt(typeIndex(l), typeIndex(r))
 		},
 	).(int)
 }
 
-func getTypeOrdNum(v interface{}) int {
+func compareInt(l, r int) interface{} {
+	switch {
+	case l < r:
+		return -1
+	case l == r:
+		return 0
+	default:
+		return 1
+	}
+}
+
+func typeIndex(v interface{}) int {
 	switch v := v.(type) {
-	case nil:
+	default:
 		return 0
 	case bool:
-		if v {
-			return 2
+		if !v {
+			return 1
 		}
-		return 1
+		return 2
 	case int, float64, *big.Int:
 		return 3
 	case string:
@@ -99,7 +89,5 @@ func getTypeOrdNum(v interface{}) int {
 		return 5
 	case map[string]interface{}:
 		return 6
-	default:
-		return -1
 	}
 }
