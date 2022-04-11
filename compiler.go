@@ -583,11 +583,8 @@ func (c *compiler) compilePattern(vs [][2]int, p *Pattern) ([][2]int, error) {
 		v := c.newVariable()
 		c.append(&code{op: opstore, v: v})
 		for i, p := range p.Array {
-			c.append(&code{op: oppush, v: i})
 			c.append(&code{op: opload, v: v})
-			c.append(&code{op: oppush, v: nil})
-			// ref: compileCall
-			c.append(&code{op: opcall, v: [3]interface{}{internalFuncs["_index"].callback, 2, "_index"}})
+			c.append(&code{op: opindex, v: i})
 			if vs, err = c.compilePattern(vs, p); err != nil {
 				return nil, err
 			}
@@ -598,30 +595,30 @@ func (c *compiler) compilePattern(vs [][2]int, p *Pattern) ([][2]int, error) {
 		c.append(&code{op: opstore, v: v})
 		for _, kv := range p.Object {
 			var key, name string
+			c.append(&code{op: opload, v: v})
 			if kv.KeyOnly != "" {
 				key, name = kv.KeyOnly[1:], kv.KeyOnly
-				c.append(&code{op: oppush, v: key})
 			} else if kv.Key != "" {
-				key = kv.Key
-				if key != "" && key[0] == '$' {
+				if key = kv.Key; key[0] == '$' {
 					key, name = key[1:], key
 				}
-				c.append(&code{op: oppush, v: key})
 			} else if kv.KeyString != nil {
-				c.append(&code{op: opload, v: v})
 				if err := c.compileString(kv.KeyString, nil); err != nil {
 					return nil, err
 				}
 			} else if kv.KeyQuery != nil {
-				c.append(&code{op: opload, v: v})
 				if err := c.compileQuery(kv.KeyQuery); err != nil {
 					return nil, err
 				}
 			}
-			c.append(&code{op: opload, v: v})
-			c.append(&code{op: oppush, v: nil})
-			// ref: compileCall
-			c.append(&code{op: opcall, v: [3]interface{}{internalFuncs["_index"].callback, 2, "_index"}})
+			if key != "" {
+				c.append(&code{op: opindex, v: key})
+			} else {
+				c.append(&code{op: opload, v: v})
+				c.append(&code{op: oppush, v: nil})
+				// ref: compileCall
+				c.append(&code{op: opcall, v: [3]interface{}{internalFuncs["_index"].callback, 2, "_index"}})
+			}
 			if name != "" {
 				if kv.Val != nil {
 					c.append(&code{op: opdup})
