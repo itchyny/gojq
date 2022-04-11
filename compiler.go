@@ -1151,7 +1151,8 @@ func (c *compiler) compileObjectKeyVal(v [2]int, kv *ObjectKeyVal) error {
 		}
 		c.append(&code{op: oppush, v: kv.KeyOnly})
 		c.append(&code{op: opload, v: v})
-		return c.compileIndex(&Term{Type: TermTypeIdentity}, &Index{Name: kv.KeyOnly})
+		c.append(&code{op: opindex, v: kv.KeyOnly})
+		return nil
 	} else if kv.KeyOnlyString != nil {
 		c.append(&code{op: opload, v: v})
 		if err := c.compileString(kv.KeyOnlyString, nil); err != nil {
