@@ -1132,7 +1132,7 @@ yydefault:
 		yyDollar = yyS[yypt-1 : yypt+1]
 //line parser.go.y:309
 		{
-			yyVAL.value = &PatternObject{KeyOnly: yyDollar[1].token}
+			yyVAL.value = &PatternObject{Key: yyDollar[1].token}
 		}
 	case 55:
 		yyDollar = yyS[yypt-1 : yypt+1]
@@ -1475,13 +1475,13 @@ yydefault:
 		yyDollar = yyS[yypt-1 : yypt+1]
 //line parser.go.y:554
 		{
-			yyVAL.value = &ObjectKeyVal{KeyOnly: yyDollar[1].token}
+			yyVAL.value = &ObjectKeyVal{Key: yyDollar[1].token}
 		}
 	case 112:
 		yyDollar = yyS[yypt-1 : yypt+1]
 //line parser.go.y:558
 		{
-			yyVAL.value = &ObjectKeyVal{KeyOnlyString: yyDollar[1].value.(*String)}
+			yyVAL.value = &ObjectKeyVal{KeyString: yyDollar[1].value.(*String)}
 		}
 	case 113:
 		yyDollar = yyS[yypt-1 : yypt+1]

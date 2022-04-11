@@ -596,10 +596,8 @@ func (c *compiler) compilePattern(vs [][2]int, p *Pattern) ([][2]int, error) {
 		for _, kv := range p.Object {
 			var key, name string
 			c.append(&code{op: opload, v: v})
-			if kv.KeyOnly != "" {
-				key, name = kv.KeyOnly[1:], kv.KeyOnly
-			} else if kv.Key != "" {
-				if key = kv.Key; key[0] == '$' {
+			if key = kv.Key; key != "" {
+				if key[0] == '$' {
 					key, name = key[1:], key
 				}
 			} else if kv.KeyString != nil {
@@ -1142,55 +1140,55 @@ func (c *compiler) compileObject(e *Object) error {
 }
 
 func (c *compiler) compileObjectKeyVal(v [2]int, kv *ObjectKeyVal) error {
-	if kv.KeyOnly != "" {
-		if kv.KeyOnly[0] == '$' {
-			c.append(&code{op: oppush, v: kv.KeyOnly[1:]})
-			c.append(&code{op: opload, v: v})
-			return c.compileFunc(&Func{Name: kv.KeyOnly})
-		}
-		c.append(&code{op: oppush, v: kv.KeyOnly})
-		c.append(&code{op: opload, v: v})
-		c.append(&code{op: opindex, v: kv.KeyOnly})
-		return nil
-	} else if kv.KeyOnlyString != nil {
-		c.append(&code{op: opload, v: v})
-		if err := c.compileString(kv.KeyOnlyString, nil); err != nil {
-			return err
-		}
-		c.append(&code{op: opdup})
-		c.append(&code{op: opload, v: v})
-		c.append(&code{op: oppush, v: nil})
-		// ref: compileCall
-		c.append(&code{op: opcall, v: [3]interface{}{internalFuncs["_index"].callback, 2, "_index"}})
-		return nil
-	} else {
-		if kv.KeyQuery != nil {
-			c.append(&code{op: opload, v: v})
-			f := c.newScopeDepth()
-			if err := c.compileQuery(kv.KeyQuery); err != nil {
-				return err
+	if key := kv.Key; key != "" {
+		if key[0] == '$' {
+			if kv.Val == nil { // {$foo} == {foo:$foo}
+				c.append(&code{op: oppush, v: key[1:]})
 			}
-			f()
-		} else if kv.KeyString != nil {
 			c.append(&code{op: opload, v: v})
-			if err := c.compileString(kv.KeyString, nil); err != nil {
-				return err
-			}
-			if d := c.codes[len(c.codes)-1]; d.op == opconst {
-				c.codes[len(c.codes)-2] = &code{op: oppush, v: d.v}
-				c.codes = c.codes[:len(c.codes)-1]
-			}
-		} else if kv.Key[0] == '$' {
-			c.append(&code{op: opload, v: v})
-			if err := c.compileFunc(&Func{Name: kv.Key}); err != nil {
+			if err := c.compileFunc(&Func{Name: key}); err != nil {
 				return err
 			}
 		} else {
-			c.append(&code{op: oppush, v: kv.Key})
+			c.append(&code{op: oppush, v: key})
+			if kv.Val == nil { // {foo} == {foo:.foo}
+				c.append(&code{op: opload, v: v})
+				c.append(&code{op: opindex, v: key})
+			}
 		}
+	} else if key := kv.KeyString; key != nil {
+		if key.Queries == nil {
+			c.append(&code{op: oppush, v: key.Str})
+			if kv.Val == nil { // {"foo"} == {"foo":.["foo"]}
+				c.append(&code{op: opload, v: v})
+				c.append(&code{op: opindex, v: key.Str})
+			}
+		} else {
+			c.append(&code{op: opload, v: v})
+			if err := c.compileString(key, nil); err != nil {
+				return err
+			}
+			if kv.Val == nil {
+				c.append(&code{op: opdup})
+				c.append(&code{op: opload, v: v})
+				c.append(&code{op: oppush, v: nil})
+				// ref: compileCall
+				c.append(&code{op: opcall, v: [3]interface{}{internalFuncs["_index"].callback, 2, "_index"}})
+			}
+		}
+	} else if kv.KeyQuery != nil {
+		c.append(&code{op: opload, v: v})
+		f := c.newScopeDepth()
+		if err := c.compileQuery(kv.KeyQuery); err != nil {
+			return err
+		}
+		f()
+	}
+	if kv.Val != nil {
 		c.append(&code{op: opload, v: v})
 		return c.compileObjectVal(kv.Val)
 	}
+	return nil
 }
 
 func (c *compiler) compileObjectVal(e *ObjectVal) error {

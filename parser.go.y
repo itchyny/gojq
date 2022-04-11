@@ -307,7 +307,7 @@ objectpattern
     }
     | tokVariable
     {
-        $$ = &PatternObject{KeyOnly: $1}
+        $$ = &PatternObject{Key: $1}
     }
 
 term
@@ -552,11 +552,11 @@ objectkeyval
     }
     | objectkey
     {
-        $$ = &ObjectKeyVal{KeyOnly: $1}
+        $$ = &ObjectKeyVal{Key: $1}
     }
     | string
     {
-        $$ = &ObjectKeyVal{KeyOnlyString: $1.(*String)}
+        $$ = &ObjectKeyVal{KeyString: $1.(*String)}
     }
 
 objectkey

@@ -429,7 +429,6 @@ type PatternObject struct {
 	KeyString *String
 	KeyQuery  *Query
 	Val       *Pattern
-	KeyOnly   string
 }
 
 func (e *PatternObject) String() string {
@@ -451,9 +450,6 @@ func (e *PatternObject) writeTo(s *strings.Builder) {
 	if e.Val != nil {
 		s.WriteString(": ")
 		e.Val.writeTo(s)
-	}
-	if e.KeyOnly != "" {
-		s.WriteString(e.KeyOnly)
 	}
 }
 
@@ -646,12 +642,10 @@ func (e *Object) minify() {
 
 // ObjectKeyVal ...
 type ObjectKeyVal struct {
-	Key           string
-	KeyString     *String
-	KeyQuery      *Query
-	Val           *ObjectVal
-	KeyOnly       string
-	KeyOnlyString *String
+	Key       string
+	KeyString *String
+	KeyQuery  *Query
+	Val       *ObjectVal
 }
 
 func (e *ObjectKeyVal) String() string {
@@ -674,11 +668,6 @@ func (e *ObjectKeyVal) writeTo(s *strings.Builder) {
 		s.WriteString(": ")
 		e.Val.writeTo(s)
 	}
-	if e.KeyOnly != "" {
-		s.WriteString(e.KeyOnly)
-	} else if e.KeyOnlyString != nil {
-		e.KeyOnlyString.writeTo(s)
-	}
 }
 
 func (e *ObjectKeyVal) minify() {
@@ -689,9 +678,6 @@ func (e *ObjectKeyVal) minify() {
 	}
 	if e.Val != nil {
 		e.Val.minify()
-	}
-	if e.KeyOnlyString != nil {
-		e.KeyOnlyString.minify()
 	}
 }
 
