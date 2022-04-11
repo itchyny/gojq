@@ -805,7 +805,7 @@ func (c *compiler) compileTerm(e *Term) error {
 	if len(e.SuffixList) > 0 {
 		s := e.SuffixList[len(e.SuffixList)-1]
 		t := *e // clone without changing e
-		(&t).SuffixList = t.SuffixList[:len(e.SuffixList)-1]
+		t.SuffixList = t.SuffixList[:len(e.SuffixList)-1]
 		return c.compileTermSuffix(&t, s)
 	}
 	switch e.Type {
@@ -1339,10 +1339,10 @@ func (c *compiler) compileTermSuffix(e *Term, s *Suffix) error {
 		return nil
 	} else if s.Optional {
 		if len(e.SuffixList) > 0 {
-			if u, ok := e.SuffixList[len(e.SuffixList)-1].toTerm(); ok {
-				t := *e // clone without changing e
-				(&t).SuffixList = t.SuffixList[:len(e.SuffixList)-1]
-				if err := c.compileTerm(&t); err != nil {
+			if u := e.SuffixList[len(e.SuffixList)-1].toTerm(); u != nil {
+				// no need to clone (ref: compileTerm)
+				e.SuffixList = e.SuffixList[:len(e.SuffixList)-1]
+				if err := c.compileTerm(e); err != nil {
 					return err
 				}
 				e = u

@@ -784,13 +784,13 @@ func (e *Suffix) minify() {
 	}
 }
 
-func (e *Suffix) toTerm() (*Term, bool) {
+func (e *Suffix) toTerm() *Term {
 	if e.Index != nil {
-		return &Term{Type: TermTypeIndex, Index: e.Index}, true
+		return &Term{Type: TermTypeIndex, Index: e.Index}
 	} else if e.Iter {
-		return &Term{Type: TermTypeIdentity, SuffixList: []*Suffix{{Iter: true}}}, true
+		return &Term{Type: TermTypeIdentity, SuffixList: []*Suffix{{Iter: true}}}
 	} else {
-		return nil, false
+		return nil
 	}
 }
 
