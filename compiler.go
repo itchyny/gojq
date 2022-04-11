@@ -529,7 +529,12 @@ func (c *compiler) compileQueryUpdate(l, r *Query, op Operator) error {
 	}
 }
 
-func (c *compiler) compileBind(b *Bind) error {
+func (c *compiler) compileBind(e *Term, b *Bind) error {
+	c.append(&code{op: opdup})
+	c.append(&code{op: opexpbegin})
+	if err := c.compileTerm(e); err != nil {
+		return err
+	}
 	var pc int
 	var vs [][2]int
 	for i, p := range b.Patterns {
@@ -562,7 +567,7 @@ func (c *compiler) compileBind(b *Bind) error {
 	if len(b.Patterns) == 1 && c.codes[len(c.codes)-2].op == opexpbegin {
 		c.codes[len(c.codes)-2].op = opnop
 	} else {
-		c.append(&code{op: opexpend}) // ref: compileTermSuffix
+		c.append(&code{op: opexpend})
 	}
 	return c.compileQuery(b.Body)
 }
@@ -1350,12 +1355,7 @@ func (c *compiler) compileTermSuffix(e *Term, s *Suffix) error {
 		}
 		return c.compileTry(&Try{Body: &Query{Term: e}})
 	} else if s.Bind != nil {
-		c.append(&code{op: opdup})
-		c.append(&code{op: opexpbegin})
-		if err := c.compileTerm(e); err != nil {
-			return err
-		}
-		return c.compileBind(s.Bind)
+		return c.compileBind(e, s.Bind)
 	} else {
 		return fmt.Errorf("invalid suffix: %s", s)
 	}
