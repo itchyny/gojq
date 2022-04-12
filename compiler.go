@@ -436,15 +436,15 @@ func (c *compiler) compileQuery(e *Query) error {
 
 func (c *compiler) compileComma(l, r *Query) error {
 	setfork := c.lazy(func() *code {
-		return &code{op: opfork, v: len(c.codes) + 1}
+		return &code{op: opfork, v: len(c.codes)}
 	})
 	if err := c.compileQuery(l); err != nil {
 		return err
 	}
-	setfork()
 	defer c.lazy(func() *code {
 		return &code{op: opjump, v: len(c.codes)}
 	})()
+	setfork()
 	return c.compileQuery(r)
 }
 
@@ -463,7 +463,7 @@ func (c *compiler) compileAlt(l, r *Query) error {
 	c.append(&code{op: oppush, v: true})                  // found some value
 	c.append(&code{op: opstore, v: found})
 	defer c.lazy(func() *code {
-		return &code{op: opjump, v: len(c.codes)} // ret
+		return &code{op: opjump, v: len(c.codes)}
 	})()
 	c.append(&code{op: oppop})
 	c.append(&code{op: opbacktrack})
@@ -658,17 +658,17 @@ func (c *compiler) compileIf(e *If) error {
 	}
 	pcc := len(c.codes)
 	setjumpifnot := c.lazy(func() *code {
-		return &code{op: opjumpifnot, v: len(c.codes) + 1} // if falsy, skip then clause
+		return &code{op: opjumpifnot, v: len(c.codes)} // skip then clause
 	})
 	f = c.newScopeDepth()
 	if err := c.compileQuery(e.Then); err != nil {
 		return err
 	}
 	f()
-	setjumpifnot()
 	defer c.lazy(func() *code {
-		return &code{op: opjump, v: len(c.codes)} // jump to ret after else clause
+		return &code{op: opjump, v: len(c.codes)}
 	})()
+	setjumpifnot()
 	if len(e.Elif) > 0 {
 		return c.compileIf(&If{e.Elif[0].Cond, e.Elif[0].Then, e.Elif[1:], e.Else})
 	}
@@ -717,9 +717,9 @@ func (c *compiler) compileTry(e *Try) error {
 func (c *compiler) compileReduce(e *Reduce) error {
 	c.appendCodeInfo(e)
 	defer c.newScopeDepth()()
-	defer c.lazy(func() *code {
-		return &code{op: opfork, v: len(c.codes) - 2}
-	})()
+	setfork := c.lazy(func() *code {
+		return &code{op: opfork, v: len(c.codes)}
+	})
 	c.append(&code{op: opdup})
 	v := c.newVariable()
 	f := c.newScopeDepth()
@@ -742,6 +742,7 @@ func (c *compiler) compileReduce(e *Reduce) error {
 	f()
 	c.append(&code{op: opstore, v: v})
 	c.append(&code{op: opbacktrack})
+	setfork()
 	c.append(&code{op: oppop})
 	c.append(&code{op: opload, v: v})
 	return nil
@@ -1209,18 +1210,16 @@ func (c *compiler) compileArray(e *Array) error {
 	arr := c.newVariable()
 	c.append(&code{op: opstore, v: arr})
 	pc := len(c.codes)
-	c.append(&code{op: opfork})
-	defer func() {
-		if pc < len(c.codes) {
-			c.codes[pc].v = len(c.codes) - 2
-		}
-	}()
+	setfork := c.lazy(func() *code {
+		return &code{op: opfork, v: len(c.codes)}
+	})
 	defer c.newScopeDepth()()
 	if err := c.compileQuery(e.Query); err != nil {
 		return err
 	}
 	c.append(&code{op: opappend, v: arr})
 	c.append(&code{op: opbacktrack})
+	setfork()
 	c.append(&code{op: oppop})
 	c.append(&code{op: opload, v: arr})
 	if e.Query.Op == OpPipe {
