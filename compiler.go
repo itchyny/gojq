@@ -1186,15 +1186,10 @@ func (c *compiler) compileObjectKeyVal(v [2]int, kv *ObjectKeyVal) error {
 	}
 	if kv.Val != nil {
 		c.append(&code{op: opload, v: v})
-		return c.compileObjectVal(kv.Val)
-	}
-	return nil
-}
-
-func (c *compiler) compileObjectVal(e *ObjectVal) error {
-	for _, e := range e.Queries {
-		if err := c.compileQuery(e); err != nil {
-			return err
+		for _, e := range kv.Val.Queries {
+			if err := c.compileQuery(e); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
