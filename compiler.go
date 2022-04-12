@@ -601,8 +601,12 @@ func (c *compiler) compilePattern(vs [][2]int, p *Pattern) ([][2]int, error) {
 					key, name = key[1:], key
 				}
 			} else if kv.KeyString != nil {
-				if err := c.compileString(kv.KeyString, nil); err != nil {
-					return nil, err
+				if kv.KeyString.Str != "" {
+					key = kv.KeyString.Str
+				} else {
+					if err := c.compileString(kv.KeyString, nil); err != nil {
+						return nil, err
+					}
 				}
 			} else if kv.KeyQuery != nil {
 				if err := c.compileQuery(kv.KeyQuery); err != nil {
