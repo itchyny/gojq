@@ -106,23 +106,24 @@ func (e *encoder) encodeString(s string, color []byte) {
 			if start < i {
 				e.w.WriteString(s[start:i])
 			}
-			e.w.WriteByte('\\')
 			switch b {
-			case '\\', '"':
-				e.w.WriteByte(b)
+			case '"':
+				e.w.WriteString(`\"`)
+			case '\\':
+				e.w.WriteString(`\\`)
 			case '\b':
-				e.w.WriteByte('b')
+				e.w.WriteString(`\b`)
 			case '\f':
-				e.w.WriteByte('f')
+				e.w.WriteString(`\f`)
 			case '\n':
-				e.w.WriteByte('n')
+				e.w.WriteString(`\n`)
 			case '\r':
-				e.w.WriteByte('r')
+				e.w.WriteString(`\r`)
 			case '\t':
-				e.w.WriteByte('t')
+				e.w.WriteString(`\t`)
 			default:
 				const hex = "0123456789abcdef"
-				e.w.WriteString("u00")
+				e.w.WriteString(`\u00`)
 				e.w.WriteByte(hex[b>>4])
 				e.w.WriteByte(hex[b&0xF])
 			}
