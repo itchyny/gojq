@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"strconv"
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -159,7 +159,7 @@ func TestGetLineByOffset(t *testing.T) {
 		} else {
 			name = tc.str
 		}
-		t.Run(name+","+strconv.Itoa(tc.offset), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%q,%d", name, tc.offset), func(t *testing.T) {
 			linestr, line, column := getLineByOffset(tc.str, tc.offset)
 			if linestr != tc.linestr || line != tc.line || column != tc.column {
 				t.Errorf("getLineByOffset(%q, %d):\n"+
@@ -231,7 +231,7 @@ func TestGetLineByLine(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.str+","+strconv.Itoa(tc.line), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%q,%d", tc.str, tc.line), func(t *testing.T) {
 			linestr := getLineByLine(tc.str, tc.line)
 			if linestr != tc.linestr {
 				t.Errorf("getLineByLine(%q, %d):\n"+
