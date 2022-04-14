@@ -2899,22 +2899,39 @@
 
 - name: condition
   args:
-    - '.[] | if . then . else empty end'
-  input: '[false, true, 0, 1]'
+    - 'if . then . else [.] end'
+  input: 'null false true 0'
   expected: |
+    [
+      null
+    ]
+    [
+      false
+    ]
     true
     0
-    1
 
-- name: condition with elif
+- name: condition with elif clause
   args:
-    - '.[] | if . then . elif [] then . else empty end'
-  input: '[false, true, 0, 1]'
+    - 'if . == null then . elif not then [.] elif . == true then [[.]] else [[[.]]] end'
+  input: 'null false true 0'
   expected: |
-    false
-    true
-    0
-    1
+    null
+    [
+      false
+    ]
+    [
+      [
+        true
+      ]
+    ]
+    [
+      [
+        [
+          0
+        ]
+      ]
+    ]
 
 - name: condition without else clause
   args:
