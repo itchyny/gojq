@@ -5860,8 +5860,8 @@
 
 - name: destructuring alternative operator
   args:
-    - '.[] | . as {a:$a} ?// [$a] ?// $a | $a'
-  input: '[[1],[2],{"a":3},4]'
+    - '. as {$a} ?// [$a] ?// $a | $a'
+  input: '[1] [2] {"a":3} 4'
   expected: |
     1
     2
@@ -5871,8 +5871,8 @@
 - name: destructuring alternative operator with error backtrack
   args:
     - -c
-    - '.[] | . as {a:$a} ?// [$a] ?// $a | if 1 < $a and $a < 4 then $a|error else $a end'
-  input: '[[1],[2],{"a":3},4]'
+    - '. as {$a} ?// [$a] ?// $a | if 1 < $a and $a < 4 then $a|error else $a end'
+  input: '[1] [2] {"a":3} 4'
   expected: |
     1
     [2]
@@ -5882,8 +5882,8 @@
 - name: destructuring alternative operator with multiple variables
   args:
     - -c
-    - '.[] | . as {$a, b: [$c, {$d}]} ?// [$a, {$b}, $e] ?// $f | [$a, $b, $c, $d, $e, $f]'
-  input: '[{"a":1,"b":[2,{"d":3}]},[4,{"b":5,"c":6},7,8,9],"foo"]'
+    - '. as {$a, b: [$c, {$d}]} ?// [$a, {$b}, $e] ?// $f | [$a, $b, $c, $d, $e, $f]'
+  input: '{"a":1,"b":[2,{"d":3}]} [4,{"b":5,"c":6},7,8,9] "foo"'
   expected: |
     [1,null,2,3,null,null]
     [4,5,null,null,7,null]
