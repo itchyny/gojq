@@ -128,7 +128,7 @@ def capture($re): capture($re; null);
 def capture($re; $flags): match($re; $flags) | _capture;
 def scan($re): scan($re; null);
 def scan($re; $flags):
-  match($re; "g" + $flags)
+  match($re; $flags + "g")
     | if .captures|length > 0 then [.captures[].string] else .string end;
 def splits($re): splits($re; null);
 def splits($re; $flags): split($re; $flags) | .[];
