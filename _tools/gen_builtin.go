@@ -37,11 +37,11 @@ func run(input, output string) error {
 	if err != nil {
 		return err
 	}
-	fds := make(map[string][]*gojq.FuncDef)
 	q, err := gojq.Parse(string(cnt))
 	if err != nil {
 		return err
 	}
+	fds := make(map[string][]*gojq.FuncDef)
 	for _, fd := range q.FuncDefs {
 		fd.Minify()
 		fds[fd.Name] = append(fds[fd.Name], fd)

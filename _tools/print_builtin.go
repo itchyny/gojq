@@ -15,11 +15,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fds := make(map[string][]*gojq.FuncDef)
 	q, err := gojq.Parse(string(cnt))
 	if err != nil {
 		panic(err)
 	}
+	fds := make(map[string][]*gojq.FuncDef)
 	for _, fd := range q.FuncDefs {
 		fd.Minify()
 		fds[fd.Name] = append(fds[fd.Name], fd)
