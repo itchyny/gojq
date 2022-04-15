@@ -40,14 +40,8 @@ def scalars: select(type | . != "array" and . != "object");
 def leaf_paths: paths(scalars);
 
 def inside(xs): . as $x | xs | contains($x);
-def combinations:
-  if length == 0 then
-    []
-  else
-    .[0][] as $x | .[1:] | combinations as $y | [$x] + $y
-  end;
-def combinations(n):
-  . as $dot | [range(n) | $dot] | combinations;
+def combinations: if length == 0 then [] else .[0][] as $x | [$x] + (.[1:] | combinations) end;
+def combinations(n): [limit(n; repeat(.))] | combinations;
 def ascii_downcase:
   explode | map(if 65 <= . and . <= 90 then . + 32 end) | implode;
 def ascii_upcase:
