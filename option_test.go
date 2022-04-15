@@ -181,7 +181,7 @@ func TestWithEnvironLoader(t *testing.T) {
 		}
 		expected := map[string]interface{}{"foo": "42", "bar": "128", "qux": ""}
 		if !reflect.DeepEqual(got, expected) {
-			t.Errorf("expected: %#v, got: %#v", expected, got)
+			t.Errorf("expected: %v, got: %v", expected, got)
 		}
 	}
 }
@@ -548,7 +548,7 @@ func TestWithFunctionValueError(t *testing.T) {
 			break
 		}
 		if !reflect.DeepEqual(v, expected) {
-			t.Errorf("expected: %#v, got: %#v", expected, v)
+			t.Errorf("expected: %v, got: %v", expected, v)
 		}
 	}
 }
