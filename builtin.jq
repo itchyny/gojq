@@ -88,8 +88,7 @@ def nth($n; g):
   end;
 
 def truncate_stream(f):
-  . as $n | null | f | . as $input
-    | if (.[0] | length) > $n then setpath([0]; $input[0][$n:]) else empty end;
+  . as $n | null | f | if .[0] | length > $n then .[0] |= .[$n:] else empty end;
 def fromstream(f):
   { x: null, e: false } as $init
     | foreach f as $i
