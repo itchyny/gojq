@@ -399,7 +399,7 @@ func (w *limitedWriter) String() string {
 func jsonLimitedMarshal(v interface{}, n int) (s string) {
 	w := &limitedWriter{buf: make([]byte, n)}
 	defer func() {
-		recover()
+		_ = recover()
 		s = w.String()
 	}()
 	(&encoder{w: w}).encode(v)
