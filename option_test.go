@@ -36,9 +36,12 @@ func TestWithModuleLoaderError(t *testing.T) {
 	if !ok {
 		t.Fatal("should emit an error but got no output")
 	}
-	err, expected := v.(error), `cannot load module: "m"`
-	if got := err.Error(); got != expected {
-		t.Errorf("expected: %v, got: %v", expected, got)
+	if err, ok := v.(error); ok {
+		if expected := `cannot load module: "m"`; err.Error() != expected {
+			t.Errorf("expected: %v, got: %v", expected, err)
+		}
+	} else {
+		t.Errorf("should emit an error but got: %v", v)
 	}
 	v, ok = iter.Next()
 	if ok {
@@ -240,9 +243,12 @@ func TestWithVariablesError1(t *testing.T) {
 	if !ok {
 		t.Fatal("should emit an error but got no output")
 	}
-	err, expected := v.(error), "variable defined but not bound: $x"
-	if got := err.Error(); got != expected {
-		t.Errorf("expected: %v, got: %v", expected, got)
+	if err, ok := v.(error); ok {
+		if expected := "variable defined but not bound: $x"; err.Error() != expected {
+			t.Errorf("expected: %v, got: %v", expected, err)
+		}
+	} else {
+		t.Errorf("should emit an error but got: %v", v)
 	}
 	v, ok = iter.Next()
 	if ok {
@@ -267,9 +273,12 @@ func TestWithVariablesError2(t *testing.T) {
 	if !ok {
 		t.Fatal("should emit an error but got no output")
 	}
-	err, expected := v.(error), "too many variable values provided"
-	if got := err.Error(); got != expected {
-		t.Errorf("expected: %v, got: %v", expected, got)
+	if err, ok := v.(error); ok {
+		if expected := "too many variable values provided"; err.Error() != expected {
+			t.Errorf("expected: %v, got: %v", expected, err)
+		}
+	} else {
+		t.Errorf("should emit an error but got: %v", v)
 	}
 	v, ok = iter.Next()
 	if ok {
@@ -706,9 +715,12 @@ func TestWithIterFunctionPathError(t *testing.T) {
 	if !ok {
 		t.Fatal("should emit an error but got no output")
 	}
-	err, expected := v.(error), "invalid path on iterating against: gojq.Iter"
-	if got := err.Error(); got != expected {
-		t.Errorf("expected: %v, got: %v", expected, got)
+	if err, ok := v.(error); ok {
+		if expected := "invalid path on iterating against: gojq.Iter"; err.Error() != expected {
+			t.Errorf("expected: %v, got: %v", expected, err)
+		}
+	} else {
+		t.Errorf("should emit an error but got: %v", v)
 	}
 }
 

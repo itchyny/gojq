@@ -84,7 +84,7 @@ func TestQueryRun_Errors(t *testing.T) {
 				t.Errorf("expected: %v, got: %v", expected, err)
 			}
 		} else {
-			t.Errorf("errors should occur")
+			t.Errorf("should emit an error but got: %v", v)
 		}
 		n++
 	}
@@ -130,7 +130,7 @@ func TestQueryRun_IndexError(t *testing.T) {
 				t.Errorf("expected: %v, got: %v", expected, err)
 			}
 		} else {
-			t.Errorf("errors should occur")
+			t.Errorf("should emit an error but got: %v", v)
 		}
 	}
 }
@@ -172,7 +172,7 @@ func TestQueryRun_IteratorError(t *testing.T) {
 				t.Errorf("expected: %v, got: %v", expected, err)
 			}
 		} else {
-			t.Errorf("errors should occur")
+			t.Errorf("should emit an error but got: %v", v)
 		}
 	}
 }
@@ -237,9 +237,12 @@ func TestQueryRun_Input(t *testing.T) {
 	if !ok {
 		t.Fatal("should emit an error but got no output")
 	}
-	err, expected := v.(error), "input(s)/0 is not allowed"
-	if got := err.Error(); got != expected {
-		t.Errorf("expected: %v, got: %v", expected, got)
+	if err, ok := v.(error); ok {
+		if expected := "input(s)/0 is not allowed"; err.Error() != expected {
+			t.Errorf("expected: %v, got: %v", expected, err)
+		}
+	} else {
+		t.Errorf("should emit an error but got: %v", v)
 	}
 }
 
