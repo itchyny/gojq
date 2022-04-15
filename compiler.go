@@ -601,9 +601,7 @@ func (c *compiler) compilePattern(vs [][2]int, p *Pattern) ([][2]int, error) {
 					key, name = key[1:], key
 				}
 			} else if kv.KeyString != nil {
-				if kv.KeyString.Str != "" {
-					key = kv.KeyString.Str
-				} else {
+				if key = kv.KeyString.Str; key == "" {
 					if err := c.compileString(kv.KeyString, nil); err != nil {
 						return nil, err
 					}
