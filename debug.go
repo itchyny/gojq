@@ -196,6 +196,8 @@ func debugValue(v interface{}) string {
 	switch v := v.(type) {
 	case Iter:
 		return fmt.Sprintf("gojq.Iter(%#v)", v)
+	case []pathValue:
+		return fmt.Sprintf("[]gojq.pathValue(%v)", v)
 	case [2]int:
 		return fmt.Sprintf("[%d,%d]", v[0], v[1])
 	case [3]int:
