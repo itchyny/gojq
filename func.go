@@ -270,12 +270,8 @@ func mathFunc3(name string, f func(_, _, _ float64) float64) function {
 
 func funcLength(v interface{}) interface{} {
 	switch v := v.(type) {
-	case []interface{}:
-		return len(v)
-	case map[string]interface{}:
-		return len(v)
-	case string:
-		return len([]rune(v))
+	case nil:
+		return 0
 	case int:
 		if v >= 0 {
 			return v
@@ -288,8 +284,12 @@ func funcLength(v interface{}) interface{} {
 			return v
 		}
 		return new(big.Int).Abs(v)
-	case nil:
-		return 0
+	case string:
+		return len([]rune(v))
+	case []interface{}:
+		return len(v)
+	case map[string]interface{}:
+		return len(v)
 	default:
 		return &funcTypeError{"length", v}
 	}
@@ -444,6 +444,17 @@ func funcAdd(v interface{}) interface{} {
 				w.WriteString(y)
 				continue
 			}
+		case []interface{}:
+			switch w := v.(type) {
+			case nil:
+				s := make([]interface{}, len(y))
+				copy(s, y)
+				v = s
+				continue
+			case []interface{}:
+				v = append(w, y...)
+				continue
+			}
 		case map[string]interface{}:
 			switch w := v.(type) {
 			case nil:
@@ -457,17 +468,6 @@ func funcAdd(v interface{}) interface{} {
 				for k, e := range y {
 					w[k] = e
 				}
-				continue
-			}
-		case []interface{}:
-			switch w := v.(type) {
-			case nil:
-				s := make([]interface{}, len(y))
-				copy(s, y)
-				v = s
-				continue
-			case []interface{}:
-				v = append(w, y...)
 				continue
 			}
 		}
