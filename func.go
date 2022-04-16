@@ -573,14 +573,10 @@ func indices(vs, xs []interface{}) interface{} {
 	if len(xs) == 0 {
 		return rs
 	}
-L:
 	for i := 0; i <= len(vs)-len(xs); i++ {
-		for j, x := range xs {
-			if compare(vs[i+j], x) != 0 {
-				continue L
-			}
+		if compare(vs[i:i+len(xs)], xs) == 0 {
+			rs = append(rs, i)
 		}
-		rs = append(rs, i)
 	}
 	return rs
 }
@@ -590,14 +586,10 @@ func funcIndex(v, x interface{}) interface{} {
 		if len(xs) == 0 {
 			return nil
 		}
-	L:
 		for i := 0; i <= len(vs)-len(xs); i++ {
-			for j, x := range xs {
-				if compare(vs[i+j], x) != 0 {
-					continue L
-				}
+			if compare(vs[i:i+len(xs)], xs) == 0 {
+				return i
 			}
-			return i
 		}
 		return nil
 	})
@@ -608,14 +600,10 @@ func funcRindex(v, x interface{}) interface{} {
 		if len(xs) == 0 {
 			return nil
 		}
-	L:
 		for i := len(vs) - len(xs); i >= 0; i-- {
-			for j, x := range xs {
-				if compare(vs[i+j], x) != 0 {
-					continue L
-				}
+			if compare(vs[i:i+len(xs)], xs) == 0 {
+				return i
 			}
-			return i
 		}
 		return nil
 	})
