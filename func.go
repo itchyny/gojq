@@ -430,42 +430,42 @@ func funcAdd(v interface{}) interface{} {
 	}
 	v = nil
 	for _, x := range vs {
-		switch y := x.(type) {
+		switch x := x.(type) {
 		case nil:
 			continue
 		case string:
 			switch w := v.(type) {
 			case nil:
 				var sb strings.Builder
-				sb.WriteString(y)
+				sb.WriteString(x)
 				v = &sb
 				continue
 			case *strings.Builder:
-				w.WriteString(y)
+				w.WriteString(x)
 				continue
 			}
 		case []interface{}:
 			switch w := v.(type) {
 			case nil:
-				s := make([]interface{}, len(y))
-				copy(s, y)
+				s := make([]interface{}, len(x))
+				copy(s, x)
 				v = s
 				continue
 			case []interface{}:
-				v = append(w, y...)
+				v = append(w, x...)
 				continue
 			}
 		case map[string]interface{}:
 			switch w := v.(type) {
 			case nil:
-				m := make(map[string]interface{}, len(y))
-				for k, e := range y {
+				m := make(map[string]interface{}, len(x))
+				for k, e := range x {
 					m[k] = e
 				}
 				v = m
 				continue
 			case map[string]interface{}:
-				for k, e := range y {
+				for k, e := range x {
 					w[k] = e
 				}
 				continue
