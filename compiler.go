@@ -990,7 +990,7 @@ func (c *compiler) compileFunc(e *Func) error {
 			return err
 		}
 		if fn.iter {
-			c.append(&code{op: opeach})
+			c.append(&code{op: opiter})
 		}
 		return nil
 	}
@@ -1331,7 +1331,7 @@ func (c *compiler) compileTermSuffix(e *Term, s *Suffix) error {
 		if err := c.compileTerm(e); err != nil {
 			return err
 		}
-		c.append(&code{op: opeach})
+		c.append(&code{op: opiter})
 		return nil
 	} else if s.Optional {
 		if len(e.SuffixList) > 0 {
@@ -1363,7 +1363,7 @@ func (c *compiler) compileCall(name string, args []*Query) error {
 		return err
 	}
 	if fn.iter {
-		c.append(&code{op: opeach})
+		c.append(&code{op: opiter})
 	}
 	return nil
 }

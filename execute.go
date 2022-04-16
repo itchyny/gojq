@@ -266,7 +266,7 @@ loop:
 			if env.scopes.empty() {
 				return env.pop(), true
 			}
-		case opeach:
+		case opiter:
 			if err != nil {
 				break loop
 			}

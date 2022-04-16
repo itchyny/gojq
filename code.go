@@ -32,7 +32,7 @@ const (
 	opcallpc
 	opscope
 	opret
-	opeach
+	opiter
 	opexpbegin
 	opexpend
 	oppathbegin
@@ -89,8 +89,8 @@ func (op opcode) String() string {
 		return "scope"
 	case opret:
 		return "ret"
-	case opeach:
-		return "each"
+	case opiter:
+		return "iter"
 	case opexpbegin:
 		return "expbegin"
 	case opexpend:
