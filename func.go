@@ -431,6 +431,19 @@ func funcAdd(v interface{}) interface{} {
 	v = nil
 	for _, x := range vs {
 		switch y := x.(type) {
+		case nil:
+			continue
+		case string:
+			switch w := v.(type) {
+			case nil:
+				var sb strings.Builder
+				sb.WriteString(y)
+				v = &sb
+				continue
+			case *strings.Builder:
+				w.WriteString(y)
+				continue
+			}
 		case map[string]interface{}:
 			switch w := v.(type) {
 			case nil:
@@ -458,10 +471,16 @@ func funcAdd(v interface{}) interface{} {
 				continue
 			}
 		}
+		if sb, ok := v.(*strings.Builder); ok {
+			v = sb.String()
+		}
 		v = funcOpAdd(nil, v, x)
 		if err, ok := v.(error); ok {
 			return err
 		}
+	}
+	if sb, ok := v.(*strings.Builder); ok {
+		v = sb.String()
 	}
 	return v
 }

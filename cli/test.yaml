@@ -1366,6 +1366,13 @@
   error: |
     cannot add: object ({}) and array ([])
 
+- name: add function error
+  args:
+    - 'add'
+  input: '["x", null, "y", {}, "z"]'
+  error: |
+    cannot add: string ("xy") and object ({})
+
 - name: flatten/0 function
   args:
     - -c
