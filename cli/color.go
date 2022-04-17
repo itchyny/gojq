@@ -35,10 +35,7 @@ func validColor(x string) bool {
 	for _, c := range x {
 		if '0' <= c && c <= '9' {
 			num = true
-		} else if c == ';' {
-			if !num {
-				return false
-			}
+		} else if c == ';' && num {
 			num = false
 		} else {
 			return false
