@@ -79,9 +79,8 @@ loop:
 				}
 				pc, backtrack = code.v.(int), false
 				goto loop
-			} else {
-				env.pushfork(pc)
 			}
+			env.pushfork(pc)
 		case opforktrybegin:
 			if backtrack {
 				if err == nil {
@@ -108,18 +107,16 @@ loop:
 				}
 				pc, backtrack, err = code.v.(int), false, nil
 				goto loop
-			} else {
-				env.pushfork(pc)
 			}
+			env.pushfork(pc)
 		case opforktryend:
 			if backtrack {
 				if err != nil {
 					err = &tryEndError{err}
 				}
 				break loop
-			} else {
-				env.pushfork(pc)
 			}
+			env.pushfork(pc)
 		case opforkalt:
 			if backtrack {
 				if err == nil {
@@ -127,9 +124,8 @@ loop:
 				}
 				pc, backtrack, err = code.v.(int), false, nil
 				goto loop
-			} else {
-				env.pushfork(pc)
 			}
+			env.pushfork(pc)
 		case opforklabel:
 			if backtrack {
 				label := env.pop()
@@ -137,13 +133,12 @@ loop:
 					err = nil
 				}
 				break loop
-			} else {
-				env.push(env.label)
-				env.pushfork(pc)
-				env.pop()
-				env.values[env.index(code.v.([2]int))] = env.label
-				env.label++
 			}
+			env.push(env.label)
+			env.pushfork(pc)
+			env.pop()
+			env.values[env.index(code.v.([2]int))] = env.label
+			env.label++
 		case opbacktrack:
 			break loop
 		case opjump:
