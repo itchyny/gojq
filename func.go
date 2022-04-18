@@ -961,6 +961,8 @@ func funcIndex2(_, v, x interface{}) interface{} {
 		switch v.(type) {
 		case []interface{}:
 			return &arrayIndexNotNumberError{x}
+		case string:
+			return &stringIndexNotNumberError{x}
 		default:
 			return &objectKeyNotStringError{x}
 		}

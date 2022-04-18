@@ -663,6 +663,13 @@
   expected: |
     ["１","５","１","４","５",null,"３４","２３"]
 
+- name: string indexing not number error
+  args:
+    - '.[null]'
+  input: '""'
+  error: |
+    expected a number for indexing a string but got: null
+
 - name: array construction
   args:
     - -c

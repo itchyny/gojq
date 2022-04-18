@@ -72,6 +72,14 @@ func (err *arrayIndexNotNumberError) Error() string {
 	return "expected a number for indexing an array but got: " + typeErrorPreview(err.v)
 }
 
+type stringIndexNotNumberError struct {
+	v interface{}
+}
+
+func (err *stringIndexNotNumberError) Error() string {
+	return "expected a number for indexing a string but got: " + typeErrorPreview(err.v)
+}
+
 type expectedStartEndError struct {
 	v interface{}
 }
