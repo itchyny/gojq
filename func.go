@@ -997,12 +997,7 @@ func funcSlice(_, v, e, s interface{}) (r interface{}) {
 	case []interface{}:
 		return slice(v, e, s)
 	case string:
-		switch v := slice(explode(v), e, s).(type) {
-		case []interface{}:
-			return implode(v)
-		default:
-			return v
-		}
+		return sliceString(v, e, s)
 	default:
 		return &expectedArrayError{v}
 	}
@@ -1027,6 +1022,48 @@ func slice(vs []interface{}, e, s interface{}) interface{} {
 		end = len(vs)
 	}
 	return vs[start:end]
+}
+
+func sliceString(v string, e, s interface{}) interface{} {
+	var start, end int
+	l := len([]rune(v))
+	if s != nil {
+		if i, ok := toInt(s); ok {
+			start = clampIndex(i, 0, l)
+		} else {
+			return &stringIndexNotNumberError{s}
+		}
+	}
+	if e != nil {
+		if i, ok := toInt(e); ok {
+			end = clampIndex(i, start, l)
+		} else {
+			return &stringIndexNotNumberError{e}
+		}
+	} else {
+		end = l
+	}
+	if start < l {
+		for i := range v {
+			if start--; start < 0 {
+				start = i
+				break
+			}
+		}
+	} else {
+		start = len(v)
+	}
+	if end < l {
+		for i := range v {
+			if end--; end < 0 {
+				end = i
+				break
+			}
+		}
+	} else {
+		end = len(v)
+	}
+	return v[start:end]
 }
 
 func clampIndex(i, min, max int) int {

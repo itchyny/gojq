@@ -557,13 +557,6 @@
   error: |
     expected "start" and "end" for slicing but got: object ({"start":1})
 
-- name: array slicing against string error
-  args:
-    - '""[:{}]'
-  input: '0'
-  error: |
-    expected a number for indexing an array but got: object ({})
-
 - name: array nested indexing by iterator
   args:
     - -c
@@ -669,6 +662,20 @@
   input: '""'
   error: |
     expected a number for indexing a string but got: null
+
+- name: string slicing start error
+  args:
+    - '.[[]:]'
+  input: '""'
+  error: |
+    expected a number for indexing a string but got: array ([])
+
+- name: string slicing end error
+  args:
+    - '.[:{}]'
+  input: '""'
+  error: |
+    expected a number for indexing a string but got: object ({})
 
 - name: array construction
   args:
