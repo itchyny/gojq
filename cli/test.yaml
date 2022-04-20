@@ -4265,10 +4265,34 @@
 - name: setpath function error
   args:
     - -c
-    - 'setpath(["a",{}]; 10)'
+    - 'setpath([{}]; 10)'
   input: 'null'
   error: |
-    expected a string for object key but got: object ({})
+    expected "start" and "end" for slicing but got: object ({})
+
+- name: setpath function error
+  args:
+    - -c
+    - 'setpath([{start:0}]; 10)'
+  input: 'null'
+  error: |
+    expected "start" and "end" for slicing but got: object ({"start":0})
+
+- name: setpath function error
+  args:
+    - -c
+    - 'setpath([[]]; 10)'
+  input: '[]'
+  error: |
+    expected a number for indexing an array but got: array ([])
+
+- name: setpath function error
+  args:
+    - -c
+    - 'setpath([{start:0,end:1}]; 10)'
+  input: '[]'
+  error: |
+    expected an array but got: number (10)
 
 - name: delpaths function
   args:
