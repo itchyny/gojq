@@ -82,35 +82,3 @@ func normalizeNumbers(v interface{}) interface{} {
 		return v
 	}
 }
-
-// It's ok to delete destructively because this function is used right after
-// updatePaths, where it shallow-copies maps or slices on updates.
-func deleteEmpty(v interface{}) interface{} {
-	switch v := v.(type) {
-	case struct{}:
-		return nil
-	case map[string]interface{}:
-		for k, w := range v {
-			if w == struct{}{} {
-				delete(v, k)
-			} else {
-				v[k] = deleteEmpty(w)
-			}
-		}
-		return v
-	case []interface{}:
-		var j int
-		for _, w := range v {
-			if w != struct{}{} {
-				v[j] = deleteEmpty(w)
-				j++
-			}
-		}
-		for i := j; i < len(v); i++ {
-			v[i] = nil
-		}
-		return v[:j]
-	default:
-		return v
-	}
-}
