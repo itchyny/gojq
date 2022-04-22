@@ -204,7 +204,7 @@ func TestQueryRun_Strings(t *testing.T) {
 }
 
 func TestQueryRun_NumericTypes(t *testing.T) {
-	query, err := gojq.Parse(".[] != 0")
+	query, err := gojq.Parse(`.[] + 0 != 0`)
 	if err != nil {
 		t.Fatal(err)
 	}
