@@ -17,7 +17,7 @@ func generateString(size int) string {
 
 func TestGetLineByOffset(t *testing.T) {
 	numbers := generateString(500)
-	var testCases = []struct {
+	testCases := []struct {
 		str          string
 		offset       int
 		linestr      string
@@ -172,7 +172,7 @@ func TestGetLineByOffset(t *testing.T) {
 }
 
 func TestGetLineByLine(t *testing.T) {
-	var testCases = []struct {
+	testCases := []struct {
 		str     string
 		line    int
 		linestr string
