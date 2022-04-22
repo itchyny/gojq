@@ -37,10 +37,10 @@ func normalizeNumbers(v interface{}) interface{} {
 		}
 		return v
 	case int64:
-		if v > maxInt || v < minInt {
-			return new(big.Int).SetInt64(v)
+		if minInt <= v && v <= maxInt {
+			return int(v)
 		}
-		return int(v)
+		return new(big.Int).SetInt64(v)
 	case int32:
 		return int(v)
 	case int16:
@@ -48,34 +48,34 @@ func normalizeNumbers(v interface{}) interface{} {
 	case int8:
 		return int(v)
 	case uint:
-		if v > maxInt {
-			return new(big.Int).SetUint64(uint64(v))
+		if v <= maxInt {
+			return int(v)
 		}
-		return int(v)
+		return new(big.Int).SetUint64(uint64(v))
 	case uint64:
-		if v > maxInt {
-			return new(big.Int).SetUint64(v)
+		if v <= maxInt {
+			return int(v)
 		}
-		return int(v)
+		return new(big.Int).SetUint64(v)
 	case uint32:
-		if uint64(v) > maxInt {
-			return new(big.Int).SetUint64(uint64(v))
+		if uint64(v) <= maxInt {
+			return int(v)
 		}
-		return int(v)
+		return new(big.Int).SetUint64(uint64(v))
 	case uint16:
 		return int(v)
 	case uint8:
 		return int(v)
 	case float32:
 		return float64(v)
-	case map[string]interface{}:
-		for k, x := range v {
-			v[k] = normalizeNumbers(x)
-		}
-		return v
 	case []interface{}:
 		for i, x := range v {
 			v[i] = normalizeNumbers(x)
+		}
+		return v
+	case map[string]interface{}:
+		for k, x := range v {
+			v[k] = normalizeNumbers(x)
 		}
 		return v
 	default:
