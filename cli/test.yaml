@@ -636,14 +636,14 @@
 
 - name: array slicing start error
   args:
-    - '.["":]'
+    - '.[[]:0]'
   input: '[]'
   error: |
-    expected a number for indexing an array but got: string ("")
+    expected a number for indexing an array but got: array ([])
 
 - name: array slicing end error
   args:
-    - '.[:{}]'
+    - '.[0:{}]'
   input: '[]'
   error: |
     expected a number for indexing an array but got: object ({})

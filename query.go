@@ -522,6 +522,20 @@ func (e *Index) toIndexKey() interface{} {
 		}
 	} else if !e.IsSlice {
 		return e.Start.toIndexKey()
+	} else {
+		var start, end interface{}
+		ok := true
+		if e.Start != nil {
+			start = e.Start.toIndexKey()
+			ok = start != nil
+		}
+		if e.End != nil && ok {
+			end = e.End.toIndexKey()
+			ok = end != nil
+		}
+		if ok {
+			return map[string]interface{}{"start": start, "end": end}
+		}
 	}
 	return nil
 }

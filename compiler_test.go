@@ -130,8 +130,8 @@ func TestCodeCompile_OptimizeConstants(t *testing.T) {
 	}
 }
 
-func TestCodeCompile_OptimizeIndex(t *testing.T) {
-	query, err := gojq.Parse(`.foo."bar".["baz"].[-1].""`)
+func TestCodeCompile_OptimizeIndexSlice(t *testing.T) {
+	query, err := gojq.Parse(`.foo."bar".["baz"].[-1]."".[0:1]`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,7 +139,7 @@ func TestCodeCompile_OptimizeIndex(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, expected := reflect.ValueOf(code).Elem().FieldByName("codes").Len(), 7; expected != got {
+	if got, expected := reflect.ValueOf(code).Elem().FieldByName("codes").Len(), 8; expected != got {
 		t.Errorf("expected: %v, got: %v", expected, got)
 	}
 	iter := code.Run(nil)
@@ -154,8 +154,8 @@ func TestCodeCompile_OptimizeIndex(t *testing.T) {
 	}
 }
 
-func TestCodeCompile_OptimizeIndexAssign(t *testing.T) {
-	query, err := gojq.Parse(`.foo."bar".["baz"].[0]."" = 0`)
+func TestCodeCompile_OptimizeIndexSliceAssign(t *testing.T) {
+	query, err := gojq.Parse(`.foo."bar".["baz"].[0]."".[0:1] = [0]`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,7 +175,7 @@ func TestCodeCompile_OptimizeIndexAssign(t *testing.T) {
 		if expected := map[string]interface{}{
 			"foo": map[string]interface{}{
 				"bar": map[string]interface{}{
-					"baz": []interface{}{map[string]interface{}{"": 0}},
+					"baz": []interface{}{map[string]interface{}{"": []interface{}{0}}},
 				},
 			},
 		}; !reflect.DeepEqual(got, expected) {
