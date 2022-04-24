@@ -113,7 +113,8 @@ func TestCodeCompile_OptimizeConstants(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, expected := reflect.ValueOf(code).Elem().FieldByName("codes").Len(), 3; expected != got {
+	codes := reflect.ValueOf(code).Elem().FieldByName("codes")
+	if got, expected := codes.Len(), 3; expected != got {
 		t.Errorf("expected: %v, got: %v", expected, got)
 	}
 	iter := code.Run(nil)
@@ -139,7 +140,8 @@ func TestCodeCompile_OptimizeIndexSlice(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, expected := reflect.ValueOf(code).Elem().FieldByName("codes").Len(), 8; expected != got {
+	codes := reflect.ValueOf(code).Elem().FieldByName("codes")
+	if got, expected := codes.Len(), 8; expected != got {
 		t.Errorf("expected: %v, got: %v", expected, got)
 	}
 	iter := code.Run(nil)
@@ -163,7 +165,8 @@ func TestCodeCompile_OptimizeIndexSliceAssign(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, expected := reflect.ValueOf(code).Elem().FieldByName("codes").Len(), 8; expected != got {
+	codes := reflect.ValueOf(code).Elem().FieldByName("codes")
+	if got, expected := codes.Len(), 8; expected != got {
 		t.Errorf("expected: %v, got: %v", expected, got)
 	}
 	iter := code.Run(nil)
@@ -221,7 +224,9 @@ func TestCodeCompile_OptimizeTailRec_While(t *testing.T) {
 }
 
 func TestCodeCompile_OptimizeTailRec_CallRec(t *testing.T) {
-	query, err := gojq.Parse("def f: . as $x | $x, (if $x < 3 then $x + 1 | f else empty end), $x; f")
+	query, err := gojq.Parse(`
+		def f: . as $x | $x, (if $x < 3 then $x + 1 | f else empty end), $x; f
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}

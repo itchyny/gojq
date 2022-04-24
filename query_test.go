@@ -105,7 +105,8 @@ func TestQueryRun_ObjectError(t *testing.T) {
 			break
 		}
 		if err, ok := v.(error); ok {
-			if expected := "expected a string for object key but got"; !strings.Contains(err.Error(), expected) {
+			expected := "expected a string for object key but got"
+			if !strings.Contains(err.Error(), expected) {
 				t.Errorf("expected: %v, got: %v", expected, err)
 			}
 		} else if expected := map[string]interface{}{"x": 1}; !reflect.DeepEqual(v, expected) {
@@ -126,7 +127,8 @@ func TestQueryRun_IndexError(t *testing.T) {
 			break
 		}
 		if err, ok := v.(error); ok {
-			if expected := "expected an object but got: array ([0])"; !strings.Contains(err.Error(), expected) {
+			expected := "expected an object but got: array ([0])"
+			if !strings.Contains(err.Error(), expected) {
 				t.Errorf("expected: %v, got: %v", expected, err)
 			}
 		} else {
