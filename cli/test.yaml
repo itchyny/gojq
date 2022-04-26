@@ -1321,7 +1321,6 @@
 
 - name: from_entries function missing key
   args:
-    - -c
     - 'from_entries'
   input: '[{"value":1}]'
   error: |
@@ -2330,7 +2329,6 @@
 
 - name: function declaration name error
   args:
-    - -c
     - 'def $f: .; $f'
   input: 'null'
   error: |
@@ -3332,7 +3330,6 @@
 
 - name: string interpolation parse error
   args:
-    - -c
     - '"\(1 +)"'
   input: '0'
   error: |
@@ -4240,7 +4237,6 @@
 
 - name: setpath function error
   args:
-    - -c
     - 'setpath([-1]; 10)'
   input: '[]'
   error: |
@@ -4248,7 +4244,6 @@
 
 - name: setpath function error
   args:
-    - -c
     - 'setpath(["a","b","c"]; 10)'
   input: '{"a":{"b":[]}}'
   error: |
@@ -4256,7 +4251,6 @@
 
 - name: setpath function error
   args:
-    - -c
     - 'setpath(["a",1]; 10)'
   input: '{"a":{"b":[]}}'
   error: |
@@ -4264,7 +4258,6 @@
 
 - name: setpath function error
   args:
-    - -c
     - 'setpath([{}]; 10)'
   input: 'null'
   error: |
@@ -4272,7 +4265,6 @@
 
 - name: setpath function error
   args:
-    - -c
     - 'setpath([{start:0}]; 10)'
   input: 'null'
   error: |
@@ -4280,7 +4272,6 @@
 
 - name: setpath function error
   args:
-    - -c
     - 'setpath([[]]; 10)'
   input: '[]'
   error: |
@@ -4288,7 +4279,6 @@
 
 - name: setpath function error
   args:
-    - -c
     - 'setpath([{start:0,end:1}]; 10)'
   input: '[]'
   error: |
@@ -4354,7 +4344,6 @@
 
 - name: getpath function error
   args:
-    - -c
     - 'getpath(["a",1,"b","c"])'
   input: '{"a":[{},{"b":[1,2,3,4,5,6,7]}]}'
   error: |
