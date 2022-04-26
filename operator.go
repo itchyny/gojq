@@ -399,23 +399,14 @@ func funcOpMul(_, l, r interface{}) interface{} {
 		func(l, r []interface{}) interface{} { return &binopTypeError{"multiply", l, r} },
 		deepMergeObjects,
 		func(l, r interface{}) interface{} {
-			multiplyString := func(s string, cnt float64) interface{} {
-				if cnt <= 0.0 || len(s) > 0 && cnt > float64(0x10000000/len(s)) || math.IsNaN(cnt) {
-					return nil
-				}
-				if cnt < 1.0 {
-					return s
-				}
-				return strings.Repeat(s, int(cnt))
-			}
 			if l, ok := l.(string); ok {
-				if f, ok := toFloat(r); ok {
-					return multiplyString(l, f)
+				if r, ok := toFloat(r); ok {
+					return repeatString(l, r)
 				}
 			}
 			if r, ok := r.(string); ok {
-				if f, ok := toFloat(l); ok {
-					return multiplyString(r, f)
+				if l, ok := toFloat(l); ok {
+					return repeatString(r, l)
 				}
 			}
 			return &binopTypeError{"multiply", l, r}
@@ -439,6 +430,16 @@ func deepMergeObjects(l, r map[string]interface{}) interface{} {
 		m[k] = v
 	}
 	return m
+}
+
+func repeatString(s string, n float64) interface{} {
+	if n <= 0.0 || len(s) > 0 && n > float64(0x10000000/len(s)) || math.IsNaN(n) {
+		return nil
+	}
+	if n < 1.0 {
+		return s
+	}
+	return strings.Repeat(s, int(n))
 }
 
 func funcOpDiv(_, l, r interface{}) interface{} {
