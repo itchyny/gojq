@@ -584,7 +584,7 @@ func (c *compiler) compilePattern(vs [][2]int, p *Pattern) ([][2]int, error) {
 		c.append(&code{op: opstore, v: v})
 		for i, p := range p.Array {
 			c.append(&code{op: opload, v: v})
-			c.append(&code{op: opindex, v: i})
+			c.append(&code{op: opindexarray, v: i})
 			if vs, err = c.compilePattern(vs, p); err != nil {
 				return nil, err
 			}

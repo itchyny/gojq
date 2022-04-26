@@ -149,11 +149,17 @@ loop:
 				pc = code.v.(int)
 				goto loop
 			}
-		case opindex:
+		case opindex, opindexarray:
 			if backtrack {
 				break loop
 			}
 			p, v := code.v, env.pop()
+			if code.op == opindexarray && v != nil {
+				if _, ok := v.([]interface{}); !ok {
+					err = &expectedArrayError{v}
+					break loop
+				}
+			}
 			w := funcIndex2(nil, v, p)
 			if e, ok := w.(error); ok {
 				err = e
