@@ -987,14 +987,12 @@
 
 - name: variable in object keys
   args:
+    - -c
     - '. as [$x, $y, $z] | {$x: 1, $y: 2, $z: 3}'
-  input: '["a", "b", "c"]'
+  input: |
+    ["a","b","c"]
   expected: |
-    {
-      "a": 1,
-      "b": 2,
-      "c": 3
-    }
+    {"a":1,"b":2,"c":3}
 
 - name: pipe in object key
   args:
@@ -2614,21 +2612,13 @@
 
 - name: ensure arrays are immutable during addition
   args:
+    - -c
     - '. as $first | .[:0] + [6, 7, 8] | ., $first'
-  input: '[1, 2, 3, 4, 5]'
+  input: |
+    [1,2,3,4,5]
   expected: |
-    [
-      6,
-      7,
-      8
-    ]
-    [
-      1,
-      2,
-      3,
-      4,
-      5
-    ]
+    [6,7,8]
+    [1,2,3,4,5]
 
 - name: subtract arrays
   args:
@@ -3089,18 +3079,11 @@
 
 - name: reduce variable scope
   args:
+    - -c
     - '. as $x | reduce .[] as $x (.; . + .) | [., $x]'
   input: '[1]'
   expected: |
-    [
-      [
-        1,
-        1
-      ],
-      [
-        1
-      ]
-    ]
+    [[1,1],[1]]
 
 - name: foreach iterator
   args:
@@ -3148,18 +3131,11 @@
 
 - name: foreach variable scope
   args:
+    - -c
     - '. as $x | foreach .[] as $x (.; . + .) | [., $x]'
   input: '[1]'
   expected: |
-    [
-      [
-        1,
-        1
-      ],
-      [
-        1
-      ]
-    ]
+    [[1,1],[1]]
 
 - name: label and break syntax
   args:
@@ -3388,28 +3364,22 @@
 
 - name: variable definition
   args:
+    - -c
     - '.foo.bar as $foo | .foo.bar as $bar | {$foo} + {bar: ($bar / 2)} * { baz: 20 }'
-  input: '{ "foo": { "bar": 10 } }'
+  input: |
+    {"foo":{"bar":10}}
   expected: |
-    {
-      "bar": 5,
-      "baz": 20,
-      "foo": 10
-    }
+    {"bar":5,"baz":20,"foo":10}
 
 - name: variable definition
   args:
+    - -c
     - '.ys as $ys | .xs[] | {a, b: $ys[.b]}'
-  input: '{"xs": [{"a": "a0", "b": "b0"}, {"a": "a1", "b": "b1"}], "ys": {"b0": "bb0", "b1": "bb1"}}'
+  input: |
+    {"xs":[{"a":"a0","b":"b0"},{"a":"a1","b":"b1"}],"ys":{"b0":"bb0","b1":"bb1"}}
   expected: |
-    {
-      "a": "a0",
-      "b": "bb0"
-    }
-    {
-      "a": "a1",
-      "b": "bb1"
-    }
+    {"a":"a0","b":"bb0"}
+    {"a":"a1","b":"bb1"}
 
 - name: variable name error
   args:
@@ -3424,204 +3394,152 @@
 - name: variable name not found error
   args:
     - '.foo as $foo | {$bar}'
-  input: '{ "foo": 10 }'
+  input: |
+    {"foo":10}
   error: |
     variable not defined: $bar
   exit_code: 3
 
 - name: binding an array
   args:
+    - -c
     - '. as [$i, $j] | [$j, $i]'
   input: |
     []
     [10]
-    [20, 30]
+    [20,30]
   expected: |
-    [
-      null,
-      null
-    ]
-    [
-      null,
-      10
-    ]
-    [
-      30,
-      20
-    ]
+    [null,null]
+    [null,10]
+    [30,20]
 
 - name: binding an array deeply
   args:
+    - -c
     - '. as [$i, [$j], [[$k]]] | [$i, $j, $k]'
   input: |
     []
     [10]
-    [20, [30], [[40]]]
+    [20,[30],[[40]]]
   expected: |
-    [
-      null,
-      null,
-      null
-    ]
-    [
-      10,
-      null,
-      null
-    ]
-    [
-      20,
-      30,
-      40
-    ]
+    [null,null,null]
+    [10,null,null]
+    [20,30,40]
 
 - name: binding an array error
   args:
     - '. as [$i, $j] | [$j, $i]'
-  input: '{ "foo": 10 }'
+  input: |
+    {"foo":10}
   error: |
     expected an array but got: object ({"foo":10})
 
 - name: binding an object
   args:
+    - -c
     - '. as {$foo, bar: $bar} | {$bar, $foo}'
   input: |
     {}
-    {"foo": 10}
-    {"foo": 20, "bar": 30}
+    {"foo":10}
+    {"foo":20,"bar":30}
   expected: |
-    {
-      "bar": null,
-      "foo": null
-    }
-    {
-      "bar": null,
-      "foo": 10
-    }
-    {
-      "bar": 30,
-      "foo": 20
-    }
+    {"bar":null,"foo":null}
+    {"bar":null,"foo":10}
+    {"bar":30,"foo":20}
 
 - name: binding an object deeply
   args:
+    - -c
     - '. as {$foo, bar: {"baz": {$qux}, "": $quy}} | {$foo, $qux, $quy}'
   input: |
     {}
-    {"foo": 10}
-    {"foo": 20, "bar": { "baz": { "qux": 30 }, "": -1 } }
+    {"foo":10}
+    {"foo":20,"bar":{"baz":{"qux":30},"":-1}}
   expected: |
-    {
-      "foo": null,
-      "qux": null,
-      "quy": null
-    }
-    {
-      "foo": 10,
-      "qux": null,
-      "quy": null
-    }
-    {
-      "foo": 20,
-      "qux": 30,
-      "quy": -1
-    }
+    {"foo":null,"qux":null,"quy":null}
+    {"foo":10,"qux":null,"quy":null}
+    {"foo":20,"qux":30,"quy":-1}
 
 - name: binding an object with expression
   args:
+    - -c
     - '. as {as: $foo, ("e"+"x"+"p"): $bar, (.foo): $baz, "\(.qux)": $qux} | [$foo, $bar, $baz, $qux]'
-  input: '{"as": 1, "exp": 2, "foo": "bar", "bar": 3, "qux": "quux", "quux": 4}'
+  input: |
+    {"as":1,"exp":2,"foo":"bar","bar":3,"qux":"quux","quux":4}
   expected: |
-    [
-      1,
-      2,
-      3,
-      4
-    ]
+    [1,2,3,4]
 
 - name: binding an object error
   args:
     - '. as {$i} | [$i]'
-  input: '[10]'
+  input: |
+    [10]
   error: |
     expected an object but got: array ([10])
 
 - name: binding object and array deeply
   args:
+    - -c
     - '. as {$a, $b: [$c, $d]} | [$a, $b, $c, $d]'
-  input: '{"a":1, "b": [2, {"d": 3}]}'
+  input: |
+    {"a":1,"b":[2,{"d":3}]}
   expected: |
-    [
-      1,
-      [
-        2,
-        {
-          "d": 3
-        }
-      ],
-      2,
-      {
-        "d": 3
-      }
-    ]
+    [1,[2,{"d":3}],2,{"d":3}]
 
 - name: binding variable scope in parenthesis
   args:
+    - -c
     - '. as $x | (.foo as $x | [$x]) | .+[$x]'
-  input: '{"foo": 42}'
+  input: |
+    {"foo": 42}
   expected: |
-    [
-      42,
-      {
-        "foo": 42
-      }
-    ]
+    [42,{"foo":42}]
 
 - name: binding variable scope in array
   args:
+    - -c
     - '. as $x | [.foo as $x | $x] | $x'
-  input: '{"foo": 42}'
+  input: |
+    {"foo":42}
   expected: |
-    {
-      "foo": 42
-    }
+    {"foo":42}
 
 - name: binding variable scope in object
   args:
+    - -c
     - '. as $x | {bar: (.foo as $x | $x)} | $x'
-  input: '{"foo": "bar"}'
+  input: |
+    {"foo":"bar"}
   expected: |
-    {
-      "foo": "bar"
-    }
+    {"foo":"bar"}
 
 - name: binding variable scope in object key
   args:
+    - -c
     - '. as $x | {(.foo as $x | $x): $x}'
-  input: '{"foo": "bar"}'
+  input: |
+    {"foo":"bar"}
   expected: |
-    {
-      "bar": {
-        "foo": "bar"
-      }
-    }
+    {"bar":{"foo":"bar"}}
 
 - name: binding variable scope in condition
   args:
     - -c
     - '. as $x | if (.foo,.bar) as $x | $x then 1 as $x | $x else 2 as $x | $x end | [., $x]'
-  input: '{"foo": "bar"}'
+  input: |
+    {"foo":"bar"}
   expected: |
     [1,{"foo":"bar"}]
     [2,{"foo":"bar"}]
 
 - name: binding variable scope in try catch
   args:
+    - -c
     - '. as $x | try .foo as $x | $x | error catch $x'
-  input: '{"foo": 42}'
+  input: |
+    {"foo":42}
   expected: |
-    {
-      "foo": 42
-    }
+    {"foo":42}
 
 - name: binding variable scope in reduce
   args:
@@ -3691,19 +3609,19 @@
   args:
     - -c
     - 'def f: 1; . | {bar: (def f: .foo; f)} | f, .'
-  input: '{"foo": "bar"}'
+  input: |
+    {"foo":"bar"}
   expected: |
     1
     {"bar":"bar"}
 
 - name: function scope in object key
   args:
+    - -c
     - 'def f: 1; . | {(def f: "foo"; f): f}'
   input: '0'
   expected: |
-    {
-      "foo": 1
-    }
+    {"foo":1}
 
 - name: function scope error in parenthesis
   args:
