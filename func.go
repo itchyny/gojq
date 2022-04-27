@@ -849,7 +849,7 @@ func funcToCSVTSV(typ string, v interface{}, sep string, escape func(string) str
 
 func toCSVTSV(typ string, v interface{}, escape func(string) string) (string, error) {
 	switch v := v.(type) {
-	case map[string]interface{}, []interface{}:
+	case []interface{}, map[string]interface{}:
 		return "", &formatCsvTsvRowError{typ, v}
 	case string:
 		return escape(v), nil
@@ -874,7 +874,7 @@ func funcToSh(v interface{}) interface{} {
 			sb.WriteByte(' ')
 		}
 		switch x := x.(type) {
-		case map[string]interface{}, []interface{}:
+		case []interface{}, map[string]interface{}:
 			return &formatShError{x}
 		case string:
 			sb.WriteByte('\'')
@@ -1625,12 +1625,12 @@ func funcGetpath(v, p interface{}) interface{} {
 	u := v
 	for _, x := range keys {
 		switch v.(type) {
-		case nil, map[string]interface{}, []interface{}:
+		case nil, []interface{}, map[string]interface{}:
+			v = funcIndex2(nil, v, x)
+			if _, ok := v.(error); ok {
+				return &getpathError{u, p}
+			}
 		default:
-			return &getpathError{u, p}
-		}
-		v = funcIndex2(nil, v, x)
-		if _, ok := v.(error); ok {
 			return &getpathError{u, p}
 		}
 	}
