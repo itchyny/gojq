@@ -51,16 +51,6 @@ func (c *Code) RunWithContext(ctx context.Context, v interface{}, values ...inte
 	return newEnv(ctx).execute(c, normalizeNumbers(v), values...)
 }
 
-// ModuleLoader is an interface for loading modules.
-//
-// Implement following optional methods. Use NewModuleLoader to load local modules.
-//  LoadModule(string) (*Query, error)
-//  LoadModuleWithMeta(string, map[string]interface{}) (*Query, error)
-//  LoadInitModules() ([]*Query, error)
-//  LoadJSON(string) (interface{}, error)
-//  LoadJSONWithMeta(string, map[string]interface{}) (interface{}, error)
-type ModuleLoader interface{}
-
 type scopeinfo struct {
 	variables   []*varinfo
 	funcs       []*funcinfo
