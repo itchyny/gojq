@@ -5,6 +5,17 @@ import (
 	"math/big"
 )
 
+// Compare l and r, and returns jq-flavored comparison value.
+//
+//   -1 if l <  r
+//    0 if l == r
+//   +1 if l >  r
+//
+// This comparison is used by built-in operators and functions.
+func Compare(l, r interface{}) int {
+	return compare(l, r)
+}
+
 func compare(l, r interface{}) int {
 	return binopTypeSwitch(l, r,
 		compareInt,
