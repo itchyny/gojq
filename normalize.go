@@ -40,7 +40,7 @@ func normalizeNumbers(v interface{}) interface{} {
 		if minInt <= v && v <= maxInt {
 			return int(v)
 		}
-		return new(big.Int).SetInt64(v)
+		return big.NewInt(v)
 	case int32:
 		return int(v)
 	case int16:
