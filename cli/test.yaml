@@ -3318,49 +3318,42 @@
   args:
     - 'tojson'
   input: |
-    1
     null
     false
     true
+    4722366482869645213696
     "foo"
     ["foo"]
     {"a": [1,2,3]}
   expected: |
-    "1"
     "null"
     "false"
     "true"
+    "4722366482869645213696"
     "\"foo\""
     "[\"foo\"]"
     "{\"a\":[1,2,3]}"
 
 - name: fromjson function
   args:
+    - -c
     - 'fromjson'
   input: |
-    "1"
     "null"
     "false"
     "true"
+    "4722366482869645213696"
     "\"foo\""
     "[\"foo\"]"
-    "{\"a\":[1,2,4722366482869645213696]}"
+    "{\"a\":[1,2,3]}"
   expected: |
-    1
     null
     false
     true
+    4722366482869645213696
     "foo"
-    [
-      "foo"
-    ]
-    {
-      "a": [
-        1,
-        2,
-        4722366482869645213696
-      ]
-    }
+    ["foo"]
+    {"a":[1,2,3]}
 
 - name: variable definition
   args:
