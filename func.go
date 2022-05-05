@@ -761,11 +761,13 @@ func funcFromJSON(v interface{}) interface{} {
 	switch v := v.(type) {
 	case string:
 		var w interface{}
-		err := json.Unmarshal([]byte(v), &w)
+		dec := json.NewDecoder(strings.NewReader(v))
+		dec.UseNumber()
+		err := dec.Decode(&w)
 		if err != nil {
 			return err
 		}
-		return w
+		return normalizeNumbers(w)
 	default:
 		return &funcTypeError{"fromjson", v}
 	}
