@@ -763,8 +763,7 @@ func funcFromJSON(v interface{}) interface{} {
 		var w interface{}
 		dec := json.NewDecoder(strings.NewReader(v))
 		dec.UseNumber()
-		err := dec.Decode(&w)
-		if err != nil {
+		if err := dec.Decode(&w); err != nil {
 			return err
 		}
 		return normalizeNumbers(w)
