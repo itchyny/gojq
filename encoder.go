@@ -69,7 +69,7 @@ func (e *encoder) encode(v interface{}) {
 	case map[string]interface{}:
 		e.encodeMap(v)
 	default:
-		panic(fmt.Sprintf("invalid type: %T (%v)", v, v))
+		panic(fmt.Sprintf("invalid type: %[1]T (%[1]v)", v))
 	}
 }
 
