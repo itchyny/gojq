@@ -1719,9 +1719,13 @@ func funcMktime(v interface{}) interface{} {
 		if err != nil {
 			return err
 		}
-		return float64(t.Unix()) + float64(t.Nanosecond())/1e9
+		return timeToEpoch(t)
 	}
 	return &funcTypeError{"mktime", v}
+}
+
+func timeToEpoch(t time.Time) float64 {
+	return float64(t.Unix()) + float64(t.Nanosecond())/1e9
 }
 
 func funcStrftime(v, x interface{}) interface{} {
@@ -1769,7 +1773,7 @@ func funcStrptime(v, x interface{}) interface{} {
 			if t == s {
 				return &funcTypeError{"strptime", v}
 			}
-			return epochToArray(float64(t.Unix())+float64(t.Nanosecond())/1e9, time.UTC)
+			return epochToArray(timeToEpoch(t), time.UTC)
 		}
 		return &funcTypeError{"strptime", x}
 	}
@@ -1817,8 +1821,7 @@ func arrayToTime(name string, a []interface{}, loc *time.Location) (time.Time, e
 }
 
 func funcNow(interface{}) interface{} {
-	t := time.Now()
-	return float64(t.Unix()) + float64(t.Nanosecond())/1e9
+	return timeToEpoch(time.Now())
 }
 
 func funcMatch(v, re, fs, testing interface{}) interface{} {
