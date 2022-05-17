@@ -400,7 +400,7 @@
     - '"a"+"☆"*100 | .foo'
   input: '0'
   error: |
-    expected an object but got: string ("a☆☆☆☆☆☆☆☆ ...")
+    expected an object but got: string ("a☆☆☆☆☆☆☆ ...")
 
 - name: expected object error with pipe operator
   args:

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
-	"strings"
+	"unicode/utf8"
 )
 
 // ValueError is an interface for errors with a value for internal function.
@@ -53,7 +53,7 @@ type arrayIndexTooLargeError struct {
 }
 
 func (err *arrayIndexTooLargeError) Error() string {
-	return "array index too large: " + previewValue(err.v)
+	return "array index too large: " + preview(err.v)
 }
 
 type objectKeyNotStringError struct {
@@ -154,7 +154,7 @@ type containsTypeError struct {
 }
 
 func (err *containsTypeError) Error() string {
-	return "cannot check contains(" + previewValue(err.r) + "): " + typeErrorPreview(err.l)
+	return "cannot check contains(" + preview(err.r) + "): " + typeErrorPreview(err.l)
 }
 
 type hasKeyTypeError struct {
@@ -312,7 +312,7 @@ type getpathError struct {
 }
 
 func (err *getpathError) Error() string {
-	return "cannot getpath with " + previewValue(err.path) + " against: " + typeErrorPreview(err.v) + ""
+	return "cannot getpath with " + preview(err.path) + " against: " + typeErrorPreview(err.v) + ""
 }
 
 type queryParseError struct {
@@ -342,14 +342,14 @@ func (err *jsonParseError) Error() string {
 }
 
 func typeErrorPreview(v interface{}) string {
-	if _, ok := v.(Iter); ok {
+	switch v.(type) {
+	case nil:
+		return "null"
+	case Iter:
 		return "gojq.Iter"
+	default:
+		return typeof(v) + " (" + preview(v) + ")"
 	}
-	p := preview(v)
-	if p != "" {
-		p = " (" + p + ")"
-	}
-	return typeof(v) + p
 }
 
 func typeof(v interface{}) string {
@@ -400,26 +400,23 @@ func (w *limitedWriter) WriteString(s string) (int, error) {
 	return n, nil
 }
 
-func (w *limitedWriter) String() string {
-	return string(w.buf[:w.off])
+func (w *limitedWriter) Bytes() []byte {
+	return w.buf[:w.off]
 }
 
-func jsonLimitedMarshal(v interface{}, n int) (s string) {
+func jsonLimitedMarshal(v interface{}, n int) (bs []byte) {
 	w := &limitedWriter{buf: make([]byte, n)}
 	defer func() {
 		_ = recover()
-		s = w.String()
+		bs = w.Bytes()
 	}()
 	(&encoder{w: w}).encode(v)
 	return
 }
 
 func preview(v interface{}) string {
-	if v == nil {
-		return ""
-	}
-	s := jsonLimitedMarshal(v, 32)
-	if l := 30; len(s) > l {
+	bs := jsonLimitedMarshal(v, 32)
+	if l := 30; len(bs) > l {
 		var trailing string
 		switch v.(type) {
 		case string:
@@ -431,23 +428,11 @@ func preview(v interface{}) string {
 		default:
 			trailing = " ..."
 		}
-		var sb strings.Builder
-		sb.Grow(l + 5)
-		for _, c := range s {
-			sb.WriteRune(c)
-			if sb.Len() >= l-len(trailing) {
-				sb.WriteString(trailing)
-				break
-			}
+		for len(bs) > l-len(trailing) {
+			_, size := utf8.DecodeLastRune(bs)
+			bs = bs[:len(bs)-size]
 		}
-		s = sb.String()
+		bs = append(bs, trailing...)
 	}
-	return s
-}
-
-func previewValue(v interface{}) string {
-	if v == nil {
-		return "null"
-	}
-	return preview(v)
+	return string(bs)
 }
