@@ -14,8 +14,8 @@ import (
 
 // Marshal returns the jq-flavored JSON encoding of v.
 //
-// This method only accepts limited types (nil, bool, int, float64, *big.Int,
-// string, []interface{} and map[string]interface{}) because these are the
+// This method accepts only limited types (nil, bool, int, float64, *big.Int,
+// string, []interface{}, and map[string]interface{}) because these are the
 // possible types a gojq iterator can emit. This method marshals NaN to null,
 // truncates infinities to (+|-) math.MaxFloat64, uses \b and \f in strings,
 // and does not escape '<', '>', '&', '\u2028', and '\u2029'. These behaviors
