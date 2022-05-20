@@ -511,7 +511,7 @@ func funcToString(v interface{}) interface{} {
 }
 
 func funcType(v interface{}) interface{} {
-	return typeof(v)
+	return TypeOf(v)
 }
 
 func funcReverse(v interface{}) interface{} {

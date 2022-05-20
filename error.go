@@ -1,8 +1,6 @@
 package gojq
 
 import (
-	"fmt"
-	"math/big"
 	"strconv"
 	"unicode/utf8"
 )
@@ -348,26 +346,7 @@ func typeErrorPreview(v interface{}) string {
 	case Iter:
 		return "gojq.Iter"
 	default:
-		return typeof(v) + " (" + preview(v) + ")"
-	}
-}
-
-func typeof(v interface{}) string {
-	switch v := v.(type) {
-	case nil:
-		return "null"
-	case bool:
-		return "boolean"
-	case int, float64, *big.Int:
-		return "number"
-	case string:
-		return "string"
-	case []interface{}:
-		return "array"
-	case map[string]interface{}:
-		return "object"
-	default:
-		panic(fmt.Sprintf("invalid type: %[1]T (%[1]v)", v))
+		return TypeOf(v) + " (" + preview(v) + ")"
 	}
 }
 
