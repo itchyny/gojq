@@ -11,7 +11,7 @@ import (
 // types (nil, bool, int, float64, *big.Int, string, []interface{},
 // and map[string]interface{}).
 func TypeOf(v interface{}) string {
-	switch v := v.(type) {
+	switch v.(type) {
 	case nil:
 		return "null"
 	case bool:
