@@ -1,9 +1,6 @@
 package gojq
 
-import (
-	"strconv"
-	"unicode/utf8"
-)
+import "strconv"
 
 // ValueError is an interface for errors with a value for internal function.
 // Return an error implementing this interface when you want to catch error
@@ -51,7 +48,7 @@ type arrayIndexTooLargeError struct {
 }
 
 func (err *arrayIndexTooLargeError) Error() string {
-	return "array index too large: " + preview(err.v)
+	return "array index too large: " + Preview(err.v)
 }
 
 type objectKeyNotStringError struct {
@@ -152,7 +149,7 @@ type containsTypeError struct {
 }
 
 func (err *containsTypeError) Error() string {
-	return "cannot check contains(" + preview(err.r) + "): " + typeErrorPreview(err.l)
+	return "cannot check contains(" + Preview(err.r) + "): " + typeErrorPreview(err.l)
 }
 
 type hasKeyTypeError struct {
@@ -310,7 +307,7 @@ type getpathError struct {
 }
 
 func (err *getpathError) Error() string {
-	return "cannot getpath with " + preview(err.path) + " against: " + typeErrorPreview(err.v) + ""
+	return "cannot getpath with " + Preview(err.path) + " against: " + typeErrorPreview(err.v) + ""
 }
 
 type queryParseError struct {
@@ -346,72 +343,6 @@ func typeErrorPreview(v interface{}) string {
 	case Iter:
 		return "gojq.Iter"
 	default:
-		return TypeOf(v) + " (" + preview(v) + ")"
+		return TypeOf(v) + " (" + Preview(v) + ")"
 	}
-}
-
-type limitedWriter struct {
-	buf []byte
-	off int
-}
-
-func (w *limitedWriter) Write(bs []byte) (int, error) {
-	n := copy(w.buf[w.off:], bs)
-	if w.off += n; w.off == len(w.buf) {
-		panic(nil)
-	}
-	return n, nil
-}
-
-func (w *limitedWriter) WriteByte(b byte) error {
-	w.buf[w.off] = b
-	if w.off++; w.off == len(w.buf) {
-		panic(nil)
-	}
-	return nil
-}
-
-func (w *limitedWriter) WriteString(s string) (int, error) {
-	n := copy(w.buf[w.off:], s)
-	if w.off += n; w.off == len(w.buf) {
-		panic(nil)
-	}
-	return n, nil
-}
-
-func (w *limitedWriter) Bytes() []byte {
-	return w.buf[:w.off]
-}
-
-func jsonLimitedMarshal(v interface{}, n int) (bs []byte) {
-	w := &limitedWriter{buf: make([]byte, n)}
-	defer func() {
-		_ = recover()
-		bs = w.Bytes()
-	}()
-	(&encoder{w: w}).encode(v)
-	return
-}
-
-func preview(v interface{}) string {
-	bs := jsonLimitedMarshal(v, 32)
-	if l := 30; len(bs) > l {
-		var trailing string
-		switch v.(type) {
-		case string:
-			trailing = ` ..."`
-		case []interface{}:
-			trailing = " ...]"
-		case map[string]interface{}:
-			trailing = " ...}"
-		default:
-			trailing = " ..."
-		}
-		for len(bs) > l-len(trailing) {
-			_, size := utf8.DecodeLastRune(bs)
-			bs = bs[:len(bs)-size]
-		}
-		bs = append(bs, trailing...)
-	}
-	return string(bs)
 }

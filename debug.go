@@ -205,6 +205,6 @@ func debugValue(v interface{}) string {
 	case [3]interface{}:
 		return fmt.Sprintf("[%v,%v,%v]", v[0], v[1], v[2])
 	default:
-		return preview(v)
+		return Preview(v)
 	}
 }
