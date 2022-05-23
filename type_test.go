@@ -11,7 +11,7 @@ import (
 
 func TestTypeOf(t *testing.T) {
 	testCases := []struct {
-		v        interface{}
+		value    interface{}
 		expected string
 	}{
 		{nil, "null"},
@@ -28,10 +28,10 @@ func TestTypeOf(t *testing.T) {
 		{map[string]interface{}{}, "object"},
 	}
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("%v", tc.v), func(t *testing.T) {
-			got := gojq.TypeOf(tc.v)
+		t.Run(fmt.Sprintf("%v", tc.value), func(t *testing.T) {
+			got := gojq.TypeOf(tc.value)
 			if got != tc.expected {
-				t.Errorf("TypeOf(%v): got %s, expected %s", tc.v, got, tc.expected)
+				t.Errorf("TypeOf(%v): got %s, expected %s", tc.value, got, tc.expected)
 			}
 		})
 	}
