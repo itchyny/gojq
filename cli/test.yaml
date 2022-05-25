@@ -7189,7 +7189,7 @@
     - 'include "7"; .'
   input: '0'
   error: |
-    invalid query in module: testdata/7.jq:1
+    invalid query: testdata/7.jq:1
         1 | def f: 1 +
                       ^  unexpected token <EOF>
   exit_code: 3

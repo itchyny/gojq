@@ -311,16 +311,16 @@ func (err *getpathError) Error() string {
 }
 
 type queryParseError struct {
-	typ, fname, contents string
-	err                  error
+	fname, contents string
+	err             error
 }
 
-func (err *queryParseError) QueryParseError() (string, string, string, error) {
-	return err.typ, err.fname, err.contents, err.err
+func (err *queryParseError) QueryParseError() (string, string, error) {
+	return err.fname, err.contents, err.err
 }
 
 func (err *queryParseError) Error() string {
-	return "invalid " + err.typ + ": " + err.fname + ": " + err.err.Error()
+	return "invalid query: " + err.fname + ": " + err.err.Error()
 }
 
 type jsonParseError struct {

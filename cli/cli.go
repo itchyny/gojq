@@ -226,7 +226,7 @@ Usage:
 	}
 	query, err := gojq.Parse(arg)
 	if err != nil {
-		return &queryParseError{"query", fname, arg, err}
+		return &queryParseError{fname, arg, err}
 	}
 	modulePaths := opts.ModulePaths
 	if len(modulePaths) == 0 && addDefaultModulePaths {
@@ -254,13 +254,10 @@ Usage:
 	)
 	if err != nil {
 		if err, ok := err.(interface {
-			QueryParseError() (string, string, string, error)
+			QueryParseError() (string, string, error)
 		}); ok {
-			typ, name, query, err := err.QueryParseError()
-			if _, err := os.Stat(name); os.IsNotExist(err) {
-				name = fname + ":" + name
-			}
-			return &queryParseError{typ, name, query, err}
+			name, query, err := err.QueryParseError()
+			return &queryParseError{name, query, err}
 		}
 		if err, ok := err.(interface {
 			JSONParseError() (string, string, error)

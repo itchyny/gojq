@@ -51,7 +51,7 @@ func (l *moduleLoader) LoadInitModules() ([]*Query, error) {
 		}
 		q, err := parseModule(path, string(cnt))
 		if err != nil {
-			return nil, &queryParseError{"query in module", path, string(cnt), err}
+			return nil, &queryParseError{path, string(cnt), err}
 		}
 		qs = append(qs, q)
 	}
@@ -69,7 +69,7 @@ func (l *moduleLoader) LoadModuleWithMeta(name string, meta map[string]interface
 	}
 	q, err := parseModule(path, string(cnt))
 	if err != nil {
-		return nil, &queryParseError{"query in module", path, string(cnt), err}
+		return nil, &queryParseError{path, string(cnt), err}
 	}
 	return q, nil
 }

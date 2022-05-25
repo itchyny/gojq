@@ -71,8 +71,8 @@ func (err *compileError) ExitCode() int {
 }
 
 type queryParseError struct {
-	typ, fname, contents string
-	err                  error
+	fname, contents string
+	err             error
 }
 
 func (err *queryParseError) Error() string {
@@ -84,11 +84,11 @@ func (err *queryParseError) Error() string {
 	}
 	linestr, line, column := getLineByOffset(err.contents, offset)
 	if err.fname != "<arg>" || containsNewline(err.contents) {
-		return fmt.Sprintf("invalid %s: %s:%d\n%s  %s",
-			err.typ, err.fname, line, formatLineInfo(linestr, line, column), err.err)
+		return fmt.Sprintf("invalid query: %s:%d\n%s  %s",
+			err.fname, line, formatLineInfo(linestr, line, column), err.err)
 	}
-	return fmt.Sprintf("invalid %s: %s\n    %s\n%s    ^  %s",
-		err.typ, err.contents, linestr, strings.Repeat(" ", column), err.err)
+	return fmt.Sprintf("invalid query: %s\n    %s\n%s    ^  %s",
+		err.contents, linestr, strings.Repeat(" ", column), err.err)
 }
 
 func (err *queryParseError) ExitCode() int {
