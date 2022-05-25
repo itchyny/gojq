@@ -77,7 +77,8 @@ type queryParseError struct {
 
 func (err *queryParseError) Error() string {
 	if e, ok := err.err.(interface{ Token() (string, int) }); ok {
-		_, offset := e.Token()
+		token, offset := e.Token()
+		offset -= len(token) - 1
 		linestr, line, column := getLineByOffset(err.contents, offset)
 		if strings.HasPrefix(err.fname, "<arg>") && !containsNewline(err.contents) {
 			return fmt.Sprintf("invalid %s: %s\n    %s\n%s    ^  %s",

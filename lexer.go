@@ -234,7 +234,8 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 		return tok
 	default:
 		if ch >= utf8.RuneSelf {
-			r, _ := utf8.DecodeRuneInString(l.source[l.offset-1:])
+			r, size := utf8.DecodeRuneInString(l.source[l.offset-1:])
+			l.offset += size
 			l.token = string(r)
 		}
 	}
@@ -473,7 +474,7 @@ func (l *lexer) scanString(start int) (int, string) {
 		}
 	}
 	l.offset = len(l.source)
-	l.token = l.source[start:l.offset]
+	l.token = ""
 	return tokUnterminatedString, ""
 }
 
@@ -537,13 +538,7 @@ func (err *parseError) Token() (string, int) {
 
 func (l *lexer) Error(string) {
 	offset, token := l.offset, l.token
-	switch {
-	case l.tokenType == eof || l.tokenType == tokUnterminatedString:
-		offset++
-	case l.tokenType > 0xFF:
-		offset -= len(token) - 1
-	case l.tokenType >= utf8.RuneSelf:
-	default:
+	if l.tokenType != eof && l.tokenType < utf8.RuneSelf {
 		token = string(rune(l.tokenType))
 	}
 	l.err = &parseError{offset, token, l.tokenType}
