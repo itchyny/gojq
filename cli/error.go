@@ -76,18 +76,19 @@ type queryParseError struct {
 }
 
 func (err *queryParseError) Error() string {
+	var offset int
 	if e, ok := err.err.(interface{ Token() (string, int) }); ok {
-		token, offset := e.Token()
+		var token string
+		token, offset = e.Token()
 		offset -= len(token) - 1
-		linestr, line, column := getLineByOffset(err.contents, offset)
-		if strings.HasPrefix(err.fname, "<arg>") && !containsNewline(err.contents) {
-			return fmt.Sprintf("invalid %s: %s\n    %s\n%s    ^  %s",
-				err.typ, err.contents, linestr, strings.Repeat(" ", column), err.err)
-		}
+	}
+	linestr, line, column := getLineByOffset(err.contents, offset)
+	if err.fname != "<arg>" || containsNewline(err.contents) {
 		return fmt.Sprintf("invalid %s: %s:%d\n%s  %s",
 			err.typ, err.fname, line, formatLineInfo(linestr, line, column), err.err)
 	}
-	return fmt.Sprintf("invalid %s: %s: %s", err.typ, err.fname, err.err)
+	return fmt.Sprintf("invalid %s: %s\n    %s\n%s    ^  %s",
+		err.typ, err.contents, linestr, strings.Repeat(" ", column), err.err)
 }
 
 func (err *queryParseError) ExitCode() int {
