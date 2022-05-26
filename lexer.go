@@ -413,7 +413,7 @@ func (l *lexer) scanString(start int) (int, string) {
 					if i+j >= len(l.source) || !isHex(l.source[i+j]) {
 						l.offset = i + j
 						l.token = l.source[i-1 : l.offset]
-						return tokInvalidEscape, ""
+						return tokInvalidEscapeSequence, ""
 					}
 				}
 				i += 4
@@ -440,7 +440,7 @@ func (l *lexer) scanString(start int) (int, string) {
 			default:
 				l.offset = i + 1
 				l.token = l.source[l.offset-2 : l.offset]
-				return tokInvalidEscape, ""
+				return tokInvalidEscapeSequence, ""
 			}
 		case '"':
 			if !l.inString {
@@ -517,7 +517,7 @@ func (err *parseError) Error() string {
 		return "unexpected token <EOF>"
 	case tokInvalid:
 		return "invalid token " + jsonMarshal(err.token)
-	case tokInvalidEscape:
+	case tokInvalidEscapeSequence:
 		return `invalid escape sequence "` + err.token + `" in string literal`
 	case tokUnterminatedString:
 		return "unterminated string literal"

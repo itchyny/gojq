@@ -79,7 +79,7 @@ const tokFuncDefPost = 57383
 const tokTermPost = 57384
 const tokEmptyCatch = 57385
 const tokInvalid = 57386
-const tokInvalidEscape = 57387
+const tokInvalidEscapeSequence = 57387
 const tokUnterminatedString = 57388
 
 var yyToknames = [...]string{
@@ -127,7 +127,7 @@ var yyToknames = [...]string{
 	"tokTermPost",
 	"tokEmptyCatch",
 	"tokInvalid",
-	"tokInvalidEscape",
+	"tokInvalidEscapeSequence",
 	"tokUnterminatedString",
 	"'|'",
 	"','",
