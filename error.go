@@ -207,7 +207,7 @@ type zeroModuloError struct {
 }
 
 func (err *zeroModuloError) Error() string {
-	return "cannot modulo " + typeErrorPreview(err.l) + " by: " + typeErrorPreview(err.r) + ""
+	return "cannot modulo " + typeErrorPreview(err.l) + " by: " + typeErrorPreview(err.r)
 }
 
 type formatNotFoundError struct {
@@ -307,7 +307,7 @@ type getpathError struct {
 }
 
 func (err *getpathError) Error() string {
-	return "cannot getpath with " + Preview(err.path) + " against: " + typeErrorPreview(err.v) + ""
+	return "cannot getpath with " + Preview(err.path) + " against: " + typeErrorPreview(err.v)
 }
 
 type queryParseError struct {
