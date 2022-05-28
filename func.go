@@ -296,12 +296,11 @@ func funcLength(v interface{}) interface{} {
 }
 
 func funcUtf8ByteLength(v interface{}) interface{} {
-	switch v := v.(type) {
-	case string:
-		return len(v)
-	default:
+	s, ok := v.(string)
+	if !ok {
 		return &funcTypeError{"utf8bytelength", v}
 	}
+	return len(s)
 }
 
 func funcKeys(v interface{}) interface{} {
@@ -679,12 +678,11 @@ func funcRtrimstr(v, x interface{}) interface{} {
 }
 
 func funcExplode(v interface{}) interface{} {
-	switch v := v.(type) {
-	case string:
-		return explode(v)
-	default:
+	s, ok := v.(string)
+	if !ok {
 		return &funcTypeError{"explode", v}
 	}
+	return explode(s)
 }
 
 func explode(s string) []interface{} {
@@ -698,15 +696,10 @@ func explode(s string) []interface{} {
 }
 
 func funcImplode(v interface{}) interface{} {
-	switch v := v.(type) {
-	case []interface{}:
-		return implode(v)
-	default:
+	vs, ok := v.([]interface{})
+	if !ok {
 		return &funcTypeError{"implode", v}
 	}
-}
-
-func implode(vs []interface{}) interface{} {
 	var sb strings.Builder
 	sb.Grow(len(vs))
 	for _, v := range vs {
@@ -758,32 +751,30 @@ func funcToJSON(v interface{}) interface{} {
 }
 
 func funcFromJSON(v interface{}) interface{} {
-	switch v := v.(type) {
-	case string:
-		var w interface{}
-		dec := json.NewDecoder(strings.NewReader(v))
-		dec.UseNumber()
-		if err := dec.Decode(&w); err != nil {
-			return err
-		}
-		return normalizeNumbers(w)
-	default:
+	s, ok := v.(string)
+	if !ok {
 		return &funcTypeError{"fromjson", v}
 	}
+	var w interface{}
+	dec := json.NewDecoder(strings.NewReader(s))
+	dec.UseNumber()
+	if err := dec.Decode(&w); err != nil {
+		return err
+	}
+	return normalizeNumbers(w)
 }
 
 func funcFormat(v, x interface{}) interface{} {
-	switch x := x.(type) {
-	case string:
-		fmt := "@" + x
-		f := formatToFunc(fmt)
-		if f == nil {
-			return &formatNotFoundError{fmt}
-		}
-		return internalFuncs[f.Name].callback(v, nil)
-	default:
+	s, ok := x.(string)
+	if !ok {
 		return &funcTypeError{"format", x}
 	}
+	fmt := "@" + s
+	f := formatToFunc(fmt)
+	if f == nil {
+		return &formatNotFoundError{fmt}
+	}
+	return internalFuncs[f.Name].callback(v, nil)
 }
 
 var htmlEscaper = strings.NewReplacer(
