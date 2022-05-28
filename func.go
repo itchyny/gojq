@@ -851,29 +851,24 @@ func toCSVTSV(typ string, v interface{}, sep string, escape func(string) string)
 }
 
 func funcToSh(v interface{}) interface{} {
-	var xs []interface{}
+	var vs []interface{}
 	if w, ok := v.([]interface{}); ok {
-		xs = w
+		vs = w
 	} else {
-		xs = []interface{}{v}
+		vs = []interface{}{v}
 	}
-	var sb strings.Builder
-	for i, x := range xs {
-		if i > 0 {
-			sb.WriteByte(' ')
-		}
-		switch x := x.(type) {
+	ss := make([]string, len(vs))
+	for i, v := range vs {
+		switch v := v.(type) {
 		case []interface{}, map[string]interface{}:
-			return &formatRowError{"sh", x}
+			return &formatRowError{"sh", v}
 		case string:
-			sb.WriteByte('\'')
-			sb.WriteString(strings.ReplaceAll(x, "'", `'\''`))
-			sb.WriteByte('\'')
+			ss[i] = "'" + strings.ReplaceAll(v, "'", `'\''`) + "'"
 		default:
-			sb.WriteString(jsonMarshal(x))
+			ss[i] = jsonMarshal(v)
 		}
 	}
-	return sb.String()
+	return strings.Join(ss, " ")
 }
 
 func funcToBase64(v interface{}) interface{} {
