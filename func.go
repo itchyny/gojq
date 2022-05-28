@@ -838,7 +838,7 @@ func toCSVTSV(typ string, v interface{}, sep string, escape func(string) string)
 	for i, v := range vs {
 		switch v := v.(type) {
 		case []interface{}, map[string]interface{}:
-			return &formatCsvTsvRowError{typ, v}
+			return &formatRowError{typ, v}
 		case string:
 			ss[i] = escape(v)
 		default:
@@ -864,7 +864,7 @@ func funcToSh(v interface{}) interface{} {
 		}
 		switch x := x.(type) {
 		case []interface{}, map[string]interface{}:
-			return &formatShError{x}
+			return &formatRowError{"sh", x}
 		case string:
 			sb.WriteByte('\'')
 			sb.WriteString(strings.ReplaceAll(x, "'", `'\''`))

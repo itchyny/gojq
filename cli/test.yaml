@@ -5655,7 +5655,7 @@
   input: |
     [1, "foo", null, {"foo":1}]
   error: |
-    invalid csv row: object ({"foo":1})
+    @csv cannot format an array including: object ({"foo":1})
 
 - name: format strings @tsv
   args:
@@ -5686,7 +5686,7 @@
   input: |
     [1, "foo", null, ["foo"]]
   error: |
-    invalid tsv row: array (["foo"])
+    @tsv cannot format an array including: array (["foo"])
 
 - name: format strings @sh
   args:
@@ -5702,7 +5702,7 @@
   input: |
     [{"foo": "<>"}]
   error: |
-    cannot escape for shell: object ({"foo":"<>"})
+    @sh cannot format an array including: object ({"foo":"<>"})
 
 - name: format strings @base64
   args:

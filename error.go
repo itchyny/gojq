@@ -218,21 +218,13 @@ func (err *formatNotFoundError) Error() string {
 	return "format not defined: " + err.n
 }
 
-type formatCsvTsvRowError struct {
+type formatRowError struct {
 	typ string
 	v   interface{}
 }
 
-func (err *formatCsvTsvRowError) Error() string {
-	return "invalid " + err.typ + " row: " + typeErrorPreview(err.v)
-}
-
-type formatShError struct {
-	v interface{}
-}
-
-func (err *formatShError) Error() string {
-	return "cannot escape for shell: " + typeErrorPreview(err.v)
+func (err *formatRowError) Error() string {
+	return "@" + err.typ + " cannot format an array including: " + typeErrorPreview(err.v)
 }
 
 type tooManyVariableValuesError struct{}
