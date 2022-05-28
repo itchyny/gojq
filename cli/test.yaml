@@ -5636,13 +5636,20 @@
 
 - name: format strings @csv with string interpolation
   args:
-    - '@csv "\(.),\(. + .)"'
+    - '@csv "\(.),\(. + .),\([nan])"'
   input: |
     [1, "foo", null, 2]
   expected: |
-    "1,\"foo\",,2,1,\"foo\",,2,1,\"foo\",,2"
+    "1,\"foo\",,2,1,\"foo\",,2,1,\"foo\",,2,"
 
 - name: format strings @csv error
+  args:
+    - '@csv'
+  input: 'null'
+  error: |
+    @csv cannot be applied to: null
+
+- name: format strings @csv row error
   args:
     - '@csv'
   input: |
@@ -5660,13 +5667,20 @@
 
 - name: format strings @tsv with string interpolation
   args:
-    - '@tsv "\(.),\(. + .)"'
+    - '@tsv "\(.),\(. + .),\([nan])"'
   input: |
     [1, "foo", null, 2]
   expected: |
-    "1\tfoo\t\t2,1\tfoo\t\t2\t1\tfoo\t\t2"
+    "1\tfoo\t\t2,1\tfoo\t\t2\t1\tfoo\t\t2,"
 
 - name: format strings @tsv error
+  args:
+    - '@tsv'
+  input: '0'
+  error: |
+    @tsv cannot be applied to: number (0)
+
+- name: format strings @tsv row error
   args:
     - '@tsv'
   input: |
