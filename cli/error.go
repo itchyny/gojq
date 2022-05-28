@@ -124,20 +124,15 @@ type yamlParseError struct {
 
 func (err *yamlParseError) Error() string {
 	var line int
-	msg := err.err.Error()
-	fmt.Sscanf(msg, "yaml: line %d:", &line)
-	if line > 0 {
-		msg = msg[7+strings.IndexRune(msg[5:], ':'):] // trim "yaml: line N:"
-	} else {
-		if !strings.HasPrefix(msg, "yaml: unmarshal errors:\n") {
-			return "invalid yaml: " + err.fname
-		}
-		msg = strings.Split(msg, "\n")[1]
-		fmt.Sscanf(msg, " line %d: ", &line)
-		if line == 0 {
-			return "invalid yaml: " + err.fname
-		}
-		msg = msg[2+strings.IndexRune(msg, ':'):] // trim "line N:"
+	msg := strings.TrimPrefix(
+		strings.TrimPrefix(err.err.Error(), "yaml: "),
+		"unmarshal errors:\n  ")
+	if fmt.Sscanf(msg, "line %d: ", &line); line == 0 {
+		return "invalid yaml: " + err.fname
+	}
+	msg = msg[strings.Index(msg, ": ")+2:]
+	if i := strings.IndexByte(msg, '\n'); i >= 0 {
+		msg = msg[:i]
 	}
 	linestr := getLineByLine(err.contents, line)
 	return fmt.Sprintf("invalid yaml: %s:%d\n%s  %s",
