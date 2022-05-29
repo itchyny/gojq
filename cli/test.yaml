@@ -2400,7 +2400,7 @@
   error: |
     invalid query: .?/
         .?/
-           ^  unexpected token <EOF>
+           ^  unexpected EOF
   exit_code: 3
 
 - name: factorial calculation
@@ -3242,7 +3242,7 @@
   error: |
     invalid query: label $x | break
         label $x | break
-                        ^  unexpected token <EOF>
+                        ^  unexpected EOF
   exit_code: 3
 
 - name: variable and label name conflict
@@ -6768,7 +6768,7 @@
   error: |
     invalid query: .abc[
         .abc[
-             ^  unexpected token <EOF>
+             ^  unexpected EOF
   exit_code: 3
 
 - name: invalid query
@@ -7209,7 +7209,7 @@
   error: |
     invalid query: testdata/7.jq:1
         1 | def f: 1 +
-                      ^  unexpected token <EOF>
+                      ^  unexpected EOF
   exit_code: 3
 
 - name: module directive
@@ -7773,7 +7773,7 @@
   error: |
     invalid query: --
         --
-          ^  unexpected token <EOF>
+          ^  unexpected EOF
   exit_code: 3
 
 - name: short clumped options

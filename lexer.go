@@ -514,7 +514,7 @@ type parseError struct {
 func (err *parseError) Error() string {
 	switch err.tokenType {
 	case eof:
-		return "unexpected token <EOF>"
+		return "unexpected EOF"
 	case tokInvalid:
 		return "invalid token " + jsonMarshal(err.token)
 	case tokInvalidEscapeSequence:
