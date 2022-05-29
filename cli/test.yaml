@@ -5692,8 +5692,12 @@
   args:
     - '@sh'
   input: |
+    null
+    true
     [1, "f'o'o", null, false]
   expected: |
+    "null"
+    "true"
     "1 'f'\\''o'\\''o' null false"
 
 - name: format strings @sh error

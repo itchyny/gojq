@@ -804,7 +804,7 @@ func funcToURI(v interface{}) interface{} {
 }
 
 func funcToCSV(v interface{}) interface{} {
-	return toCSVTSV("csv", v, ",", func(s string) string {
+	return formatJoin("csv", v, ",", func(s string) string {
 		return `"` + strings.ReplaceAll(s, `"`, `""`) + `"`
 	})
 }
@@ -817,10 +817,19 @@ var tsvEscaper = strings.NewReplacer(
 )
 
 func funcToTSV(v interface{}) interface{} {
-	return toCSVTSV("tsv", v, "\t", tsvEscaper.Replace)
+	return formatJoin("tsv", v, "\t", tsvEscaper.Replace)
 }
 
-func toCSVTSV(typ string, v interface{}, sep string, escape func(string) string) interface{} {
+func funcToSh(v interface{}) interface{} {
+	if _, ok := v.([]interface{}); !ok {
+		v = []interface{}{v}
+	}
+	return formatJoin("sh", v, " ", func(s string) string {
+		return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
+	})
+}
+
+func formatJoin(typ string, v interface{}, sep string, escape func(string) string) interface{} {
 	vs, ok := v.([]interface{})
 	if !ok {
 		return &funcTypeError{"@" + typ, v}
@@ -833,33 +842,12 @@ func toCSVTSV(typ string, v interface{}, sep string, escape func(string) string)
 		case string:
 			ss[i] = escape(v)
 		default:
-			if s := jsonMarshal(v); s != "null" {
+			if s := jsonMarshal(v); s != "null" || typ == "sh" {
 				ss[i] = s
 			}
 		}
 	}
 	return strings.Join(ss, sep)
-}
-
-func funcToSh(v interface{}) interface{} {
-	var vs []interface{}
-	if w, ok := v.([]interface{}); ok {
-		vs = w
-	} else {
-		vs = []interface{}{v}
-	}
-	ss := make([]string, len(vs))
-	for i, v := range vs {
-		switch v := v.(type) {
-		case []interface{}, map[string]interface{}:
-			return &formatRowError{"sh", v}
-		case string:
-			ss[i] = "'" + strings.ReplaceAll(v, "'", `'\''`) + "'"
-		default:
-			ss[i] = jsonMarshal(v)
-		}
-	}
-	return strings.Join(ss, " ")
 }
 
 func funcToBase64(v interface{}) interface{} {
