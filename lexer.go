@@ -522,13 +522,7 @@ func (err *parseError) Error() string {
 	case tokUnterminatedString:
 		return "unterminated string literal"
 	default:
-		var message string
-		if err.tokenType >= utf8.RuneSelf {
-			message = jsonMarshal(err.token)
-		} else {
-			message = jsonMarshal(string(rune(err.tokenType)))
-		}
-		return "unexpected token " + message
+		return "unexpected token " + jsonMarshal(err.token)
 	}
 }
 
