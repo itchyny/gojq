@@ -1,4 +1,28 @@
 # Changelog
+## [v0.12.8](https://github.com/itchyny/gojq/compare/v0.12.7..v0.12.8) (2022-06-01)
+* implement `gojq.Compare` for comparing values in custom internal functions
+* implement `gojq.TypeOf` for obtaining type name of values in custom internal functions
+* implement `gojq.Preview` for previewing values for error messages of custom internal functions
+* fix query lexer to parse string literals as JSON to support surrogate pairs (`"\ud83d\ude04"`)
+* fix priority bug of declared and builtin functions (`def empty: .; null | select(.)`)
+* fix string indexing by index out of bounds to emit `null` (`"abc" | .[3]`)
+* fix array binding pattern not to match against strings (`"abc" as [$a] ?// $a | $a`)
+* fix `sub` and `gsub` functions to emit results in the same order of jq
+* fix `fromjson` to keep integer precision (`"10000000000000000" | fromjson + 1`)
+* fix stream option to raise error against incomplete JSON input
+* improve array updating index and string repetition to increase limitations
+* improve `mktime` to support nanoseconds, just like `gmtime` and `now`
+* improve query lexer to report unterminated string literals
+* improve performance of string indexing and slicing by reducing allocations
+* improve performance of object and array indexing, slicing, and iteration,
+  by validating path values by comparing data addresses. This change improves jq
+  compatibility of path value validation (`{} | {}.x = 0`, `[0] | [.[]][] = 1`).
+  Also optimize constant indexing and slicing by specialized instruction
+* improve performance of `add` (on array of strings), `flatten`, `min`, `max`,
+  `sort`, `unique`, `join`, `to_entries`, `from_entries`, `indices`, `index`,
+  `rindex`, `startswith`, `endswith`, `ltrimstr`, `rtrimstr`, `explode`,
+  `capture`, `sub`, and `gsub` functions
+
 ## [v0.12.7](https://github.com/itchyny/gojq/compare/v0.12.6..v0.12.7) (2022-03-01)
 * fix precedence of try expression against operators (`try 0 * error(0)`)
 * fix iterator suffix with optional operator (`0 | .x[]?`)
