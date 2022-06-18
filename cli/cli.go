@@ -1,3 +1,4 @@
+// Package cli implements the gojq command.
 package cli
 
 import (
