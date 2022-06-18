@@ -1928,27 +1928,27 @@ func toInt(x interface{}) (int, bool) {
 		return floatToInt(x), true
 	case *big.Int:
 		if x.IsInt64() {
-			if i := x.Int64(); minInt <= i && i <= maxInt {
+			if i := x.Int64(); math.MinInt <= i && i <= math.MaxInt {
 				return int(i), true
 			}
 		}
 		if x.Sign() > 0 {
-			return maxInt, true
+			return math.MaxInt, true
 		}
-		return minInt, true
+		return math.MinInt, true
 	default:
 		return 0, false
 	}
 }
 
 func floatToInt(x float64) int {
-	if minInt <= x && x <= maxInt {
+	if math.MinInt <= x && x <= math.MaxInt {
 		return int(x)
 	}
 	if x > 0 {
-		return maxInt
+		return math.MaxInt
 	}
-	return minInt
+	return math.MinInt
 }
 
 func toFloat(x interface{}) (float64, bool) {
