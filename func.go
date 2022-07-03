@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math"
 	"math/big"
 	"net/url"
@@ -760,6 +761,9 @@ func funcFromJSON(v interface{}) interface{} {
 	dec.UseNumber()
 	if err := dec.Decode(&w); err != nil {
 		return err
+	}
+	if _, err := dec.Token(); err != io.EOF {
+		return &funcTypeError{"fromjson", v}
 	}
 	return normalizeNumbers(w)
 }

@@ -4526,14 +4526,18 @@
     {"foo": 42}
     {"foo": "42"}
     {"foo": "a"}
+    {"foo": "0 a"}
     {"foo": "true"}
     {"foo": "[{}]"}
+    {"foo": "[][]"}
   expected: |
     {"foo":"x"}
     {"foo":42}
     {"foo":"x"}
+    {"foo":"x"}
     {"foo":true}
     {"foo":[{}]}
+    {"foo":"x"}
 
 - name: update operators
   args:
