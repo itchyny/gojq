@@ -218,27 +218,30 @@ func (i *filesInputIter) Name() string {
 }
 
 type rawInputIter struct {
-	scanner *bufio.Scanner
-	fname   string
-	err     error
+	r     *bufio.Reader
+	fname string
+	err   error
 }
 
 func newRawInputIter(r io.Reader, fname string) inputIter {
-	return &rawInputIter{scanner: bufio.NewScanner(r), fname: fname}
+	return &rawInputIter{r: bufio.NewReader(r), fname: fname}
 }
 
 func (i *rawInputIter) Next() (interface{}, bool) {
 	if i.err != nil {
 		return nil, false
 	}
-	if i.scanner.Scan() {
-		return i.scanner.Text(), true
+	line, err := i.r.ReadString('\n')
+	if err != nil {
+		i.err = err
+		if err != io.EOF {
+			return err, true
+		}
+		if line == "" {
+			return nil, false
+		}
 	}
-	if i.err = i.scanner.Err(); i.err != nil {
-		return i.err, true
-	}
-	i.err = io.EOF
-	return nil, false
+	return strings.TrimSuffix(line, "\n"), true
 }
 
 func (i *rawInputIter) Close() error {

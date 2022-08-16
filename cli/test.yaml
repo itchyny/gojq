@@ -4987,7 +4987,7 @@
   expected: |
     null
 
-- name: input_filename function with raw strings input option
+- name: input_filename function with raw string input option
   args:
     - --raw-input
     - 'input_filename'
@@ -5095,7 +5095,7 @@
     2
     1
 
-- name: halt function and raw strings input option
+- name: halt function and raw string input option
   args:
     - -R
     - 'halt'
@@ -5153,7 +5153,7 @@
     3
   exit_code: 5
 
-- name: halt_error/0 function and raw strings input option
+- name: halt_error/0 function and raw string input option
   args:
     - -R
     - 'halt_error'
@@ -6180,33 +6180,29 @@
     	}
     }
 
-- name: raw strings input option
+- name: raw string input option
   args:
     - -R
     - '.'
-  input: |
-    {
-      "foo": "bar"
-    }
+  input: "null\nfalse\r\nfoo\nbar"
   expected: |
-    "{"
-    "  \"foo\": \"bar\""
-    "}"
+    "null"
+    "false\r"
+    "foo"
+    "bar"
 
-- name: raw strings input long option
+- name: raw string input long option
   args:
     - --raw-input
     - '.'
-  input: |
-    {
-      "foo": "bar"
-    }
+  input: "null\nfalse\r\nfoo\nbar\n"
   expected: |
-    "{"
-    "  \"foo\": \"bar\""
-    "}"
+    "null"
+    "false\r"
+    "foo"
+    "bar"
 
-- name: raw strings input option error
+- name: raw string input option error
   args:
     - -R
     - '. / 2'
@@ -6245,7 +6241,7 @@
   expected: |
     [null,null]
 
-- name: null input value option with raw strings input option
+- name: null input value option with raw string input option
   args:
     - -n
     - -R
@@ -6284,7 +6280,7 @@
   expected: |
     [null,false]
 
-- name: slurp option with raw strings input option
+- name: slurp option with raw string input option
   args:
     - -s
     - -R
