@@ -37,7 +37,7 @@ jobs:
       run: |
         ./gojq -Rnr 'reduce inputs as $x (
           {};
-          if $x|test("^ [$] .*gojq|^```$")
+          if $x|test("^ [$] .*gojq|^```")
           then
             if .command
             then .results += [{command: .command, output: .output}] | del(.command,.output)
