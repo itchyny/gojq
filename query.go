@@ -19,7 +19,7 @@ type Query struct {
 
 // Run the query.
 //
-// It is safe to call this method of a *Query in multiple goroutines.
+// It is safe to call this method in goroutines, to reuse a parsed [*Query].
 func (e *Query) Run(v interface{}) Iter {
 	return e.RunWithContext(context.Background(), v)
 }
