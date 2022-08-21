@@ -45,7 +45,7 @@ install-debug: parser.go builtin.go
 
 .PHONY: show-version
 show-version: $(GOBIN)/gobump
-	@gobump show -r $(VERSION_PATH)
+	@gobump show -r "$(VERSION_PATH)"
 
 $(GOBIN)/gobump:
 	@go install github.com/x-motemen/gobump/cmd/gobump@latest
