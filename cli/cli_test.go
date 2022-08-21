@@ -55,12 +55,7 @@ func TestCliRun(t *testing.T) {
 					t.Fatal(err)
 				}
 			}()
-			var outStream, errStream strings.Builder
-			cli := cli{
-				inStream:  strings.NewReader(tc.Input),
-				outStream: &outStream,
-				errStream: &errStream,
-			}
+
 			for _, env := range tc.Env {
 				xs := strings.SplitN(env, "=", 2)
 				k, v := xs[0], xs[1]
@@ -78,7 +73,13 @@ func TestCliRun(t *testing.T) {
 				}
 				os.Setenv(k, v)
 			}
-			code := cli.run(tc.Args)
+
+			var outStream, errStream strings.Builder
+			code := (&Config{
+				Stdin:  strings.NewReader(tc.Input),
+				Stdout: &outStream,
+				Stderr: &errStream,
+			}).Run(tc.Args)
 			if tc.Error == "" {
 				if code != tc.ExitCode {
 					t.Errorf("exit code: got: %v, expected: %v", code, tc.ExitCode)
