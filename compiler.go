@@ -341,10 +341,12 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 		}
 		for _, w := range vis {
 			c.append(&code{op: opload, v: v})
+			c.append(&code{op: opexpbegin})
 			c.append(&code{op: opload, v: w.index})
 			c.append(&code{op: opcallpc})
 			c.appendCodeInfo(w.name)
 			c.append(&code{op: opstore, v: c.pushVariable(w.name)})
+			c.append(&code{op: opexpend})
 		}
 		c.append(&code{op: opload, v: v})
 	}

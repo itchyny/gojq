@@ -2135,6 +2135,14 @@
     [0,1]
     [[0,1],[0,1],[0,1],[0,1]]
 
+- name: function declaration with update operator
+  args:
+    - -c
+    - 'def f: def f($x): .; f(.x) | .x; f += f'
+  input: '{"x": 1}'
+  expected: |
+    {"x":2}
+
 - name: function declaration and recursive call
   args:
     - 'def f(g): if type == "array" then map(f(g * 2)) else g end; f(.)'
@@ -4753,6 +4761,15 @@
   input: '[0]'
   error: |
     invalid path against: array ([])
+
+- name: path function with function declaration
+  args:
+    - 'def f($x): .y; path(f(.x))'
+  input: 'null'
+  expected: |
+    [
+      "y"
+    ]
 
 - name: path function with error function
   args:
