@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/cornelk/orderedmap"
 	"gopkg.in/yaml.v3"
 
 	"github.com/itchyny/gojq"
@@ -87,7 +88,7 @@ func (i *jsonInputIter) Next() (interface{}, bool) {
 	if i.err != nil {
 		return nil, false
 	}
-	var v interface{}
+	var v orderedmap.Map
 	if err := i.dec.Decode(&v); err != nil {
 		if err == io.EOF {
 			i.err = err

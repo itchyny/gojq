@@ -9,6 +9,8 @@ import (
 	"sort"
 	"strconv"
 	"unicode/utf8"
+
+	"github.com/cornelk/orderedmap"
 )
 
 type encoder struct {
@@ -55,6 +57,8 @@ func (e *encoder) encode(v interface{}) {
 		e.encodeArray(v)
 	case map[string]interface{}:
 		e.encodeMap(v)
+	case orderedmap.Entry:
+		e.encode(v.Value)
 	default:
 		panic(fmt.Sprintf("invalid type: %[1]T (%[1]v)", v))
 	}

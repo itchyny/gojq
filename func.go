@@ -15,6 +15,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/cornelk/orderedmap"
 	"github.com/itchyny/timefmt-go"
 )
 
@@ -379,6 +380,14 @@ func funcToEntries(v interface{}) interface{} {
 		for i, k := range keys(v) {
 			w[i] = map[string]interface{}{"key": k, "value": v[k]}
 		}
+		return w
+	case orderedmap.Map:
+		var w []interface{}
+		v.Range(func(key string, value interface{}) bool {
+			entry := map[string]interface{}{"key": key, "value": value}
+			w = append(w, entry)
+			return true
+		})
 		return w
 	default:
 		return &funcTypeError{"to_entries", v}
