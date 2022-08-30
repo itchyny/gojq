@@ -34,6 +34,7 @@ type Code struct {
 // a result iterator.
 //
 // It is safe to call this method in goroutines, to reuse a compiled [*Code].
+// But for arguments, do not give values sharing same data between goroutines.
 func (c *Code) Run(v interface{}, values ...interface{}) Iter {
 	return c.RunWithContext(context.Background(), v, values...)
 }
