@@ -229,19 +229,23 @@ func (e *encoder) writeIndent() {
 	e.w.WriteByte('\n')
 	if n := e.depth; n > 0 {
 		if e.tab {
-			const tabs = "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
-			for n > len(tabs) {
-				e.w.Write([]byte(tabs))
-				n -= len(tabs)
-			}
-			e.w.Write([]byte(tabs)[:n])
+			e.writeIndentInternal(n, "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t")
 		} else {
-			const spaces = "                                                                "
-			for n > len(spaces) {
-				e.w.Write([]byte(spaces))
-				n -= len(spaces)
+			e.writeIndentInternal(n, "                                ")
+		}
+	}
+}
+
+func (e *encoder) writeIndentInternal(n int, spaces string) {
+	if l := len(spaces); n <= l {
+		e.w.WriteString(spaces[:n])
+	} else {
+		e.w.WriteString(spaces)
+		for n -= l; n > 0; n, l = n-l, l*2 {
+			if n < l {
+				l = n
 			}
-			e.w.Write([]byte(spaces)[:n])
+			e.w.Write(e.w.Bytes()[e.w.Len()-l:])
 		}
 	}
 }
