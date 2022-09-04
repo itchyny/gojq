@@ -25,15 +25,22 @@ func newEncoder(tab bool, indent int) *encoder {
 	return &encoder{w: new(bytes.Buffer), tab: tab, indent: indent}
 }
 
-func (e *encoder) marshal(v interface{}, w io.Writer) error {
-	e.out = w
-	e.encode(v)
-	_, err := w.Write(e.w.Bytes())
+func (e *encoder) flush() error {
+	_, err := e.out.Write(e.w.Bytes())
 	e.w.Reset()
 	return err
 }
 
-func (e *encoder) encode(v interface{}) {
+func (e *encoder) marshal(v interface{}, w io.Writer) error {
+	e.out = w
+	err := e.encode(v)
+	if ferr := e.flush(); ferr != nil && err == nil {
+		err = ferr
+	}
+	return err
+}
+
+func (e *encoder) encode(v interface{}) error {
 	switch v := v.(type) {
 	case nil:
 		e.write([]byte("null"), nullColor)
@@ -52,16 +59,20 @@ func (e *encoder) encode(v interface{}) {
 	case string:
 		e.encodeString(v, stringColor)
 	case []interface{}:
-		e.encodeArray(v)
+		if err := e.encodeArray(v); err != nil {
+			return err
+		}
 	case map[string]interface{}:
-		e.encodeMap(v)
+		if err := e.encodeMap(v); err != nil {
+			return err
+		}
 	default:
 		panic(fmt.Sprintf("invalid type: %[1]T (%[1]v)", v))
 	}
 	if e.w.Len() > 8*1024 {
-		e.out.Write(e.w.Bytes())
-		e.w.Reset()
+		return e.flush()
 	}
+	return nil
 }
 
 // ref: floatEncoder in encoding/json
@@ -152,7 +163,7 @@ func (e *encoder) encodeString(s string, color []byte) {
 	}
 }
 
-func (e *encoder) encodeArray(vs []interface{}) {
+func (e *encoder) encodeArray(vs []interface{}) error {
 	e.writeByte('[', arrayColor)
 	e.depth += e.indent
 	for i, v := range vs {
@@ -162,16 +173,19 @@ func (e *encoder) encodeArray(vs []interface{}) {
 		if e.indent != 0 {
 			e.writeIndent()
 		}
-		e.encode(v)
+		if err := e.encode(v); err != nil {
+			return err
+		}
 	}
 	e.depth -= e.indent
 	if len(vs) > 0 && e.indent != 0 {
 		e.writeIndent()
 	}
 	e.writeByte(']', arrayColor)
+	return nil
 }
 
-func (e *encoder) encodeMap(vs map[string]interface{}) {
+func (e *encoder) encodeMap(vs map[string]interface{}) error {
 	e.writeByte('{', objectColor)
 	e.depth += e.indent
 	type keyVal struct {
@@ -199,13 +213,16 @@ func (e *encoder) encodeMap(vs map[string]interface{}) {
 		if e.indent != 0 {
 			e.w.WriteByte(' ')
 		}
-		e.encode(kv.val)
+		if err := e.encode(kv.val); err != nil {
+			return err
+		}
 	}
 	e.depth -= e.indent
 	if len(vs) > 0 && e.indent != 0 {
 		e.writeIndent()
 	}
 	e.writeByte('}', objectColor)
+	return nil
 }
 
 func (e *encoder) writeIndent() {
