@@ -88,8 +88,7 @@ func TestWithModuleLoader_modulemeta(t *testing.T) {
 type moduleLoaderJSON struct{}
 
 func (*moduleLoaderJSON) LoadJSON(name string) (interface{}, error) {
-	switch name {
-	case "module1":
+	if name == "module1" {
 		return []interface{}{1.0, 42, json.Number("123")}, nil
 	}
 	return nil, fmt.Errorf("module not found: %q", name)
@@ -748,8 +747,7 @@ func TestWithIterFunctionDefineError(t *testing.T) {
 type moduleLoader2 struct{}
 
 func (*moduleLoader2) LoadModule(name string) (*gojq.Query, error) {
-	switch name {
-	case "module1":
+	if name == "module1" {
 		return gojq.Parse(`
 			def g: def h: f * 3; h * 4;
 		`)
