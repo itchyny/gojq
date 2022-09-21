@@ -1,3 +1,4 @@
+// gojq - Go implementation of jq
 package main
 
 import (
