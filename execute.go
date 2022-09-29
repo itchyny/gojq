@@ -306,16 +306,16 @@ loop:
 					return xs[i].path.(string) < xs[j].path.(string)
 				})
 			case Iter:
-				if !env.paths.empty() && env.expdepth == 0 {
-					err = &invalidPathIterError{v}
-					break loop
-				}
 				if w, ok := v.Next(); ok {
 					env.push(v)
 					env.pushfork(pc)
 					env.pop()
 					if e, ok := w.(error); ok {
 						err = e
+						break loop
+					}
+					if !env.paths.empty() && env.expdepth == 0 && !env.pathIntact(w) {
+						err = &invalidPathError{w}
 						break loop
 					}
 					env.push(w)
