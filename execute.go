@@ -314,10 +314,6 @@ loop:
 						err = e
 						break loop
 					}
-					if !env.paths.empty() && env.expdepth == 0 && !env.pathIntact(w) {
-						err = &invalidPathError{w}
-						break loop
-					}
 					env.push(w)
 					continue
 				}
