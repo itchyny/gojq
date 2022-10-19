@@ -53,7 +53,11 @@ def ascii_upcase:
   explode | map(if 97 <= . and . <= 122 then . - 32 end) | implode;
 def walk(f):
   def _walk:
-    if type | . == "array" or . == "object" then map_values(_walk) end | f;
+    if type == "array" then
+      map(_walk)
+    elif type == "object" then
+      map_values(last(_walk))
+    end | f;
   _walk;
 
 def first: .[0];
