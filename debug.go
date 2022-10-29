@@ -204,6 +204,8 @@ func debugValue(v interface{}) string {
 		return fmt.Sprintf("[%d,%d,%d]", v[0], v[1], v[2])
 	case [3]interface{}:
 		return fmt.Sprintf("[%v,%v,%v]", v[0], v[1], v[2])
+	case allocator:
+		return fmt.Sprintf("%v", v)
 	default:
 		return Preview(v)
 	}

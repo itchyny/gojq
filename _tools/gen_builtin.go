@@ -46,6 +46,8 @@ func run(input, output string) error {
 		fd.Minify()
 		fds[fd.Name] = append(fds[fd.Name], fd)
 	}
+	fds["_assign"] = nil
+	fds["_modify"] = nil
 	t, err := astgen.Build(fds)
 	if err != nil {
 		return err

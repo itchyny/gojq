@@ -118,18 +118,6 @@ def tostream:
   getpath($p) |
   reduce path(.[]?) as $q ([$p, .]; [$p + $q]);
 
-def _assign(ps; $v):
-  reduce path(ps) as $p (.; setpath($p; $v));
-def _modify(ps; f):
-  reduce path(ps) as $p (
-    [., []];
-    label $out | (
-      ([0] + $p) as $q |
-      setpath($q; getpath($q) | f) |
-      ., break $out
-    ), setpath([1]; .[1] + [$p])
-  ) |
-  . as $x | $x[0] | delpaths($x[1]);
 def map_values(f): .[] |= f;
 def del(f): delpaths([path(f)]);
 def paths: path(..) | select(. != []);

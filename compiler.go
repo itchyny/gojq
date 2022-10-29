@@ -279,6 +279,21 @@ func (c *compiler) lookupBuiltin(name string, argcnt int) *funcinfo {
 	return nil
 }
 
+func (c *compiler) appendBuiltin(name string, argcnt int) func() {
+	setjump := c.lazy(func() *code {
+		return &code{op: opjump, v: len(c.codes)}
+	})
+	c.appendCodeInfo(name)
+	c.builtinScope.funcs = append(
+		c.builtinScope.funcs,
+		&funcinfo{name, len(c.codes), argcnt},
+	)
+	return func() {
+		setjump()
+		c.appendCodeInfo("end of " + name)
+	}
+}
+
 func (c *compiler) newScope() *scopeinfo {
 	i := c.scopecnt // do not use len(c.scopes) because it pops
 	c.scopecnt++
@@ -774,9 +789,7 @@ func (c *compiler) compileForeach(e *Foreach) error {
 func (c *compiler) compileLabel(e *Label) error {
 	c.appendCodeInfo(e)
 	v := c.pushVariable("$%" + e.Ident[1:])
-	defer c.lazy(func() *code {
-		return &code{op: opforklabel, v: v}
-	})()
+	c.append(&code{op: opforklabel, v: v})
 	return c.compileQuery(e.Body)
 }
 
@@ -787,14 +800,14 @@ func (c *compiler) compileBreak(label string) error {
 	}
 	c.append(&code{op: oppop})
 	c.append(&code{op: opload, v: v})
-	c.append(&code{op: opcall, v: [3]interface{}{
-		func(v interface{}, _ []interface{}) interface{} {
-			return &breakError{label, v}
-		},
-		0,
-		"_break",
-	}})
+	c.append(&code{op: opcall, v: [3]interface{}{funcBreak(label), 0, "_break"}})
 	return nil
+}
+
+func funcBreak(label string) func(interface{}, []interface{}) interface{} {
+	return func(v interface{}, _ []interface{}) interface{} {
+		return &breakError{label, v}
+	}
 }
 
 func (c *compiler) compileTerm(e *Term) error {
@@ -929,6 +942,14 @@ func (c *compiler) compileFunc(e *Func) error {
 				break
 			}
 		}
+		if len(fds) == 0 {
+			switch e.Name {
+			case "_assign":
+				c.compileAssign()
+			case "_modify":
+				c.compileModify()
+			}
+		}
 		if f := c.lookupBuiltin(e.Name, len(e.Args)); f != nil {
 			return c.compileCallPc(f, e.Args)
 		}
@@ -988,6 +1009,110 @@ func (c *compiler) compileFunc(e *Func) error {
 		return nil
 	}
 	return &funcNotFoundError{e}
+}
+
+// Appends the compiled code for the assignment operator (`=`) to maximize
+// performance. Originally the operator was implemented as follows.
+//
+//	def _assign(p; $x): reduce path(p) as $p (.; setpath($p; $x));
+//
+// To overcome the difficulty of reducing allocations on `setpath`, we use the
+// `allocator` type and track the allocated addresses during the reduction.
+func (c *compiler) compileAssign() {
+	defer c.appendBuiltin("_assign", 2)()
+	scope := c.newScope()
+	v, p := [2]int{scope.id, 0}, [2]int{scope.id, 1}
+	x, a := [2]int{scope.id, 2}, [2]int{scope.id, 3}
+	c.appends(
+		&code{op: opscope, v: [3]int{scope.id, 4, 2}},
+		&code{op: opstore, v: v}, //                def _assign(p; $x):
+		&code{op: opstore, v: p},
+		&code{op: opstore, v: x},
+		&code{op: opload, v: v},
+		&code{op: opexpbegin},
+		&code{op: opload, v: x},
+		&code{op: opcallpc},
+		&code{op: opstore, v: x},
+		&code{op: opexpend},
+		&code{op: oppush, v: nil},
+		&code{op: opcall, v: [3]interface{}{funcAllocator, 0, "_allocator"}},
+		&code{op: opstore, v: a},
+		&code{op: opload, v: v},
+		&code{op: opfork, v: len(c.codes) + 28}, // reduce [L1]
+		&code{op: oppathbegin},                  // path(p)
+		&code{op: opload, v: p},
+		&code{op: opcallpc},
+		&code{op: opload, v: v},
+		&code{op: oppathend},
+		&code{op: opstore, v: p}, //                as $p (.;
+		&code{op: opload, v: a},  //                setpath($p; $x)
+		&code{op: opload, v: x},
+		&code{op: opload, v: p},
+		&code{op: opload, v: v},
+		&code{op: opcall, v: [3]interface{}{funcSetpathWithAllocator, 3, "_setpath"}},
+		&code{op: opstore, v: v},
+		&code{op: opbacktrack}, //                  );
+		&code{op: oppop},       //                  [L1]
+		&code{op: opload, v: v},
+		&code{op: opret},
+	)
+}
+
+// Appends the compiled code for the update-assignment operator (`|=`) to
+// maximize performance. We use the `allocator` type, just like `_assign/2`.
+func (c *compiler) compileModify() {
+	defer c.appendBuiltin("_modify", 2)()
+	scope := c.newScope()
+	v, p := [2]int{scope.id, 0}, [2]int{scope.id, 1}
+	f, d := [2]int{scope.id, 2}, [2]int{scope.id, 3}
+	a, l := [2]int{scope.id, 4}, [2]int{scope.id, 5}
+	c.appends(
+		&code{op: opscope, v: [3]int{scope.id, 6, 2}},
+		&code{op: opstore, v: v}, //                def _modify(p; f):
+		&code{op: opstore, v: p},
+		&code{op: opstore, v: f},
+		&code{op: oppush, v: []interface{}{}},
+		&code{op: opstore, v: d},
+		&code{op: oppush, v: nil},
+		&code{op: opcall, v: [3]interface{}{funcAllocator, 0, "_allocator"}},
+		&code{op: opstore, v: a},
+		&code{op: opload, v: v},
+		&code{op: opfork, v: len(c.codes) + 39}, // reduce [L1]
+		&code{op: oppathbegin},                  // path(p)
+		&code{op: opload, v: p},
+		&code{op: opcallpc},
+		&code{op: opload, v: v},
+		&code{op: oppathend},
+		&code{op: opstore, v: p},                // as $p (.;
+		&code{op: opforklabel, v: l},            // label $l |
+		&code{op: opload, v: v},                 //
+		&code{op: opfork, v: len(c.codes) + 36}, // [L2]
+		&code{op: oppop},                        // (getpath($p) |
+		&code{op: opload, v: a},
+		&code{op: opload, v: p},
+		&code{op: opload, v: v},
+		&code{op: opcall, v: [3]interface{}{internalFuncs["getpath"].callback, 1, "getpath"}},
+		&code{op: opload, v: f}, //                 f)
+		&code{op: opcallpc},
+		&code{op: opload, v: p}, //                 setpath($p; ...)
+		&code{op: opload, v: v},
+		&code{op: opcall, v: [3]interface{}{funcSetpathWithAllocator, 3, "_setpath"}},
+		&code{op: opstore, v: v},
+		&code{op: opload, v: v},                 // ., break $l
+		&code{op: opfork, v: len(c.codes) + 34}, // [L4]
+		&code{op: opjump, v: len(c.codes) + 38}, // [L3]
+		&code{op: opload, v: l},                 // [L4]
+		&code{op: opcall, v: [3]interface{}{funcBreak(""), 0, "_break"}},
+		&code{op: opload, v: p},   //               append $p to $d [L2]
+		&code{op: opappend, v: d}, //
+		&code{op: opbacktrack},    //               ) |           [L3]
+		&code{op: oppop},          //               delpaths($d); [L1]
+		&code{op: opload, v: a},
+		&code{op: opload, v: d},
+		&code{op: opload, v: v},
+		&code{op: opcall, v: [3]interface{}{funcDelpathsWithAllocator, 2, "_delpaths"}},
+		&code{op: opret},
+	)
 }
 
 func (c *compiler) funcBuiltins(interface{}, []interface{}) interface{} {
@@ -1366,7 +1491,8 @@ func (c *compiler) compileCallPc(fn *funcinfo, args []*Query) error {
 }
 
 func (c *compiler) compileCallInternal(
-	fn interface{}, args []*Query, internal, indexing bool) error {
+	fn interface{}, args []*Query, internal, indexing bool,
+) error {
 	if len(args) == 0 {
 		c.append(&code{op: opcall, v: fn})
 		return nil
@@ -1432,6 +1558,10 @@ func (c *compiler) compileCallInternal(
 
 func (c *compiler) append(code *code) {
 	c.codes = append(c.codes, code)
+}
+
+func (c *compiler) appends(codes ...*code) {
+	c.codes = append(c.codes, codes...)
 }
 
 func (c *compiler) lazy(f func() *code) func() {

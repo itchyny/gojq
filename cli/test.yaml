@@ -4246,7 +4246,7 @@
   expected: |
     [1,2,4,5]
 
-- name: delpaths function with overlapped paths
+- name: delpaths function with overlapping paths
   args:
     - -c
     - 'delpaths([["x"],["x",0,"y"]], [["x",0],["x",0,"y"]], [["x"],["x",{"start":0}]])'
@@ -4347,6 +4347,21 @@
   expected: |
     [0,3,5,6,9]
 
+- name: del function against large array with select
+  args:
+    - '[range(.)] | (5,7) as $x | del(.[] | select(. % $x == 0)) | add'
+  input: '50000'
+  expected: |
+    1000000000
+    1071421429
+
+- name: del function against large array with slicing
+  args:
+    - '[range(.)] | del(.[range(length) | {start:.,end:(.+1)}])'
+  input: '50000'
+  expected: |
+    []
+
 - name: assignment operator against object
   args:
     - -c
@@ -4362,6 +4377,28 @@
   input: '[0,1,2]'
   expected: |
     [3,1,3]
+
+- name: assignment operator against number
+  args:
+    - '. = 1'
+  input: '0'
+  expected: |
+    1
+
+- name: assignment operator against number error
+  args:
+    - '.foo = 1'
+  input: '0'
+  error: |
+    expected an object but got: number (0)
+
+- name: assignment operator against object with multiple paths
+  args:
+    - -c
+    - '(.foo,.bar,.baz) = 1'
+  input: 'null'
+  expected: |
+    {"bar":1,"baz":1,"foo":1}
 
 - name: assignment operator against array with slicing
   args:
@@ -4434,6 +4471,14 @@
   expected: |
     {"foo":[{"bar":1},{"bar":1}]}
 
+- name: assignment operator with overlapping paths
+  args:
+    - -c
+    - '[(.x,.x.y,.x.y.z) = {}, (.x.y.z,.x.y,.x) = {}]'
+  input: 'null'
+  expected: |
+    [{"x":{"y":{"z":{}}}},{"x":{}}]
+
 - name: assignment operator query
   args:
     - -c
@@ -4441,6 +4486,21 @@
   input: '{"bar":42}'
   expected: |
     {"bar":42,"foo":42}
+
+- name: assignment operator query with multiple paths
+  args:
+    - -c
+    - '(.foo,.bar,.baz) = .bar + 1'
+  input: '{"bar":42}'
+  expected: |
+    {"bar":43,"baz":43,"foo":43}
+
+- name: assignment operator array index negative error
+  args:
+    - '.[-1,0] = 1'
+  input: '[]'
+  error: |
+    setpath cannot be applied to: number (-1)
 
 - name: assignment operator array index limit error
   args:
@@ -4473,7 +4533,57 @@
   expected: |
     [{"k":"a","v":1},{"k":"b","v":0},{"k":"c","v":3}]
 
-- name: modify operator
+- name: assignment operator with fork
+  args:
+    - -c
+    - '[range(3)] | .[] = 0 | [.[] = 1, .[] = 2]'
+  input: 'null'
+  expected: |
+    [[1,1,1],[2,2,2]]
+
+- name: assignment operator against large array
+  args:
+    - '[range(.)] | .[] = 1 | add'
+  input: '50000'
+  expected: |
+    50000
+
+- name: assignment operator against large array with select
+  args:
+    - '[range(.)] | (.[] | select(. % 2 > 0)) = 1 | add'
+  input: '50000'
+  expected: |
+    625000000
+
+- name: assignment operator against large array with range
+  args:
+    - '[range(.)] | .[range(length)] = 1 | add'
+  input: '50000'
+  expected: |
+    50000
+
+- name: assignment operator against large array with slicing
+  args:
+    - '[range(.)] | .[range(length) | {start:.,end:(.+1)}] = [1] | add'
+  input: '50000'
+  expected: |
+    50000
+
+- name: assignment operator against large object
+  args:
+    - '[{key:range(.)|tostring}] | from_entries | .[] = 1 | add'
+  input: '50000'
+  expected: |
+    50000
+
+- name: assignment operator constructing large array
+  args:
+    - '.[range(50000)] = 1 | add'
+  input: 'null'
+  expected: |
+    50000
+
+- name: update-assignment operator
   args:
     - -c
     - '.foo |= .+1'
@@ -4481,7 +4591,7 @@
   expected: |
     {"foo":2}
 
-- name: modify operator deeply
+- name: update-assignment operator deeply
   args:
     - -c
     - '.[0].a |= {"old":., "new":(.+1)}'
@@ -4489,7 +4599,7 @@
   expected: |
     [{"a":{"new":2,"old":1},"b":2}]
 
-- name: modify operator in function
+- name: update-assignment operator in function
   args:
     - -c
     - 'def inc(x): x |= .+1; inc(.[].a)'
@@ -4497,7 +4607,7 @@
   expected: |
     [{"a":2,"b":2},{"a":3,"b":4},{"a":8,"b":8}]
 
-- name: modify operator with empty
+- name: update-assignment operator with empty
   args:
     - -c
     - '.foo |= empty'
@@ -4505,7 +4615,15 @@
   expected: |
     {"bar":48}
 
-- name: modify operator with same paths
+- name: update-assignment operator with repeat
+  args:
+    - -c
+    - '.foo |= repeat(.)'
+  input: '{"foo": 42, "bar": 48}'
+  expected: |
+    {"bar":48,"foo":42}
+
+- name: update-assignment operator with same paths
   args:
     - -c
     - '(.foo,.foo,.foo) |= .+1'
@@ -4513,7 +4631,7 @@
   expected: |
     {"foo":3}
 
-- name: modify operator on array with empty function
+- name: update-assignment operator against array with empty function
   args:
     - -c
     - '(.[] | select(. % 2 > 0)) |= empty'
@@ -4521,7 +4639,7 @@
   expected: |
     [2,4]
 
-- name: modify operator on array with conditional empty function
+- name: update-assignment operator against array with conditional empty function
   args:
     - -c
     - '[range(.)] | .[] |= if . % 2 == 0 then empty else [., -.] end'
@@ -4529,7 +4647,36 @@
   expected: |
     [[1,-1],[3,-3],[5,-5],[7,-7],[9,-9]]
 
-- name: modify operator on array with overlapping paths
+- name: update-assignment operator with fork
+  args:
+    - -c
+    - '[range(3)] | .[] |= 0 | [.[] |= 1, .[] |= 2]'
+  input: 'null'
+  expected: |
+    [[1,1,1],[2,2,2]]
+
+- name: update-assignment operator against large array
+  args:
+    - '[range(.)] | .[] |= . * 2 | add'
+  input: '50000'
+  expected: |
+    2499950000
+
+- name: update-assignment operator against large array with select
+  args:
+    - '[range(.)] | (.[] | select(. % 2 > 0)) |= (. * 2) | add'
+  input: '50000'
+  expected: |
+    1874975000
+
+- name: update-assignment operator against large object
+  args:
+    - '[range(.) | {key:tostring,value:.}] | from_entries | .[] |= . * 2 | add'
+  input: '50000'
+  expected: |
+    2499950000
+
+- name: update-assignment operator against array with overlapping paths
   args:
     - -c
     - '(.[1:3][],.[2:4][],.[2]) |= .+1'
@@ -4537,7 +4684,7 @@
   expected: |
     [1,3,6,5,5]
 
-- name: modify operator with optional operator
+- name: update-assignment operator with optional operator
   args:
     - -c
     - '.foo |= .?'
@@ -4545,7 +4692,15 @@
   expected: |
     {"foo":42}
 
-- name: modify operator with try catch
+- name: update-assignment operator with infinite range
+  args:
+    - -c
+    - '[range(.)] | .[] |= range(infinite)'
+  input: '5'
+  expected: |
+    [0,0,0,0,0]
+
+- name: update-assignment operator with try catch
   args:
     - -c
     - '. |= try . catch .'
@@ -4553,7 +4708,7 @@
   expected: |
     1
 
-- name: modify operator with alternative operator
+- name: update-assignment operator with alternative operator
   args:
     - -c
     - '.foo |= (fromjson? // "x")'
@@ -4797,6 +4952,13 @@
     [
       "y"
     ]
+
+- name: path function with assignment operator
+  args:
+    - 'path(. = .x)'
+  input: 'null'
+  expected: |
+    []
 
 - name: path function with error function
   args:
