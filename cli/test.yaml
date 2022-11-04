@@ -4877,6 +4877,14 @@
   expected: |
     [0,"id"]
 
+- name: path function with getpath
+  args:
+    - -c
+    - '[path(getpath([[0]] | .[0],.[]))]'
+  input: 'null'
+  expected: |
+    [[0],[0]]
+
 - name: path function against nan
   args:
     - -c

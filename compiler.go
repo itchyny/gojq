@@ -971,7 +971,7 @@ func (c *compiler) compileFunc(e *Func) error {
 				[3]interface{}{c.funcBuiltins, 0, e.Name},
 				e.Args,
 				true,
-				false,
+				-1,
 			)
 		case "input":
 			if c.inputIter == nil {
@@ -981,14 +981,14 @@ func (c *compiler) compileFunc(e *Func) error {
 				[3]interface{}{c.funcInput, 0, e.Name},
 				e.Args,
 				true,
-				false,
+				-1,
 			)
 		case "modulemeta":
 			return c.compileCallInternal(
 				[3]interface{}{c.funcModulemeta, 0, e.Name},
 				e.Args,
 				true,
-				false,
+				-1,
 			)
 		default:
 			return c.compileCall(e.Name, e.Args)
@@ -999,7 +999,7 @@ func (c *compiler) compileFunc(e *Func) error {
 			[3]interface{}{fn.callback, len(e.Args), e.Name},
 			e.Args,
 			true,
-			false,
+			-1,
 		); err != nil {
 			return err
 		}
@@ -1472,11 +1472,20 @@ func (c *compiler) compileTermSuffix(e *Term, s *Suffix) error {
 
 func (c *compiler) compileCall(name string, args []*Query) error {
 	fn := internalFuncs[name]
+	var indexing int
+	switch name {
+	case "_index", "_slice":
+		indexing = 1
+	case "getpath":
+		indexing = 0
+	default:
+		indexing = -1
+	}
 	if err := c.compileCallInternal(
 		[3]interface{}{fn.callback, len(args), name},
 		args,
 		true,
-		name == "_index" || name == "_slice",
+		indexing,
 	); err != nil {
 		return err
 	}
@@ -1487,11 +1496,11 @@ func (c *compiler) compileCall(name string, args []*Query) error {
 }
 
 func (c *compiler) compileCallPc(fn *funcinfo, args []*Query) error {
-	return c.compileCallInternal(fn.pc, args, false, false)
+	return c.compileCallInternal(fn.pc, args, false, -1)
 }
 
 func (c *compiler) compileCallInternal(
-	fn interface{}, args []*Query, internal, indexing bool,
+	fn interface{}, args []*Query, internal bool, indexing int,
 ) error {
 	if len(args) == 0 {
 		c.append(&code{op: opcall, v: fn})
@@ -1499,7 +1508,7 @@ func (c *compiler) compileCallInternal(
 	}
 	v := c.newVariable()
 	c.append(&code{op: opstore, v: v})
-	if indexing {
+	if indexing >= 0 {
 		c.append(&code{op: opexpbegin})
 	}
 	for i := len(args) - 1; i >= 0; i-- {
@@ -1538,7 +1547,7 @@ func (c *compiler) compileCallInternal(
 		} else {
 			c.append(&code{op: oppushpc, v: pc})
 		}
-		if indexing && i == 1 {
+		if i == indexing {
 			if c.codes[len(c.codes)-2].op == opexpbegin {
 				c.codes[len(c.codes)-2] = c.codes[len(c.codes)-1]
 				c.codes = c.codes[:len(c.codes)-1]
@@ -1547,7 +1556,7 @@ func (c *compiler) compileCallInternal(
 			}
 		}
 	}
-	if indexing {
+	if indexing > 0 {
 		c.append(&code{op: oppush, v: nil})
 	} else {
 		c.append(&code{op: opload, v: v})
