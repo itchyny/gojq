@@ -808,9 +808,14 @@ func funcToURI(v interface{}) interface{} {
 	}
 }
 
+var csvEscaper = strings.NewReplacer(
+	`"`, `""`,
+	"\x00", `\0`,
+)
+
 func funcToCSV(v interface{}) interface{} {
 	return formatJoin("csv", v, ",", func(s string) string {
-		return `"` + strings.ReplaceAll(s, `"`, `""`) + `"`
+		return `"` + csvEscaper.Replace(s) + `"`
 	})
 }
 
@@ -819,18 +824,24 @@ var tsvEscaper = strings.NewReplacer(
 	"\r", `\r`,
 	"\n", `\n`,
 	"\\", `\\`,
+	"\x00", `\0`,
 )
 
 func funcToTSV(v interface{}) interface{} {
 	return formatJoin("tsv", v, "\t", tsvEscaper.Replace)
 }
 
+var shEscaper = strings.NewReplacer(
+	"'", `'\''`,
+	"\x00", `\0`,
+)
+
 func funcToSh(v interface{}) interface{} {
 	if _, ok := v.([]interface{}); !ok {
 		v = []interface{}{v}
 	}
 	return formatJoin("sh", v, " ", func(s string) string {
-		return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
+		return "'" + shEscaper.Replace(s) + "'"
 	})
 }
 

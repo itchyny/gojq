@@ -5848,9 +5848,9 @@
   args:
     - '@csv'
   input: |
-    [1, "foo", null, "foo,\n\"bar\"\tbaz"]
+    [1, "foo", null, "foo,\n\"bar\"\tbaz\u0000\\0"]
   expected: |
-    "1,\"foo\",,\"foo,\n\"\"bar\"\"\tbaz\""
+    "1,\"foo\",,\"foo,\n\"\"bar\"\"\tbaz\\0\\0\""
 
 - name: format strings @csv with string interpolation
   args:
@@ -5879,9 +5879,9 @@
   args:
     - '@tsv'
   input: |
-    [1, "foo", null, "foo,\n\"bar\"\tba\\z"]
+    [1, "foo", null, "foo,\n\"bar\"\tbaz\u0000\\0"]
   expected: |
-    "1\tfoo\t\tfoo,\\n\"bar\"\\tba\\\\z"
+    "1\tfoo\t\tfoo,\\n\"bar\"\\tbaz\\0\\\\0"
 
 - name: format strings @tsv with string interpolation
   args:
@@ -5912,11 +5912,11 @@
   input: |
     null
     true
-    [1, "f'o'o", null, false]
+    [1, "f'o'o\u0000\\0", null, false]
   expected: |
     "null"
     "true"
-    "1 'f'\\''o'\\''o' null false"
+    "1 'f'\\''o'\\''o\\0\\0' null false"
 
 - name: format strings @sh error
   args:
