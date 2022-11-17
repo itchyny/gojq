@@ -1920,6 +1920,26 @@
     "endswith cannot be applied to: object ({})"
     "endswith cannot be applied to: number (10)"
 
+- name: combinations/0 function
+  args:
+    - -c
+    - '[combinations]'
+  input: '[] [[0]] [[1, 2, 3], [4, 5, 6]]'
+  expected: |
+    [[]]
+    [[0]]
+    [[1,4],[1,5],[1,6],[2,4],[2,5],[2,6],[3,4],[3,5],[3,6]]
+
+- name: combinations/1 function
+  args:
+    - -c
+    - '[combinations(3)]'
+  input: '[] [0] [1, 2]'
+  expected: |
+    []
+    [[0,0,0]]
+    [[1,1,1],[1,1,2],[1,2,1],[1,2,2],[2,1,1],[2,1,2],[2,2,1],[2,2,2]]
+
 - name: ltrimstr function
   args:
     - 'map(ltrimstr("foo")), ("x"|ltrimstr(0, null, {}))'
@@ -1962,25 +1982,62 @@
     "x"
     "x"
 
-- name: combinations/0 function
+- name: explode function
   args:
     - -c
-    - '[combinations]'
-  input: '[] [[0]] [[1, 2, 3], [4, 5, 6]]'
-  expected: |
-    [[]]
-    [[0]]
-    [[1,4],[1,5],[1,6],[2,4],[2,5],[2,6],[3,4],[3,5],[3,6]]
-
-- name: combinations/1 function
-  args:
-    - -c
-    - '[combinations(3)]'
-  input: '[] [0] [1, 2]'
+    - 'explode'
+  input: |
+    ""
+    "foo bar"
+    "１２３４５"
+    "\n\t"
   expected: |
     []
-    [[0,0,0]]
-    [[1,1,1],[1,1,2],[1,2,1],[1,2,2],[2,1,1],[2,1,2],[2,2,1],[2,2,2]]
+    [102,111,111,32,98,97,114]
+    [65297,65298,65299,65300,65301]
+    [10,9]
+
+- name: implode function
+  args:
+    - 'implode'
+  input: |
+    []
+    [102,111,111,32,98,97,114]
+    [65297,65298,65299,65300,65301]
+    [10,9]
+  expected: |
+    ""
+    "foo bar"
+    "１２３４５"
+    "\n\t"
+
+- name: implode function error
+  args:
+    - 'try implode catch .'
+  input: |
+    [0]
+    [-1]
+    [1114112]
+    [[]]
+    [{}]
+  expected: |
+    "\u0000"
+    "implode cannot be applied to: array ([-1])"
+    "implode cannot be applied to: array ([1114112])"
+    "implode cannot be applied to: array ([[]])"
+    "implode cannot be applied to: array ([{}])"
+
+- name: split/1 function
+  args:
+    - 'split(", ","") | join("/")'
+  input: |
+    "a,b, c, d, e,f"
+    ", a,b, c, d, e,f, "
+  expected: |
+    "a,b/c/d/e,f"
+    "a/,/b/,/ /c/,/ /d/,/ /e/,/f"
+    "/a,b/c/d/e,f/"
+    ",/ /a/,/b/,/ /c/,/ /d/,/ /e/,/f/,/ "
 
 - name: join function
   args:
@@ -2817,63 +2874,6 @@
   input: '{ "a": 5, "b": false, "c": [null,false], "d": [false,3], "e": null }'
   expected: |
     [5,5,false,3,3,[null,false],null,false]
-
-- name: explode function
-  args:
-    - -c
-    - 'explode'
-  input: |
-    ""
-    "foo bar"
-    "１２３４５"
-    "\n\t"
-  expected: |
-    []
-    [102,111,111,32,98,97,114]
-    [65297,65298,65299,65300,65301]
-    [10,9]
-
-- name: implode function
-  args:
-    - 'implode'
-  input: |
-    []
-    [102,111,111,32,98,97,114]
-    [65297,65298,65299,65300,65301]
-    [10,9]
-  expected: |
-    ""
-    "foo bar"
-    "１２３４５"
-    "\n\t"
-
-- name: implode function error
-  args:
-    - 'try implode catch .'
-  input: |
-    [0]
-    [-1]
-    [1114112]
-    [[]]
-    [{}]
-  expected: |
-    "\u0000"
-    "implode cannot be applied to: array ([-1])"
-    "implode cannot be applied to: array ([1114112])"
-    "implode cannot be applied to: array ([[]])"
-    "implode cannot be applied to: array ([{}])"
-
-- name: split/1 function
-  args:
-    - 'split(", ","") | join("/")'
-  input: |
-    "a,b, c, d, e,f"
-    ", a,b, c, d, e,f, "
-  expected: |
-    "a,b/c/d/e,f"
-    "a/,/b/,/ /c/,/ /d/,/ /e/,/f"
-    "/a,b/c/d/e,f/"
-    ",/ /a/,/b/,/ /c/,/ /d/,/ /e/,/f/,/ "
 
 - name: condition
   args:
