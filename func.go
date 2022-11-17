@@ -71,6 +71,8 @@ func init() {
 		"explode":        argFunc0(funcExplode),
 		"implode":        argFunc0(funcImplode),
 		"split":          {argcount1 | argcount2, false, funcSplit},
+		"ascii_downcase": argFunc0(funcASCIIDowncase),
+		"ascii_upcase":   argFunc0(funcASCIIUpcase),
 		"tojson":         argFunc0(funcToJSON),
 		"fromjson":       argFunc0(funcFromJSON),
 		"format":         argFunc1(funcFormat),
@@ -746,6 +748,32 @@ func funcSplit(v interface{}, args []interface{}) interface{} {
 		xs[i] = s
 	}
 	return xs
+}
+
+func funcASCIIDowncase(v interface{}) interface{} {
+	s, ok := v.(string)
+	if !ok {
+		return &funcTypeError{"ascii_downcase", v}
+	}
+	return strings.Map(func(r rune) rune {
+		if 'A' <= r && r <= 'Z' {
+			return r + ('a' - 'A')
+		}
+		return r
+	}, s)
+}
+
+func funcASCIIUpcase(v interface{}) interface{} {
+	s, ok := v.(string)
+	if !ok {
+		return &funcTypeError{"ascii_upcase", v}
+	}
+	return strings.Map(func(r rune) rune {
+		if 'a' <= r && r <= 'z' {
+			return r - ('a' - 'A')
+		}
+		return r
+	}, s)
 }
 
 func funcToJSON(v interface{}) interface{} {

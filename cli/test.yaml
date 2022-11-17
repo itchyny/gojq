@@ -2044,16 +2044,16 @@
 - name: ascii_downcase function
   args:
     - 'ascii_downcase'
-  input: '"@ABC XYZ[] `abc xyz{} ☆"'
+  input: '"@ABC XYZ[] `abc xyz{} Αα"'
   expected: |
-    "@abc xyz[] `abc xyz{} ☆"
+    "@abc xyz[] `abc xyz{} Αα"
 
 - name: ascii_upcase function
   args:
     - 'ascii_upcase'
-  input: '"@ABC XYZ[] `abc xyz{} ☆"'
+  input: '"@ABC XYZ[] `abc xyz{} Αα"'
   expected: |
-    "@ABC XYZ[] `ABC XYZ{} ☆"
+    "@ABC XYZ[] `ABC XYZ{} Αα"
 
 - name: walk function
   args:
