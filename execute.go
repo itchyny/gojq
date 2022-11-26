@@ -90,6 +90,8 @@ loop:
 				case *tryEndError:
 					err = er.err
 					break loop
+				case *breakError:
+					break loop
 				case ValueError:
 					if er, ok := er.(*exitCodeError); ok && er.halt {
 						break loop

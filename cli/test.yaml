@@ -3177,6 +3177,13 @@
     3
     6
 
+- name: label and break in try catch syntax
+  args:
+    - 'label $x | (label $y | try break $y catch .), .'
+  input: '10'
+  expected: |
+    10
+
 - name: label and break in function argument
   args:
     - 'range(.) | label $out | limit(3; 1, if . > 1 then break $out end, 2)'
