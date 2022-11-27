@@ -837,12 +837,20 @@
     [-1,-2,-3,-4722366482869645213696]
     [1,2,3,4722366482869645213696]
 
-- name: unary operators against string
+- name: unary operator against string
   args:
     - '(-.)'
   input: '"abcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcde"'
   error: |
     cannot negate: string ("abcdeabcdeabcdeabcdeabcd ...")
+
+- name: unary operator with variable binding
+  args:
+    - '-1 as $x | 1, $x'
+  input: 'null'
+  expected: |
+    1
+    -1
 
 - name: object construction
   args:
