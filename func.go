@@ -1411,8 +1411,11 @@ func funcIsnan(v interface{}) interface{} {
 }
 
 func funcIsnormal(v interface{}) interface{} {
-	x, ok := toFloat(v)
-	return ok && !math.IsNaN(x) && !math.IsInf(x, 0) && x != 0.0
+	if v, ok := toFloat(v); ok {
+		e := math.Float64bits(v) & 0x7ff0000000000000 >> 52
+		return 0 < e && e < 0x7ff
+	}
+	return false
 }
 
 // An `allocator` creates new maps and slices, stores the allocated addresses.

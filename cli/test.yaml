@@ -4075,25 +4075,40 @@
 
 - name: isnormal function
   args:
-    - 'nan, infinite, -infinite, 9 | ., 1/. | isnormal'
+    - '0, 2.2250738585072011e-308, 2.2250738585072014e-308, 1, 1.7976931348623157e+308, nan, infinite, "", [], {} | isnormal'
   input: 'null'
   expected: |
     false
     false
-    false
-    false
-    false
-    false
     true
     true
+    true
+    false
+    false
+    false
+    false
+    false
 
 - name: normals function
   args:
-    - -c
-    - 'nan, infinite, -infinite, "", [], {}, 0, 9 | normals'
+    - '0, 2.2250738585072011e-308, 2.2250738585072014e-308, 1, 1.7976931348623157e+308, nan, infinite | ., -. | normals'
   input: 'null'
   expected: |
-    9
+    2.2250738585072014e-308
+    -2.2250738585072014e-308
+    1
+    -1
+    1.7976931348623157e+308
+    -1.7976931348623157e+308
+
+- name: normals with nextafter function
+  args:
+    - '0, 2.2250738585072014e-308, 1.7976931348623157e+308, nan, infinite | nextafter(.; 0, infinite) | normals'
+  input: 'null'
+  expected: |
+    2.225073858507202e-308
+    1.7976931348623155e+308
+    1.7976931348623157e+308
 
 - name: stringify nan and infinite
   args:
