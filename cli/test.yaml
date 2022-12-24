@@ -4517,13 +4517,15 @@
   expected: |
     {"bar":42,"foo":42}
 
-- name: assignment operator query with multiple paths
+- name: assignment operator query with multiple paths and values
   args:
     - -c
-    - '(.foo,.bar,.baz) = .bar + 1'
-  input: '{"bar":42}'
+    - '(.foo,.bar,.baz) = .bar[]'
+  input: '{"bar":[0,1,2]}'
   expected: |
-    {"bar":43,"baz":43,"foo":43}
+    {"bar":0,"baz":0,"foo":0}
+    {"bar":1,"baz":1,"foo":1}
+    {"bar":2,"baz":2,"foo":2}
 
 - name: assignment operator array index negative error
   args:

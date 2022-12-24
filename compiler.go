@@ -1014,7 +1014,7 @@ func (c *compiler) compileFunc(e *Func) error {
 // Appends the compiled code for the assignment operator (`=`) to maximize
 // performance. Originally the operator was implemented as follows.
 //
-//	def _assign(p; $x): reduce path(p) as $p (.; setpath($p; $x));
+//	def _assign(p; $x): reduce path(p) as $q (.; setpath($q; $x));
 //
 // To overcome the difficulty of reducing allocations on `setpath`, we use the
 // `allocator` type and track the allocated addresses during the reduction.
@@ -1023,8 +1023,9 @@ func (c *compiler) compileAssign() {
 	scope := c.newScope()
 	v, p := [2]int{scope.id, 0}, [2]int{scope.id, 1}
 	x, a := [2]int{scope.id, 2}, [2]int{scope.id, 3}
+	q := [2]int{scope.id, 4} // Cannot reuse p due to backtracking in x.
 	c.appends(
-		&code{op: opscope, v: [3]int{scope.id, 4, 2}},
+		&code{op: opscope, v: [3]int{scope.id, 5, 2}},
 		&code{op: opstore, v: v}, //                def _assign(p; $x):
 		&code{op: opstore, v: p},
 		&code{op: opstore, v: x},
@@ -1044,10 +1045,10 @@ func (c *compiler) compileAssign() {
 		&code{op: opcallpc},
 		&code{op: opload, v: v},
 		&code{op: oppathend},
-		&code{op: opstore, v: p}, //                as $p (.;
-		&code{op: opload, v: a},  //                setpath($p; $x)
+		&code{op: opstore, v: q}, //                as $q (.;
+		&code{op: opload, v: a},  //                setpath($q; $x)
 		&code{op: opload, v: x},
-		&code{op: opload, v: p},
+		&code{op: opload, v: q},
 		&code{op: opload, v: v},
 		&code{op: opcall, v: [3]interface{}{funcSetpathWithAllocator, 3, "_setpath"}},
 		&code{op: opstore, v: v},
