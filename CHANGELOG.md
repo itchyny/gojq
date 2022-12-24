@@ -1,4 +1,8 @@
 # Changelog
+## [v0.12.11](https://github.com/itchyny/gojq/compare/v0.12.10..v0.12.11) (2022-12-24)
+* fix crash on assignment operators (`=`) with multiple values (`. = (0,0)`)
+* fix `isnormal` and `normals` functions against subnormal numbers
+
 ## [v0.12.10](https://github.com/itchyny/gojq/compare/v0.12.9..v0.12.10) (2022-12-01)
 * fix `break` in `try`-`catch` query (`label $x | try break $x catch .`)
 * fix path value validation for `getpath` function (`path(getpath([[0]][0]))`)
