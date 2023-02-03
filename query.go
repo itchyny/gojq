@@ -21,12 +21,12 @@ type Query struct {
 //
 // It is safe to call this method in goroutines, to reuse a parsed [*Query].
 // But for arguments, do not give values sharing same data between goroutines.
-func (e *Query) Run(v interface{}) Iter {
+func (e *Query) Run(v any) Iter {
 	return e.RunWithContext(context.Background(), v)
 }
 
 // RunWithContext runs the query with context.
-func (e *Query) RunWithContext(ctx context.Context, v interface{}) Iter {
+func (e *Query) RunWithContext(ctx context.Context, v any) Iter {
 	code, err := Compile(e)
 	if err != nil {
 		return NewIter(err)
@@ -92,14 +92,14 @@ func (e *Query) minify() {
 	}
 }
 
-func (e *Query) toIndexKey() interface{} {
+func (e *Query) toIndexKey() any {
 	if e.Term == nil {
 		return nil
 	}
 	return e.Term.toIndexKey()
 }
 
-func (e *Query) toIndices(xs []interface{}) []interface{} {
+func (e *Query) toIndices(xs []any) []any {
 	if e.Term == nil {
 		return nil
 	}
@@ -314,7 +314,7 @@ func (e *Term) toFunc() string {
 	}
 }
 
-func (e *Term) toIndexKey() interface{} {
+func (e *Term) toIndexKey() any {
 	switch e.Type {
 	case TermTypeNumber:
 		return toNumber(e.Number)
@@ -330,7 +330,7 @@ func (e *Term) toIndexKey() interface{} {
 	}
 }
 
-func (e *Term) toIndices(xs []interface{}) []interface{} {
+func (e *Term) toIndices(xs []any) []any {
 	switch e.Type {
 	case TermTypeIndex:
 		if xs = e.Index.toIndices(xs); xs == nil {
@@ -351,7 +351,7 @@ func (e *Term) toIndices(xs []interface{}) []interface{} {
 	return xs
 }
 
-func (e *Term) toNumber() interface{} {
+func (e *Term) toNumber() any {
 	if e.Type == TermTypeNumber {
 		return toNumber(e.Number)
 	}
@@ -379,7 +379,7 @@ func (e *Unary) minify() {
 	e.Term.minify()
 }
 
-func (e *Unary) toNumber() interface{} {
+func (e *Unary) toNumber() any {
 	v := e.Term.toNumber()
 	if v != nil && e.Op == OpSub {
 		v = funcOpNegate(v)
@@ -514,7 +514,7 @@ func (e *Index) minify() {
 	}
 }
 
-func (e *Index) toIndexKey() interface{} {
+func (e *Index) toIndexKey() any {
 	if e.Name != "" {
 		return e.Name
 	} else if e.Str != nil {
@@ -524,7 +524,7 @@ func (e *Index) toIndexKey() interface{} {
 	} else if !e.IsSlice {
 		return e.Start.toIndexKey()
 	} else {
-		var start, end interface{}
+		var start, end any
 		ok := true
 		if e.Start != nil {
 			start = e.Start.toIndexKey()
@@ -535,13 +535,13 @@ func (e *Index) toIndexKey() interface{} {
 			ok = end != nil
 		}
 		if ok {
-			return map[string]interface{}{"start": start, "end": end}
+			return map[string]any{"start": start, "end": end}
 		}
 	}
 	return nil
 }
 
-func (e *Index) toIndices(xs []interface{}) []interface{} {
+func (e *Index) toIndices(xs []any) []any {
 	if k := e.toIndexKey(); k != nil {
 		return append(xs, k)
 	}
@@ -795,7 +795,7 @@ func (e *Suffix) toTerm() *Term {
 	}
 }
 
-func (e *Suffix) toIndices(xs []interface{}) []interface{} {
+func (e *Suffix) toIndices(xs []any) []any {
 	if e.Index == nil {
 		return nil
 	}
@@ -1057,7 +1057,7 @@ func (e *ConstTerm) writeTo(s *strings.Builder) {
 	}
 }
 
-func (e *ConstTerm) toValue() interface{} {
+func (e *ConstTerm) toValue() any {
 	if e.Object != nil {
 		return e.Object.ToValue()
 	} else if e.Array != nil {
@@ -1101,12 +1101,12 @@ func (e *ConstObject) writeTo(s *strings.Builder) {
 	s.WriteString(" }")
 }
 
-// ToValue converts the object to map[string]interface{}.
-func (e *ConstObject) ToValue() map[string]interface{} {
+// ToValue converts the object to map[string]any.
+func (e *ConstObject) ToValue() map[string]any {
 	if e == nil {
 		return nil
 	}
-	v := make(map[string]interface{}, len(e.KeyVals))
+	v := make(map[string]any, len(e.KeyVals))
 	for _, e := range e.KeyVals {
 		key := e.Key
 		if key == "" {
@@ -1162,8 +1162,8 @@ func (e *ConstArray) writeTo(s *strings.Builder) {
 	s.WriteByte(']')
 }
 
-func (e *ConstArray) toValue() []interface{} {
-	v := make([]interface{}, len(e.Elems))
+func (e *ConstArray) toValue() []any {
+	v := make([]any, len(e.Elems))
 	for i, e := range e.Elems {
 		v[i] = e.toValue()
 	}

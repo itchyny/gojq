@@ -40,7 +40,7 @@ func ExampleWithModuleLoader() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	input := map[string]interface{}{"foo": 42}
+	input := map[string]any{"foo": 42}
 	iter := code.Run(input)
 	for {
 		v, ok := iter.Next()

@@ -8,11 +8,11 @@ import "strconv"
 // Refer to [WithFunction] to add a custom internal function.
 type ValueError interface {
 	error
-	Value() interface{}
+	Value() any
 }
 
 type expectedObjectError struct {
-	v interface{}
+	v any
 }
 
 func (err *expectedObjectError) Error() string {
@@ -20,7 +20,7 @@ func (err *expectedObjectError) Error() string {
 }
 
 type expectedArrayError struct {
-	v interface{}
+	v any
 }
 
 func (err *expectedArrayError) Error() string {
@@ -28,7 +28,7 @@ func (err *expectedArrayError) Error() string {
 }
 
 type expectedStringError struct {
-	v interface{}
+	v any
 }
 
 func (err *expectedStringError) Error() string {
@@ -36,7 +36,7 @@ func (err *expectedStringError) Error() string {
 }
 
 type iteratorError struct {
-	v interface{}
+	v any
 }
 
 func (err *iteratorError) Error() string {
@@ -44,7 +44,7 @@ func (err *iteratorError) Error() string {
 }
 
 type arrayIndexTooLargeError struct {
-	v interface{}
+	v any
 }
 
 func (err *arrayIndexTooLargeError) Error() string {
@@ -52,7 +52,7 @@ func (err *arrayIndexTooLargeError) Error() string {
 }
 
 type objectKeyNotStringError struct {
-	v interface{}
+	v any
 }
 
 func (err *objectKeyNotStringError) Error() string {
@@ -60,7 +60,7 @@ func (err *objectKeyNotStringError) Error() string {
 }
 
 type arrayIndexNotNumberError struct {
-	v interface{}
+	v any
 }
 
 func (err *arrayIndexNotNumberError) Error() string {
@@ -68,7 +68,7 @@ func (err *arrayIndexNotNumberError) Error() string {
 }
 
 type stringIndexNotNumberError struct {
-	v interface{}
+	v any
 }
 
 func (err *stringIndexNotNumberError) Error() string {
@@ -76,7 +76,7 @@ func (err *stringIndexNotNumberError) Error() string {
 }
 
 type expectedStartEndError struct {
-	v interface{}
+	v any
 }
 
 func (err *expectedStartEndError) Error() string {
@@ -85,7 +85,7 @@ func (err *expectedStartEndError) Error() string {
 
 type lengthMismatchError struct {
 	name string
-	v, x []interface{}
+	v, x []any
 }
 
 func (err *lengthMismatchError) Error() string {
@@ -108,7 +108,7 @@ func (err *funcNotFoundError) Error() string {
 
 type funcTypeError struct {
 	name string
-	v    interface{}
+	v    any
 }
 
 func (err *funcTypeError) Error() string {
@@ -116,7 +116,7 @@ func (err *funcTypeError) Error() string {
 }
 
 type exitCodeError struct {
-	value interface{}
+	value any
 	code  int
 	halt  bool
 }
@@ -132,7 +132,7 @@ func (err *exitCodeError) IsEmptyError() bool {
 	return err.value == nil
 }
 
-func (err *exitCodeError) Value() interface{} {
+func (err *exitCodeError) Value() any {
 	return err.value
 }
 
@@ -145,7 +145,7 @@ func (err *exitCodeError) IsHaltError() bool {
 }
 
 type containsTypeError struct {
-	l, r interface{}
+	l, r any
 }
 
 func (err *containsTypeError) Error() string {
@@ -153,7 +153,7 @@ func (err *containsTypeError) Error() string {
 }
 
 type hasKeyTypeError struct {
-	l, r interface{}
+	l, r any
 }
 
 func (err *hasKeyTypeError) Error() string {
@@ -169,7 +169,7 @@ func (err *flattenDepthError) Error() string {
 }
 
 type joinTypeError struct {
-	v interface{}
+	v any
 }
 
 func (err *joinTypeError) Error() string {
@@ -178,7 +178,7 @@ func (err *joinTypeError) Error() string {
 
 type unaryTypeError struct {
 	name string
-	v    interface{}
+	v    any
 }
 
 func (err *unaryTypeError) Error() string {
@@ -187,7 +187,7 @@ func (err *unaryTypeError) Error() string {
 
 type binopTypeError struct {
 	name string
-	l, r interface{}
+	l, r any
 }
 
 func (err *binopTypeError) Error() string {
@@ -195,7 +195,7 @@ func (err *binopTypeError) Error() string {
 }
 
 type zeroDivisionError struct {
-	l, r interface{}
+	l, r any
 }
 
 func (err *zeroDivisionError) Error() string {
@@ -203,7 +203,7 @@ func (err *zeroDivisionError) Error() string {
 }
 
 type zeroModuloError struct {
-	l, r interface{}
+	l, r any
 }
 
 func (err *zeroModuloError) Error() string {
@@ -220,7 +220,7 @@ func (err *formatNotFoundError) Error() string {
 
 type formatRowError struct {
 	typ string
-	v   interface{}
+	v   any
 }
 
 func (err *formatRowError) Error() string {
@@ -259,7 +259,7 @@ func (err *variableNameError) Error() string {
 
 type breakError struct {
 	n string
-	v interface{}
+	v any
 }
 
 func (err *breakError) Error() string {
@@ -279,7 +279,7 @@ func (err *tryEndError) Error() string {
 }
 
 type invalidPathError struct {
-	v interface{}
+	v any
 }
 
 func (err *invalidPathError) Error() string {
@@ -287,7 +287,7 @@ func (err *invalidPathError) Error() string {
 }
 
 type invalidPathIterError struct {
-	v interface{}
+	v any
 }
 
 func (err *invalidPathIterError) Error() string {
@@ -295,7 +295,7 @@ func (err *invalidPathIterError) Error() string {
 }
 
 type getpathError struct {
-	v, path interface{}
+	v, path any
 }
 
 func (err *getpathError) Error() string {
@@ -328,7 +328,7 @@ func (err *jsonParseError) Error() string {
 	return "invalid json: " + err.fname + ": " + err.err.Error()
 }
 
-func typeErrorPreview(v interface{}) string {
+func typeErrorPreview(v any) string {
 	switch v.(type) {
 	case nil:
 		return "null"

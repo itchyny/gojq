@@ -6,23 +6,23 @@ import (
 )
 
 // Workaround for https://github.com/go-yaml/yaml/issues/139
-func normalizeYAML(v interface{}) interface{} {
+func normalizeYAML(v any) any {
 	switch v := v.(type) {
-	case map[interface{}]interface{}:
-		w := make(map[string]interface{}, len(v))
+	case map[any]any:
+		w := make(map[string]any, len(v))
 		for k, v := range v {
 			w[fmt.Sprint(k)] = normalizeYAML(v)
 		}
 		return w
 
-	case map[string]interface{}:
-		w := make(map[string]interface{}, len(v))
+	case map[string]any:
+		w := make(map[string]any, len(v))
 		for k, v := range v {
 			w[k] = normalizeYAML(v)
 		}
 		return w
 
-	case []interface{}:
+	case []any:
 		for i, w := range v {
 			v[i] = normalizeYAML(w)
 		}

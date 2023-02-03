@@ -23,12 +23,12 @@ func ExampleCompile() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	iter := code.Run([]interface{}{
+	iter := code.Run([]any{
 		nil,
 		"string",
 		42,
-		[]interface{}{"foo"},
-		map[string]interface{}{"foo": 42},
+		[]any{"foo"},
+		map[string]any{"foo": 42},
 	})
 	for {
 		v, ok := iter.Next()
@@ -59,7 +59,7 @@ func ExampleCode_Run() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	input := map[string]interface{}{"foo": 42}
+	input := map[string]any{"foo": 42}
 	iter := code.Run(input)
 	for {
 		v, ok := iter.Next()
@@ -123,8 +123,8 @@ func TestCodeCompile_OptimizeConstants(t *testing.T) {
 		if !ok {
 			break
 		}
-		if expected := []interface{}{
-			1, map[string]interface{}{"foo": 2, "bar": 3}, []interface{}{-4},
+		if expected := []any{
+			1, map[string]any{"foo": 2, "bar": 3}, []any{-4},
 		}; !reflect.DeepEqual(got, expected) {
 			t.Errorf("expected: %v, got: %v", expected, got)
 		}
@@ -175,10 +175,10 @@ func TestCodeCompile_OptimizeIndexSliceAssign(t *testing.T) {
 		if !ok {
 			break
 		}
-		if expected := map[string]interface{}{
-			"foo": map[string]interface{}{
-				"bar": map[string]interface{}{
-					"baz": []interface{}{map[string]interface{}{"": []interface{}{0}}},
+		if expected := map[string]any{
+			"foo": map[string]any{
+				"bar": map[string]any{
+					"baz": []any{map[string]any{"": []any{0}}},
 				},
 			},
 		}; !reflect.DeepEqual(got, expected) {
@@ -260,7 +260,7 @@ func TestCodeCompile_OptimizeJumps(t *testing.T) {
 		t.Errorf("expected: %v, got: %v", expected, got)
 	}
 	v := codes.Index(1).Elem().FieldByName("v")
-	if got, expected := *(*interface{})(unsafe.Pointer(v.UnsafeAddr())), 13; expected != got {
+	if got, expected := *(*any)(unsafe.Pointer(v.UnsafeAddr())), 13; expected != got {
 		t.Errorf("expected: %v, got: %v", expected, got)
 	}
 	iter := code.Run(nil)

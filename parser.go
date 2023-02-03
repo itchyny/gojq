@@ -38,7 +38,7 @@ func prependFuncDef(xs []*FuncDef, x *FuncDef) []*FuncDef {
 //line parser.go.y:33
 type yySymType struct {
 	yys      int
-	value    interface{}
+	value    any
 	token    string
 	operator Operator
 }

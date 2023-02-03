@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func parseFlags(args []string, opts interface{}) ([]string, error) {
+func parseFlags(args []string, opts any) ([]string, error) {
 	rest := make([]string, 0, len(args))
 	val := reflect.ValueOf(opts).Elem()
 	typ := val.Type()
@@ -158,7 +158,7 @@ func parseFlags(args []string, opts interface{}) ([]string, error) {
 	return rest, nil
 }
 
-func formatFlags(opts interface{}) string {
+func formatFlags(opts any) string {
 	val := reflect.ValueOf(opts).Elem()
 	typ := val.Type()
 	var sb strings.Builder

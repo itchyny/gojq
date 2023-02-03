@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func normalizeNumber(v json.Number) interface{} {
+func normalizeNumber(v json.Number) any {
 	if i, err := v.Int64(); err == nil && math.MinInt <= i && i <= math.MaxInt {
 		return int(i)
 	}
@@ -25,7 +25,7 @@ func normalizeNumber(v json.Number) interface{} {
 	return math.Inf(1)
 }
 
-func normalizeNumbers(v interface{}) interface{} {
+func normalizeNumbers(v any) any {
 	switch v := v.(type) {
 	case json.Number:
 		return normalizeNumber(v)
@@ -68,12 +68,12 @@ func normalizeNumbers(v interface{}) interface{} {
 		return int(v)
 	case float32:
 		return float64(v)
-	case []interface{}:
+	case []any:
 		for i, x := range v {
 			v[i] = normalizeNumbers(x)
 		}
 		return v
-	case map[string]interface{}:
+	case map[string]any:
 		for k, x := range v {
 			v[k] = normalizeNumbers(x)
 		}

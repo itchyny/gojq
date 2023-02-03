@@ -10,7 +10,7 @@ import (
 	"github.com/itchyny/gojq"
 )
 
-func toFloat(x interface{}) (float64, bool) {
+func toFloat(x any) (float64, bool) {
 	switch x := x.(type) {
 	case int:
 		return float64(x), true
@@ -31,7 +31,7 @@ func ExampleWithFunction() {
 	}
 	code, err := gojq.Compile(
 		query,
-		gojq.WithFunction("f", 0, 1, func(x interface{}, xs []interface{}) interface{} {
+		gojq.WithFunction("f", 0, 1, func(x any, xs []any) any {
 			if x, ok := toFloat(x); ok {
 				if len(xs) == 1 {
 					if y, ok := toFloat(xs[0]); ok {
@@ -50,7 +50,7 @@ func ExampleWithFunction() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	input := []interface{}{0, 1, 2.5, json.Number("10000000000000000000000000000000000000000")}
+	input := []any{0, 1, 2.5, json.Number("10000000000000000000000000000000000000000")}
 	iter := code.Run(input)
 	for {
 		v, ok := iter.Next()

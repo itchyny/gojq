@@ -11,7 +11,7 @@ import (
 
 func TestPreview(t *testing.T) {
 	testCases := []struct {
-		value    interface{}
+		value    any
 		expected string
 	}{
 		{
@@ -71,35 +71,35 @@ func TestPreview(t *testing.T) {
 			`"０１２３４５６７ ..."`,
 		},
 		{
-			[]interface{}{},
+			[]any{},
 			"[]",
 		},
 		{
-			[]interface{}{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
+			[]any{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
 			"[0,1,2,3,4,5,6,7,8,9,10,11,12]",
 		},
 		{
-			[]interface{}{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
+			[]any{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
 			"[0,1,2,3,4,5,6,7,8,9,10,1 ...]",
 		},
 		{
-			[]interface{}{[]interface{}{[]interface{}{[]interface{}{[]interface{}{[]interface{}{[]interface{}{[]interface{}{nil, nil, nil}}}}}}}},
+			[]any{[]any{[]any{[]any{[]any{[]any{[]any{[]any{nil, nil, nil}}}}}}}},
 			"[[[[[[[[null,null,null]]]]]]]]",
 		},
 		{
-			[]interface{}{[]interface{}{[]interface{}{[]interface{}{[]interface{}{[]interface{}{[]interface{}{[]interface{}{nil, nil, nil, nil}}}}}}}},
+			[]any{[]any{[]any{[]any{[]any{[]any{[]any{[]any{nil, nil, nil, nil}}}}}}}},
 			"[[[[[[[[null,null,null,nu ...]",
 		},
 		{
-			map[string]interface{}{},
+			map[string]any{},
 			"{}",
 		},
 		{
-			map[string]interface{}{"0": map[string]interface{}{"1": map[string]interface{}{"2": map[string]interface{}{"3": []interface{}{nil}}}}},
+			map[string]any{"0": map[string]any{"1": map[string]any{"2": map[string]any{"3": []any{nil}}}}},
 			`{"0":{"1":{"2":{"3":[null]}}}}`,
 		},
 		{
-			map[string]interface{}{"0": map[string]interface{}{"1": map[string]interface{}{"2": map[string]interface{}{"3": map[string]interface{}{"4": map[string]interface{}{}}}}}},
+			map[string]any{"0": map[string]any{"1": map[string]any{"2": map[string]any{"3": map[string]any{"4": map[string]any{}}}}}},
 			`{"0":{"1":{"2":{"3":{"4": ...}`,
 		},
 	}

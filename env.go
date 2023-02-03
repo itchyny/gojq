@@ -7,7 +7,7 @@ type env struct {
 	stack     *stack
 	paths     *stack
 	scopes    *scopeStack
-	values    []interface{}
+	values    []any
 	codes     []*code
 	codeinfos []codeinfo
 	forks     []fork
@@ -15,7 +15,7 @@ type env struct {
 	offset    int
 	expdepth  int
 	label     int
-	args      [32]interface{} // len(env.args) > maxarity
+	args      [32]any // len(env.args) > maxarity
 	ctx       context.Context
 }
 

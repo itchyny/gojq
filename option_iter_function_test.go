@@ -12,7 +12,7 @@ type rangeIter struct {
 	value, max int
 }
 
-func (iter *rangeIter) Next() (interface{}, bool) {
+func (iter *rangeIter) Next() (any, bool) {
 	if iter.value >= iter.max {
 		return nil, false
 	}
@@ -28,7 +28,7 @@ func ExampleWithIterFunction() {
 	}
 	code, err := gojq.Compile(
 		query,
-		gojq.WithIterFunction("f", 2, 2, func(_ interface{}, xs []interface{}) gojq.Iter {
+		gojq.WithIterFunction("f", 2, 2, func(_ any, xs []any) gojq.Iter {
 			if x, ok := xs[0].(int); ok {
 				if y, ok := xs[1].(int); ok {
 					return &rangeIter{x, y}

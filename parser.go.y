@@ -31,7 +31,7 @@ func prependFuncDef(xs []*FuncDef, x *FuncDef) []*FuncDef {
 %}
 
 %union {
-  value    interface{}
+  value    any
   token    string
   operator Operator
 }

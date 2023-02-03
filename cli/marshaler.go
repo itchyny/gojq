@@ -7,14 +7,14 @@ import (
 )
 
 type marshaler interface {
-	marshal(interface{}, io.Writer) error
+	marshal(any, io.Writer) error
 }
 
 type rawMarshaler struct {
 	m marshaler
 }
 
-func (m *rawMarshaler) marshal(v interface{}, w io.Writer) error {
+func (m *rawMarshaler) marshal(v any, w io.Writer) error {
 	if s, ok := v.(string); ok {
 		_, err := w.Write([]byte(s))
 		return err
@@ -30,7 +30,7 @@ type yamlMarshaler struct {
 	indent *int
 }
 
-func (m *yamlMarshaler) marshal(v interface{}, w io.Writer) error {
+func (m *yamlMarshaler) marshal(v any, w io.Writer) error {
 	enc := yaml.NewEncoder(w)
 	if i := m.indent; i != nil {
 		enc.SetIndent(*i)

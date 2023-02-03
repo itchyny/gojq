@@ -48,7 +48,7 @@ type cli struct {
 	inputYAML     bool
 
 	argnames  []string
-	argvalues []interface{}
+	argvalues []any
 
 	outputYAMLSeparator bool
 	exitCodeError       error
@@ -75,8 +75,8 @@ type flagopts struct {
 	ArgJSON       map[string]string `long:"argjson" description:"set variable to JSON value"`
 	SlurpFile     map[string]string `long:"slurpfile" description:"set variable to the JSON contents of the file"`
 	RawFile       map[string]string `long:"rawfile" description:"set variable to the contents of the file"`
-	Args          []interface{}     `long:"args" positional:"" description:"consume remaining arguments as positional string values"`
-	JSONArgs      []interface{}     `long:"jsonargs" positional:"" description:"consume remaining arguments as positional JSON values"`
+	Args          []any             `long:"args" positional:"" description:"consume remaining arguments as positional string values"`
+	JSONArgs      []any             `long:"jsonargs" positional:"" description:"consume remaining arguments as positional JSON values"`
 	ExitStatus    bool              `short:"e" long:"exit-status" description:"exit 1 when the last value is false or null"`
 	Version       bool              `short:"v" long:"version" description:"print version"`
 	Help          bool              `short:"h" long:"help" description:"print this help"`
@@ -181,7 +181,7 @@ Usage:
 		cli.argnames = append(cli.argnames, "$"+k)
 		cli.argvalues = append(cli.argvalues, string(val))
 	}
-	named := make(map[string]interface{}, len(cli.argnames))
+	named := make(map[string]any, len(cli.argnames))
 	for i, name := range cli.argnames {
 		named[name[1:]] = cli.argvalues[i]
 	}
@@ -200,7 +200,7 @@ Usage:
 		}
 	}
 	cli.argnames = append(cli.argnames, "$ARGS")
-	cli.argvalues = append(cli.argvalues, map[string]interface{}{
+	cli.argvalues = append(cli.argvalues, map[string]any{
 		"named":      named,
 		"positional": positional,
 	})
@@ -242,8 +242,8 @@ Usage:
 		gojq.WithFunction("debug", 0, 0, cli.funcDebug),
 		gojq.WithFunction("stderr", 0, 0, cli.funcStderr),
 		gojq.WithFunction("input_filename", 0, 0,
-			func(iter inputIter) func(interface{}, []interface{}) interface{} {
-				return func(interface{}, []interface{}) interface{} {
+			func(iter inputIter) func(any, []any) any {
+				return func(any, []any) any {
 					if fname := iter.Name(); fname != "" && (len(args) > 0 || !opts.InputNull) {
 						return fname
 					}
@@ -291,7 +291,7 @@ func listDefaultModulePaths() []string {
 	return modulePaths
 }
 
-func slurpFile(name string) (interface{}, error) {
+func slurpFile(name string) (any, error) {
 	iter := newSlurpInputIter(
 		newFilesInputIter(newJSONInputIter, []string{name}, nil),
 	)
@@ -408,13 +408,13 @@ func (cli *cli) createMarshaler() marshaler {
 	return f
 }
 
-func (cli *cli) funcDebug(v interface{}, _ []interface{}) interface{} {
-	newEncoder(false, 0).marshal([]interface{}{"DEBUG:", v}, cli.errStream)
+func (cli *cli) funcDebug(v any, _ []any) any {
+	newEncoder(false, 0).marshal([]any{"DEBUG:", v}, cli.errStream)
 	cli.errStream.Write([]byte{'\n'})
 	return v
 }
 
-func (cli *cli) funcStderr(v interface{}, _ []interface{}) interface{} {
+func (cli *cli) funcStderr(v any, _ []any) any {
 	newEncoder(false, 0).marshal(v, cli.errStream)
 	return v
 }

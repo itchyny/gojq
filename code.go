@@ -1,7 +1,7 @@
 package gojq
 
 type code struct {
-	v  interface{}
+	v  any
 	op opcode
 }
 

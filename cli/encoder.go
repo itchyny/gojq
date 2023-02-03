@@ -31,7 +31,7 @@ func (e *encoder) flush() error {
 	return err
 }
 
-func (e *encoder) marshal(v interface{}, w io.Writer) error {
+func (e *encoder) marshal(v any, w io.Writer) error {
 	e.out = w
 	err := e.encode(v)
 	if ferr := e.flush(); ferr != nil && err == nil {
@@ -40,7 +40,7 @@ func (e *encoder) marshal(v interface{}, w io.Writer) error {
 	return err
 }
 
-func (e *encoder) encode(v interface{}) error {
+func (e *encoder) encode(v any) error {
 	switch v := v.(type) {
 	case nil:
 		e.write([]byte("null"), nullColor)
@@ -58,11 +58,11 @@ func (e *encoder) encode(v interface{}) error {
 		e.write(v.Append(e.buf[:0], 10), numberColor)
 	case string:
 		e.encodeString(v, stringColor)
-	case []interface{}:
+	case []any:
 		if err := e.encodeArray(v); err != nil {
 			return err
 		}
-	case map[string]interface{}:
+	case map[string]any:
 		if err := e.encodeMap(v); err != nil {
 			return err
 		}
@@ -163,7 +163,7 @@ func (e *encoder) encodeString(s string, color []byte) {
 	}
 }
 
-func (e *encoder) encodeArray(vs []interface{}) error {
+func (e *encoder) encodeArray(vs []any) error {
 	e.writeByte('[', arrayColor)
 	e.depth += e.indent
 	for i, v := range vs {
@@ -185,12 +185,12 @@ func (e *encoder) encodeArray(vs []interface{}) error {
 	return nil
 }
 
-func (e *encoder) encodeMap(vs map[string]interface{}) error {
+func (e *encoder) encodeMap(vs map[string]any) error {
 	e.writeByte('{', objectColor)
 	e.depth += e.indent
 	type keyVal struct {
 		key string
-		val interface{}
+		val any
 	}
 	kvs := make([]keyVal, len(vs))
 	var i int

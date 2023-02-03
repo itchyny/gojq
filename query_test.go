@@ -23,7 +23,7 @@ func ExampleQuery_Run() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	input := map[string]interface{}{"foo": []interface{}{1, 2, 3}}
+	input := map[string]any{"foo": []any{1, 2, 3}}
 	iter := query.Run(input)
 	for {
 		v, ok := iter.Next()
@@ -72,7 +72,7 @@ func TestQueryRun_Errors(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	iter := query.Run([]interface{}{0, 1, 2, 3, 4})
+	iter := query.Run([]any{0, 1, 2, 3, 4})
 	n := 0
 	for {
 		v, ok := iter.Next()
@@ -98,7 +98,7 @@ func TestQueryRun_ObjectError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	iter := query.Run([]interface{}{0, "x", []interface{}{}})
+	iter := query.Run([]any{0, "x", []any{}})
 	for {
 		v, ok := iter.Next()
 		if !ok {
@@ -109,7 +109,7 @@ func TestQueryRun_ObjectError(t *testing.T) {
 			if !strings.Contains(err.Error(), expected) {
 				t.Errorf("expected: %v, got: %v", expected, err)
 			}
-		} else if expected := map[string]interface{}{"x": 1}; !reflect.DeepEqual(v, expected) {
+		} else if expected := map[string]any{"x": 1}; !reflect.DeepEqual(v, expected) {
 			t.Errorf("expected: %v, got: %v", expected, v)
 		}
 	}
@@ -120,7 +120,7 @@ func TestQueryRun_IndexError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	iter := query.Run([]interface{}{0})
+	iter := query.Run([]any{0})
 	for {
 		v, ok := iter.Next()
 		if !ok {
@@ -196,7 +196,7 @@ func TestQueryRun_Strings(t *testing.T) {
 		if err, ok := v.(error); ok {
 			t.Fatal(err)
 		}
-		if expected := []interface{}{
+		if expected := []any{
 			0x00, int('\\'), 0x1f, int('"'), int('\n'), int('\n'), int('\n'),
 			int('\n'), int('\n'), int('\n'), int('/'), 0x7f, 0xfffd, 128516,
 		}; !reflect.DeepEqual(v, expected) {
@@ -210,7 +210,7 @@ func TestQueryRun_NumericTypes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	iter := query.Run([]interface{}{
+	iter := query.Run([]any{
 		int64(1), int32(1), int16(1), int8(1), uint64(1), uint32(1), uint16(1), uint8(1), uint(math.MaxUint),
 		int64(math.MaxInt64), int64(math.MinInt64), uint64(math.MaxUint64), uint32(math.MaxUint32),
 		new(big.Int).SetUint64(math.MaxUint64), new(big.Int).SetUint64(math.MaxUint32),

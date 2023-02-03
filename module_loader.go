@@ -14,11 +14,11 @@ import (
 // Implement following optional methods. Use [NewModuleLoader] to load local modules.
 //
 //	LoadModule(string) (*Query, error)
-//	LoadModuleWithMeta(string, map[string]interface{}) (*Query, error)
+//	LoadModuleWithMeta(string, map[string]any) (*Query, error)
 //	LoadInitModules() ([]*Query, error)
-//	LoadJSON(string) (interface{}, error)
-//	LoadJSONWithMeta(string, map[string]interface{}) (interface{}, error)
-type ModuleLoader interface{}
+//	LoadJSON(string) (any, error)
+//	LoadJSONWithMeta(string, map[string]any) (any, error)
+type ModuleLoader any
 
 // NewModuleLoader creates a new [ModuleLoader] reading local modules in the paths.
 func NewModuleLoader(paths []string) ModuleLoader {
@@ -58,7 +58,7 @@ func (l *moduleLoader) LoadInitModules() ([]*Query, error) {
 	return qs, nil
 }
 
-func (l *moduleLoader) LoadModuleWithMeta(name string, meta map[string]interface{}) (*Query, error) {
+func (l *moduleLoader) LoadModuleWithMeta(name string, meta map[string]any) (*Query, error) {
 	path, err := l.lookupModule(name, ".jq", meta)
 	if err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func (l *moduleLoader) LoadModuleWithMeta(name string, meta map[string]interface
 	return q, nil
 }
 
-func (l *moduleLoader) LoadJSONWithMeta(name string, meta map[string]interface{}) (interface{}, error) {
+func (l *moduleLoader) LoadJSONWithMeta(name string, meta map[string]any) (any, error) {
 	path, err := l.lookupModule(name, ".json", meta)
 	if err != nil {
 		return nil, err
@@ -84,11 +84,11 @@ func (l *moduleLoader) LoadJSONWithMeta(name string, meta map[string]interface{}
 		return nil, err
 	}
 	defer f.Close()
-	var vals []interface{}
+	var vals []any
 	dec := json.NewDecoder(f)
 	dec.UseNumber()
 	for {
-		var val interface{}
+		var val any
 		if err := dec.Decode(&val); err != nil {
 			if err == io.EOF {
 				break
@@ -107,7 +107,7 @@ func (l *moduleLoader) LoadJSONWithMeta(name string, meta map[string]interface{}
 	return vals, nil
 }
 
-func (l *moduleLoader) lookupModule(name, extension string, meta map[string]interface{}) (string, error) {
+func (l *moduleLoader) lookupModule(name, extension string, meta map[string]any) (string, error) {
 	paths := l.paths
 	if path := searchPath(meta); path != "" {
 		paths = append([]string{path}, paths...)
@@ -146,7 +146,7 @@ func parseModule(path, cnt string) (*Query, error) {
 	return q, nil
 }
 
-func searchPath(meta map[string]interface{}) string {
+func searchPath(meta map[string]any) string {
 	x, ok := meta["search"]
 	if !ok {
 		return ""

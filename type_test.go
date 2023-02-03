@@ -11,7 +11,7 @@ import (
 
 func TestTypeOf(t *testing.T) {
 	testCases := []struct {
-		value    interface{}
+		value    any
 		expected string
 	}{
 		{nil, "null"},
@@ -24,8 +24,8 @@ func TestTypeOf(t *testing.T) {
 		{math.Inf(-1), "number"},
 		{big.NewInt(10), "number"},
 		{"string", "string"},
-		{[]interface{}{}, "array"},
-		{map[string]interface{}{}, "object"},
+		{[]any{}, "array"},
+		{map[string]any{}, "object"},
 	}
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("%v", tc.value), func(t *testing.T) {

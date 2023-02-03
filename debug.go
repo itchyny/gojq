@@ -32,7 +32,7 @@ type codeinfo struct {
 	pc   int
 }
 
-func (c *compiler) appendCodeInfo(x interface{}) {
+func (c *compiler) appendCodeInfo(x any) {
 	if !debug {
 		return
 	}
@@ -182,7 +182,7 @@ func debugOperand(c *code) string {
 		switch v := c.v.(type) {
 		case int:
 			return strconv.Itoa(v)
-		case [3]interface{}:
+		case [3]any:
 			return fmt.Sprintf("%s/%d", v[2], v[1])
 		default:
 			panic(c)
@@ -192,7 +192,7 @@ func debugOperand(c *code) string {
 	}
 }
 
-func debugValue(v interface{}) string {
+func debugValue(v any) string {
 	switch v := v.(type) {
 	case Iter:
 		return fmt.Sprintf("gojq.Iter(%#v)", v)
@@ -202,7 +202,7 @@ func debugValue(v interface{}) string {
 		return fmt.Sprintf("[%d,%d]", v[0], v[1])
 	case [3]int:
 		return fmt.Sprintf("[%d,%d,%d]", v[0], v[1], v[2])
-	case [3]interface{}:
+	case [3]any:
 		return fmt.Sprintf("[%v,%v,%v]", v[0], v[1], v[2])
 	case allocator:
 		return fmt.Sprintf("%v", v)

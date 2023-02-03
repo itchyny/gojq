@@ -7,7 +7,7 @@ type stack struct {
 }
 
 type block struct {
-	value interface{}
+	value any
 	next  int
 }
 
@@ -15,7 +15,7 @@ func newStack() *stack {
 	return &stack{index: -1, limit: -1}
 }
 
-func (s *stack) push(v interface{}) {
+func (s *stack) push(v any) {
 	b := block{v, s.index}
 	i := s.index + 1
 	if i <= s.limit {
@@ -29,13 +29,13 @@ func (s *stack) push(v interface{}) {
 	}
 }
 
-func (s *stack) pop() interface{} {
+func (s *stack) pop() any {
 	b := s.data[s.index]
 	s.index = b.next
 	return b.value
 }
 
-func (s *stack) top() interface{} {
+func (s *stack) top() any {
 	return s.data[s.index].value
 }
 

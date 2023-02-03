@@ -35,12 +35,12 @@ type Code struct {
 //
 // It is safe to call this method in goroutines, to reuse a compiled [*Code].
 // But for arguments, do not give values sharing same data between goroutines.
-func (c *Code) Run(v interface{}, values ...interface{}) Iter {
+func (c *Code) Run(v any, values ...any) Iter {
 	return c.RunWithContext(context.Background(), v, values...)
 }
 
 // RunWithContext runs the code with context.
-func (c *Code) RunWithContext(ctx context.Context, v interface{}, values ...interface{}) Iter {
+func (c *Code) RunWithContext(ctx context.Context, v any, values ...any) Iter {
 	if len(values) > len(c.variables) {
 		return NewIter(&tooManyVariableValuesError{})
 	} else if len(values) < len(c.variables) {
@@ -144,15 +144,15 @@ func (c *compiler) compileImport(i *Import) error {
 		return fmt.Errorf("cannot load module: %q", path)
 	}
 	if strings.HasPrefix(alias, "$") {
-		var vals interface{}
+		var vals any
 		if moduleLoader, ok := c.moduleLoader.(interface {
-			LoadJSONWithMeta(string, map[string]interface{}) (interface{}, error)
+			LoadJSONWithMeta(string, map[string]any) (any, error)
 		}); ok {
 			if vals, err = moduleLoader.LoadJSONWithMeta(path, i.Meta.ToValue()); err != nil {
 				return err
 			}
 		} else if moduleLoader, ok := c.moduleLoader.(interface {
-			LoadJSON(string) (interface{}, error)
+			LoadJSON(string) (any, error)
 		}); ok {
 			if vals, err = moduleLoader.LoadJSON(path); err != nil {
 				return err
@@ -169,7 +169,7 @@ func (c *compiler) compileImport(i *Import) error {
 	}
 	var q *Query
 	if moduleLoader, ok := c.moduleLoader.(interface {
-		LoadModuleWithMeta(string, map[string]interface{}) (*Query, error)
+		LoadModuleWithMeta(string, map[string]any) (*Query, error)
 	}); ok {
 		if q, err = moduleLoader.LoadModuleWithMeta(path, i.Meta.ToValue()); err != nil {
 			return err
@@ -498,7 +498,7 @@ func (c *compiler) compileQueryUpdate(l, r *Query, op Operator) error {
 			}
 			c.append(&code{op: oppush, v: xs})
 			c.append(&code{op: opload, v: v})
-			c.append(&code{op: opcall, v: [3]interface{}{internalFuncs["setpath"].callback, 2, "setpath"}})
+			c.append(&code{op: opcall, v: [3]any{internalFuncs["setpath"].callback, 2, "setpath"}})
 			return nil
 		}
 		fallthrough
@@ -625,7 +625,7 @@ func (c *compiler) compilePattern(vs [][2]int, p *Pattern) ([][2]int, error) {
 				c.append(&code{op: opload, v: v})
 				c.append(&code{op: oppush, v: nil})
 				// ref: compileCall
-				c.append(&code{op: opcall, v: [3]interface{}{internalFuncs["_index"].callback, 2, "_index"}})
+				c.append(&code{op: opcall, v: [3]any{internalFuncs["_index"].callback, 2, "_index"}})
 			}
 			if name != "" {
 				if kv.Val != nil {
@@ -800,12 +800,12 @@ func (c *compiler) compileBreak(label string) error {
 	}
 	c.append(&code{op: oppop})
 	c.append(&code{op: opload, v: v})
-	c.append(&code{op: opcall, v: [3]interface{}{funcBreak(label), 0, "_break"}})
+	c.append(&code{op: opcall, v: [3]any{funcBreak(label), 0, "_break"}})
 	return nil
 }
 
-func funcBreak(label string) func(interface{}, []interface{}) interface{} {
-	return func(v interface{}, _ []interface{}) interface{} {
+func funcBreak(label string) func(any, []any) any {
+	return func(v any, _ []any) any {
 		return &breakError{label, v}
 	}
 }
@@ -907,7 +907,7 @@ func (c *compiler) compileFunc(e *Func) error {
 			}
 			return nil
 		} else if e.Name == "$ENV" || e.Name == "env" {
-			env := make(map[string]interface{})
+			env := make(map[string]any)
 			if c.environLoader != nil {
 				for _, kv := range c.environLoader() {
 					if i := strings.IndexByte(kv, '='); i > 0 {
@@ -968,7 +968,7 @@ func (c *compiler) compileFunc(e *Func) error {
 			return nil
 		case "builtins":
 			return c.compileCallInternal(
-				[3]interface{}{c.funcBuiltins, 0, e.Name},
+				[3]any{c.funcBuiltins, 0, e.Name},
 				e.Args,
 				true,
 				-1,
@@ -978,14 +978,14 @@ func (c *compiler) compileFunc(e *Func) error {
 				return &inputNotAllowedError{}
 			}
 			return c.compileCallInternal(
-				[3]interface{}{c.funcInput, 0, e.Name},
+				[3]any{c.funcInput, 0, e.Name},
 				e.Args,
 				true,
 				-1,
 			)
 		case "modulemeta":
 			return c.compileCallInternal(
-				[3]interface{}{c.funcModulemeta, 0, e.Name},
+				[3]any{c.funcModulemeta, 0, e.Name},
 				e.Args,
 				true,
 				-1,
@@ -996,7 +996,7 @@ func (c *compiler) compileFunc(e *Func) error {
 	}
 	if fn, ok := c.customFuncs[e.Name]; ok && fn.accept(len(e.Args)) {
 		if err := c.compileCallInternal(
-			[3]interface{}{fn.callback, len(e.Args), e.Name},
+			[3]any{fn.callback, len(e.Args), e.Name},
 			e.Args,
 			true,
 			-1,
@@ -1036,7 +1036,7 @@ func (c *compiler) compileAssign() {
 		&code{op: opstore, v: x},
 		&code{op: opexpend},
 		&code{op: oppush, v: nil},
-		&code{op: opcall, v: [3]interface{}{funcAllocator, 0, "_allocator"}},
+		&code{op: opcall, v: [3]any{funcAllocator, 0, "_allocator"}},
 		&code{op: opstore, v: a},
 		&code{op: opload, v: v},
 		&code{op: opfork, v: len(c.codes) + 28}, // reduce [L1]
@@ -1050,7 +1050,7 @@ func (c *compiler) compileAssign() {
 		&code{op: opload, v: x},
 		&code{op: opload, v: q},
 		&code{op: opload, v: v},
-		&code{op: opcall, v: [3]interface{}{funcSetpathWithAllocator, 3, "_setpath"}},
+		&code{op: opcall, v: [3]any{funcSetpathWithAllocator, 3, "_setpath"}},
 		&code{op: opstore, v: v},
 		&code{op: opbacktrack}, //                  );
 		&code{op: oppop},       //                  [L1]
@@ -1072,10 +1072,10 @@ func (c *compiler) compileModify() {
 		&code{op: opstore, v: v}, //                def _modify(p; f):
 		&code{op: opstore, v: p},
 		&code{op: opstore, v: f},
-		&code{op: oppush, v: []interface{}{}},
+		&code{op: oppush, v: []any{}},
 		&code{op: opstore, v: d},
 		&code{op: oppush, v: nil},
-		&code{op: opcall, v: [3]interface{}{funcAllocator, 0, "_allocator"}},
+		&code{op: opcall, v: [3]any{funcAllocator, 0, "_allocator"}},
 		&code{op: opstore, v: a},
 		&code{op: opload, v: v},
 		&code{op: opfork, v: len(c.codes) + 39}, // reduce [L1]
@@ -1092,18 +1092,18 @@ func (c *compiler) compileModify() {
 		&code{op: opload, v: a},
 		&code{op: opload, v: p},
 		&code{op: opload, v: v},
-		&code{op: opcall, v: [3]interface{}{internalFuncs["getpath"].callback, 1, "getpath"}},
+		&code{op: opcall, v: [3]any{internalFuncs["getpath"].callback, 1, "getpath"}},
 		&code{op: opload, v: f}, //                 f)
 		&code{op: opcallpc},
 		&code{op: opload, v: p}, //                 setpath($p; ...)
 		&code{op: opload, v: v},
-		&code{op: opcall, v: [3]interface{}{funcSetpathWithAllocator, 3, "_setpath"}},
+		&code{op: opcall, v: [3]any{funcSetpathWithAllocator, 3, "_setpath"}},
 		&code{op: opstore, v: v},
 		&code{op: opload, v: v},                 // ., break $l
 		&code{op: opfork, v: len(c.codes) + 34}, // [L4]
 		&code{op: opjump, v: len(c.codes) + 38}, // [L3]
 		&code{op: opload, v: l},                 // [L4]
-		&code{op: opcall, v: [3]interface{}{funcBreak(""), 0, "_break"}},
+		&code{op: opcall, v: [3]any{funcBreak(""), 0, "_break"}},
 		&code{op: opload, v: p},   //               append $p to $d [L2]
 		&code{op: opappend, v: d}, //
 		&code{op: opbacktrack},    //               ) |           [L3]
@@ -1111,12 +1111,12 @@ func (c *compiler) compileModify() {
 		&code{op: opload, v: a},
 		&code{op: opload, v: d},
 		&code{op: opload, v: v},
-		&code{op: opcall, v: [3]interface{}{funcDelpathsWithAllocator, 2, "_delpaths"}},
+		&code{op: opcall, v: [3]any{funcDelpathsWithAllocator, 2, "_delpaths"}},
 		&code{op: opret},
 	)
 }
 
-func (c *compiler) funcBuiltins(interface{}, []interface{}) interface{} {
+func (c *compiler) funcBuiltins(any, []any) any {
 	type funcNameArity struct {
 		name  string
 		arity int
@@ -1151,14 +1151,14 @@ func (c *compiler) funcBuiltins(interface{}, []interface{}) interface{} {
 		return xs[i].name < xs[j].name ||
 			xs[i].name == xs[j].name && xs[i].arity < xs[j].arity
 	})
-	ys := make([]interface{}, len(xs))
+	ys := make([]any, len(xs))
 	for i, x := range xs {
 		ys[i] = x.name + "/" + strconv.Itoa(x.arity)
 	}
 	return ys
 }
 
-func (c *compiler) funcInput(interface{}, []interface{}) interface{} {
+func (c *compiler) funcInput(any, []any) any {
 	v, ok := c.inputIter.Next()
 	if !ok {
 		return errors.New("break")
@@ -1166,7 +1166,7 @@ func (c *compiler) funcInput(interface{}, []interface{}) interface{} {
 	return normalizeNumbers(v)
 }
 
-func (c *compiler) funcModulemeta(v interface{}, _ []interface{}) interface{} {
+func (c *compiler) funcModulemeta(v any, _ []any) any {
 	s, ok := v.(string)
 	if !ok {
 		return &funcTypeError{"modulemeta", v}
@@ -1177,7 +1177,7 @@ func (c *compiler) funcModulemeta(v interface{}, _ []interface{}) interface{} {
 	var q *Query
 	var err error
 	if moduleLoader, ok := c.moduleLoader.(interface {
-		LoadModuleWithMeta(string, map[string]interface{}) (*Query, error)
+		LoadModuleWithMeta(string, map[string]any) (*Query, error)
 	}); ok {
 		if q, err = moduleLoader.LoadModuleWithMeta(s, nil); err != nil {
 			return err
@@ -1191,13 +1191,13 @@ func (c *compiler) funcModulemeta(v interface{}, _ []interface{}) interface{} {
 	}
 	meta := q.Meta.ToValue()
 	if meta == nil {
-		meta = make(map[string]interface{})
+		meta = make(map[string]any)
 	}
-	var deps []interface{}
+	var deps []any
 	for _, i := range q.Imports {
 		v := i.Meta.ToValue()
 		if v == nil {
-			v = make(map[string]interface{})
+			v = make(map[string]any)
 		} else {
 			for k := range v {
 				// dirty hack to remove the internal fields
@@ -1227,7 +1227,7 @@ func (c *compiler) funcModulemeta(v interface{}, _ []interface{}) interface{} {
 func (c *compiler) compileObject(e *Object) error {
 	c.appendCodeInfo(e)
 	if len(e.KeyVals) == 0 {
-		c.append(&code{op: opconst, v: map[string]interface{}{}})
+		c.append(&code{op: opconst, v: map[string]any{}})
 		return nil
 	}
 	defer c.newScopeDepth()()
@@ -1252,7 +1252,7 @@ func (c *compiler) compileObject(e *Object) error {
 			return nil
 		}
 	}
-	w := make(map[string]interface{}, l)
+	w := make(map[string]any, l)
 	for i := 0; i < l; i++ {
 		w[c.codes[pc+i*3].v.(string)] = c.codes[pc+i*3+2].v
 	}
@@ -1295,7 +1295,7 @@ func (c *compiler) compileObjectKeyVal(v [2]int, kv *ObjectKeyVal) error {
 				c.append(&code{op: opload, v: v})
 				c.append(&code{op: oppush, v: nil})
 				// ref: compileCall
-				c.append(&code{op: opcall, v: [3]interface{}{internalFuncs["_index"].callback, 2, "_index"}})
+				c.append(&code{op: opcall, v: [3]any{internalFuncs["_index"].callback, 2, "_index"}})
 			}
 		}
 	} else if kv.KeyQuery != nil {
@@ -1320,10 +1320,10 @@ func (c *compiler) compileObjectKeyVal(v [2]int, kv *ObjectKeyVal) error {
 func (c *compiler) compileArray(e *Array) error {
 	c.appendCodeInfo(e)
 	if e.Query == nil {
-		c.append(&code{op: opconst, v: []interface{}{}})
+		c.append(&code{op: opconst, v: []any{}})
 		return nil
 	}
-	c.append(&code{op: oppush, v: []interface{}{}})
+	c.append(&code{op: oppush, v: []any{}})
 	arr := c.newVariable()
 	c.append(&code{op: opstore, v: arr})
 	pc := len(c.codes)
@@ -1354,7 +1354,7 @@ func (c *compiler) compileArray(e *Array) error {
 			return nil
 		}
 	}
-	v := make([]interface{}, l)
+	v := make([]any, l)
 	for i := 0; i < l; i++ {
 		v[i] = c.codes[pc+i*2+l].v
 	}
@@ -1483,7 +1483,7 @@ func (c *compiler) compileCall(name string, args []*Query) error {
 		indexing = -1
 	}
 	if err := c.compileCallInternal(
-		[3]interface{}{fn.callback, len(args), name},
+		[3]any{fn.callback, len(args), name},
 		args,
 		true,
 		indexing,
@@ -1501,7 +1501,7 @@ func (c *compiler) compileCallPc(fn *funcinfo, args []*Query) error {
 }
 
 func (c *compiler) compileCallInternal(
-	fn interface{}, args []*Query, internal bool, indexing int,
+	fn any, args []*Query, internal bool, indexing int,
 ) error {
 	if len(args) == 0 {
 		c.append(&code{op: opcall, v: fn})
