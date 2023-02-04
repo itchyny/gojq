@@ -802,10 +802,10 @@ func funcFormat(v, x any) any {
 	if !ok {
 		return &funcTypeError{"format", x}
 	}
-	fmt := "@" + s
-	f := formatToFunc(fmt)
+	format := "@" + s
+	f := formatToFunc(format)
 	if f == nil {
-		return &formatNotFoundError{fmt}
+		return &formatNotFoundError{format}
 	}
 	return internalFuncs[f.Name].callback(v, nil)
 }

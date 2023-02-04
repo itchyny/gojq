@@ -84,12 +84,12 @@ func (e *encoder) encodeFloat64(f float64) {
 	} else if f <= -math.MaxFloat64 {
 		f = -math.MaxFloat64
 	}
-	fmt := byte('f')
+	format := byte('f')
 	if x := math.Abs(f); x != 0 && x < 1e-6 || x >= 1e21 {
-		fmt = 'e'
+		format = 'e'
 	}
-	buf := strconv.AppendFloat(e.buf[:0], f, fmt, -1, 64)
-	if fmt == 'e' {
+	buf := strconv.AppendFloat(e.buf[:0], f, format, -1, 64)
+	if format == 'e' {
 		// clean up e-09 to e-9
 		if n := len(buf); n >= 4 && buf[n-4] == 'e' && buf[n-3] == '-' && buf[n-2] == '0' {
 			buf[n-2] = buf[n-1]

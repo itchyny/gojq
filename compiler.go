@@ -1382,12 +1382,12 @@ func (c *compiler) compileUnary(e *Unary) error {
 	}
 }
 
-func (c *compiler) compileFormat(fmt string, str *String) error {
-	f := formatToFunc(fmt)
+func (c *compiler) compileFormat(format string, str *String) error {
+	f := formatToFunc(format)
 	if f == nil {
 		f = &Func{
 			Name: "format",
-			Args: []*Query{{Term: &Term{Type: TermTypeString, Str: &String{Str: fmt[1:]}}}},
+			Args: []*Query{{Term: &Term{Type: TermTypeString, Str: &String{Str: format[1:]}}}},
 		}
 	}
 	if str == nil {
@@ -1396,8 +1396,8 @@ func (c *compiler) compileFormat(fmt string, str *String) error {
 	return c.compileString(str, f)
 }
 
-func formatToFunc(fmt string) *Func {
-	switch fmt {
+func formatToFunc(format string) *Func {
+	switch format {
 	case "@text":
 		return &Func{Name: "tostring"}
 	case "@json":
