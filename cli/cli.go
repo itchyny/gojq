@@ -409,13 +409,19 @@ func (cli *cli) createMarshaler() marshaler {
 }
 
 func (cli *cli) funcDebug(v any, _ []any) any {
-	newEncoder(false, 0).marshal([]any{"DEBUG:", v}, cli.errStream)
-	cli.errStream.Write([]byte{'\n'})
+	if err := newEncoder(false, 0).marshal([]any{"DEBUG:", v}, cli.errStream); err != nil {
+		return err
+	}
+	if _, err := cli.errStream.Write([]byte{'\n'}); err != nil {
+		return err
+	}
 	return v
 }
 
 func (cli *cli) funcStderr(v any, _ []any) any {
-	newEncoder(false, 0).marshal(v, cli.errStream)
+	if err := newEncoder(false, 0).marshal(v, cli.errStream); err != nil {
+		return err
+	}
 	return v
 }
 
