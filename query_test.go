@@ -327,3 +327,27 @@ func BenchmarkParse(b *testing.B) {
 		}
 	}
 }
+
+func FuzzQueryRun(f *testing.F) {
+	f.Fuzz(func(t *testing.T, src string) {
+		if len(src) > 16 {
+			t.SkipNow()
+		}
+		q, err := gojq.Parse(src)
+		if err != nil {
+			t.SkipNow()
+		}
+		code, err := gojq.Compile(q)
+		if err != nil {
+			t.SkipNow()
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		t.Cleanup(cancel)
+		iter := code.RunWithContext(ctx, nil)
+		for {
+			if _, ok := iter.Next(); !ok {
+				break
+			}
+		}
+	})
+}
