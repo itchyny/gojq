@@ -1030,6 +1030,7 @@ func (c *compiler) compileAssign() {
 		&code{op: opstore, v: p},
 		&code{op: opstore, v: x},
 		&code{op: opload, v: v},
+		&code{op: opdup},
 		&code{op: opexpbegin},
 		&code{op: opload, v: x},
 		&code{op: opcallpc},
@@ -1038,7 +1039,6 @@ func (c *compiler) compileAssign() {
 		&code{op: oppush, v: nil},
 		&code{op: opcall, v: [3]any{funcAllocator, 0, "_allocator"}},
 		&code{op: opstore, v: a},
-		&code{op: opload, v: v},
 		&code{op: opfork, v: len(c.codes) + 28}, // reduce [L1]
 		&code{op: oppathbegin},                  // path(p)
 		&code{op: opload, v: p},

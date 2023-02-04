@@ -4509,7 +4509,7 @@
   expected: |
     [{"x":{"y":{"z":{}}}},{"x":{}}]
 
-- name: assignment operator query
+- name: assignment operator with query value
   args:
     - -c
     - '.foo = .bar'
@@ -4517,7 +4517,7 @@
   expected: |
     {"bar":42,"foo":42}
 
-- name: assignment operator query with multiple paths and values
+- name: assignment operator with multiple paths and query values
   args:
     - -c
     - '(.foo,.bar,.baz) = .bar[]'
@@ -4526,6 +4526,19 @@
     {"bar":0,"baz":0,"foo":0}
     {"bar":1,"baz":1,"foo":1}
     {"bar":2,"baz":2,"foo":2}
+
+- name: assignment operator with overlapping paths and multiple values
+  args:
+    - -c
+    - '.. = ..'
+  input: '{"x":{"y":{}}} [[[]]]'
+  expected: |
+    {"x":{"x":{"y":{}},"y":{"x":{"y":{}}}}}
+    {"x":{"y":{"y":{}}},"y":{}}
+    {"x":{"y":{}}}
+    [[[[[]]]]]
+    [[[[]]]]
+    [[[]]]
 
 - name: assignment operator array index negative error
   args:
