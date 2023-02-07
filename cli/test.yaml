@@ -4540,6 +4540,16 @@
     [[[[]]]]
     [[[]]]
 
+- name: assignment operator with overlapping and slicing paths
+  args:
+    - -c
+    - '..[:0] = ..'
+  input: '[[[]]]'
+  expected: |
+    [[[[[]],[]],[]],[[]]]
+    [[[[]]],[[]]]
+    [[[]]]
+
 - name: assignment operator array index negative error
   args:
     - '.[-1,0] = 1'

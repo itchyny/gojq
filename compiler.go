@@ -1023,14 +1023,14 @@ func (c *compiler) compileAssign() {
 	scope := c.newScope()
 	v, p := [2]int{scope.id, 0}, [2]int{scope.id, 1}
 	x, a := [2]int{scope.id, 2}, [2]int{scope.id, 3}
-	q := [2]int{scope.id, 4} // Cannot reuse p due to backtracking in x.
+	// Cannot reuse v, p due to backtracking in x.
+	w, q := [2]int{scope.id, 4}, [2]int{scope.id, 5}
 	c.appends(
-		&code{op: opscope, v: [3]int{scope.id, 5, 2}},
+		&code{op: opscope, v: [3]int{scope.id, 6, 2}},
 		&code{op: opstore, v: v}, //                def _assign(p; $x):
 		&code{op: opstore, v: p},
 		&code{op: opstore, v: x},
 		&code{op: opload, v: v},
-		&code{op: opdup},
 		&code{op: opexpbegin},
 		&code{op: opload, v: x},
 		&code{op: opcallpc},
@@ -1039,22 +1039,25 @@ func (c *compiler) compileAssign() {
 		&code{op: oppush, v: nil},
 		&code{op: opcall, v: [3]any{funcAllocator, 0, "_allocator"}},
 		&code{op: opstore, v: a},
-		&code{op: opfork, v: len(c.codes) + 28}, // reduce [L1]
-		&code{op: oppathbegin},                  // path(p)
+		&code{op: opload, v: v},
+		&code{op: opfork, v: len(c.codes) + 30}, // reduce [L1]
+		&code{op: opdup},
+		&code{op: opstore, v: w},
+		&code{op: oppathbegin}, // path(p)
 		&code{op: opload, v: p},
 		&code{op: opcallpc},
-		&code{op: opload, v: v},
+		&code{op: opload, v: w},
 		&code{op: oppathend},
 		&code{op: opstore, v: q}, //                as $q (.;
 		&code{op: opload, v: a},  //                setpath($q; $x)
 		&code{op: opload, v: x},
 		&code{op: opload, v: q},
-		&code{op: opload, v: v},
+		&code{op: opload, v: w},
 		&code{op: opcall, v: [3]any{funcSetpathWithAllocator, 3, "_setpath"}},
-		&code{op: opstore, v: v},
+		&code{op: opstore, v: w},
 		&code{op: opbacktrack}, //                  );
 		&code{op: oppop},       //                  [L1]
-		&code{op: opload, v: v},
+		&code{op: opload, v: w},
 		&code{op: opret},
 	)
 }
