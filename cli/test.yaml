@@ -2647,9 +2647,16 @@
 
 - name: multiply empty string
   args:
-    - '7 * ""'
+    - '(-9223372036854775808, -1, 0, 0.001, 0.999, 1, 7, 9223372036854775807) * ""'
   input: 'null'
   expected: |
+    null
+    null
+    null
+    ""
+    ""
+    ""
+    ""
     ""
 
 - name: multiply objects
