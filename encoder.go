@@ -67,7 +67,7 @@ func (e *encoder) encode(v any) {
 	case []any:
 		e.encodeArray(v)
 	case map[string]any:
-		e.encodeMap(v)
+		e.encodeObject(v)
 	default:
 		panic(fmt.Sprintf("invalid type: %[1]T (%[1]v)", v))
 	}
@@ -166,7 +166,7 @@ func (e *encoder) encodeArray(vs []any) {
 	e.w.WriteByte(']')
 }
 
-func (e *encoder) encodeMap(vs map[string]any) {
+func (e *encoder) encodeObject(vs map[string]any) {
 	e.w.WriteByte('{')
 	type keyVal struct {
 		key string

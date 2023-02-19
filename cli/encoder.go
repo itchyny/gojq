@@ -63,7 +63,7 @@ func (e *encoder) encode(v any) error {
 			return err
 		}
 	case map[string]any:
-		if err := e.encodeMap(v); err != nil {
+		if err := e.encodeObject(v); err != nil {
 			return err
 		}
 	default:
@@ -185,7 +185,7 @@ func (e *encoder) encodeArray(vs []any) error {
 	return nil
 }
 
-func (e *encoder) encodeMap(vs map[string]any) error {
+func (e *encoder) encodeObject(vs map[string]any) error {
 	e.writeByte('{', objectColor)
 	e.depth += e.indent
 	type keyVal struct {
