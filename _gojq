@@ -23,11 +23,21 @@ _gojq()
     '*--argjson[set a JSON value to a variable]:variable name: :JSON value' \
     '*--slurpfile[set the JSON contents of a file to a variable]:variable name: :JSON file:_files' \
     '*--rawfile[set the contents of a file to a variable]:variable name: :file:_files' \
-    '(       --jsonargs)--args[consume remaining arguments as positional string values]' \
-    '(--args           )--jsonargs[consume remaining arguments as positional JSON values]' \
+    '*--args[consume remaining arguments as positional string values]' \
+    '*--jsonargs[consume remaining arguments as positional JSON values]' \
     '(-e --exit-status)'{-e,--exit-status}'[exit 1 when the last value is false or null]' \
     '(- 1 *)'{-v,--version}'[display version information]' \
     '(- 1 *)'{-h,--help}'[display help information]' \
-    '1: :_guard "^-*" "jq query"' \
-    '*:input file:_files'
+    '1: :_guard "^-([[:alpha:]0]#|-*)" "jq query"' \
+    '*: :_gojq_args'
+}
+
+_gojq_args() {
+  if (($words[(I)--args] > $words[(I)--jsonargs])); then
+    _message 'string value'
+  elif (($words[(I)--args] < $words[(I)--jsonargs])); then
+    _message 'JSON value'
+  else
+    _arguments '*:input file:_files'
+  fi
 }
