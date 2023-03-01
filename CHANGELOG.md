@@ -1,6 +1,11 @@
 # Changelog
+## [v0.12.12](https://github.com/itchyny/gojq/compare/v0.12.11..v0.12.12) (2023-03-01)
+* fix assignment operator (`=`) with overlapping paths and multiple values (`[[]] | .. = ..`)
+* fix crash on multiplying large numbers to an empty string (`9223372036854775807 * ""`)
+* improve zsh completion file
+
 ## [v0.12.11](https://github.com/itchyny/gojq/compare/v0.12.10..v0.12.11) (2022-12-24)
-* fix crash on assignment operators (`=`) with multiple values (`. = (0,0)`)
+* fix crash on assignment operator (`=`) with multiple values (`. = (0,0)`)
 * fix `isnormal` and `normals` functions against subnormal numbers
 
 ## [v0.12.10](https://github.com/itchyny/gojq/compare/v0.12.9..v0.12.10) (2022-12-01)
@@ -229,7 +234,7 @@
 ## [v0.7.0](https://github.com/itchyny/gojq/compare/v0.6.0..v0.7.0) (2019-12-22)
 * implement YAML input (`--yaml-input`) and output (`--yaml-output`)
 * fix pipe in object value
-* fix precedence of if, try, reduce and foreach expressions
+* fix precedence of `if`, `try`, `reduce` and `foreach` expressions
 * release from GitHub Actions
 
 ## [v0.6.0](https://github.com/itchyny/gojq/compare/v0.5.0..v0.6.0) (2019-08-26)
