@@ -17,7 +17,7 @@ import (
 
 const name = "gojq"
 
-const version = "0.12.11"
+const version = "0.12.12"
 
 var revision = "HEAD"
 
