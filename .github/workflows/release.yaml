@@ -27,6 +27,14 @@ jobs:
       with:
         name: Release ${{ github.ref_name }}
         artifacts: 'goxz/*'
+
+  docker:
+    name: Docker
+    runs-on: ubuntu-latest
+    needs: release
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
     - name: Docker metadata
       uses: docker/metadata-action@v4
       id: metadata
