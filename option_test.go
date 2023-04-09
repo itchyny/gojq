@@ -115,7 +115,7 @@ func TestWithModuleLoader_JSON(t *testing.T) {
 		if !ok {
 			break
 		}
-		if expected := []any{[]any{1.0, 42, 123}, 5166}; !reflect.DeepEqual(got, expected) {
+		if expected := []any{[]any{1.0, 42, json.Number("123")}, 5166}; !reflect.DeepEqual(got, expected) {
 			t.Errorf("expected: %v, got: %v", expected, got)
 		}
 	}

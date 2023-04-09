@@ -19,6 +19,9 @@ func toFloat(x any) (float64, bool) {
 	case *big.Int:
 		f, err := strconv.ParseFloat(x.String(), 64)
 		return f, err == nil
+	case json.Number:
+		f, err := x.Float64()
+		return f, err == nil
 	default:
 		return 0.0, false
 	}

@@ -2,11 +2,8 @@ package gojq_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
-	"math"
-	"math/big"
 	"os"
 	"reflect"
 	"strconv"
@@ -200,32 +197,6 @@ func TestQueryRun_Strings(t *testing.T) {
 			0x00, int('\\'), 0x1f, int('"'), int('\n'), int('\n'), int('\n'),
 			int('\n'), int('\n'), int('\n'), int('/'), 0x7f, 0xfffd, 128516,
 		}; !reflect.DeepEqual(v, expected) {
-			t.Errorf("expected: %v, got: %v", expected, v)
-		}
-	}
-}
-
-func TestQueryRun_NumericTypes(t *testing.T) {
-	query, err := gojq.Parse(".[] + 0 != 0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	iter := query.Run([]any{
-		int64(1), int32(1), int16(1), int8(1), uint64(1), uint32(1), uint16(1), uint8(1), uint(math.MaxUint),
-		int64(math.MaxInt64), int64(math.MinInt64), uint64(math.MaxUint64), uint32(math.MaxUint32),
-		new(big.Int).SetUint64(math.MaxUint64), new(big.Int).SetUint64(math.MaxUint32),
-		json.Number(fmt.Sprint(uint64(math.MaxInt64))), json.Number(fmt.Sprint(uint64(math.MaxInt32))),
-		float64(1.0), float32(1.0),
-	})
-	for {
-		v, ok := iter.Next()
-		if !ok {
-			break
-		}
-		if err, ok := v.(error); ok {
-			t.Fatal(err)
-		}
-		if expected := true; expected != v {
 			t.Errorf("expected: %v, got: %v", expected, v)
 		}
 	}
