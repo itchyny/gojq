@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math"
@@ -56,6 +57,8 @@ func (e *encoder) encode(v any) error {
 		e.encodeFloat64(v)
 	case *big.Int:
 		e.write(v.Append(e.buf[:0], 10), numberColor)
+	case json.Number:
+		e.write([]byte(v.String()), numberColor)
 	case string:
 		e.encodeString(v, stringColor)
 	case []any:

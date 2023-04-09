@@ -1,6 +1,7 @@
 package gojq_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"math/big"
@@ -23,6 +24,7 @@ func TestTypeOf(t *testing.T) {
 		{math.Inf(1), "number"},
 		{math.Inf(-1), "number"},
 		{big.NewInt(10), "number"},
+		{json.Number("10"), "number"},
 		{"string", "string"},
 		{[]any{}, "array"},
 		{map[string]any{}, "object"},

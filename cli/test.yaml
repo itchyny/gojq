@@ -59,9 +59,11 @@
 - name: number input
   args:
     - '.'
-  input: '128'
+  input: '128 3.14 10.0'
   expected: |
     128
+    3.14
+    10.0
 
 - name: number query
   args:
@@ -321,6 +323,13 @@
   input: '{"foo": 4722366482869645213696}'
   expected: |
     4722366482869645213696
+
+- name: object indexing with floating-point number with trailing zeros
+  args:
+    - '.foo'
+  input: '{"foo": 100.000000}'
+  expected: |
+    100.000000
 
 - name: object indexing by keywords
   args:
@@ -601,9 +610,9 @@
   args:
     - -c
     - '[.[.[]],.[.[]:],.[:.[]],.[.[]:.[]],.[-.[]],.[--.[]]]'
-  input: '[0, 1, 2]'
+  input: '[0, 1.0, 2]'
   expected: |
-    [0,1,2,[0,1,2],[1,2],[2],[],[0],[0,1],[],[0],[0,1],[],[],[1],[],[],[],0,2,1,0,1,2]
+    [0,1.0,2,[0,1.0,2],[1.0,2],[2],[],[0],[0,1.0],[],[0],[0,1.0],[],[],[1.0],[],[],[],0,2,1.0,0,1.0,2]
 
 - name: array indexing by iterator
   args:
@@ -879,7 +888,7 @@
 
 - name: unary operator against string
   args:
-    - '(-.)'
+    - '-.'
   input: '"abcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcde"'
   error: |
     cannot negate: string ("abcdeabcdeabcdeabcdeabcd ...")
@@ -891,6 +900,14 @@
   expected: |
     1
     -1
+
+- name: unary operator with type function
+  args:
+    - '., -. | type'
+  input: '-100'
+  expected: |
+    "number"
+    "number"
 
 - name: object construction
   args:
@@ -1207,7 +1224,7 @@
     0
     42
     42
-    0
+    0.0
     3.14
     3.14
     4722366482869645213696
