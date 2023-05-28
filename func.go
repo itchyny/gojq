@@ -573,7 +573,7 @@ func funcIndices(v, x any) any {
 }
 
 func indices(vs, xs []any) any {
-	var rs []any
+	rs := []any{}
 	if len(xs) == 0 {
 		return rs
 	}
@@ -1117,7 +1117,7 @@ func funcFlatten(v any, args []any) any {
 			return &flattenDepthError{depth}
 		}
 	}
-	return flatten(nil, vs, depth)
+	return flatten([]any{}, vs, depth)
 }
 
 func flatten(xs, vs []any, depth float64) []any {
@@ -1265,7 +1265,7 @@ func funcGroupBy(v, x any) any {
 	if err != nil {
 		return err
 	}
-	var rs []any
+	rs := []any{}
 	var last any
 	for i, r := range items {
 		if i == 0 || compare(last, r.key) != 0 {
@@ -1290,7 +1290,7 @@ func uniqueBy(name string, v, x any) any {
 	if err != nil {
 		return err
 	}
-	var rs []any
+	rs := []any{}
 	var last any
 	for i, r := range items {
 		if i == 0 || compare(last, r.key) != 0 {

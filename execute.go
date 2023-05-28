@@ -436,7 +436,7 @@ func (env *env) pathIntact(v any) bool {
 }
 
 func (env *env) poppaths() []any {
-	var xs []any
+	xs := []any{}
 	for {
 		p := env.paths.pop().(pathValue)
 		if p.path == nil {

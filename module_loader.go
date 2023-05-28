@@ -84,7 +84,7 @@ func (l *moduleLoader) LoadJSONWithMeta(name string, meta map[string]any) (any, 
 		return nil, err
 	}
 	defer f.Close()
-	var vals []any
+	vals := []any{}
 	dec := json.NewDecoder(f)
 	dec.UseNumber()
 	for {

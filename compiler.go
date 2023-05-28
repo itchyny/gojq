@@ -1196,7 +1196,7 @@ func (c *compiler) funcModulemeta(v any, _ []any) any {
 	if meta == nil {
 		meta = make(map[string]any)
 	}
-	var deps []any
+	deps := []any{}
 	for _, i := range q.Imports {
 		v := i.Meta.ToValue()
 		if v == nil {

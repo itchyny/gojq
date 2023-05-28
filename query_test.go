@@ -250,6 +250,32 @@ func TestQueryRun_Input(t *testing.T) {
 	}
 }
 
+func TestQueryRun_NonNilSlice(t *testing.T) {
+	for _, f := range []string{"keys", "map(.)", "to_entries", "arrays",
+		"reverse", "flatten", "sort", "sort_by(.)", "group_by(.)", "unique",
+		"unique_by(.)", "transpose", "nth(.)", "indices([])", "path(.)"} {
+		t.Run(f, func(t *testing.T) {
+			query, err := gojq.Parse("[] | " + f)
+			if err != nil {
+				t.Fatal(err)
+			}
+			iter := query.Run(nil)
+			for {
+				v, ok := iter.Next()
+				if !ok {
+					break
+				}
+				if err, ok := v.(error); ok {
+					t.Fatal(err)
+				}
+				if expected := []any{}; !reflect.DeepEqual(v, expected) {
+					t.Errorf("expected: %#v, got: %#v", expected, v)
+				}
+			}
+		})
+	}
+}
+
 func TestQueryRun_Race(t *testing.T) {
 	query, err := gojq.Parse("range(10)")
 	if err != nil {
