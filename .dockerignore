@@ -6,4 +6,12 @@
 *.exe
 *.test
 *.out
-/.github/
+*.md
+*.y
+**/*.jq
+**/*.json
+**/*.yaml
+**/*_test.go
+.github
+_gojq
+_tools
