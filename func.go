@@ -78,6 +78,7 @@ func init() {
 		"format":         argFunc1(funcFormat),
 		"_tohtml":        argFunc0(funcToHTML),
 		"_touri":         argFunc0(funcToURI),
+		"_tourid":        argFunc0(funcToURId),
 		"_tocsv":         argFunc0(funcToCSV),
 		"_totsv":         argFunc0(funcToTSV),
 		"_tosh":          argFunc0(funcToSh),
@@ -831,6 +832,19 @@ func funcToURI(v any) any {
 	switch x := funcToString(v).(type) {
 	case string:
 		return url.QueryEscape(x)
+	default:
+		return x
+	}
+}
+
+func funcToURId(v any) any {
+	switch x := funcToString(v).(type) {
+	case string:
+		escaped, err := url.QueryUnescape(x)
+		if err != nil {
+			return fmt.Errorf("@urid cannot be applied: %s", err.Error())
+		}
+		return string(escaped)
 	default:
 		return x
 	}
