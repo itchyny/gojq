@@ -1264,7 +1264,7 @@
     - 'has(0)'
   input: '{}'
   error: |
-    cannot check whether object ({}) has a key: number (0)
+    has(0) cannot be applied to: object ({})
 
 - name: in function for object
   args:
@@ -1296,7 +1296,7 @@
     - 'in([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])'
   input: '"x"'
   error: |
-    cannot check whether array ([0,0,0,0,0,0,0,0,0,0,0,0, ...]) has a key: string ("x")
+    has("x") cannot be applied to: array ([0,0,0,0,0,0,0,0,0,0,0,0, ...])
 
 - name: map function
   args:
@@ -1330,7 +1330,14 @@
     - 'from_entries'
   input: '[{"value":1}]'
   error: |
-    expected a string for object key but got: null
+    from_entries cannot be applied to [{"value":1}]: expected a string for object key but got: null
+
+- name: from_entries function key type error
+  args:
+    - 'from_entries'
+  input: '[{"key":{},"value":1}]'
+  error: |
+    from_entries cannot be applied to [{"key":{},"value":1}]: expected a string for object key but got: object ({})
 
 - name: with_entries function
   args:
@@ -1709,12 +1716,12 @@
     ".e1"
     "-.e"
   expected: |
-    "invalid number: \"\""
-    "invalid number: \".\""
-    "invalid number: \" \""
-    "invalid number: \"1a\""
-    "invalid number: \".e1\""
-    "invalid number: \"-.e\""
+    "tonumber cannot be applied to \"\": invalid number"
+    "tonumber cannot be applied to \".\": invalid number"
+    "tonumber cannot be applied to \" \": invalid number"
+    "tonumber cannot be applied to \"1a\": invalid number"
+    "tonumber cannot be applied to \".e1\": invalid number"
+    "tonumber cannot be applied to \"-.e\": invalid number"
 
 - name: tostring function
   args:
@@ -1818,7 +1825,7 @@
     - 'nan | contains([nan])'
   input: '0'
   error: |
-    cannot check contains([null]): number (null)
+    contains([null]) cannot be applied to: number (null)
 
 - name: indices, index, rindex functions against null
   args:
@@ -1901,8 +1908,8 @@
     - '("x" | try startswith({}) catch .), (10 | try startswith("x") catch .)'
   input: '0'
   expected: |
-    "startswith cannot be applied to: object ({})"
-    "startswith cannot be applied to: number (10)"
+    "startswith({}) cannot be applied to: string (\"x\")"
+    "startswith(\"x\") cannot be applied to: number (10)"
 
 - name: endswith function
   args:
@@ -1925,8 +1932,8 @@
     - '("x" | try endswith({}) catch .), (10 | try endswith("x") catch .)'
   input: '0'
   expected: |
-    "endswith cannot be applied to: object ({})"
-    "endswith cannot be applied to: number (10)"
+    "endswith({}) cannot be applied to: string (\"x\")"
+    "endswith(\"x\") cannot be applied to: number (10)"
 
 - name: combinations/0 function
   args:
@@ -2084,18 +2091,18 @@
     - 'try join(",") catch .'
   input: '["1","2",[3,4,5]]'
   expected: |
-    "cannot join: array ([3,4,5])"
+    "join cannot be applied to an array including: array ([3,4,5])"
 
 - name: join function error input
   args:
     - '.[] | try join(",") catch .'
   input: '[null, false, true, 1, "a"]'
   expected: |
-    "join cannot be applied to: null"
-    "join cannot be applied to: boolean (false)"
-    "join cannot be applied to: boolean (true)"
-    "join cannot be applied to: number (1)"
-    "join cannot be applied to: string (\"a\")"
+    "join(\",\") cannot be applied to: null"
+    "join(\",\") cannot be applied to: boolean (false)"
+    "join(\",\") cannot be applied to: boolean (true)"
+    "join(\",\") cannot be applied to: number (1)"
+    "join(\",\") cannot be applied to: string (\"a\")"
 
 - name: join function non-string separator
   args:
@@ -2104,7 +2111,7 @@
   expected: |
     ""
     "1"
-    "join cannot be applied to: number (1)"
+    "join(1) cannot be applied to: array ([1,2])"
 
 - name: ascii_downcase function
   args:
@@ -3396,6 +3403,13 @@
     ["foo"]
     {"a":[1,2,3]}
 
+- name: fromjson function error
+  args:
+    - 'fromjson'
+  input: '"[0"'
+  error: |
+    fromjson cannot be applied to "[0": unexpected EOF
+
 - name: variable definition
   args:
     - -c
@@ -4314,7 +4328,7 @@
     - 'getpath(["a",1,"b","c"])'
   input: '{"a":[{},{"b":[1,2,3,4,5,6,7]}]}'
   error: |
-    cannot getpath with ["a",1,"b","c"] against: object ({"a":[{},{"b":[1,2,3,4,5, ...})
+    getpath(["a",1,"b","c"]) cannot be applied to {"a":[{},{"b":[1,2,3,4,5, ...}: expected an object but got: array ([1,2,3,4,5,6,7])
 
 - name: setpath, delpaths, getpath functions
   args:
@@ -4341,10 +4355,10 @@
   expected: |
     {"a":[{"b":5}]}
     {"a":[{"b":5}],"b":0}
-    "cannot getpath with [\"a\",0,\"b\"] against: object ({\"a\":0})"
+    "getpath([\"a\",0,\"b\"]) cannot be applied to: object ({\"a\":0})"
     {"a":[{"b":5}]}
-    "cannot getpath with [\"a\",0,\"b\"] against: object ({\"a\":[0,1]})"
-    "cannot getpath with [\"a\",0,\"b\"] against: object ({\"a\":{\"b\":1}})"
+    "getpath([\"a\",0,\"b\"]) cannot be applied to: object ({\"a\":[0,1]})"
+    "getpath([\"a\",0,\"b\"]) cannot be applied to {\"a\":{\"b\":1}}: expected an array but got: object ({\"b\":1})"
     {"a":[{"b":5}]}
     {"a":[{"b":5,"c":3}]}
 
@@ -5718,12 +5732,26 @@
     [{"captures":[{"length":1,"name":"foo","offset":2,"string":"c"},{"length":1,"name":null,"offset":3,"string":"d"}],"length":3,"offset":1,"string":"bcd"},{"captures":[{"length":1,"name":"foo","offset":9,"string":"c"},{"length":1,"name":null,"offset":10,"string":"d"}],"length":3,"offset":8,"string":"bcd"},{"captures":[{"length":1,"name":"foo","offset":16,"string":"C"},{"length":1,"name":null,"offset":17,"string":"D"}],"length":3,"offset":15,"string":"BCD"}]
     [{"captures":[{"length":0,"name":null,"offset":-1,"string":null},{"length":0,"name":null,"offset":-1,"string":null}],"length":3,"offset":1,"string":"bcd"}]
 
+- name: match function type error
+  args:
+    - 'match("x"; "g")'
+  input: '{}'
+  error: |
+    match("x"; "g") cannot be applied to: object ({})
+
 - name: match function flag error
   args:
     - 'match("x"; "a")'
   input: '""'
   error: |
     unsupported regular expression flag: "a"
+
+- name: match function regular expression error
+  args:
+    - 'match("["; "g")'
+  input: '""'
+  error: |
+    invalid regular expression "[": error parsing regexp: missing closing ]: `[`
 
 - name: test function
   args:
@@ -5920,7 +5948,7 @@
   input: |
     "%5B1%2C%"
   error: |
-    @urid cannot be applied: invalid URL escape "%"
+    @urid cannot be applied to "%5B1%2C%": invalid URL escape "%"
 
 - name: format strings @csv
   args:
@@ -6041,6 +6069,14 @@
   input: 'eyJmb28iOiJiYXIifQ=x=y'
   expected: |
     "{\"foo\":\"bar\"}"
+
+- name: format strings @base64d error
+  args:
+    - '@base64d'
+  input: |
+    ":"
+  error: |
+    @base64d cannot be applied to ":": illegal base64 data at input byte 0
 
 - name: format strings not defined error
   args:

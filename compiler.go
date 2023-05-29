@@ -1172,7 +1172,7 @@ func (c *compiler) funcInput(any, []any) any {
 func (c *compiler) funcModulemeta(v any, _ []any) any {
 	s, ok := v.(string)
 	if !ok {
-		return &funcTypeError{"modulemeta", v}
+		return &func0TypeError{"modulemeta", v}
 	}
 	if c.moduleLoader == nil {
 		return fmt.Errorf("cannot load module: %q", s)

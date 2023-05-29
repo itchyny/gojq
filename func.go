@@ -3,6 +3,7 @@ package gojq
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -235,7 +236,7 @@ func mathFunc(name string, f func(float64) float64) function {
 	return argFunc0(func(v any) any {
 		x, ok := toFloat(v)
 		if !ok {
-			return &funcTypeError{name, v}
+			return &func0TypeError{name, v}
 		}
 		return f(x)
 	})
@@ -245,11 +246,11 @@ func mathFunc2(name string, f func(_, _ float64) float64) function {
 	return argFunc2(func(_, x, y any) any {
 		l, ok := toFloat(x)
 		if !ok {
-			return &funcTypeError{name, x}
+			return &func0TypeError{name, x}
 		}
 		r, ok := toFloat(y)
 		if !ok {
-			return &funcTypeError{name, y}
+			return &func0TypeError{name, y}
 		}
 		return f(l, r)
 	})
@@ -259,15 +260,15 @@ func mathFunc3(name string, f func(_, _, _ float64) float64) function {
 	return argFunc3(func(_, a, b, c any) any {
 		x, ok := toFloat(a)
 		if !ok {
-			return &funcTypeError{name, a}
+			return &func0TypeError{name, a}
 		}
 		y, ok := toFloat(b)
 		if !ok {
-			return &funcTypeError{name, b}
+			return &func0TypeError{name, b}
 		}
 		z, ok := toFloat(c)
 		if !ok {
-			return &funcTypeError{name, c}
+			return &func0TypeError{name, c}
 		}
 		return f(x, y, z)
 	})
@@ -296,14 +297,14 @@ func funcLength(v any) any {
 	case map[string]any:
 		return len(v)
 	default:
-		return &funcTypeError{"length", v}
+		return &func0TypeError{"length", v}
 	}
 }
 
 func funcUtf8ByteLength(v any) any {
 	s, ok := v.(string)
 	if !ok {
-		return &funcTypeError{"utf8bytelength", v}
+		return &func0TypeError{"utf8bytelength", v}
 	}
 	return len(s)
 }
@@ -323,7 +324,7 @@ func funcKeys(v any) any {
 		}
 		return w
 	default:
-		return &funcTypeError{"keys", v}
+		return &func0TypeError{"keys", v}
 	}
 }
 
@@ -367,7 +368,7 @@ func funcHas(v, x any) any {
 	case nil:
 		return false
 	}
-	return &hasKeyTypeError{v, x}
+	return &func1TypeError{"has", v, x}
 }
 
 func funcToEntries(v any) any {
@@ -385,14 +386,14 @@ func funcToEntries(v any) any {
 		}
 		return w
 	default:
-		return &funcTypeError{"to_entries", v}
+		return &func0TypeError{"to_entries", v}
 	}
 }
 
 func funcFromEntries(v any) any {
 	vs, ok := v.([]any)
 	if !ok {
-		return &funcTypeError{"from_entries", v}
+		return &func0TypeError{"from_entries", v}
 	}
 	w := make(map[string]any, len(vs))
 	for _, v := range vs {
@@ -406,13 +407,13 @@ func funcFromEntries(v any) any {
 			for _, k := range [4]string{"key", "Key", "name", "Name"} {
 				if k := v[k]; k != nil && k != false {
 					if key, ok = k.(string); !ok {
-						return &objectKeyNotStringError{k}
+						return &func0WrapError{"from_entries", vs, &objectKeyNotStringError{k}}
 					}
 					break
 				}
 			}
 			if !ok {
-				return &objectKeyNotStringError{nil}
+				return &func0WrapError{"from_entries", vs, &objectKeyNotStringError{nil}}
 			}
 			for _, k := range [2]string{"value", "Value"} {
 				if value, ok = v[k]; ok {
@@ -421,7 +422,7 @@ func funcFromEntries(v any) any {
 			}
 			w[key] = value
 		default:
-			return &funcTypeError{"from_entries", v}
+			return &func0TypeError{"from_entries", v}
 		}
 	}
 	return w
@@ -430,7 +431,7 @@ func funcFromEntries(v any) any {
 func funcAdd(v any) any {
 	vs, ok := values(v)
 	if !ok {
-		return &funcTypeError{"add", v}
+		return &func0TypeError{"add", v}
 	}
 	v = nil
 	for _, x := range vs {
@@ -495,11 +496,11 @@ func funcToNumber(v any) any {
 		return v
 	case string:
 		if !newLexer(v).validNumber() {
-			return fmt.Errorf("invalid number: %q", v)
+			return &func0WrapError{"tonumber", v, errors.New("invalid number")}
 		}
 		return toNumber(v)
 	default:
-		return &funcTypeError{"tonumber", v}
+		return &func0TypeError{"tonumber", v}
 	}
 }
 
@@ -521,7 +522,7 @@ func funcType(v any) any {
 func funcReverse(v any) any {
 	vs, ok := v.([]any)
 	if !ok {
-		return &funcTypeError{"reverse", v}
+		return &func0TypeError{"reverse", v}
 	}
 	ws := make([]any, len(vs))
 	for i, v := range vs {
@@ -563,7 +564,7 @@ func funcContains(v, x any) any {
 			if l == r {
 				return true
 			}
-			return &containsTypeError{l, r}
+			return &func1TypeError{"contains", l, r}
 		},
 	)
 }
@@ -637,11 +638,11 @@ func indexFunc(v, x any, f func(_, _ []any) any) any {
 func funcStartsWith(v, x any) any {
 	s, ok := v.(string)
 	if !ok {
-		return &funcTypeError{"startswith", v}
+		return &func1TypeError{"startswith", v, x}
 	}
 	t, ok := x.(string)
 	if !ok {
-		return &funcTypeError{"startswith", x}
+		return &func1TypeError{"startswith", v, x}
 	}
 	return strings.HasPrefix(s, t)
 }
@@ -649,11 +650,11 @@ func funcStartsWith(v, x any) any {
 func funcEndsWith(v, x any) any {
 	s, ok := v.(string)
 	if !ok {
-		return &funcTypeError{"endswith", v}
+		return &func1TypeError{"endswith", v, x}
 	}
 	t, ok := x.(string)
 	if !ok {
-		return &funcTypeError{"endswith", x}
+		return &func1TypeError{"endswith", v, x}
 	}
 	return strings.HasSuffix(s, t)
 }
@@ -685,7 +686,7 @@ func funcRtrimstr(v, x any) any {
 func funcExplode(v any) any {
 	s, ok := v.(string)
 	if !ok {
-		return &funcTypeError{"explode", v}
+		return &func0TypeError{"explode", v}
 	}
 	return explode(s)
 }
@@ -703,7 +704,7 @@ func explode(s string) []any {
 func funcImplode(v any) any {
 	vs, ok := v.([]any)
 	if !ok {
-		return &funcTypeError{"implode", v}
+		return &func0TypeError{"implode", v}
 	}
 	var sb strings.Builder
 	sb.Grow(len(vs))
@@ -711,7 +712,7 @@ func funcImplode(v any) any {
 		if r, ok := toInt(v); ok && 0 <= r && r <= utf8.MaxRune {
 			sb.WriteRune(rune(r))
 		} else {
-			return &funcTypeError{"implode", vs}
+			return &func0TypeError{"implode", vs}
 		}
 	}
 	return sb.String()
@@ -720,11 +721,11 @@ func funcImplode(v any) any {
 func funcSplit(v any, args []any) any {
 	s, ok := v.(string)
 	if !ok {
-		return &funcTypeError{"split", v}
+		return &func0TypeError{"split", v}
 	}
 	x, ok := args[0].(string)
 	if !ok {
-		return &funcTypeError{"split", x}
+		return &func0TypeError{"split", x}
 	}
 	var ss []string
 	if len(args) == 1 {
@@ -734,7 +735,7 @@ func funcSplit(v any, args []any) any {
 		if args[1] != nil {
 			v, ok := args[1].(string)
 			if !ok {
-				return &funcTypeError{"split", args[1]}
+				return &func0TypeError{"split", args[1]}
 			}
 			flags = v
 		}
@@ -754,7 +755,7 @@ func funcSplit(v any, args []any) any {
 func funcASCIIDowncase(v any) any {
 	s, ok := v.(string)
 	if !ok {
-		return &funcTypeError{"ascii_downcase", v}
+		return &func0TypeError{"ascii_downcase", v}
 	}
 	return strings.Map(func(r rune) rune {
 		if 'A' <= r && r <= 'Z' {
@@ -767,7 +768,7 @@ func funcASCIIDowncase(v any) any {
 func funcASCIIUpcase(v any) any {
 	s, ok := v.(string)
 	if !ok {
-		return &funcTypeError{"ascii_upcase", v}
+		return &func0TypeError{"ascii_upcase", v}
 	}
 	return strings.Map(func(r rune) rune {
 		if 'a' <= r && r <= 'z' {
@@ -784,16 +785,16 @@ func funcToJSON(v any) any {
 func funcFromJSON(v any) any {
 	s, ok := v.(string)
 	if !ok {
-		return &funcTypeError{"fromjson", v}
+		return &func0TypeError{"fromjson", v}
 	}
 	var w any
 	dec := json.NewDecoder(strings.NewReader(s))
 	dec.UseNumber()
 	if err := dec.Decode(&w); err != nil {
-		return err
+		return &func0WrapError{"fromjson", v, err}
 	}
 	if _, err := dec.Token(); err != io.EOF {
-		return &funcTypeError{"fromjson", v}
+		return &func0TypeError{"fromjson", v}
 	}
 	return normalizeNumbers(w)
 }
@@ -801,7 +802,7 @@ func funcFromJSON(v any) any {
 func funcFormat(v, x any) any {
 	s, ok := x.(string)
 	if !ok {
-		return &funcTypeError{"format", x}
+		return &func0TypeError{"format", x}
 	}
 	format := "@" + s
 	f := formatToFunc(format)
@@ -842,7 +843,7 @@ func funcToURId(v any) any {
 	case string:
 		escaped, err := url.QueryUnescape(x)
 		if err != nil {
-			return fmt.Errorf("@urid cannot be applied: %s", err.Error())
+			return &func0WrapError{"@urid", v, err}
 		}
 		return string(escaped)
 	default:
@@ -890,7 +891,7 @@ func funcToSh(v any) any {
 func formatJoin(typ string, v any, sep string, escape func(string) string) any {
 	vs, ok := v.([]any)
 	if !ok {
-		return &funcTypeError{"@" + typ, v}
+		return &func0TypeError{"@" + typ, v}
 	}
 	ss := make([]string, len(vs))
 	for i, v := range vs {
@@ -925,7 +926,7 @@ func funcToBase64d(v any) any {
 		}
 		y, err := base64.RawStdEncoding.DecodeString(x)
 		if err != nil {
-			return err
+			return &func0WrapError{"@base64d", v, err}
 		}
 		return string(y)
 	default:
@@ -1103,7 +1104,7 @@ func clampIndex(i, min, max int) int {
 func funcFlatten(v any, args []any) any {
 	vs, ok := values(v)
 	if !ok {
-		return &funcTypeError{"flatten", v}
+		return &func0TypeError{"flatten", v}
 	}
 	var depth float64
 	if len(args) == 0 {
@@ -1111,7 +1112,7 @@ func funcFlatten(v any, args []any) any {
 	} else {
 		depth, ok = toFloat(args[0])
 		if !ok {
-			return &funcTypeError{"flatten", args[0]}
+			return &func0TypeError{"flatten", args[0]}
 		}
 		if depth < 0 {
 			return &flattenDepthError{depth}
@@ -1149,7 +1150,7 @@ func funcRange(_ any, xs []any) any {
 		switch x.(type) {
 		case int, float64, *big.Int:
 		default:
-			return &funcTypeError{"range", x}
+			return &func0TypeError{"range", x}
 		}
 	}
 	return &rangeIter{xs[0], xs[1], xs[2]}
@@ -1158,7 +1159,7 @@ func funcRange(_ any, xs []any) any {
 func funcMin(v any) any {
 	vs, ok := v.([]any)
 	if !ok {
-		return &funcTypeError{"min", v}
+		return &func0TypeError{"min", v}
 	}
 	return minMaxBy(vs, vs, true)
 }
@@ -1166,14 +1167,14 @@ func funcMin(v any) any {
 func funcMinBy(v, x any) any {
 	vs, ok := v.([]any)
 	if !ok {
-		return &funcTypeError{"min_by", v}
+		return &func1TypeError{"min_by", v, x}
 	}
 	xs, ok := x.([]any)
 	if !ok {
-		return &funcTypeError{"min_by", x}
+		return &func1TypeError{"min_by", v, x}
 	}
 	if len(vs) != len(xs) {
-		return &lengthMismatchError{"min_by", vs, xs}
+		return &func1WrapError{"min_by", v, x, &lengthMismatchError{}}
 	}
 	return minMaxBy(vs, xs, true)
 }
@@ -1181,7 +1182,7 @@ func funcMinBy(v, x any) any {
 func funcMax(v any) any {
 	vs, ok := v.([]any)
 	if !ok {
-		return &funcTypeError{"max", v}
+		return &func0TypeError{"max", v}
 	}
 	return minMaxBy(vs, vs, false)
 }
@@ -1189,14 +1190,14 @@ func funcMax(v any) any {
 func funcMaxBy(v, x any) any {
 	vs, ok := v.([]any)
 	if !ok {
-		return &funcTypeError{"max_by", v}
+		return &func1TypeError{"max_by", v, x}
 	}
 	xs, ok := x.([]any)
 	if !ok {
-		return &funcTypeError{"max_by", x}
+		return &func1TypeError{"max_by", v, x}
 	}
 	if len(vs) != len(xs) {
-		return &lengthMismatchError{"max_by", vs, xs}
+		return &func1WrapError{"max_by", v, x, &lengthMismatchError{}}
 	}
 	return minMaxBy(vs, xs, false)
 }
@@ -1221,14 +1222,17 @@ type sortItem struct {
 func sortItems(name string, v, x any) ([]*sortItem, error) {
 	vs, ok := v.([]any)
 	if !ok {
-		return nil, &funcTypeError{name, v}
+		if strings.HasSuffix(name, "_by") {
+			return nil, &func1TypeError{name, v, x}
+		}
+		return nil, &func0TypeError{name, v}
 	}
 	xs, ok := x.([]any)
 	if !ok {
-		return nil, &funcTypeError{name, x}
+		return nil, &func1TypeError{name, v, x}
 	}
 	if len(vs) != len(xs) {
-		return nil, &lengthMismatchError{name, vs, xs}
+		return nil, &func1WrapError{name, v, x, &lengthMismatchError{}}
 	}
 	items := make([]*sortItem, len(vs))
 	for i, v := range vs {
@@ -1303,14 +1307,14 @@ func uniqueBy(name string, v, x any) any {
 func funcJoin(v, x any) any {
 	vs, ok := values(v)
 	if !ok {
-		return &funcTypeError{"join", v}
+		return &func1TypeError{"join", v, x}
 	}
 	if len(vs) == 0 {
 		return ""
 	}
 	sep, ok := x.(string)
 	if len(vs) > 1 && !ok {
-		return &funcTypeError{"join", x}
+		return &func1TypeError{"join", v, x}
 	}
 	ss := make([]string, len(vs))
 	for i, v := range vs {
@@ -1347,7 +1351,7 @@ func funcExp10(v float64) float64 {
 func funcFrexp(v any) any {
 	x, ok := toFloat(v)
 	if !ok {
-		return &funcTypeError{"frexp", v}
+		return &func0TypeError{"frexp", v}
 	}
 	f, e := math.Frexp(x)
 	return []any{f, e}
@@ -1356,7 +1360,7 @@ func funcFrexp(v any) any {
 func funcModf(v any) any {
 	x, ok := toFloat(v)
 	if !ok {
-		return &funcTypeError{"modf", v}
+		return &func0TypeError{"modf", v}
 	}
 	i, f := math.Modf(x)
 	return []any{f, i}
@@ -1419,7 +1423,7 @@ func funcIsnan(v any) any {
 		if v == nil {
 			return false
 		}
-		return &funcTypeError{"isnan", v}
+		return &func0TypeError{"isnan", v}
 	}
 	return math.IsNaN(x)
 }
@@ -1479,11 +1483,11 @@ func funcSetpathWithAllocator(v any, args []any) any {
 func setpath(v, p, n any, a allocator) any {
 	path, ok := p.([]any)
 	if !ok {
-		return &funcTypeError{"setpath", p}
+		return &func1TypeError{"setpath", v, p}
 	}
 	var err error
 	if v, err = update(v, path, n, a); err != nil {
-		if err, ok := err.(*funcTypeError); ok {
+		if err, ok := err.(*func0TypeError); ok {
 			err.name = "setpath"
 		}
 		return err
@@ -1503,7 +1507,7 @@ func funcDelpathsWithAllocator(v any, args []any) any {
 func delpaths(v, p any, a allocator) any {
 	paths, ok := p.([]any)
 	if !ok {
-		return &funcTypeError{"delpaths", p}
+		return &func1TypeError{"delpaths", v, p}
 	}
 	if len(paths) == 0 {
 		return v
@@ -1516,7 +1520,7 @@ func delpaths(v, p any, a allocator) any {
 	for _, p := range paths {
 		path, ok := p.([]any)
 		if !ok {
-			return &funcTypeError{"delpaths", p}
+			return &func0TypeError{"delpaths", p}
 		}
 		if v, err = update(v, path, empty, a); err != nil {
 			return err
@@ -1601,7 +1605,7 @@ func updateArrayIndex(v []any, i int, path []any, n any, a allocator) (any, erro
 		if n == struct{}{} {
 			return v, nil
 		}
-		return nil, &funcTypeError{v: i}
+		return nil, &func0TypeError{v: i}
 	} else if j < len(v) {
 		i = j
 		x = v[i]
@@ -1724,18 +1728,18 @@ func deleteEmpty(v any) any {
 func funcGetpath(v, p any) any {
 	keys, ok := p.([]any)
 	if !ok {
-		return &funcTypeError{"getpath", p}
+		return &func1TypeError{"getpath", v, p}
 	}
 	u := v
 	for _, x := range keys {
 		switch v.(type) {
 		case nil, []any, map[string]any:
 			v = funcIndex2(nil, v, x)
-			if _, ok := v.(error); ok {
-				return &getpathError{u, p}
+			if err, ok := v.(error); ok {
+				return &func1WrapError{"getpath", u, p, err}
 			}
 		default:
-			return &getpathError{u, p}
+			return &func1TypeError{"getpath", u, p}
 		}
 	}
 	return v
@@ -1744,7 +1748,7 @@ func funcGetpath(v, p any) any {
 func funcTranspose(v any) any {
 	vss, ok := v.([]any)
 	if !ok {
-		return &funcTypeError{"transpose", v}
+		return &func0TypeError{"transpose", v}
 	}
 	if len(vss) == 0 {
 		return []any{}
@@ -1753,7 +1757,7 @@ func funcTranspose(v any) any {
 	for _, vs := range vss {
 		vs, ok := vs.([]any)
 		if !ok {
-			return &funcTypeError{"transpose", v}
+			return &func0TypeError{"transpose", v}
 		}
 		if k := len(vs); l < k {
 			l = k
@@ -1777,7 +1781,7 @@ func funcTranspose(v any) any {
 func funcBsearch(v, t any) any {
 	vs, ok := v.([]any)
 	if !ok {
-		return &funcTypeError{"bsearch", v}
+		return &func1TypeError{"bsearch", v, t}
 	}
 	i := sort.Search(len(vs), func(i int) bool {
 		return compare(vs[i], t) >= 0
@@ -1792,14 +1796,14 @@ func funcGmtime(v any) any {
 	if v, ok := toFloat(v); ok {
 		return epochToArray(v, time.UTC)
 	}
-	return &funcTypeError{"gmtime", v}
+	return &func0TypeError{"gmtime", v}
 }
 
 func funcLocaltime(v any) any {
 	if v, ok := toFloat(v); ok {
 		return epochToArray(v, time.Local)
 	}
-	return &funcTypeError{"localtime", v}
+	return &func0TypeError{"localtime", v}
 }
 
 func epochToArray(v float64, loc *time.Location) []any {
@@ -1817,14 +1821,15 @@ func epochToArray(v float64, loc *time.Location) []any {
 }
 
 func funcMktime(v any) any {
-	if a, ok := v.([]any); ok {
-		t, err := arrayToTime("mktime", a, time.UTC)
-		if err != nil {
-			return err
-		}
-		return timeToEpoch(t)
+	a, ok := v.([]any)
+	if !ok {
+		return &func0TypeError{"mktime", v}
 	}
-	return &funcTypeError{"mktime", v}
+	t, err := arrayToTime(a, time.UTC)
+	if err != nil {
+		return &func0WrapError{"mktime", v, err}
+	}
+	return timeToEpoch(t)
 }
 
 func timeToEpoch(t time.Time) float64 {
@@ -1835,90 +1840,95 @@ func funcStrftime(v, x any) any {
 	if w, ok := toFloat(v); ok {
 		v = epochToArray(w, time.UTC)
 	}
-	if a, ok := v.([]any); ok {
-		if format, ok := x.(string); ok {
-			t, err := arrayToTime("strftime", a, time.UTC)
-			if err != nil {
-				return err
-			}
-			return timefmt.Format(t, format)
-		}
-		return &funcTypeError{"strftime", x}
+	a, ok := v.([]any)
+	if !ok {
+		return &func1TypeError{"strftime", v, x}
 	}
-	return &funcTypeError{"strftime", v}
+	format, ok := x.(string)
+	if !ok {
+		return &func1TypeError{"strftime", v, x}
+	}
+	t, err := arrayToTime(a, time.UTC)
+	if err != nil {
+		return &func1WrapError{"strftime", v, x, err}
+	}
+	return timefmt.Format(t, format)
 }
 
 func funcStrflocaltime(v, x any) any {
 	if w, ok := toFloat(v); ok {
 		v = epochToArray(w, time.Local)
 	}
-	if a, ok := v.([]any); ok {
-		if format, ok := x.(string); ok {
-			t, err := arrayToTime("strflocaltime", a, time.Local)
-			if err != nil {
-				return err
-			}
-			return timefmt.Format(t, format)
-		}
-		return &funcTypeError{"strflocaltime", x}
+	a, ok := v.([]any)
+	if !ok {
+		return &func1TypeError{"strflocaltime", v, x}
 	}
-	return &funcTypeError{"strflocaltime", v}
+	format, ok := x.(string)
+	if !ok {
+		return &func1TypeError{"strflocaltime", v, x}
+	}
+	t, err := arrayToTime(a, time.Local)
+	if err != nil {
+		return &func1WrapError{"strflocaltime", v, x, err}
+	}
+	return timefmt.Format(t, format)
 }
 
 func funcStrptime(v, x any) any {
-	if v, ok := v.(string); ok {
-		if format, ok := x.(string); ok {
-			t, err := timefmt.Parse(v, format)
-			if err != nil {
-				return err
-			}
-			var s time.Time
-			if t == s {
-				return &funcTypeError{"strptime", v}
-			}
-			return epochToArray(timeToEpoch(t), time.UTC)
-		}
-		return &funcTypeError{"strptime", x}
+	s, ok := v.(string)
+	if !ok {
+		return &func1TypeError{"strptime", v, x}
 	}
-	return &funcTypeError{"strptime", v}
+	format, ok := x.(string)
+	if !ok {
+		return &func1TypeError{"strptime", v, x}
+	}
+	t, err := timefmt.Parse(s, format)
+	if err != nil {
+		return &func1WrapError{"strptime", v, x, err}
+	}
+	var u time.Time
+	if t == u {
+		return &func1TypeError{"strptime", v, x}
+	}
+	return epochToArray(timeToEpoch(t), time.UTC)
 }
 
-func arrayToTime(name string, a []any, loc *time.Location) (time.Time, error) {
+func arrayToTime(a []any, loc *time.Location) (time.Time, error) {
 	var t time.Time
 	if len(a) != 8 {
-		return t, &funcTypeError{name, a}
+		return t, &timeArrayError{}
 	}
 	var y, m, d, h, min, sec, nsec int
-	if x, ok := toInt(a[0]); ok {
-		y = x
-	} else {
-		return t, &funcTypeError{name, a}
+	var ok bool
+	if y, ok = toInt(a[0]); !ok {
+		return t, &timeArrayError{}
 	}
-	if x, ok := toInt(a[1]); ok {
-		m = x + 1
+	if m, ok = toInt(a[1]); ok {
+		m++
 	} else {
-		return t, &funcTypeError{name, a}
+		return t, &timeArrayError{}
 	}
-	if x, ok := toInt(a[2]); ok {
-		d = x
-	} else {
-		return t, &funcTypeError{name, a}
+	if d, ok = toInt(a[2]); !ok {
+		return t, &timeArrayError{}
 	}
-	if x, ok := toInt(a[3]); ok {
-		h = x
-	} else {
-		return t, &funcTypeError{name, a}
+	if h, ok = toInt(a[3]); !ok {
+		return t, &timeArrayError{}
 	}
-	if x, ok := toInt(a[4]); ok {
-		min = x
-	} else {
-		return t, &funcTypeError{name, a}
+	if min, ok = toInt(a[4]); !ok {
+		return t, &timeArrayError{}
 	}
 	if x, ok := toFloat(a[5]); ok {
 		sec = int(x)
 		nsec = int((x - math.Floor(x)) * 1e9)
 	} else {
-		return t, &funcTypeError{name, a}
+		return t, &timeArrayError{}
+	}
+	if _, ok = toFloat(a[6]); !ok {
+		return t, &timeArrayError{}
+	}
+	if _, ok = toFloat(a[7]); !ok {
+		return t, &timeArrayError{}
 	}
 	return time.Date(y, time.Month(m), d, h, min, sec, nsec, loc), nil
 }
@@ -1928,21 +1938,25 @@ func funcNow(any) any {
 }
 
 func funcMatch(v, re, fs, testing any) any {
+	name := "match"
+	if testing == true {
+		name = "test"
+	}
 	var flags string
 	if fs != nil {
 		v, ok := fs.(string)
 		if !ok {
-			return &funcTypeError{"match", fs}
+			return &func2TypeError{name, v, re, fs}
 		}
 		flags = v
 	}
 	s, ok := v.(string)
 	if !ok {
-		return &funcTypeError{"match", v}
+		return &func2TypeError{name, v, re, fs}
 	}
 	restr, ok := re.(string)
 	if !ok {
-		return &funcTypeError{"match", v}
+		return &func2TypeError{name, v, re, fs}
 	}
 	r, err := compileRegexp(restr, flags)
 	if err != nil {
@@ -2055,7 +2069,7 @@ func funcHaltError(v any, args []any) any {
 	if len(args) > 0 {
 		var ok bool
 		if code, ok = toInt(args[0]); !ok {
-			return &funcTypeError{"halt_error", args[0]}
+			return &func0TypeError{"halt_error", args[0]}
 		}
 	}
 	return &exitCodeError{v, code, true}
