@@ -27,20 +27,20 @@ func (err *expectedArrayError) Error() string {
 	return "expected an array but got: " + typeErrorPreview(err.v)
 }
 
-type expectedStringError struct {
-	v any
-}
-
-func (err *expectedStringError) Error() string {
-	return "expected a string but got: " + typeErrorPreview(err.v)
-}
-
 type iteratorError struct {
 	v any
 }
 
 func (err *iteratorError) Error() string {
 	return "cannot iterate over: " + typeErrorPreview(err.v)
+}
+
+type arrayIndexNegativeError struct {
+	v int
+}
+
+func (err *arrayIndexNegativeError) Error() string {
+	return "array index should not be negative: " + Preview(err.v)
 }
 
 type arrayIndexTooLargeError struct {
@@ -150,6 +150,16 @@ func (err *func1WrapError) Error() string {
 	return err.name + "(" + Preview(err.w) + ") cannot be applied to " + Preview(err.v) + ": " + err.err.Error()
 }
 
+type func2WrapError struct {
+	name    string
+	v, w, x any
+	err     error
+}
+
+func (err *func2WrapError) Error() string {
+	return err.name + "(" + Preview(err.w) + "; " + Preview(err.x) + ") cannot be applied to " + Preview(err.v) + ": " + err.err.Error()
+}
+
 type exitCodeError struct {
 	value any
 	code  int
@@ -184,7 +194,7 @@ type flattenDepthError struct {
 }
 
 func (err *flattenDepthError) Error() string {
-	return "flatten depth must not be negative: " + typeErrorPreview(err.v)
+	return "flatten depth should not be negative: " + Preview(err.v)
 }
 
 type joinTypeError struct {

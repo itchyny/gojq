@@ -570,7 +570,7 @@ func funcContains(v, x any) any {
 }
 
 func funcIndices(v, x any) any {
-	return indexFunc(v, x, indices)
+	return indexFunc("indices", v, x, indices)
 }
 
 func indices(vs, xs []any) any {
@@ -587,7 +587,7 @@ func indices(vs, xs []any) any {
 }
 
 func funcIndex(v, x any) any {
-	return indexFunc(v, x, func(vs, xs []any) any {
+	return indexFunc("index", v, x, func(vs, xs []any) any {
 		if len(xs) == 0 {
 			return nil
 		}
@@ -601,7 +601,7 @@ func funcIndex(v, x any) any {
 }
 
 func funcRindex(v, x any) any {
-	return indexFunc(v, x, func(vs, xs []any) any {
+	return indexFunc("rindex", v, x, func(vs, xs []any) any {
 		if len(xs) == 0 {
 			return nil
 		}
@@ -614,7 +614,7 @@ func funcRindex(v, x any) any {
 	})
 }
 
-func indexFunc(v, x any, f func(_, _ []any) any) any {
+func indexFunc(name string, v, x any, f func(_, _ []any) any) any {
 	switch v := v.(type) {
 	case nil:
 		return nil
@@ -629,9 +629,9 @@ func indexFunc(v, x any, f func(_, _ []any) any) any {
 		if x, ok := x.(string); ok {
 			return f(explode(v), explode(x))
 		}
-		return &expectedStringError{x}
+		return &func1TypeError{name, v, x}
 	default:
-		return &expectedArrayError{v}
+		return &func1TypeError{name, v, x}
 	}
 }
 
@@ -841,11 +841,11 @@ func funcToURI(v any) any {
 func funcToURId(v any) any {
 	switch x := funcToString(v).(type) {
 	case string:
-		escaped, err := url.QueryUnescape(x)
+		x, err := url.QueryUnescape(x)
 		if err != nil {
 			return &func0WrapError{"@urid", v, err}
 		}
-		return string(escaped)
+		return x
 	default:
 		return x
 	}
@@ -1485,14 +1485,11 @@ func setpath(v, p, n any, a allocator) any {
 	if !ok {
 		return &func1TypeError{"setpath", v, p}
 	}
-	var err error
-	if v, err = update(v, path, n, a); err != nil {
-		if err, ok := err.(*func0TypeError); ok {
-			err.name = "setpath"
-		}
-		return err
+	u, err := update(v, path, n, a)
+	if err != nil {
+		return &func2WrapError{"setpath", v, p, n, err}
 	}
-	return v
+	return u
 }
 
 func funcDelpaths(v, p any) any {
@@ -1517,16 +1514,18 @@ func delpaths(v, p any, a allocator) any {
 	//   jq -n "[0, 1, 2, 3] | delpaths([[1], [2]])" #=> [0, 3].
 	var empty struct{}
 	var err error
-	for _, p := range paths {
-		path, ok := p.([]any)
+	u := v
+	for _, q := range paths {
+		path, ok := q.([]any)
 		if !ok {
-			return &func0TypeError{"delpaths", p}
+			return &func1WrapError{"delpaths", v, p, &expectedArrayError{q}}
 		}
-		if v, err = update(v, path, empty, a); err != nil {
-			return err
+		u, err = update(u, path, empty, a)
+		if err != nil {
+			return &func1WrapError{"delpaths", v, p, err}
 		}
 	}
-	return deleteEmpty(v)
+	return deleteEmpty(u)
 }
 
 func update(v any, path []any, n any, a allocator) (any, error) {
@@ -1605,7 +1604,7 @@ func updateArrayIndex(v []any, i int, path []any, n any, a allocator) (any, erro
 		if n == struct{}{} {
 			return v, nil
 		}
-		return nil, &func0TypeError{v: i}
+		return nil, &arrayIndexNegativeError{i}
 	} else if j < len(v) {
 		i = j
 		x = v[i]
@@ -1726,12 +1725,12 @@ func deleteEmpty(v any) any {
 }
 
 func funcGetpath(v, p any) any {
-	keys, ok := p.([]any)
+	path, ok := p.([]any)
 	if !ok {
 		return &func1TypeError{"getpath", v, p}
 	}
 	u := v
-	for _, x := range keys {
+	for _, x := range path {
 		switch v.(type) {
 		case nil, []any, map[string]any:
 			v = funcIndex2(nil, v, x)

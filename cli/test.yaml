@@ -1452,7 +1452,7 @@
     - 'flatten(-1)'
   input: '[]'
   error: |
-    flatten depth must not be negative: number (-1)
+    flatten depth should not be negative: -1
 
 - name: min, min_by, max, max_by functions
   args:
@@ -1874,6 +1874,15 @@
     [[0,5],[1],[3]]
     [0,1,3]
     [5,1,3]
+
+- name: indices, index, rindex functions type error
+  args:
+    - '(try indices([]) catch .), (try index([]) catch .), (try rindex([]) catch .)'
+  input: '{}'
+  expected: |
+    "indices([]) cannot be applied to: object ({})"
+    "index([]) cannot be applied to: object ({})"
+    "rindex([]) cannot be applied to: object ({})"
 
 - name: inside function
   args:
@@ -4221,49 +4230,49 @@
     - 'setpath([-1]; 10)'
   input: '[]'
   error: |
-    setpath cannot be applied to: number (-1)
+    setpath([-1]; 10) cannot be applied to []: array index should not be negative: -1
 
 - name: setpath function error
   args:
     - 'setpath(["a","b","c"]; 10)'
   input: '{"a":{"b":[]}}'
   error: |
-    expected an object but got: array ([])
+    setpath(["a","b","c"]; 10) cannot be applied to {"a":{"b":[]}}: expected an object but got: array ([])
 
 - name: setpath function error
   args:
     - 'setpath(["a",1]; 10)'
   input: '{"a":{"b":[]}}'
   error: |
-    expected an array but got: object ({"b":[]})
+    setpath(["a",1]; 10) cannot be applied to {"a":{"b":[]}}: expected an array but got: object ({"b":[]})
 
 - name: setpath function error
   args:
     - 'setpath([{}]; 10)'
   input: 'null'
   error: |
-    expected "start" and "end" for slicing but got: object ({})
+    setpath([{}]; 10) cannot be applied to null: expected "start" and "end" for slicing but got: object ({})
 
 - name: setpath function error
   args:
     - 'setpath([{start:0}]; 10)'
   input: 'null'
   error: |
-    expected "start" and "end" for slicing but got: object ({"start":0})
+    setpath([{"start":0}]; 10) cannot be applied to null: expected "start" and "end" for slicing but got: object ({"start":0})
 
 - name: setpath function error
   args:
     - 'setpath([[]]; 10)'
   input: '[]'
   error: |
-    expected a number for indexing an array but got: array ([])
+    setpath([[]]; 10) cannot be applied to []: expected a number for indexing an array but got: array ([])
 
 - name: setpath function error
   args:
     - 'setpath([{start:0,end:1}]; 10)'
   input: '[]'
   error: |
-    expected an array but got: number (10)
+    setpath([{"end":1,"start":0}]; 10) cannot be applied to []: expected an array but got: number (10)
 
 - name: delpaths function
   args:
@@ -4306,6 +4315,20 @@
     {}
     {"x":[]}
     {}
+
+- name: delpaths function error
+  args:
+    - 'delpaths([{}])'
+  input: '[]'
+  error: |
+    delpaths([{}]) cannot be applied to []: expected an array but got: object ({})
+
+- name: delpaths function error
+  args:
+    - 'delpaths([["x"]])'
+  input: '[]'
+  error: |
+    delpaths([["x"]]) cannot be applied to []: expected an object but got: array ([])
 
 - name: getpath function
   args:
@@ -4576,7 +4599,7 @@
     - '.[-1,0] = 1'
   input: '[]'
   error: |
-    setpath cannot be applied to: number (-1)
+    setpath([-1]; 1) cannot be applied to []: array index should not be negative: -1
 
 - name: assignment operator array index limit error
   args:
