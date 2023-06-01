@@ -1,4 +1,9 @@
 # Changelog
+## [v0.12.13](https://github.com/itchyny/gojq/compare/v0.12.12..v0.12.13) (2023-06-01)
+* implement `@urid` format string to decode URI values
+* fix functions returning arrays not to emit nil slices (`flatten`, `group_by`,
+  `unique`, `unique_by`, `nth`, `indices`, `path`, and `modulemeta.deps`)
+
 ## [v0.12.12](https://github.com/itchyny/gojq/compare/v0.12.11..v0.12.12) (2023-03-01)
 * fix assignment operator (`=`) with overlapping paths and multiple values (`[[]] | .. = ..`)
 * fix crash on multiplying large numbers to an empty string (`9223372036854775807 * ""`)
