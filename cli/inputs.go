@@ -4,12 +4,14 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"io"
 	"os"
 	"strings"
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/clbanning/mxj/v2"
 	"github.com/itchyny/gojq"
 )
 
@@ -302,6 +304,43 @@ func (i *streamInputIter) Close() error {
 }
 
 func (i *streamInputIter) Name() string {
+	return i.fname
+}
+
+type xmlInputIter struct {
+	dec   *xml.Decoder
+	ir    *inputReader
+	fname string
+	err   error
+}
+
+func newXMLInputIter(r io.Reader, fname string) inputIter {
+	ir := newInputReader(r)
+	dec := xml.NewDecoder(ir)
+	dec.Strict = false
+	return &xmlInputIter{dec: dec, ir: ir, fname: fname}
+}
+
+func (i *xmlInputIter) Next() (any, bool) {
+	if i.err != nil {
+		return nil, false
+	}
+	mxj.CustomDecoder = i.dec
+	m, err := mxj.NewMapXmlReader(i.ir, true)
+	if err != nil {
+		return nil, false
+	}
+	var v map[string]interface{}
+	v = m
+	return v, true
+}
+
+func (i *xmlInputIter) Close() error {
+	i.err = io.EOF
+	return nil
+}
+
+func (i *xmlInputIter) Name() string {
 	return i.fname
 }
 

@@ -1,0 +1,6 @@
+<foo ns:x="1">
+    <bar>42</bar>
+    <baz>
+    </baz>
+    <qux>100</qux>
+</foo>

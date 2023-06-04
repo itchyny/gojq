@@ -1,7 +1,9 @@
 package cli
 
 import (
+	"github.com/clbanning/mxj/v2"
 	"io"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -20,6 +22,36 @@ func (m *rawMarshaler) marshal(v any, w io.Writer) error {
 		return err
 	}
 	return m.m.marshal(v, w)
+}
+
+func xmlFormatter(indent *int, root string, element string) *xmlMarshaller {
+	return &xmlMarshaller{indent, root, element}
+}
+
+type xmlMarshaller struct {
+	indent  *int
+	root    string
+	element string
+}
+
+func (m *xmlMarshaller) marshal(v any, w io.Writer) error {
+	indentStr := "  "
+	if i := m.indent; i != nil {
+		indentStr = strings.Repeat(" ", *m.indent)
+	}
+	tags := []string{m.root, m.element}
+	if m.root == "" {
+		tags[0] = mxj.DefaultRootTag
+	}
+	if m.element == "" {
+		tags[1] = mxj.DefaultElementTag
+	}
+	bytes, err := mxj.AnyXmlIndent(v, "", indentStr, tags...)
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(bytes)
+	return err
 }
 
 func yamlFormatter(indent *int) *yamlMarshaler {
