@@ -46,7 +46,13 @@ func (m *xmlMarshaller) marshal(v any, w io.Writer) error {
 	if m.element == "" {
 		tags[1] = mxj.DefaultElementTag
 	}
-	bytes, err := mxj.AnyXmlIndent(v, "", indentStr, tags...)
+	var bytes []byte
+	var err error
+	if indentStr == "" {
+		bytes, err = mxj.AnyXml(v)
+	} else {
+		bytes, err = mxj.AnyXmlIndent(v, "", indentStr, tags...)
+	}
 	if err != nil {
 		return err
 	}

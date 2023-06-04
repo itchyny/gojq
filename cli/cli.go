@@ -415,9 +415,6 @@ func (cli *cli) createMarshaler() marshaler {
 	if cli.outputYAML {
 		return yamlFormatter(cli.outputIndent)
 	}
-	if cli.outputXML {
-		return xmlFormatter(cli.outputIndent, cli.rootXML, cli.elementXML)
-	}
 	indent := 2
 	if cli.outputCompact {
 		indent = 0
@@ -425,6 +422,9 @@ func (cli *cli) createMarshaler() marshaler {
 		indent = 1
 	} else if i := cli.outputIndent; i != nil {
 		indent = *i
+	}
+	if cli.outputXML {
+		return xmlFormatter(&indent, cli.rootXML, cli.elementXML)
 	}
 	f := newEncoder(cli.outputTab, indent)
 	if cli.outputRaw || cli.outputJoin || cli.outputNul {
