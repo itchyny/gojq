@@ -332,7 +332,13 @@ func (cli *cli) createInputIter(args []string) (iter inputIter) {
 		newIter = newStreamInputIter
 	case cli.inputXML:
 		mxj.FixRoot(true)
-		mxj.ForceListForKeys(cli.forceListXML...)
+		for _, s := range cli.forceListXML {
+			if strings.Contains(s, ".") {
+				mxj.ForceListForPaths(s)
+			} else {
+				mxj.ForceListForKeys(s)
+			}
+		}
 		mxj.KeepNamespace(cli.keepSpaceXML)
 		mxj.SetAttrPrefix("@")
 		newIter = newXMLInputIter
