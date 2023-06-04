@@ -2,7 +2,7 @@ module github.com/itchyny/gojq
 
 go 1.18
 
-replace github.com/clbanning/mxj/v2 v2.5.7 => github.com/momiji/mxj/v2 v2.7.0-x1
+replace github.com/clbanning/mxj/v2 v2.5.7 => github.com/momiji/mxj/v2 v2.7.0-x2
 
 require (
 	github.com/clbanning/mxj/v2 v2.5.7

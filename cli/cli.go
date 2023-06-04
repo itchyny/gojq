@@ -332,7 +332,7 @@ func (cli *cli) createInputIter(args []string) (iter inputIter) {
 		newIter = newStreamInputIter
 	case cli.inputXML:
 		mxj.FixRoot(true)
-		mxj.ForceList(cli.forceListXML...)
+		mxj.ForceListForKeys(cli.forceListXML...)
 		mxj.KeepNamespace(cli.keepSpaceXML)
 		mxj.SetAttrPrefix("@")
 		newIter = newXMLInputIter
