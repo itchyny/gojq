@@ -49,7 +49,7 @@ func (m *xmlMarshaller) marshal(v any, w io.Writer) error {
 	var bytes []byte
 	var err error
 	if indentStr == "" {
-		bytes, err = mxj.AnyXml(v)
+		bytes, err = mxj.AnyXml(v, tags...)
 	} else {
 		bytes, err = mxj.AnyXmlIndent(v, "", indentStr, tags...)
 	}
