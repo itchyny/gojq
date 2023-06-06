@@ -315,17 +315,21 @@ type xmlInputIter struct {
 	err   error
 }
 
-func newXMLInputIter(r io.Reader, fname string, namespace bool, forceList []string) inputIter {
+func newXMLInputIter(r io.Reader, fname string, attributes bool, namespace bool, forceList []string, html bool) inputIter {
 	ir := newInputReader(r)
 	dec := xml.NewDecoder(ir)
 	dec.Strict = false
-	//dec.AutoClose = xml.HTMLAutoClose
 	dec.Entity = xml.HTMLEntity
+	if html {
+		dec.AutoClose = xml.HTMLAutoClose
+	}
 	xq := xqml.NewXQML()
 	xq.Decoder(dec)
 	xq.Partial(true)
+	xq.Attributes(attributes)
 	xq.Namespace(namespace)
 	xq.ForceList(forceList...)
+	xq.Html(html)
 	return &xmlInputIter{dec: dec, xq: xq, ir: ir, fname: fname}
 }
 

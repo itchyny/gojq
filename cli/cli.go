@@ -50,7 +50,9 @@ type cli struct {
 	inputYAML     bool
 	inputSlurp    bool
 	stripSpaceXML bool
+	stripAttrsXML bool
 	forceListXML  []string
+	htmlXML       bool
 	rootXML       string
 	elementXML    string
 
@@ -76,10 +78,12 @@ type flagopts struct {
 	InputRaw      bool              `short:"R" long:"raw-input" description:"read input as raw strings"`
 	InputStream   bool              `long:"stream" description:"parse input in stream fashion"`
 	InputXML      bool              `short:"X" long:"xml-input" description:"read input as XML format"`
+	StripAttrsXML bool              `long:"xml-strip-attributes" description:"strip attributes from XML elements"`
 	StripSpaceXML bool              `long:"xml-strip-namespace" description:"strip namespace from XML elements and attributes"`
 	ForceListXML  []string          `long:"xml-force-list" description:"force XML elements as array"`
 	RootXML       string            `long:"xml-root" description:"root XML element name"`
 	ElementXML    string            `long:"xml-element" description:"element XML element name"`
+	HtmlXML       bool              `long:"xml-html" description:"HTML compatibility mode"`
 	InputYAML     bool              `short:"Y" long:"yaml-input" description:"read input as YAML format"`
 	InputSlurp    bool              `short:"s" long:"slurp" description:"read all inputs into an array"`
 	FromFile      string            `short:"f" long:"from-file" description:"load query from file"`
@@ -166,8 +170,8 @@ Usage:
 	}
 	cli.inputRaw, cli.inputStream, cli.inputYAML, cli.inputSlurp =
 		opts.InputRaw, opts.InputStream, opts.InputYAML, opts.InputSlurp
-	cli.inputXML, cli.stripSpaceXML, cli.forceListXML, cli.rootXML, cli.elementXML =
-		opts.InputXML, opts.StripSpaceXML, opts.ForceListXML, opts.RootXML, opts.ElementXML
+	cli.inputXML, cli.stripAttrsXML, cli.stripSpaceXML, cli.forceListXML, cli.rootXML, cli.elementXML, cli.htmlXML =
+		opts.InputXML, opts.StripAttrsXML, opts.StripSpaceXML, opts.ForceListXML, opts.RootXML, opts.ElementXML, opts.HtmlXML
 	for k, v := range opts.Arg {
 		cli.argnames = append(cli.argnames, "$"+k)
 		cli.argvalues = append(cli.argvalues, v)
@@ -331,7 +335,7 @@ func (cli *cli) createInputIter(args []string) (iter inputIter) {
 		newIter = newStreamInputIter
 	case cli.inputXML:
 		newIter = func(r io.Reader, fname string) inputIter {
-			return newXMLInputIter(r, fname, !cli.stripSpaceXML, cli.forceListXML)
+			return newXMLInputIter(r, fname, !cli.stripAttrsXML, !cli.stripSpaceXML, cli.forceListXML, cli.htmlXML)
 		}
 	case cli.inputYAML:
 		newIter = newYAMLInputIter
