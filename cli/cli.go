@@ -78,8 +78,8 @@ type flagopts struct {
 	InputRaw      bool              `short:"R" long:"raw-input" description:"read input as raw strings"`
 	InputStream   bool              `long:"stream" description:"parse input in stream fashion"`
 	InputXML      bool              `short:"X" long:"xml-input" description:"read input as XML format"`
-	StripAttrsXML bool              `long:"xml-strip-attributes" description:"strip attributes from XML elements"`
-	StripSpaceXML bool              `long:"xml-strip-namespace" description:"strip namespace from XML elements and attributes"`
+	StripAttrsXML bool              `long:"xml-no-attributes" description:"remove attributes from XML elements"`
+	StripSpaceXML bool              `long:"xml-no-namespaces" description:"remove namespace from XML elements and attributes"`
 	ForceListXML  []string          `long:"xml-force-list" description:"force XML elements as array"`
 	RootXML       string            `long:"xml-root" description:"root XML element name"`
 	ElementXML    string            `long:"xml-element" description:"element XML element name"`
