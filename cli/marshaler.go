@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"github.com/clbanning/mxj/v2"
+	"github.com/momiji/xqml"
 	"io"
 	"strings"
 
@@ -35,29 +35,18 @@ type xmlMarshaller struct {
 }
 
 func (m *xmlMarshaller) marshal(v any, w io.Writer) error {
-	indentStr := "  "
+	xq := xqml.NewXQML()
 	if i := m.indent; i != nil {
-		indentStr = strings.Repeat(" ", *m.indent)
+		indentStr := strings.Repeat(" ", *m.indent)
+		xq.Indent(indentStr)
 	}
-	tags := []string{m.root, m.element}
-	if m.root == "" {
-		tags[0] = mxj.DefaultRootTag
+	if m.root != "" {
+		xq.Root(m.root)
 	}
-	if m.element == "" {
-		tags[1] = mxj.DefaultElementTag
+	if m.element != "" {
+		xq.Element(m.element)
 	}
-	var bytes []byte
-	var err error
-	if indentStr == "" {
-		bytes, err = mxj.AnyXml(v, tags...)
-	} else {
-		bytes, err = mxj.AnyXmlIndent(v, "", indentStr, tags...)
-	}
-	if err != nil {
-		return err
-	}
-	_, err = w.Write(bytes)
-	return err
+	return xq.WriteXml(w, v)
 }
 
 func yamlFormatter(indent *int) *yamlMarshaler {

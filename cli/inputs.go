@@ -11,8 +11,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/clbanning/mxj/v2"
 	"github.com/itchyny/gojq"
+	"github.com/momiji/xqml"
 )
 
 type inputReader struct {
@@ -309,30 +309,35 @@ func (i *streamInputIter) Name() string {
 
 type xmlInputIter struct {
 	dec   *xml.Decoder
+	xq    *xqml.Xqml
 	ir    *inputReader
 	fname string
 	err   error
 }
 
-func newXMLInputIter(r io.Reader, fname string) inputIter {
+func newXMLInputIter(r io.Reader, fname string, namespace bool, forceList []string) inputIter {
 	ir := newInputReader(r)
 	dec := xml.NewDecoder(ir)
 	dec.Strict = false
-	return &xmlInputIter{dec: dec, ir: ir, fname: fname}
+	//dec.AutoClose = xml.HTMLAutoClose
+	dec.Entity = xml.HTMLEntity
+	xq := xqml.NewXQML()
+	xq.Decoder(dec)
+	xq.Partial(true)
+	xq.Namespace(namespace)
+	xq.ForceList(forceList...)
+	return &xmlInputIter{dec: dec, xq: xq, ir: ir, fname: fname}
 }
 
 func (i *xmlInputIter) Next() (any, bool) {
 	if i.err != nil {
 		return nil, false
 	}
-	mxj.CustomDecoder = i.dec
-	m, err := mxj.NewMapXmlReader(i.ir, true)
+	m, err := i.xq.ParseXml(i.ir, true)
 	if err != nil {
 		return nil, false
 	}
-	var v map[string]interface{}
-	v = m
-	return v, true
+	return m, true
 }
 
 func (i *xmlInputIter) Close() error {
