@@ -38,13 +38,13 @@ func (m *xmlMarshaller) marshal(v any, w io.Writer) error {
 	xq := xqml.NewXQML()
 	if i := m.indent; i != nil {
 		indentStr := strings.Repeat(" ", *m.indent)
-		xq.Indent(indentStr)
+		xq.SetWriteIndent(indentStr)
 	}
 	if m.root != "" {
-		xq.Root(m.root)
+		xq.SetWriteRoot(m.root)
 	}
 	if m.element != "" {
-		xq.Element(m.element)
+		xq.SetWriteElement(m.element)
 	}
 	return xq.WriteXml(w, v)
 }

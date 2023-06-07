@@ -327,7 +327,7 @@ func newXMLInputIter(r io.Reader, fname string, attributes bool, namespaces bool
 	xq.SetReadDecoder(dec)
 	xq.SetReadPartials(true)
 	xq.SetReadAttributes(attributes)
-	xq.SetReadNamespace(namespaces)
+	xq.SetReadNamespaces(namespaces)
 	xq.SetReadForceList(forceList...)
 	xq.SetReadHtml(html)
 	return &xmlInputIter{dec: dec, xq: xq, ir: ir, fname: fname}
