@@ -332,7 +332,12 @@ func (i *xmlInputIter) Next() (any, bool) {
 	var v any
 	err := i.dec.Decode(&v)
 	if err != nil {
-		return nil, false
+		if err == io.EOF {
+			i.err = err
+			return nil, false
+		}
+		i.err = err
+		return i.err, true
 	}
 	return v, true
 }
