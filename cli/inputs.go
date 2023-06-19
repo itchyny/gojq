@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"encoding/xml"
 	"io"
 	"os"
 	"strings"
@@ -308,8 +307,7 @@ func (i *streamInputIter) Name() string {
 }
 
 type xmlInputIter struct {
-	dec   *xml.Decoder
-	xq    *xqml.Xqml
+	dec   *xqml.Decoder
 	ir    *inputReader
 	fname string
 	err   error
@@ -317,31 +315,26 @@ type xmlInputIter struct {
 
 func newXMLInputIter(r io.Reader, fname string, attributes bool, namespaces bool, forceList []string, html bool) inputIter {
 	ir := newInputReader(r)
-	dec := xml.NewDecoder(ir)
-	dec.Strict = false
-	dec.Entity = xml.HTMLEntity
-	if html {
-		dec.AutoClose = xml.HTMLAutoClose
-	}
-	xq := xqml.NewXQML()
-	xq.SetReadDecoder(dec)
-	xq.SetReadPartials(true)
-	xq.SetReadAttributes(attributes)
-	xq.SetReadNamespaces(namespaces)
-	xq.SetReadForceList(forceList...)
-	xq.SetReadHtml(html)
-	return &xmlInputIter{dec: dec, xq: xq, ir: ir, fname: fname}
+	dec := xqml.NewDecoder(ir)
+	dec.Attributes = attributes
+	dec.Namespaces = namespaces
+	dec.ForceList = forceList
+	dec.Html = html
+	dec.Cast = true
+	dec.Partials = true
+	return &xmlInputIter{dec: dec, ir: ir, fname: fname}
 }
 
 func (i *xmlInputIter) Next() (any, bool) {
 	if i.err != nil {
 		return nil, false
 	}
-	m, err := i.xq.ParseXml(i.ir, true)
+	var v any
+	err := i.dec.Decode(&v)
 	if err != nil {
 		return nil, false
 	}
-	return m, true
+	return v, true
 }
 
 func (i *xmlInputIter) Close() error {

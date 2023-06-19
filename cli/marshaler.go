@@ -35,18 +35,18 @@ type xmlMarshaller struct {
 }
 
 func (m *xmlMarshaller) marshal(v any, w io.Writer) error {
-	xq := xqml.NewXQML()
+	enc := xqml.NewEncoder(w)
 	if i := m.indent; i != nil {
-		indentStr := strings.Repeat(" ", *m.indent)
-		xq.SetWriteIndent(indentStr)
+		indent := strings.Repeat(" ", *m.indent)
+		enc.Indent = indent
 	}
 	if m.root != "" {
-		xq.SetWriteRoot(m.root)
+		enc.Root = m.root
 	}
 	if m.element != "" {
-		xq.SetWriteElement(m.element)
+		enc.Element = m.element
 	}
-	return xq.WriteXml(w, v)
+	return enc.Encode(v)
 }
 
 func yamlFormatter(indent *int) *yamlMarshaler {
