@@ -46,6 +46,7 @@ type cli struct {
 	outputYAML    bool
 	inputRaw      bool
 	inputStream   bool
+	inputJSON     bool
 	inputXML      bool
 	inputYAML     bool
 	inputSlurp    bool
@@ -77,6 +78,7 @@ type flagopts struct {
 	InputNull     bool              `short:"n" long:"null-input" description:"use null as input value"`
 	InputRaw      bool              `short:"R" long:"raw-input" description:"read input as raw strings"`
 	InputStream   bool              `long:"stream" description:"parse input in stream fashion"`
+	InputJSON     bool              `short:"J" long:"json-input" description:"read input as JSON format"`
 	InputXML      bool              `short:"X" long:"xml-input" description:"read input as XML format"`
 	StripAttrsXML bool              `long:"xml-no-attributes" description:"remove attributes from XML elements"`
 	StripSpaceXML bool              `long:"xml-no-namespaces" description:"remove namespace from XML elements and attributes"`
@@ -171,8 +173,8 @@ Usage:
 	}
 	cli.inputRaw, cli.inputStream, cli.inputYAML, cli.inputSlurp =
 		opts.InputRaw, opts.InputStream, opts.InputYAML, opts.InputSlurp
-	cli.inputXML, cli.stripAttrsXML, cli.stripSpaceXML, cli.forceListXML, cli.rootXML, cli.elementXML, cli.htmlXML =
-		opts.InputXML, opts.StripAttrsXML, opts.StripSpaceXML, opts.ForceListXML, opts.RootXML, opts.ElementXML, opts.HtmlXML
+	cli.inputJSON, cli.inputXML, cli.stripAttrsXML, cli.stripSpaceXML, cli.forceListXML, cli.rootXML, cli.elementXML, cli.htmlXML =
+		opts.InputJSON, opts.InputXML, opts.StripAttrsXML, opts.StripSpaceXML, opts.ForceListXML, opts.RootXML, opts.ElementXML, opts.HtmlXML
 	for k, v := range opts.Arg {
 		cli.argnames = append(cli.argnames, "$"+k)
 		cli.argvalues = append(cli.argvalues, v)
@@ -334,6 +336,8 @@ func (cli *cli) createInputIter(args []string) (iter inputIter) {
 		}
 	case cli.inputStream:
 		newIter = newStreamInputIter
+	case cli.inputJSON:
+		newIter = newJSONInputIter
 	case cli.inputXML:
 		newIter = func(r io.Reader, fname string) inputIter {
 			return newXMLInputIter(r, fname, !cli.stripAttrsXML, !cli.stripSpaceXML, cli.forceListXML, cli.htmlXML)
@@ -341,7 +345,19 @@ func (cli *cli) createInputIter(args []string) (iter inputIter) {
 	case cli.inputYAML:
 		newIter = newYAMLInputIter
 	default:
-		newIter = newJSONInputIter
+		// automatically detect between JSON / YAML / XML format
+		newIter = func(r io.Reader, fname string) inputIter {
+			rd, f := detectInputType(r, 100)
+			switch f {
+			case JsonFormat:
+				return newJSONInputIter(rd, fname)
+			case YamlFormat:
+				return newYAMLInputIter(rd, fname)
+			case XmlFormat:
+				return newXMLInputIter(rd, fname, !cli.stripAttrsXML, !cli.stripSpaceXML, cli.forceListXML, cli.htmlXML)
+			}
+			return newJSONInputIter(rd, fname)
+		}
 	}
 	if cli.inputSlurp {
 		defer func() {

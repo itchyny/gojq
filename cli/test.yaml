@@ -7381,7 +7381,7 @@
       "abcde": :★★★★★★★★★★★★★★★
   error: |
     invalid json: <stdin>:3
-        3 |   "abcde": :★★★★★★★★★★★★
+        3 |   "abcde": :★★★★★★★★★★★★★★★
                        ^  invalid character ':' looking for beginning of value
 
 - name: json file not found error
