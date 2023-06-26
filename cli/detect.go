@@ -74,7 +74,16 @@ loop:
 					return result(YamlFormat)
 				case '<':
 					return result(XmlFormat)
-				case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.':
+				case '-':
+					// yaml if ---
+					for _, c = range []byte("--") {
+						b, err = readByte()
+						if err != nil || b != c {
+							return result(JsonFormat)
+						}
+					}
+					return result(YamlFormat)
+				case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.':
 					return result(JsonFormat)
 				case '"':
 					// string can be either a json/yaml text
