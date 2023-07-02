@@ -2,6 +2,7 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -242,8 +243,8 @@ Usage:
 		gojq.WithFunction("debug", 0, 0, cli.funcDebug),
 		gojq.WithFunction("stderr", 0, 0, cli.funcStderr),
 		gojq.WithFunction("input_filename", 0, 0,
-			func(iter inputIter) func(any, []any) any {
-				return func(any, []any) any {
+			func(iter inputIter) func(context.Context, any, []any) any {
+				return func(context.Context, any, []any) any {
 					if fname := iter.Name(); fname != "" && (len(args) > 0 || !opts.InputNull) {
 						return fname
 					}
@@ -408,7 +409,7 @@ func (cli *cli) createMarshaler() marshaler {
 	return f
 }
 
-func (cli *cli) funcDebug(v any, _ []any) any {
+func (cli *cli) funcDebug(_ context.Context, v any, _ []any) any {
 	if err := newEncoder(false, 0).marshal([]any{"DEBUG:", v}, cli.errStream); err != nil {
 		return err
 	}
@@ -418,7 +419,7 @@ func (cli *cli) funcDebug(v any, _ []any) any {
 	return v
 }
 
-func (cli *cli) funcStderr(v any, _ []any) any {
+func (cli *cli) funcStderr(_ context.Context, v any, _ []any) any {
 	if err := newEncoder(false, 0).marshal(v, cli.errStream); err != nil {
 		return err
 	}
