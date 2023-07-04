@@ -28,6 +28,7 @@ func TestDetectInputType(t *testing.T) {
 		testDetectInputType(t, s+"1", JsonFormat)
 		testDetectInputType(t, s+"-1", JsonFormat)
 		testDetectInputType(t, s+"-1e3", JsonFormat)
+		testDetectInputType(t, s+"- ", YamlFormat)
 		testDetectInputType(t, s+"--", JsonFormat)
 		testDetectInputType(t, s+"---", YamlFormat)
 		testDetectInputType(t, s+`"hello"`, JsonFormat)
