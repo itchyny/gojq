@@ -433,11 +433,8 @@ func deepMergeObjects(l, r map[string]any) any {
 }
 
 func repeatString(s string, n float64) any {
-	if n <= 0.0 || len(s) > 0 && n > float64(0x10000000/len(s)) || math.IsNaN(n) {
+	if n < 0.0 || len(s) > 0 && n > float64(0x10000000/len(s)) || math.IsNaN(n) {
 		return nil
-	}
-	if int(n) < 1 {
-		return s
 	}
 	return strings.Repeat(s, int(n))
 }

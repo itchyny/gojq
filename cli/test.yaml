@@ -2636,8 +2636,8 @@
   expected: |
     null
     null
-    null
-    "abc"
+    ""
+    ""
     "abc"
     "abc"
     "abcabcabc"
@@ -2657,7 +2657,7 @@
   expected: |
     null
     null
-    null
+    ""
     ""
     ""
     ""
