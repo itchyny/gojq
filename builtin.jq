@@ -37,7 +37,6 @@ def strings: select(type == "string");
 def nulls: select(. == null);
 def values: select(. != null);
 def scalars: select(type | . != "array" and . != "object");
-def leaf_paths: paths(scalars);
 
 def inside(xs): . as $x | xs | contains($x);
 def combinations:

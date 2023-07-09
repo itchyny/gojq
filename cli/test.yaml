@@ -1518,17 +1518,6 @@
     [true,false,0,1,"","foo",[],[2,[]],{},{"foo":[]},4722366482869645213696]
     [null,true,false,0,1,"","foo",4722366482869645213696]
 
-- name: leaf_paths function
-  args:
-    - -c
-    - 'leaf_paths'
-  input: '[null,[],{},{"a":[1,[],{},true]},[3,[],1]]'
-  expected: |
-    [3,"a",0]
-    [3,"a",3]
-    [4,0]
-    [4,2]
-
 - name: recurse/0 function
   args:
     - -c
