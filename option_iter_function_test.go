@@ -1,6 +1,7 @@
 package gojq_test
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -28,7 +29,7 @@ func ExampleWithIterFunction() {
 	}
 	code, err := gojq.Compile(
 		query,
-		gojq.WithIterFunction("f", 2, 2, func(_ any, xs []any) gojq.Iter {
+		gojq.WithIterFunction("f", 2, 2, func(_ context.Context, _ any, xs []any) gojq.Iter {
 			if x, ok := xs[0].(int); ok {
 				if y, ok := xs[1].(int); ok {
 					return &rangeIter{x, y}

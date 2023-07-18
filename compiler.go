@@ -804,8 +804,8 @@ func (c *compiler) compileBreak(label string) error {
 	return nil
 }
 
-func funcBreak(label string) func(any, []any) any {
-	return func(v any, _ []any) any {
+func funcBreak(label string) func(context.Context, any, []any) any {
+	return func(_ context.Context, v any, _ []any) any {
 		return &breakError{label, v}
 	}
 }

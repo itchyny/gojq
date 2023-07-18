@@ -1,6 +1,9 @@
 package gojq
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // CompilerOption is a compiler option.
 type CompilerOption func(*compiler)
@@ -39,7 +42,7 @@ func WithVariables(variables []string) CompilerOption {
 // function. If you want to emit multiple values, call the empty function,
 // accept a filter for its argument, or call another built-in function, then
 // use LoadInitModules of the module loader.
-func WithFunction(name string, minarity, maxarity int, f func(any, []any) any) CompilerOption {
+func WithFunction(name string, minarity, maxarity int, f func(context.Context, any, []any) any) CompilerOption {
 	return withFunction(name, minarity, maxarity, false, f)
 }
 
@@ -48,15 +51,15 @@ func WithFunction(name string, minarity, maxarity int, f func(any, []any) any) C
 // returns an Iter to emit multiple values. You cannot define both iterator and
 // non-iterator functions of the same name (with possibly different arities).
 // See also [NewIter], which can be used to convert values or an error to an Iter.
-func WithIterFunction(name string, minarity, maxarity int, f func(any, []any) Iter) CompilerOption {
+func WithIterFunction(name string, minarity, maxarity int, f func(context.Context, any, []any) Iter) CompilerOption {
 	return withFunction(name, minarity, maxarity, true,
-		func(v any, args []any) any {
-			return f(v, args)
+		func(ctx context.Context, v any, args []any) any {
+			return f(ctx, v, args)
 		},
 	)
 }
 
-func withFunction(name string, minarity, maxarity int, iter bool, f func(any, []any) any) CompilerOption {
+func withFunction(name string, minarity, maxarity int, iter bool, f func(context.Context, any, []any) any) CompilerOption {
 	if !(0 <= minarity && minarity <= maxarity && maxarity <= 30) {
 		panic(fmt.Sprintf("invalid arity for %q: %d, %d", name, minarity, maxarity))
 	}
@@ -71,11 +74,11 @@ func withFunction(name string, minarity, maxarity int, iter bool, f func(any, []
 			}
 			c.customFuncs[name] = function{
 				argcount | fn.argcount, iter,
-				func(x any, xs []any) any {
+				func(ctx context.Context, x any, xs []any) any {
 					if argcount&(1<<len(xs)) != 0 {
-						return f(x, xs)
+						return f(ctx, x, xs)
 					}
-					return fn.callback(x, xs)
+					return fn.callback(ctx, x, xs)
 				},
 			}
 		} else {

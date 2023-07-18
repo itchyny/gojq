@@ -1,6 +1,7 @@
 package gojq_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -31,7 +32,7 @@ func ExampleWithFunction() {
 	}
 	code, err := gojq.Compile(
 		query,
-		gojq.WithFunction("f", 0, 1, func(x any, xs []any) any {
+		gojq.WithFunction("f", 0, 1, func(_ context.Context, x any, xs []any) any {
 			if x, ok := toFloat(x); ok {
 				if len(xs) == 1 {
 					if y, ok := toFloat(xs[0]); ok {

@@ -189,7 +189,7 @@ loop:
 				for i := 0; i < argcnt; i++ {
 					args[i] = env.pop()
 				}
-				w := v[0].(func(any, []any) any)(x, args)
+				w := v[0].(func(context.Context, any, []any) any)(env.ctx, x, args)
 				if e, ok := w.(error); ok {
 					if er, ok := e.(*exitCodeError); !ok || er.value != nil || er.halt {
 						err = e
