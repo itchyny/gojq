@@ -5217,59 +5217,49 @@
 
 - name: debug function
   args:
+    - -c
     - 'recurse(debug|.[]?)'
   input: |
     [{}]
-    [1,{"a":2}]
+    [1,{"a":[2,"b"]}]
   expected: |
-    [
-      {}
-    ]
+    [{}]
     {}
-    [
-      1,
-      {
-        "a": 2
-      }
-    ]
+    [1,{"a":[2,"b"]}]
     1
-    {
-      "a": 2
-    }
+    {"a":[2,"b"]}
+    [2,"b"]
     2
+    "b"
   error: |
     ["DEBUG:",[{}]]
     ["DEBUG:",{}]
-    ["DEBUG:",[1,{"a":2}]]
+    ["DEBUG:",[1,{"a":[2,"b"]}]]
     ["DEBUG:",1]
-    ["DEBUG:",{"a":2}]
+    ["DEBUG:",{"a":[2,"b"]}]
+    ["DEBUG:",[2,"b"]]
     ["DEBUG:",2]
+    ["DEBUG:","b"]
 
 - name: stderr function
   args:
+    - -c
     - 'recurse(stderr|.[]?)'
   input: |
     [{}]
-    [1,{"a":2}]
+    [1,{"a":[2,"b"]}]
     "DEBUG:"
   expected: |
-    [
-      {}
-    ]
+    [{}]
     {}
-    [
-      1,
-      {
-        "a": 2
-      }
-    ]
+    [1,{"a":[2,"b"]}]
     1
-    {
-      "a": 2
-    }
+    {"a":[2,"b"]}
+    [2,"b"]
     2
+    "b"
     "DEBUG:"
-  error: '[{}]{}[1,{"a":2}]1{"a":2}2"DEBUG:"'
+  error: '[{}]{}[1,{"a":[2,"b"]}]1{"a":[2,"b"]}[2,"b"]2bDEBUG:'
 
 - name: debug and stderr in builtins
   args:
