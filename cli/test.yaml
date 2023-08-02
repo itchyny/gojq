@@ -2567,33 +2567,42 @@
 
 - name: zero division
   args:
-    - '.[] / .[]'
+    - -c
+    - '.[] as $x | .[] as $y | [$x, $y, try ($x / $y) catch .]'
   input: '[1, 0]'
   expected: |
-    1
-    0
-  error: |
-    cannot divide number (1) by: number (0)
+    [1,1,1]
+    [1,0,"cannot divide number (1) by: number (0)"]
+    [0,1,0]
+    [0,0,"cannot divide number (0) by: number (0)"]
 
 - name: zero modulo
   args:
-    - '.[] % .[]'
+    - -c
+    - '.[] as $x | .[] as $y | [$x, $y, try ($x % $y) catch .]'
   input: '[1, 0]'
   expected: |
-    0
-    0
-  error: |
-    cannot modulo number (1) by: number (0)
+    [1,1,0]
+    [1,0,"cannot modulo number (1) by: number (0)"]
+    [0,1,0]
+    [0,0,"cannot modulo number (0) by: number (0)"]
 
 - name: modulo with near 0.0
   args:
-    - '.[] % .[]'
-  input: '[1, 0.9]'
-  expected: |
-    0
-    0
+    - '1 % 0.9'
+  input: 'null'
   error: |
     cannot modulo number (1) by: number (0.9)
+
+- name: modulo with nan
+  args:
+    - '(1, nan) % (1, nan) | isnan'
+  input: 'null'
+  expected: |
+    false
+    true
+    true
+    true
 
 - name: zero division and modulo for large number
   args:
@@ -3882,7 +3891,7 @@
 - name: significand function
   args:
     - -c
-    - '(range(10)|tan),0/0 | significand | . * 100000 | floor / 100000'
+    - '(range(10)|tan),nan | significand | . * 100000 | floor / 100000'
   input: '0'
   expected: |
     0
@@ -4070,11 +4079,9 @@
 - name: nan and isnan functions
   args:
     - -c
-    - 'nan, 0/0, 0/0, infinite-infinite, infinite/infinite, 0, null | [., .+1, isnan]'
+    - 'nan, infinite-infinite, infinite/infinite, 0, null | [., .+1, isnan]'
   input: 'null'
   expected: |
-    [null,null,true]
-    [null,null,true]
     [null,null,true]
     [null,null,true]
     [null,null,true]
@@ -5422,7 +5429,7 @@
 
 - name: halt_error/0 function on nan
   args:
-    - '0/0 | halt_error'
+    - 'nan | halt_error'
   input: 'null'
   error: |
     null
