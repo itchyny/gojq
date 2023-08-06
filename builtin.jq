@@ -51,7 +51,7 @@ def walk(f):
     if type == "array" then
       map(_walk)
     elif type == "object" then
-      map_values(last(_walk))
+      map_values(_walk)
     end | f;
   _walk;
 
