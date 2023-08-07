@@ -275,7 +275,7 @@ Usage:
 }
 
 func listDefaultModulePaths() []string {
-	modulePaths := []string{"", "../lib/gojq", "lib"}
+	modulePaths := []string{"", "../lib/gojq", "../lib"}
 	if executable, err := os.Executable(); err == nil {
 		if executable, err := filepath.EvalSymlinks(executable); err == nil {
 			origin := filepath.Dir(executable)
