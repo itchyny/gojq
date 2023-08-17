@@ -963,7 +963,19 @@ func funcIndex2(_, v, x any) any {
 		case map[string]any:
 			return v[x]
 		default:
-			return &expectedObjectError{v}
+			value := reflect.ValueOf(v)
+			switch value.Kind() {
+			case reflect.Ptr:
+				return funcIndex2(nil, value.Elem().Interface(), x)
+			case reflect.Struct:
+				f := value.FieldByName(x)
+				if !f.IsValid() {
+					return nil
+				}
+				return f.Interface()
+			default:
+				return &expectedObjectError{v}
+			}
 		}
 	case int, float64, *big.Int:
 		i, _ := toInt(x)

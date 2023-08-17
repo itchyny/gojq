@@ -3,6 +3,7 @@ package gojq
 import (
 	"fmt"
 	"math/big"
+	"reflect"
 )
 
 // TypeOf returns the jq-flavored type name of v.
@@ -23,7 +24,19 @@ func TypeOf(v any) string {
 		return "array"
 	case map[string]any:
 		return "object"
+	case fmt.Stringer:
+		return "stringer"
 	default:
-		panic(fmt.Sprintf("invalid type: %[1]T (%[1]v)", v))
+		t := reflect.TypeOf(v)
+		switch t.Kind() {
+		case reflect.Ptr:
+			return TypeOf(reflect.ValueOf(t).Elem().Interface())
+		case reflect.Struct:
+			return "struct"
+		case reflect.Slice:
+			return "array"
+		default:
+			panic(fmt.Sprintf("invalid type: %[1]T (%[1]v)", v))
+		}
 	}
 }

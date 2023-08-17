@@ -2,10 +2,12 @@ package gojq
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math"
 	"math/big"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -68,8 +70,20 @@ func (e *encoder) encode(v any) {
 		e.encodeArray(v)
 	case map[string]any:
 		e.encodeObject(v)
+	case fmt.Stringer:
+		e.encodeString(v.String())
 	default:
-		panic(fmt.Sprintf("invalid type: %[1]T (%[1]v)", v))
+		value := reflect.ValueOf(v)
+		switch value.Kind() {
+		case reflect.Ptr:
+			e.encode(value.Elem().Interface())
+		case reflect.Struct:
+			e.encodeStruct(value)
+		case reflect.Slice:
+			e.encodeValueSlice(value)
+		default:
+			panic(fmt.Sprintf("invalid type: %[1]T (%[1]v)", v))
+		}
 	}
 }
 
@@ -190,4 +204,21 @@ func (e *encoder) encodeObject(vs map[string]any) {
 		e.encode(kv.val)
 	}
 	e.w.WriteByte('}')
+}
+
+func (e *encoder) encodeStruct(vs reflect.Value) {
+	enc := json.NewEncoder(e.w)
+	enc.Encode(vs.Interface())
+}
+
+func (e *encoder) encodeValueSlice(vs reflect.Value) {
+	e.w.WriteByte('[')
+	for i := 0; i < vs.Len(); i++ {
+		if i > 0 {
+			e.w.WriteByte(',')
+		}
+		v := vs.Index(i).Interface()
+		e.encode(v)
+	}
+	e.w.WriteByte(']')
 }

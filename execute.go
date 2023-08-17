@@ -321,9 +321,26 @@ loop:
 				}
 				break loop
 			default:
-				err = &iteratorError{v}
-				env.push(emptyIter{})
-				break loop
+				value := reflect.ValueOf(v)
+				switch value.Kind() {
+				case reflect.Slice:
+					if !env.paths.empty() && env.expdepth == 0 && !env.pathIntact(v) {
+						err = &invalidPathIterError{v}
+						break loop
+					}
+					if value.Len() == 0 {
+						break loop
+					}
+					xs = make([]pathValue, value.Len())
+					for i := 0; i < value.Len(); i++ {
+						v := value.Index(i).Interface()
+						xs[i] = pathValue{path: i, value: v}
+					}
+				default:
+					err = &iteratorError{v}
+					env.push(emptyIter{})
+					break loop
+				}
 			}
 			if len(xs) > 1 {
 				env.push(xs[1:])
