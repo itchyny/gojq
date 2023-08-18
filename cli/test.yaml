@@ -1151,6 +1151,28 @@
     {"foo":2}
     {"foo":3}
 
+- name: abs function
+  args:
+    - 'abs'
+  input: |
+    0
+    42
+    -42
+    0.0
+    3.14
+    -3.14
+    4722366482869645213696
+    -4722366482869645213696
+  expected: |
+    0
+    42
+    42
+    0
+    3.14
+    3.14
+    4722366482869645213696
+    4722366482869645213696
+
 - name: length function
   args:
     - 'length'
@@ -1517,17 +1539,6 @@
     [null]
     [true,false,0,1,"","foo",[],[2,[]],{},{"foo":[]},4722366482869645213696]
     [null,true,false,0,1,"","foo",4722366482869645213696]
-
-- name: leaf_paths function
-  args:
-    - -c
-    - 'leaf_paths'
-  input: '[null,[],{},{"a":[1,[],{},true]},[3,[],1]]'
-  expected: |
-    [3,"a",0]
-    [3,"a",3]
-    [4,0]
-    [4,2]
 
 - name: recurse/0 function
   args:
@@ -2157,7 +2168,7 @@
   expected: |
     [1,0,2,0,3,0]
     0
-    {"x":0,"y":0,"z":0}
+    {"x":1,"y":2,"z":3}
     0
 
 - name: transpose function
@@ -2578,33 +2589,42 @@
 
 - name: zero division
   args:
-    - '.[] / .[]'
+    - -c
+    - '.[] as $x | .[] as $y | [$x, $y, try ($x / $y) catch .]'
   input: '[1, 0]'
   expected: |
-    1
-    0
-  error: |
-    cannot divide number (1) by: number (0)
+    [1,1,1]
+    [1,0,"cannot divide number (1) by: number (0)"]
+    [0,1,0]
+    [0,0,"cannot divide number (0) by: number (0)"]
 
 - name: zero modulo
   args:
-    - '.[] % .[]'
+    - -c
+    - '.[] as $x | .[] as $y | [$x, $y, try ($x % $y) catch .]'
   input: '[1, 0]'
   expected: |
-    0
-    0
-  error: |
-    cannot modulo number (1) by: number (0)
+    [1,1,0]
+    [1,0,"cannot modulo number (1) by: number (0)"]
+    [0,1,0]
+    [0,0,"cannot modulo number (0) by: number (0)"]
 
 - name: modulo with near 0.0
   args:
-    - '.[] % .[]'
-  input: '[1, 0.9]'
-  expected: |
-    0
-    0
+    - '1 % 0.9'
+  input: 'null'
   error: |
     cannot modulo number (1) by: number (0.9)
+
+- name: modulo with nan
+  args:
+    - '(1, nan) % (1, nan) | isnan'
+  input: 'null'
+  expected: |
+    false
+    true
+    true
+    true
 
 - name: zero division and modulo for large number
   args:
@@ -2647,8 +2667,8 @@
   expected: |
     null
     null
-    null
-    "abc"
+    ""
+    ""
     "abc"
     "abc"
     "abcabcabc"
@@ -2668,7 +2688,7 @@
   expected: |
     null
     null
-    null
+    ""
     ""
     ""
     ""
@@ -3893,7 +3913,7 @@
 - name: significand function
   args:
     - -c
-    - '(range(10)|tan),0/0 | significand | . * 100000 | floor / 100000'
+    - '(range(10)|tan),nan | significand | . * 100000 | floor / 100000'
   input: '0'
   expected: |
     0
@@ -4081,11 +4101,9 @@
 - name: nan and isnan functions
   args:
     - -c
-    - 'nan, 0/0, 0/0, infinite-infinite, infinite/infinite, 0, null | [., .+1, isnan]'
+    - 'nan, infinite-infinite, infinite/infinite, 0, null | [., .+1, isnan]'
   input: 'null'
   expected: |
-    [null,null,true]
-    [null,null,true]
     [null,null,true]
     [null,null,true]
     [null,null,true]
@@ -5221,59 +5239,49 @@
 
 - name: debug function
   args:
+    - -c
     - 'recurse(debug|.[]?)'
   input: |
     [{}]
-    [1,{"a":2}]
+    [1,{"a":[2,"b"]}]
   expected: |
-    [
-      {}
-    ]
+    [{}]
     {}
-    [
-      1,
-      {
-        "a": 2
-      }
-    ]
+    [1,{"a":[2,"b"]}]
     1
-    {
-      "a": 2
-    }
+    {"a":[2,"b"]}
+    [2,"b"]
     2
+    "b"
   error: |
     ["DEBUG:",[{}]]
     ["DEBUG:",{}]
-    ["DEBUG:",[1,{"a":2}]]
+    ["DEBUG:",[1,{"a":[2,"b"]}]]
     ["DEBUG:",1]
-    ["DEBUG:",{"a":2}]
+    ["DEBUG:",{"a":[2,"b"]}]
+    ["DEBUG:",[2,"b"]]
     ["DEBUG:",2]
+    ["DEBUG:","b"]
 
 - name: stderr function
   args:
+    - -c
     - 'recurse(stderr|.[]?)'
   input: |
     [{}]
-    [1,{"a":2}]
+    [1,{"a":[2,"b"]}]
     "DEBUG:"
   expected: |
-    [
-      {}
-    ]
+    [{}]
     {}
-    [
-      1,
-      {
-        "a": 2
-      }
-    ]
+    [1,{"a":[2,"b"]}]
     1
-    {
-      "a": 2
-    }
+    {"a":[2,"b"]}
+    [2,"b"]
     2
+    "b"
     "DEBUG:"
-  error: '[{}]{}[1,{"a":2}]1{"a":2}2"DEBUG:"'
+  error: '[{}]{}[1,{"a":[2,"b"]}]1{"a":[2,"b"]}[2,"b"]2bDEBUG:'
 
 - name: debug and stderr in builtins
   args:
@@ -5433,7 +5441,7 @@
 
 - name: halt_error/0 function on nan
   args:
-    - '0/0 | halt_error'
+    - 'nan | halt_error'
   input: 'null'
   error: |
     null

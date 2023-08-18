@@ -297,7 +297,7 @@ Usage:
 }
 
 func listDefaultModulePaths() []string {
-	modulePaths := []string{"", "../lib/gojq", "lib"}
+	modulePaths := []string{"", "../lib/gojq", "../lib"}
 	if executable, err := os.Executable(); err == nil {
 		if executable, err := filepath.EvalSymlinks(executable); err == nil {
 			origin := filepath.Dir(executable)
@@ -452,7 +452,8 @@ func (cli *cli) createMarshaler() marshaler {
 }
 
 func (cli *cli) funcDebug(v any, _ []any) any {
-	if err := newEncoder(false, 0).marshal([]any{"DEBUG:", v}, cli.errStream); err != nil {
+	if err := newEncoder(false, 0).
+		marshal([]any{"DEBUG:", v}, cli.errStream); err != nil {
 		return err
 	}
 	if _, err := cli.errStream.Write([]byte{'\n'}); err != nil {
@@ -462,7 +463,8 @@ func (cli *cli) funcDebug(v any, _ []any) any {
 }
 
 func (cli *cli) funcStderr(v any, _ []any) any {
-	if err := newEncoder(false, 0).marshal(v, cli.errStream); err != nil {
+	if err := (&rawMarshaler{newEncoder(false, 0)}).
+		marshal(v, cli.errStream); err != nil {
 		return err
 	}
 	return v

@@ -433,11 +433,11 @@ func deepMergeObjects(l, r map[string]any) any {
 }
 
 func repeatString(s string, n float64) any {
-	if n <= 0.0 || len(s) > 0 && n > float64(0x10000000/len(s)) || math.IsNaN(n) {
+	if n < 0.0 || len(s) > 0 && n > float64(0x10000000/len(s)) || math.IsNaN(n) {
 		return nil
 	}
-	if int(n) < 1 {
-		return s
+	if s == "" {
+		return ""
 	}
 	return strings.Repeat(s, int(n))
 }
@@ -446,9 +446,6 @@ func funcOpDiv(_, l, r any) any {
 	return binopTypeSwitch(l, r,
 		func(l, r int) any {
 			if r == 0 {
-				if l == 0 {
-					return math.NaN()
-				}
 				return &zeroDivisionError{l, r}
 			}
 			if l%r == 0 {
@@ -458,18 +455,12 @@ func funcOpDiv(_, l, r any) any {
 		},
 		func(l, r float64) any {
 			if r == 0.0 {
-				if l == 0.0 {
-					return math.NaN()
-				}
 				return &zeroDivisionError{l, r}
 			}
 			return l / r
 		},
 		func(l, r *big.Int) any {
 			if r.Sign() == 0 {
-				if l.Sign() == 0 {
-					return math.NaN()
-				}
 				return &zeroDivisionError{l, r}
 			}
 			d, m := new(big.Int).DivMod(l, r, new(big.Int))
@@ -507,6 +498,9 @@ func funcOpMod(_, l, r any) any {
 			ri := floatToInt(r)
 			if ri == 0 {
 				return &zeroModuloError{l, r}
+			}
+			if math.IsNaN(l) || math.IsNaN(r) {
+				return math.NaN()
 			}
 			return floatToInt(l) % ri
 		},
