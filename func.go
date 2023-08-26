@@ -277,11 +277,35 @@ func mathFunc3(name string, f func(_, _, _ float64) float64) function {
 
 func funcAbs(v any) any {
 	switch v := v.(type) {
+	case uint, uint8, uint16, uint32, uint64:
+		return v
 	case int:
 		if v >= 0 {
 			return v
 		}
 		return -v
+	case int8:
+		if v >= 0 {
+			return v
+		}
+		return -v
+	case int16:
+		if v >= 0 {
+			return v
+		}
+		return -v
+	case int32:
+		if v >= 0 {
+			return v
+		}
+		return -v
+	case int64:
+		if v >= 0 {
+			return v
+		}
+		return -v
+	case float32:
+		return float32(math.Abs(float64(v)))
 	case float64:
 		return math.Abs(v)
 	case *big.Int:
@@ -298,18 +322,8 @@ func funcLength(v any) any {
 	switch v := v.(type) {
 	case nil:
 		return 0
-	case int:
-		if v >= 0 {
-			return v
-		}
-		return -v
-	case float64:
-		return math.Abs(v)
-	case *big.Int:
-		if v.Sign() >= 0 {
-			return v
-		}
-		return new(big.Int).Abs(v)
+	case uint, uint8, uint16, uint32, uint64, int, int8, int16, int32, int64, float32, float64, *big.Int:
+		return funcAbs(v)
 	case string:
 		return len([]rune(v))
 	case []any:
@@ -512,7 +526,7 @@ func funcAdd(v any) any {
 
 func funcToNumber(v any) any {
 	switch v := v.(type) {
-	case int, float64, *big.Int:
+	case uint, uint8, uint16, uint32, uint64, int, int8, int16, int32, int64, float32, float64, *big.Int:
 		return v
 	case string:
 		if !newLexer(v).validNumber() {
@@ -977,7 +991,7 @@ func funcIndex2(_, v, x any) any {
 				return &expectedObjectError{v}
 			}
 		}
-	case int, float64, *big.Int:
+	case uint, uint8, uint16, uint32, uint64, int, int8, int16, int32, int64, float32, float64, *big.Int:
 		i, _ := toInt(x)
 		switch v := v.(type) {
 		case nil:
@@ -1180,7 +1194,7 @@ func (iter *rangeIter) Next() (any, bool) {
 func funcRange(_ any, xs []any) any {
 	for _, x := range xs {
 		switch x.(type) {
-		case int, float64, *big.Int:
+		case uint, uint8, uint16, uint32, uint64, int, int8, int16, int32, int64, float32, float64, *big.Int:
 		default:
 			return &func0TypeError{"range", x}
 		}
@@ -1360,7 +1374,7 @@ func funcJoin(v, x any) any {
 			} else {
 				ss[i] = "false"
 			}
-		case int, float64, *big.Int:
+		case uint, uint8, uint16, uint32, uint64, int, int8, int16, int32, int64, float32, float64, *big.Int:
 			ss[i] = jsonMarshal(v)
 		default:
 			return &joinTypeError{v}
@@ -1576,7 +1590,7 @@ func update(v any, path []any, n any, a allocator) (any, error) {
 		default:
 			return nil, &expectedObjectError{v}
 		}
-	case int, float64, *big.Int:
+	case uint, uint8, uint16, uint32, uint64, int, int8, int16, int32, int64, float32, float64, *big.Int:
 		i, _ := toInt(p)
 		switch v := v.(type) {
 		case nil:
@@ -2108,8 +2122,28 @@ func funcHaltError(v any, args []any) any {
 
 func toInt(x any) (int, bool) {
 	switch x := x.(type) {
+	case uint:
+		return int(x), true
+	case uint8:
+		return int(x), true
+	case uint16:
+		return int(x), true
+	case uint32:
+		return int(x), true
+	case uint64:
+		return int(x), true
 	case int:
 		return x, true
+	case int8:
+		return int(x), true
+	case int16:
+		return int(x), true
+	case int32:
+		return int(x), true
+	case int64:
+		return int(x), true
+	case float32:
+		return floatToInt(float64(x)), true
 	case float64:
 		return floatToInt(x), true
 	case *big.Int:
@@ -2139,7 +2173,27 @@ func floatToInt(x float64) int {
 
 func toFloat(x any) (float64, bool) {
 	switch x := x.(type) {
+	case uint:
+		return float64(x), true
+	case uint8:
+		return float64(x), true
+	case uint16:
+		return float64(x), true
+	case uint32:
+		return float64(x), true
+	case uint64:
+		return float64(x), true
 	case int:
+		return float64(x), true
+	case int8:
+		return float64(x), true
+	case int16:
+		return float64(x), true
+	case int32:
+		return float64(x), true
+	case int64:
+		return float64(x), true
+	case float32:
 		return float64(x), true
 	case float64:
 		return x, true
