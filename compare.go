@@ -88,7 +88,7 @@ func typeIndex(v any) int {
 			return 1
 		}
 		return 2
-	case int, float64, *big.Int:
+	case uint, uint8, uint16, uint32, uint64, int, int8, int16, int32, int64, float32, float64, *big.Int:
 		return 3
 	case string:
 		return 4

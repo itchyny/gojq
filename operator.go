@@ -217,20 +217,78 @@ func binopTypeSwitch(
 	callbackMaps func(_, _ map[string]any) any,
 	fallback func(_, _ any) any) any {
 	switch l := l.(type) {
+	case uint:
+		return binopTypeSwitch(int(l), r, callbackInts, callbackFloats, callbackBigInts, callbackStrings, callbackArrays, callbackMaps, fallback)
+	case uint8:
+		return binopTypeSwitch(int(l), r, callbackInts, callbackFloats, callbackBigInts, callbackStrings, callbackArrays, callbackMaps, fallback)
+	case uint16:
+		return binopTypeSwitch(int(l), r, callbackInts, callbackFloats, callbackBigInts, callbackStrings, callbackArrays, callbackMaps, fallback)
+	case uint32:
+		return binopTypeSwitch(int(l), r, callbackInts, callbackFloats, callbackBigInts, callbackStrings, callbackArrays, callbackMaps, fallback)
+	// not supporting uint64, since it can't safely convert into int64, and adding a uint callback is a pain
 	case int:
 		switch r := r.(type) {
+		case uint:
+			return callbackInts(l, int(r))
+		case uint8:
+			return callbackInts(l, int(r))
+		case uint16:
+			return callbackInts(l, int(r))
+		case uint32:
+			return callbackInts(l, int(r))
+		// not supporting uint64, since it can't safely convert into int64, and adding a uint callback is a pain
 		case int:
 			return callbackInts(l, r)
+		case int8:
+			return callbackInts(l, int(r))
+		case int16:
+			return callbackInts(l, int(r))
+		case int32:
+			return callbackInts(l, int(r))
+		case int64:
+			return callbackInts(l, int(r))
+		case float32:
+			return callbackInts(l, int(r))
 		case float64:
-			return callbackFloats(float64(l), r)
+			return callbackInts(l, int(r))
 		case *big.Int:
 			return callbackBigInts(big.NewInt(int64(l)), r)
 		default:
 			return fallback(l, r)
 		}
+	case int8:
+		return binopTypeSwitch(int(l), r, callbackInts, callbackFloats, callbackBigInts, callbackStrings, callbackArrays, callbackMaps, fallback)
+	case int16:
+		return binopTypeSwitch(int(l), r, callbackInts, callbackFloats, callbackBigInts, callbackStrings, callbackArrays, callbackMaps, fallback)
+	case int32:
+		return binopTypeSwitch(int(l), r, callbackInts, callbackFloats, callbackBigInts, callbackStrings, callbackArrays, callbackMaps, fallback)
+	case int64:
+		return binopTypeSwitch(int(l), r, callbackInts, callbackFloats, callbackBigInts, callbackStrings, callbackArrays, callbackMaps, fallback)
+	case float32:
+		return binopTypeSwitch(int(l), r, callbackInts, callbackFloats, callbackBigInts, callbackStrings, callbackArrays, callbackMaps, fallback)
 	case float64:
 		switch r := r.(type) {
+		case uint:
+			return callbackFloats(l, float64(r))
+		case uint8:
+			return callbackFloats(l, float64(r))
+		case uint16:
+			return callbackFloats(l, float64(r))
+		case uint32:
+			return callbackFloats(l, float64(r))
+		case uint64:
+			return callbackFloats(l, float64(r))
 		case int:
+			return callbackFloats(l, float64(r))
+		case int8:
+			return callbackFloats(l, float64(r))
+		case int16:
+			return callbackFloats(l, float64(r))
+		case int32:
+			return callbackFloats(l, float64(r))
+		case int64:
+			return callbackFloats(l, float64(r))
+		case float32:
 			return callbackFloats(l, float64(r))
 		case float64:
 			return callbackFloats(l, r)
@@ -241,8 +299,38 @@ func binopTypeSwitch(
 		}
 	case *big.Int:
 		switch r := r.(type) {
+		case uint:
+			var b big.Int
+			b.SetUint64(uint64(r))
+			return callbackBigInts(l, &b)
+		case uint8:
+			var b big.Int
+			b.SetUint64(uint64(r))
+			return callbackBigInts(l, &b)
+		case uint16:
+			var b big.Int
+			b.SetUint64(uint64(r))
+			return callbackBigInts(l, &b)
+		case uint32:
+			var b big.Int
+			b.SetUint64(uint64(r))
+			return callbackBigInts(l, &b)
+		case uint64:
+			var b big.Int
+			b.SetUint64(r)
+			return callbackBigInts(l, &b)
 		case int:
 			return callbackBigInts(l, big.NewInt(int64(r)))
+		case int8:
+			return callbackBigInts(l, big.NewInt(int64(r)))
+		case int16:
+			return callbackBigInts(l, big.NewInt(int64(r)))
+		case int32:
+			return callbackBigInts(l, big.NewInt(int64(r)))
+		case int64:
+			return callbackBigInts(l, big.NewInt(r))
+		case float32:
+			return callbackFloats(bigToFloat(l), float64(r))
 		case float64:
 			return callbackFloats(bigToFloat(l), r)
 		case *big.Int:
@@ -278,9 +366,9 @@ func binopTypeSwitch(
 
 func funcOpPlus(v any) any {
 	switch v := v.(type) {
-	case int:
+	case uint, uint8, uint16, uint32, uint64, int, int8, int16, int32, int64:
 		return v
-	case float64:
+	case float32, float64:
 		return v
 	case *big.Int:
 		return v
@@ -291,7 +379,27 @@ func funcOpPlus(v any) any {
 
 func funcOpNegate(v any) any {
 	switch v := v.(type) {
+	case uint:
+		return -v
+	case uint8:
+		return -v
+	case uint16:
+		return -v
+	case uint32:
+		return -v
+	case uint64:
+		return -v
 	case int:
+		return -v
+	case int8:
+		return -v
+	case int16:
+		return -v
+	case int32:
+		return -v
+	case int64:
+		return -v
+	case float32:
 		return -v
 	case float64:
 		return -v

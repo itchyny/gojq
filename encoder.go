@@ -58,8 +58,28 @@ func (e *encoder) encode(v any) {
 		} else {
 			e.w.WriteString("false")
 		}
+	case uint:
+		e.w.Write(strconv.AppendUint(e.buf[:0], uint64(v), 10))
+	case uint8:
+		e.w.Write(strconv.AppendUint(e.buf[:0], uint64(v), 10))
+	case uint16:
+		e.w.Write(strconv.AppendUint(e.buf[:0], uint64(v), 10))
+	case uint32:
+		e.w.Write(strconv.AppendUint(e.buf[:0], uint64(v), 10))
+	case uint64:
+		e.w.Write(strconv.AppendUint(e.buf[:0], v, 10))
 	case int:
 		e.w.Write(strconv.AppendInt(e.buf[:0], int64(v), 10))
+	case int8:
+		e.w.Write(strconv.AppendInt(e.buf[:0], int64(v), 10))
+	case int16:
+		e.w.Write(strconv.AppendInt(e.buf[:0], int64(v), 10))
+	case int32:
+		e.w.Write(strconv.AppendInt(e.buf[:0], int64(v), 10))
+	case int64:
+		e.w.Write(strconv.AppendInt(e.buf[:0], v, 10))
+	case float32:
+		e.encodeFloat64(float64(v))
 	case float64:
 		e.encodeFloat64(v)
 	case *big.Int:

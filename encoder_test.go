@@ -41,6 +41,50 @@ func TestMarshal(t *testing.T) {
 			value:    map[string]any{"x": []any{100}, "y": map[string]any{"z": 42}},
 			expected: `{"x":[100],"y":{"z":42}}`,
 		},
+		{
+			value:    []int{1, 2, 3},
+			expected: `[1,2,3]`,
+		},
+		{
+			value:    []int8{1, 2, 3},
+			expected: `[1,2,3]`,
+		},
+		{
+			value:    []int16{1, 2, 3},
+			expected: `[1,2,3]`,
+		},
+		{
+			value:    []int32{1, 2, 3},
+			expected: `[1,2,3]`,
+		},
+		{
+			value:    []int64{1, 2, 3},
+			expected: `[1,2,3]`,
+		},
+		{
+			value:    []uint{1, 2, 3},
+			expected: `[1,2,3]`,
+		},
+		{
+			value:    []uint8{1, 2, 3},
+			expected: `[1,2,3]`,
+		},
+		{
+			value:    []uint16{1, 2, 3},
+			expected: `[1,2,3]`,
+		},
+		{
+			value:    []uint32{1, 2, 3},
+			expected: `[1,2,3]`,
+		},
+		{
+			value:    []uint64{1, 2, 3},
+			expected: `[1,2,3]`,
+		},
+		{
+			value:    []bool{true, false},
+			expected: `[true,false]`,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("%v", tc.value), func(t *testing.T) {

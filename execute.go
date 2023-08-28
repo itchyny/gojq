@@ -444,6 +444,10 @@ func (env *env) pathIntact(v any) bool {
 			v, w := reflect.ValueOf(v), reflect.ValueOf(w)
 			return v.Pointer() == w.Pointer() && v.Len() == w.Len()
 		}
+	case float32: // this probably isn't necessary, but I'm not entirely sure what this function is doing
+		if w, ok := w.(float32); ok {
+			return v == w || math.IsNaN(float64(v)) && math.IsNaN(float64(w))
+		}
 	case float64:
 		if w, ok := w.(float64); ok {
 			return v == w || math.IsNaN(v) && math.IsNaN(w)
