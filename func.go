@@ -1,6 +1,7 @@
 package gojq
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -331,7 +332,20 @@ func funcLength(v any) any {
 	case map[string]any:
 		return len(v)
 	default:
-		return &func0TypeError{"length", v}
+		value := reflect.ValueOf(v)
+		switch value.Kind() {
+		case reflect.Ptr:
+			if value.IsNil() {
+				return 0
+			}
+			return funcLength(value.Elem().Interface())
+		case reflect.Struct:
+			return value.Type().NumField()
+		case reflect.Slice: // this an interface{} that happens to mask a []any
+			return value.Len()
+		default:
+			return &func0TypeError{"length", v}
+		}
 	}
 }
 
@@ -358,7 +372,29 @@ func funcKeys(v any) any {
 		}
 		return w
 	default:
-		return &func0TypeError{"keys", v}
+		value := reflect.ValueOf(v)
+		switch value.Kind() {
+		case reflect.Ptr:
+			if value.IsNil() {
+				return nil
+			}
+			return funcKeys(value.Elem().Interface())
+		case reflect.Struct:
+			typ := value.Type()
+			w := make([]any, typ.NumField())
+			for i := 0; i < typ.NumField(); i++ {
+				w[i] = typ.Field(i).Name
+			}
+			return w
+		case reflect.Slice: // this an interface{} that happens to mask a []any
+			w := make([]any, value.Len())
+			for i := 0; i < value.Len(); i++ {
+				w[i] = i
+			}
+			return w
+		default:
+			return &func0TypeError{"keys", v}
+		}
 	}
 }
 
@@ -384,7 +420,28 @@ func values(v any) ([]any, bool) {
 		}
 		return vs, true
 	default:
-		return nil, false
+		value := reflect.ValueOf(v)
+		switch value.Kind() {
+		case reflect.Ptr:
+			if value.IsNil() {
+				return nil, false
+			}
+			return values(value.Elem().Interface())
+		case reflect.Struct:
+			vs := make([]any, value.Type().NumField())
+			for i := 0; i < len(vs); i++ {
+				vs[i] = value.Field(i)
+			}
+			return vs, true
+		case reflect.Slice: // this an interface{} that happens to mask a []any
+			vs := make([]any, value.Len())
+			for i := 0; i < value.Len(); i++ {
+				vs[i] = value.Index(i)
+			}
+			return vs, true
+		default:
+			return nil, false
+		}
 	}
 }
 
@@ -607,13 +664,14 @@ func funcIndices(v, x any) any {
 	return indexFunc("indices", v, x, indices)
 }
 
-func indices(vs, xs []any) any {
+func indices(vs, xs reflect.Value) any {
 	rs := []any{}
-	if len(xs) == 0 {
+	if xs.Len() == 0 {
 		return rs
 	}
-	for i := 0; i <= len(vs)-len(xs); i++ {
-		if compare(vs[i:i+len(xs)], xs) == 0 {
+	xsi := xs.Interface()
+	for i := 0; i <= vs.Len()-xs.Len(); i++ {
+		if compare(vs.Slice(i, i+xs.Len()).Interface(), xsi) == 0 {
 			rs = append(rs, i)
 		}
 	}
@@ -621,12 +679,13 @@ func indices(vs, xs []any) any {
 }
 
 func funcIndex(v, x any) any {
-	return indexFunc("index", v, x, func(vs, xs []any) any {
-		if len(xs) == 0 {
+	return indexFunc("index", v, x, func(vs, xs reflect.Value) any {
+		if xs.Len() == 0 {
 			return nil
 		}
-		for i := 0; i <= len(vs)-len(xs); i++ {
-			if compare(vs[i:i+len(xs)], xs) == 0 {
+		xsi := xs.Interface()
+		for i := 0; i <= vs.Len()-xs.Len(); i++ {
+			if compare(vs.Slice(i, i+xs.Len()).Interface(), xsi) == 0 {
 				return i
 			}
 		}
@@ -635,12 +694,13 @@ func funcIndex(v, x any) any {
 }
 
 func funcRindex(v, x any) any {
-	return indexFunc("rindex", v, x, func(vs, xs []any) any {
-		if len(xs) == 0 {
+	return indexFunc("rindex", v, x, func(vs, xs reflect.Value) any {
+		if xs.Len() == 0 {
 			return nil
 		}
-		for i := len(vs) - len(xs); i >= 0; i-- {
-			if compare(vs[i:i+len(xs)], xs) == 0 {
+		xsi := xs.Interface()
+		for i := vs.Len() - xs.Len(); i >= 0; i-- {
+			if compare(vs.Slice(i, i+xs.Len()).Interface(), xsi) == 0 {
 				return i
 			}
 		}
@@ -648,24 +708,47 @@ func funcRindex(v, x any) any {
 	})
 }
 
-func indexFunc(name string, v, x any, f func(_, _ []any) any) any {
+func indexFunc(name string, v, x any, f func(_, _ reflect.Value) any) any {
 	switch v := v.(type) {
 	case nil:
 		return nil
 	case []any:
 		switch x := x.(type) {
 		case []any:
-			return f(v, x)
+			return f(reflect.ValueOf(v), reflect.ValueOf(x))
 		default:
-			return f(v, []any{x})
+			value := reflect.ValueOf(x)
+			switch value.Kind() {
+			case reflect.Slice: // this an interface{} that happens to mask a []any
+				return f(reflect.ValueOf(v), value)
+			default:
+				return f(reflect.ValueOf(v), reflect.ValueOf([]any{x}))
+			}
 		}
 	case string:
 		if x, ok := x.(string); ok {
-			return f(explode(v), explode(x))
+			return f(reflect.ValueOf(explode(v)), reflect.ValueOf(explode(x)))
 		}
 		return &func1TypeError{name, v, x}
 	default:
-		return &func1TypeError{name, v, x}
+		valuev := reflect.ValueOf(v)
+		switch valuev.Kind() {
+		case reflect.Slice: // this an interface{} that happens to mask a []any
+			switch x := x.(type) {
+			case []any:
+				return f(reflect.ValueOf(v), reflect.ValueOf(x))
+			default:
+				valuex := reflect.ValueOf(x)
+				switch valuex.Kind() {
+				case reflect.Slice: // this an interface{} that happens to mask a []any
+					return f(valuev, valuex)
+				default:
+					return f(valuev, reflect.ValueOf([]any{x}))
+				}
+			}
+		default:
+			return &func1TypeError{name, v, x}
+		}
 	}
 }
 
@@ -945,6 +1028,8 @@ func formatJoin(typ string, v any, sep string, escape func(string) string) any {
 
 func funcToBase64(v any) any {
 	switch x := funcToString(v).(type) {
+	case []byte:
+		return base64.StdEncoding.EncodeToString(x)
 	case string:
 		return base64.StdEncoding.EncodeToString([]byte(x))
 	default:
@@ -954,6 +1039,16 @@ func funcToBase64(v any) any {
 
 func funcToBase64d(v any) any {
 	switch x := funcToString(v).(type) {
+	case []byte:
+		if i := bytes.IndexRune(x, base64.StdPadding); i >= 0 {
+			x = x[:i]
+		}
+		y := make([]byte, base64.RawStdEncoding.EncodedLen(len(x)))
+		_, err := base64.RawStdEncoding.Decode(y, x)
+		if err != nil {
+			return &func0WrapError{"@base64d", v, err}
+		}
+		return string(y)
 	case string:
 		if i := strings.IndexRune(x, base64.StdPadding); i >= 0 {
 			x = x[:i]
@@ -980,6 +1075,9 @@ func funcIndex2(_, v, x any) any {
 			value := reflect.ValueOf(v)
 			switch value.Kind() {
 			case reflect.Ptr:
+				if value.IsNil() {
+					return nil
+				}
 				return funcIndex2(nil, value.Elem().Interface(), x)
 			case reflect.Struct:
 				f := value.FieldByName(x)
@@ -1001,16 +1099,28 @@ func funcIndex2(_, v, x any) any {
 		case string:
 			return indexString(v, i)
 		default:
-			return &expectedArrayError{v}
+			value := reflect.ValueOf(v)
+			switch value.Kind() {
+			case reflect.Slice: // this an interface{} that happens to mask a []any
+				return indexValue(value, i)
+			default:
+				return &expectedArrayError{v}
+			}
 		}
 	case []any:
 		switch v := v.(type) {
 		case nil:
 			return nil
 		case []any:
-			return indices(v, x)
+			return indices(reflect.ValueOf(v), reflect.ValueOf(x))
 		default:
-			return &expectedArrayError{v}
+			value := reflect.ValueOf(v)
+			switch value.Kind() {
+			case reflect.Slice: // this an interface{} that happens to mask a []any
+				return indices(value, reflect.ValueOf(x))
+			default:
+				return &expectedArrayError{v}
+			}
 		}
 	case map[string]any:
 		if v == nil {
@@ -1045,6 +1155,14 @@ func index(vs []any, i int) any {
 	return nil
 }
 
+func indexValue(vs reflect.Value, i int) any {
+	i = clampIndex(i, -1, vs.Len())
+	if 0 <= i && i < vs.Len() {
+		return vs.Index(i)
+	}
+	return nil
+}
+
 func indexString(s string, i int) any {
 	l := len([]rune(s))
 	i = clampIndex(i, -1, l)
@@ -1067,29 +1185,54 @@ func funcSlice(_, v, e, s any) (r any) {
 	case string:
 		return sliceString(v, e, s)
 	default:
-		return &expectedArrayError{v}
+		value := reflect.ValueOf(v)
+		switch value.Kind() {
+		case reflect.Slice: // this an interface{} that happens to mask a []any
+			return slice(v, e, s)
+		default:
+			return &expectedArrayError{v}
+		}
 	}
 }
 
-func slice(vs []any, e, s any) any {
+func slice(vs any, e, s any) any {
+	var length int
+	switch vs := vs.(type) {
+	case []any:
+		length = len(vs)
+	case reflect.Value:
+		length = vs.Len()
+	default:
+		return &expectedArrayError{vs}
+	}
+
 	var start, end int
 	if s != nil {
 		if i, ok := toInt(s); ok {
-			start = clampIndex(i, 0, len(vs))
+			start = clampIndex(i, 0, length)
 		} else {
 			return &arrayIndexNotNumberError{s}
 		}
 	}
 	if e != nil {
 		if i, ok := toInt(e); ok {
-			end = clampIndex(i, start, len(vs))
+
+			end = clampIndex(i, start, length)
 		} else {
 			return &arrayIndexNotNumberError{e}
 		}
 	} else {
-		end = len(vs)
+		end = length
 	}
-	return vs[start:end]
+
+	switch vs := vs.(type) {
+	case []any:
+		return vs[start:end]
+	case reflect.Value:
+		return vs.Slice(start, end).Interface()
+	default:
+		return &expectedArrayError{vs} // the compiler can't figure out this is unreachable, but it is
+	}
 }
 
 func sliceString(v string, e, s any) any {
@@ -1736,7 +1879,26 @@ func updateArraySlice(v []any, m map[string]any, path []any, n any, a allocator)
 		}
 		return w, nil
 	default:
-		return nil, &expectedArrayError{u}
+		value := reflect.ValueOf(u)
+		switch value.Kind() {
+		case reflect.Slice: // this an interface{} that happens to mask a []any
+			var w []any
+			if value.Len() == end-start && a.allocated(v) {
+				w = v
+			} else {
+				w = a.makeArray(len(v)-(end-start)+value.Len(), 0)
+				copy(w, v[:start])
+				copy(w[start+value.Len():], v[end:])
+			}
+			for i := 0; i < value.Len(); i++ {
+				if f := value.Field(i); f.CanInterface() {
+					w[start+i] = f.Interface()
+				}
+			}
+			return w, nil
+		default:
+			return nil, &expectedArrayError{u}
+		}
 	}
 }
 
@@ -1766,7 +1928,38 @@ func deleteEmpty(v any) any {
 		}
 		return v[:j]
 	default:
-		return v
+		value := reflect.ValueOf(v)
+		switch value.Kind() {
+		case reflect.Ptr:
+			if value.IsNil() {
+				return nil
+			}
+			return deleteEmpty(value.Elem().Interface())
+		case reflect.Struct:
+			typ := value.Type()
+			ret := make(map[string]any, typ.NumField())
+			for i := 0; i < typ.NumField(); i++ {
+				if f := value.Field(i); f.CanInterface() {
+					v := value.Field(i).Interface()
+					if v == struct{}{} {
+						continue
+					}
+					ret[typ.Name()] = deleteEmpty(v)
+				}
+			}
+			return ret
+		case reflect.Slice: // this an interface{} that happens to mask a []any
+			ret := make([]any, 0, value.Len())
+			for i := 0; i < value.Len(); i++ {
+				w := value.Index(i).Interface()
+				if w != struct{}{} {
+					ret = append(ret, deleteEmpty(w))
+				}
+			}
+			return ret
+		default:
+			return v
+		}
 	}
 }
 

@@ -3,6 +3,7 @@ package gojq
 import (
 	"math"
 	"math/big"
+	"reflect"
 )
 
 // Compare l and r, and returns jq-flavored comparison value.
@@ -82,7 +83,20 @@ func compareInt(l, r int) any {
 func typeIndex(v any) int {
 	switch v := v.(type) {
 	default:
-		return 0
+		value := reflect.ValueOf(v)
+		switch value.Kind() {
+		case reflect.Ptr:
+			if value.IsNil() {
+				return 0
+			}
+			return typeIndex(value.Elem().Interface())
+		case reflect.Struct:
+			return 6
+		case reflect.Slice: // this an interface{} that happens to mask a []any
+			return 5
+		default:
+			return 0
+		}
 	case bool:
 		if !v {
 			return 1

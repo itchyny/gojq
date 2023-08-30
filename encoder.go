@@ -11,7 +11,11 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
+
+	"github.com/modopayments/go-modo/v8"
+	"github.com/modopayments/go-modo/v8/uuid"
 )
 
 // Marshal returns the jq-flavored JSON encoding of v.
@@ -90,12 +94,26 @@ func (e *encoder) encode(v any) {
 		e.encodeArray(v)
 	case map[string]any:
 		e.encodeObject(v)
-	case fmt.Stringer:
+	case uuid.UUID:
 		e.encodeString(v.String())
+	case uuid.NullUUID:
+		if v.Valid {
+			e.encodeString(v.UUID.String())
+		} else {
+			e.w.WriteString("null")
+		}
+	case time.Time:
+		e.w.Write(strconv.AppendInt(e.buf[:0], v.Unix(), 10))
+	case modo.Timestamp:
+		e.w.Write(strconv.AppendInt(e.buf[:0], v.Unix(), 10))
 	default:
 		value := reflect.ValueOf(v)
 		switch value.Kind() {
 		case reflect.Ptr:
+			if value.IsNil() {
+				e.encode(nil)
+				break
+			}
 			e.encode(value.Elem().Interface())
 		case reflect.Struct:
 			e.encodeStruct(value)

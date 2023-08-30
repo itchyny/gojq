@@ -323,6 +323,32 @@ loop:
 			default:
 				value := reflect.ValueOf(v)
 				switch value.Kind() {
+				case reflect.Ptr:
+					if value.IsNil() {
+						break loop
+					}
+
+					pc--
+					env.push(value.Elem().Interface())
+					continue
+				case reflect.Struct:
+					if !env.paths.empty() && env.expdepth == 0 && !env.pathIntact(v) {
+						err = &invalidPathIterError{v}
+						break loop
+					}
+					typ := value.Type()
+					if typ.NumField() == 0 {
+						break loop
+					}
+					xs = make([]pathValue, typ.NumField())
+					for i := 0; i < typ.NumField(); i++ {
+						if f := value.Field(i); f.CanInterface() { // field may not be exported
+							xs[i] = pathValue{path: typ.Field(i).Name, value: f.Interface()}
+						}
+					}
+					sort.Slice(xs, func(i, j int) bool {
+						return xs[i].path.(string) < xs[j].path.(string)
+					})
 				case reflect.Slice: // this an interface{} that happens to mask a []any
 					if !env.paths.empty() && env.expdepth == 0 && !env.pathIntact(v) {
 						err = &invalidPathIterError{v}

@@ -346,7 +346,7 @@ func (cli *cli) process(iter inputIter, code *gojq.Code) error {
 			err = &emptyError{er}
 			continue
 		}
-		if er := cli.printValues(code.Run(v, cli.argvalues...)); er != nil {
+		if er := cli.printValues(code.RunNormalized(v, cli.argvalues...)); er != nil {
 			cli.printError(er)
 			err = &emptyError{er}
 		}

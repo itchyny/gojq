@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"time"
+
+	"github.com/modopayments/go-modo/v8"
+	"github.com/modopayments/go-modo/v8/uuid"
 )
 
 // TypeOf returns the jq-flavored type name of v.
@@ -24,13 +28,21 @@ func TypeOf(v any) string {
 		return "array"
 	case map[string]any:
 		return "object"
-	case fmt.Stringer:
-		return "stringer"
+	case uuid.UUID:
+		return "uuid"
+	case uuid.NullUUID:
+		return "nullUUID"
+	case time.Time, modo.Timestamp:
+		return "time"
 	default:
 		t := reflect.TypeOf(v)
 		switch t.Kind() {
 		case reflect.Ptr:
-			return TypeOf(reflect.ValueOf(t).Elem().Interface())
+			v := reflect.ValueOf(v)
+			if v.IsNil() {
+				return "null"
+			}
+			return "*" + TypeOf(v.Elem().Interface())
 		case reflect.Struct:
 			return "struct"
 		case reflect.Slice: // this an interface{} that happens to mask a []any

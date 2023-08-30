@@ -51,7 +51,7 @@ func ExampleWithFunction() {
 		log.Fatalln(err)
 	}
 	input := []any{0, 1, 2.5, json.Number("10000000000000000000000000000000000000000")}
-	iter := code.Run(input)
+	iter := code.RunNormalized(input)
 	for {
 		v, ok := iter.Next()
 		if !ok {
