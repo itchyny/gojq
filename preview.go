@@ -1,6 +1,12 @@
 package gojq
 
-import "unicode/utf8"
+import (
+	"math/big"
+	"reflect"
+	"unicode/utf8"
+
+	"github.com/modopayments/go-modo/v8/uuid"
+)
 
 // Preview returns the preview string of v. The preview string is basically the
 // same as the jq-flavored JSON encoding returned by [Marshal], but is truncated
@@ -15,14 +21,30 @@ func Preview(v any) string {
 	if l := 30; len(bs) > l {
 		var trailing string
 		switch v.(type) {
-		case string:
+		case string, uuid.UUID, uuid.NullUUID:
 			trailing = ` ..."`
 		case []any:
 			trailing = " ...]"
 		case map[string]any:
 			trailing = " ...}"
-		default:
+		case *big.Int:
 			trailing = " ..."
+		default:
+			value := reflect.ValueOf(v)
+			switch value.Kind() {
+			case reflect.Ptr:
+				if value.IsNil() {
+					trailing = " ..."
+					break
+				}
+				trailing = Preview(value.Elem().Interface())
+			case reflect.Struct:
+				trailing = " ...}"
+			case reflect.Slice: // this an interface{} that happens to mask a []any
+				trailing = " ...]"
+			default:
+				trailing = " ..."
+			}
 		}
 		for len(bs) > l-len(trailing) {
 			_, size := utf8.DecodeLastRune(bs)

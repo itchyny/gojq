@@ -1,9 +1,15 @@
 package gojq
 
 import (
+	"encoding/json"
 	"math"
 	"math/big"
+	"reflect"
 	"strings"
+	"time"
+
+	"github.com/modopayments/go-modo/v8"
+	"github.com/modopayments/go-modo/v8/uuid"
 )
 
 // Operator ...
@@ -216,79 +222,25 @@ func binopTypeSwitch(
 	callbackArrays func(_, _ []any) any,
 	callbackMaps func(_, _ map[string]any) any,
 	fallback func(_, _ any) any) any {
+
+	l = binopTypeSwitchNormalize(l)
+	r = binopTypeSwitchNormalize(r)
+
 	switch l := l.(type) {
-	case uint:
-		return binopTypeSwitch(int(l), r, callbackInts, callbackFloats, callbackBigInts, callbackStrings, callbackArrays, callbackMaps, fallback)
-	case uint8:
-		return binopTypeSwitch(int(l), r, callbackInts, callbackFloats, callbackBigInts, callbackStrings, callbackArrays, callbackMaps, fallback)
-	case uint16:
-		return binopTypeSwitch(int(l), r, callbackInts, callbackFloats, callbackBigInts, callbackStrings, callbackArrays, callbackMaps, fallback)
-	case uint32:
-		return binopTypeSwitch(int(l), r, callbackInts, callbackFloats, callbackBigInts, callbackStrings, callbackArrays, callbackMaps, fallback)
-	// not supporting uint64, since it can't safely convert into int64, and adding a uint callback is a pain
 	case int:
 		switch r := r.(type) {
-		case uint:
-			return callbackInts(l, int(r))
-		case uint8:
-			return callbackInts(l, int(r))
-		case uint16:
-			return callbackInts(l, int(r))
-		case uint32:
-			return callbackInts(l, int(r))
-		// not supporting uint64, since it can't safely convert into int64, and adding a uint callback is a pain
 		case int:
 			return callbackInts(l, r)
-		case int8:
-			return callbackInts(l, int(r))
-		case int16:
-			return callbackInts(l, int(r))
-		case int32:
-			return callbackInts(l, int(r))
-		case int64:
-			return callbackInts(l, int(r))
-		case float32:
-			return callbackInts(l, int(r))
 		case float64:
-			return callbackInts(l, int(r))
+			return callbackFloats(float64(l), r)
 		case *big.Int:
 			return callbackBigInts(big.NewInt(int64(l)), r)
 		default:
 			return fallback(l, r)
 		}
-	case int8:
-		return binopTypeSwitch(int(l), r, callbackInts, callbackFloats, callbackBigInts, callbackStrings, callbackArrays, callbackMaps, fallback)
-	case int16:
-		return binopTypeSwitch(int(l), r, callbackInts, callbackFloats, callbackBigInts, callbackStrings, callbackArrays, callbackMaps, fallback)
-	case int32:
-		return binopTypeSwitch(int(l), r, callbackInts, callbackFloats, callbackBigInts, callbackStrings, callbackArrays, callbackMaps, fallback)
-	case int64:
-		return binopTypeSwitch(int(l), r, callbackInts, callbackFloats, callbackBigInts, callbackStrings, callbackArrays, callbackMaps, fallback)
-	case float32:
-		return binopTypeSwitch(int(l), r, callbackInts, callbackFloats, callbackBigInts, callbackStrings, callbackArrays, callbackMaps, fallback)
 	case float64:
 		switch r := r.(type) {
-		case uint:
-			return callbackFloats(l, float64(r))
-		case uint8:
-			return callbackFloats(l, float64(r))
-		case uint16:
-			return callbackFloats(l, float64(r))
-		case uint32:
-			return callbackFloats(l, float64(r))
-		case uint64:
-			return callbackFloats(l, float64(r))
 		case int:
-			return callbackFloats(l, float64(r))
-		case int8:
-			return callbackFloats(l, float64(r))
-		case int16:
-			return callbackFloats(l, float64(r))
-		case int32:
-			return callbackFloats(l, float64(r))
-		case int64:
-			return callbackFloats(l, float64(r))
-		case float32:
 			return callbackFloats(l, float64(r))
 		case float64:
 			return callbackFloats(l, r)
@@ -299,38 +251,8 @@ func binopTypeSwitch(
 		}
 	case *big.Int:
 		switch r := r.(type) {
-		case uint:
-			var b big.Int
-			b.SetUint64(uint64(r))
-			return callbackBigInts(l, &b)
-		case uint8:
-			var b big.Int
-			b.SetUint64(uint64(r))
-			return callbackBigInts(l, &b)
-		case uint16:
-			var b big.Int
-			b.SetUint64(uint64(r))
-			return callbackBigInts(l, &b)
-		case uint32:
-			var b big.Int
-			b.SetUint64(uint64(r))
-			return callbackBigInts(l, &b)
-		case uint64:
-			var b big.Int
-			b.SetUint64(r)
-			return callbackBigInts(l, &b)
 		case int:
 			return callbackBigInts(l, big.NewInt(int64(r)))
-		case int8:
-			return callbackBigInts(l, big.NewInt(int64(r)))
-		case int16:
-			return callbackBigInts(l, big.NewInt(int64(r)))
-		case int32:
-			return callbackBigInts(l, big.NewInt(int64(r)))
-		case int64:
-			return callbackBigInts(l, big.NewInt(r))
-		case float32:
-			return callbackFloats(bigToFloat(l), float64(r))
 		case float64:
 			return callbackFloats(bigToFloat(l), r)
 		case *big.Int:
@@ -364,9 +286,90 @@ func binopTypeSwitch(
 	}
 }
 
+func binopTypeSwitchNormalize(value any) any {
+	switch v := value.(type) {
+	case json.Number:
+		return normalizeNumber(v)
+	case uint:
+		return int(v)
+	case uint8:
+		return int(v)
+	case uint16:
+		return int(v)
+	case uint32:
+		return int(v)
+	case uint64:
+		return int(v)
+	case int:
+		return value
+	case int8:
+		return int(v)
+	case int16:
+		return int(v)
+	case int32:
+		return int(v)
+	case int64:
+		return int(v)
+	case float32:
+		return float64(v)
+	case float64:
+		return value
+	case *big.Int:
+		return value
+	case string:
+		return value
+	case []any:
+		return value
+	case map[string]any:
+		return value
+	case uuid.UUID:
+		return v.String()
+	case uuid.NullUUID:
+		if !v.Valid {
+			return nil
+		}
+		return v.UUID.String()
+	case time.Time:
+		return int(v.Unix())
+	case modo.Timestamp:
+		return int(v.Time.Unix())
+	default:
+		rvalue := reflect.ValueOf(v)
+		switch rvalue.Kind() {
+		case reflect.Ptr:
+			if rvalue.IsNil() {
+				return nil
+			}
+			return binopTypeSwitchNormalize(rvalue.Elem().Interface())
+		case reflect.Struct:
+			// convert to a map[string]any, so we can do things like merge structs (+ and * are defined on maps)
+			ret := make(map[string]any, rvalue.NumField())
+			typ := rvalue.Type()
+			for i := 0; i < rvalue.NumField(); i++ {
+				if f := rvalue.Field(i); f.CanInterface() { // field may not be exported
+					ret[typ.Field(i).Name] = binopTypeSwitchNormalize(f.Interface())
+				}
+			}
+			return ret
+		case reflect.Slice: // this an interface{} that happens to mask a []any
+			ret := make([]any, rvalue.Len())
+			for i := 0; i < len(ret); i++ {
+				ret[i] = binopTypeSwitchNormalize(rvalue.Index(i).Interface())
+			}
+			return ret
+		default:
+			return value
+		}
+	}
+}
+
 func funcOpPlus(v any) any {
 	switch v := v.(type) {
 	case uint, uint8, uint16, uint32, uint64, int, int8, int16, int32, int64:
+		return v
+	case time.Time, modo.Timestamp:
+		return v
+	case uuid.UUID, uuid.NullUUID:
 		return v
 	case float32, float64:
 		return v

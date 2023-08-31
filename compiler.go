@@ -29,12 +29,26 @@ type Code struct {
 	codeinfos []codeinfo
 }
 
+// RunNormalized runs the code with the variable values (which should be in the
+// same order as the given variables using [WithVariables]) and returns
+// a result iterator. Input numbers are normalized for CLI tests
+//
+// It is safe to call this method in goroutines, to reuse a compiled [*Code].
+// But for arguments, do not give values sharing same data between goroutines.
+func (c *Code) RunNormalized(v any, values ...any) Iter {
+	normalized := make([]any, len(values))
+	for i, v := range values {
+		normalized[i] = normalizeNumbers(v)
+	}
+	return c.RunWithContext(context.Background(), normalizeNumbers(v), normalized...)
+}
+
 // Run runs the code with the variable values (which should be in the
 // same order as the given variables using [WithVariables]) and returns
 // a result iterator.
 //
-// It is safe to call this method in goroutines, to reuse a compiled [*Code].
-// But for arguments, do not give values sharing same data between goroutines.
+// It is safe to call this method in goroutines, to reuse a compiled [*Code],
+// and to reuse values between goroutines.
 func (c *Code) Run(v any, values ...any) Iter {
 	return c.RunWithContext(context.Background(), v, values...)
 }
@@ -46,10 +60,7 @@ func (c *Code) RunWithContext(ctx context.Context, v any, values ...any) Iter {
 	} else if len(values) < len(c.variables) {
 		return NewIter(&expectedVariableError{c.variables[len(values)]})
 	}
-	for i, v := range values {
-		values[i] = normalizeNumbers(v)
-	}
-	return newEnv(ctx).execute(c, normalizeNumbers(v), values...)
+	return newEnv(ctx).execute(c, v, values...)
 }
 
 type scopeinfo struct {
