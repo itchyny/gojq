@@ -1188,7 +1188,7 @@ func funcSlice(_, v, e, s any) (r any) {
 		value := reflect.ValueOf(v)
 		switch value.Kind() {
 		case reflect.Slice: // this an interface{} that happens to mask a []any
-			return slice(v, e, s)
+			return slice(value, e, s)
 		default:
 			return &expectedArrayError{v}
 		}
