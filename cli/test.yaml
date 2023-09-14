@@ -2046,19 +2046,17 @@
     "１２３４５"
     "\n\t"
 
+- name: implode function replacement character
+  args:
+    - 'implode'
+  input: '[-1,0,1114111,1114112]'
+  expected: "\"\ufffd\\u0000\U0010ffff\ufffd\"\n"
+
 - name: implode function error
   args:
     - 'try implode catch .'
-  input: |
-    [0]
-    [-1]
-    [1114112]
-    [[]]
-    [{}]
+  input: '[[]] [{}]'
   expected: |
-    "\u0000"
-    "implode cannot be applied to: array ([-1])"
-    "implode cannot be applied to: array ([1114112])"
     "implode cannot be applied to: array ([[]])"
     "implode cannot be applied to: array ([{}])"
 

@@ -729,8 +729,12 @@ func funcImplode(v any) any {
 	var sb strings.Builder
 	sb.Grow(len(vs))
 	for _, v := range vs {
-		if r, ok := toInt(v); ok && 0 <= r && r <= utf8.MaxRune {
-			sb.WriteRune(rune(r))
+		if r, ok := toInt(v); ok {
+			if 0 <= r && r <= utf8.MaxRune {
+				sb.WriteRune(rune(r))
+			} else {
+				sb.WriteRune(utf8.RuneError)
+			}
 		} else {
 			return &func0TypeError{"implode", vs}
 		}
