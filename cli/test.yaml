@@ -7593,14 +7593,14 @@
     - -c
     - -L
     - 'testdata'
-    - 'tostring | modulemeta'
+    - 'tostring | modulemeta | .defs |= sort'
   input: '4 5 6 8 9'
   expected: |
-    {"deps":[{"is_data":false,"relpath":"5"},{"as":"bar","is_data":false,"relpath":"6"}]}
-    {"deps":[{"as":"foo","is_data":false,"relpath":"6","test":"foo"}]}
-    {"deps":[{"as":"x","is_data":true,"relpath":"7"}]}
-    {"deps":[]}
-    {"deps":[],"description":"This is a description","name":"sample-module","x":[[],{},{"y":10,"z":20}],"y":{"z":[128,"",false,true,null,[[]]]}}
+    {"defs":["f/0","g/0"],"deps":[{"is_data":false,"relpath":"5"},{"as":"bar","is_data":false,"relpath":"6"}]}
+    {"defs":["h/0"],"deps":[{"as":"foo","is_data":false,"relpath":"6","test":"foo"}]}
+    {"defs":["g/0","i/0"],"deps":[{"as":"x","is_data":true,"relpath":"7"}]}
+    {"defs":[],"deps":[]}
+    {"defs":["f/1"],"deps":[],"description":"This is a description","name":"sample-module","x":[[],{},{"y":10,"z":20}],"y":{"z":[128,"",false,true,null,[[]]]}}
 
 - name: modulemeta function error
   args:

@@ -1196,8 +1196,36 @@ func (c *compiler) funcModulemeta(v any, _ []any) any {
 	if meta == nil {
 		meta = make(map[string]any)
 	}
-	deps := []any{}
-	for _, i := range q.Imports {
+	meta["defs"] = listModuleDefs(q)
+	meta["deps"] = listModuleDeps(q)
+	return meta
+}
+
+func listModuleDefs(q *Query) []any {
+	type funcNameArity struct {
+		name  string
+		arity int
+	}
+	var xs []*funcNameArity
+	for _, fd := range q.FuncDefs {
+		if fd.Name[0] != '_' {
+			xs = append(xs, &funcNameArity{fd.Name, len(fd.Args)})
+		}
+	}
+	sort.Slice(xs, func(i, j int) bool {
+		return xs[i].name < xs[j].name ||
+			xs[i].name == xs[j].name && xs[i].arity < xs[j].arity
+	})
+	defs := make([]any, len(xs))
+	for i, x := range xs {
+		defs[i] = x.name + "/" + strconv.Itoa(x.arity)
+	}
+	return defs
+}
+
+func listModuleDeps(q *Query) []any {
+	deps := make([]any, len(q.Imports))
+	for j, i := range q.Imports {
 		v := i.Meta.ToValue()
 		if v == nil {
 			v = make(map[string]any)
@@ -1209,22 +1237,18 @@ func (c *compiler) funcModulemeta(v any, _ []any) any {
 				}
 			}
 		}
-		if i.ImportPath == "" {
-			v["relpath"] = i.IncludePath
-		} else {
-			v["relpath"] = i.ImportPath
+		relpath := i.ImportPath
+		if relpath == "" {
+			relpath = i.IncludePath
 		}
-		if err != nil {
-			return err
-		}
+		v["relpath"] = relpath
 		if i.ImportAlias != "" {
 			v["as"] = strings.TrimPrefix(i.ImportAlias, "$")
 		}
 		v["is_data"] = strings.HasPrefix(i.ImportAlias, "$")
-		deps = append(deps, v)
+		deps[j] = v
 	}
-	meta["deps"] = deps
-	return meta
+	return deps
 }
 
 func (c *compiler) compileObject(e *Object) error {

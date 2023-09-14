@@ -13,7 +13,8 @@ import (
 func TestWithModuleLoaderError(t *testing.T) {
 	query, err := gojq.Parse(`
 		import "module1" as m;
-		m::f
+		def f: 42;
+		m::f, f
 	`)
 	if err != nil {
 		t.Fatal(err)
@@ -51,7 +52,7 @@ func TestWithModuleLoaderError(t *testing.T) {
 
 func TestWithModuleLoader_modulemeta(t *testing.T) {
 	query, err := gojq.Parse(`
-		"module1", "module2" | modulemeta
+		"module1", "module2", "module3" | modulemeta
 	`)
 	if err != nil {
 		t.Fatal(err)
@@ -70,8 +71,10 @@ func TestWithModuleLoader_modulemeta(t *testing.T) {
 		if !ok {
 			break
 		}
-		if n == 0 {
+		switch n {
+		case 0:
 			if expected := map[string]any{
+				"defs": []any{"g/0"},
 				"deps": []any{
 					map[string]any{
 						"relpath": "module2",
@@ -84,8 +87,16 @@ func TestWithModuleLoader_modulemeta(t *testing.T) {
 			}; !reflect.DeepEqual(got, expected) {
 				t.Errorf("expected: %v, got: %v", expected, got)
 			}
-		} else {
+		case 1:
 			if expected := map[string]any{
+				"defs": []any{"f/0"},
+				"deps": []any{}, // not a nil-slice
+			}; !reflect.DeepEqual(got, expected) {
+				t.Errorf("expected: %v, got: %v", expected, got)
+			}
+		default:
+			if expected := map[string]any{
+				"defs": []any{}, // not a nil-slice
 				"deps": []any{}, // not a nil-slice
 			}; !reflect.DeepEqual(got, expected) {
 				t.Errorf("expected: %v, got: %v", expected, got)
