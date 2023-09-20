@@ -57,17 +57,17 @@ type cli struct {
 type flagopts struct {
 	OutputRaw     bool              `short:"r" long:"raw-output" description:"output raw strings"`
 	OutputJoin    bool              `short:"j" long:"join-output" description:"output without newlines"`
-	OutputNul     bool              `short:"0" long:"nul-output" description:"output with NUL character"`
+	OutputNul     bool              `long:"raw-output0" description:"output with NUL character"`
 	OutputCompact bool              `short:"c" long:"compact-output" description:"output without pretty-printing"`
 	OutputIndent  *int              `long:"indent" description:"number of spaces for indentation"`
 	OutputTab     bool              `long:"tab" description:"use tabs for indentation"`
-	OutputYAML    bool              `long:"yaml-output" description:"output in YAML format"`
+	OutputYAML    bool              `long:"yaml-output" description:"output in YAML format (gojq only)"`
 	OutputColor   bool              `short:"C" long:"color-output" description:"output with colors even if piped"`
 	OutputMono    bool              `short:"M" long:"monochrome-output" description:"output without colors"`
 	InputNull     bool              `short:"n" long:"null-input" description:"use null as input value"`
 	InputRaw      bool              `short:"R" long:"raw-input" description:"read input as raw strings"`
 	InputStream   bool              `long:"stream" description:"parse input in stream fashion"`
-	InputYAML     bool              `long:"yaml-input" description:"read input as YAML format"`
+	InputYAML     bool              `long:"yaml-input" description:"read input as YAML format (gojq only)"`
 	InputSlurp    bool              `short:"s" long:"slurp" description:"read all inputs into an array"`
 	FromFile      string            `short:"f" long:"from-file" description:"load query from file"`
 	ModulePaths   []string          `short:"L" description:"directory to search modules from"`
@@ -78,7 +78,7 @@ type flagopts struct {
 	Args          []any             `long:"args" positional:"" description:"consume remaining arguments as positional string values"`
 	JSONArgs      []any             `long:"jsonargs" positional:"" description:"consume remaining arguments as positional JSON values"`
 	ExitStatus    bool              `short:"e" long:"exit-status" description:"exit 1 when the last value is false or null"`
-	Version       bool              `short:"v" long:"version" description:"display version information"`
+	Version       bool              `short:"V" long:"version" description:"display version information"`
 	Help          bool              `short:"h" long:"help" description:"display this help information"`
 }
 

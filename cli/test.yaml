@@ -6247,26 +6247,46 @@
   input: '["foo",[{},{}],1,[2,3]]'
   expected: "foo[\n  {},\n  {}\n]1[\n  2,\n  3\n]"
 
-- name: nul output option
+- name: nul output option legacy
   args:
     - '-0'
     - '.[]'
   input: '["foo",1,2,3]'
-  expected: "foo\x001\x002\x003\x00"
+  error: |
+    open .[]: no such file or directory
+  exit_code: 5
 
 - name: nul output long option
   args:
-    - --nul-output
+    - --raw-output0
     - '.[]'
   input: '["foo",[{},{}],1,[2,3]]'
   expected: "foo\x00[\n  {},\n  {}\n]\x001\x00[\n  2,\n  3\n]\x00"
 
+- name: nul output long option legacy
+  args:
+    - --nul-output
+    - '.[]'
+  input: '["foo",[{},{}],1,[2,3]]'
+  error: |
+    unknown flag `--nul-output'
+  exit_code: 2
+
 - name: nul output option at the last argument
+  args:
+    - '.[]'
+    - '--raw-output0'
+  input: '["foo",1,2,3]'
+  expected: "foo\x001\x002\x003\x00"
+
+- name: nul output option at the last argument legacy
   args:
     - '.[]'
     - '-0'
   input: '["foo",1,2,3]'
-  expected: "foo\x001\x002\x003\x00"
+  error: |
+    open -0: no such file or directory
+  exit_code: 5
 
 - name: color output option
   args:
@@ -8117,11 +8137,21 @@
 
 - name: double dash with nul output option
   args:
-    - '-0'
+    - '--raw-output0'
     - '--'
     - '-0'
   input: '1'
   expected: "0\x00"
+
+- name: double dash with nul output option legacy
+  args:
+    - '-0'
+    - '--'
+    - '-0'
+  input: '1'
+  error: |
+    open -0: no such file or directory
+  exit_code: 5
 
 - name: double double dash
   args:
