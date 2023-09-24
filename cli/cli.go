@@ -36,8 +36,8 @@ type cli struct {
 	errStream io.Writer
 
 	outputRaw     bool
+	outputRaw0    bool
 	outputJoin    bool
-	outputNul     bool
 	outputCompact bool
 	outputIndent  *int
 	outputTab     bool
@@ -56,8 +56,8 @@ type cli struct {
 
 type flagopts struct {
 	OutputRaw     bool              `short:"r" long:"raw-output" description:"output raw strings"`
-	OutputJoin    bool              `short:"j" long:"join-output" description:"output without newlines"`
-	OutputNul     bool              `short:"0" long:"nul-output" description:"output with NUL character"`
+	OutputRaw0    bool              `long:"raw-output0" description:"implies -r with NUL character delimiter"`
+	OutputJoin    bool              `short:"j" long:"join-output" description:"implies -r with no newline delimiter"`
 	OutputCompact bool              `short:"c" long:"compact-output" description:"output without pretty-printing"`
 	OutputIndent  *int              `long:"indent" description:"number of spaces for indentation"`
 	OutputTab     bool              `long:"tab" description:"use tabs for indentation"`
@@ -121,9 +121,9 @@ Usage:
 		fmt.Fprintf(cli.outStream, "%s %s (rev: %s/%s)\n", name, version, revision, runtime.Version())
 		return nil
 	}
-	cli.outputRaw, cli.outputJoin, cli.outputNul,
+	cli.outputRaw, cli.outputRaw0, cli.outputJoin,
 		cli.outputCompact, cli.outputIndent, cli.outputTab, cli.outputYAML =
-		opts.OutputRaw, opts.OutputJoin, opts.OutputNul,
+		opts.OutputRaw, opts.OutputRaw0, opts.OutputJoin,
 		opts.OutputCompact, opts.OutputIndent, opts.OutputTab, opts.OutputYAML
 	defer func(x bool) { noColor = x }(noColor)
 	if opts.OutputColor || opts.OutputMono {
@@ -378,10 +378,10 @@ func (cli *cli) printValues(iter gojq.Iter) error {
 				cli.exitCodeError = &exitCodeError{exitCodeOK}
 			}
 		}
-		if !cli.outputJoin && !cli.outputYAML {
-			if cli.outputNul {
+		if !cli.outputYAML {
+			if cli.outputRaw0 {
 				cli.outStream.Write([]byte{'\x00'})
-			} else {
+			} else if !cli.outputJoin {
 				cli.outStream.Write([]byte{'\n'})
 			}
 		}
@@ -402,8 +402,8 @@ func (cli *cli) createMarshaler() marshaler {
 		indent = *i
 	}
 	f := newEncoder(cli.outputTab, indent)
-	if cli.outputRaw || cli.outputJoin || cli.outputNul {
-		return &rawMarshaler{f}
+	if cli.outputRaw || cli.outputRaw0 || cli.outputJoin {
+		return &rawMarshaler{f, cli.outputRaw0}
 	}
 	return f
 }
@@ -420,7 +420,7 @@ func (cli *cli) funcDebug(v any, _ []any) any {
 }
 
 func (cli *cli) funcStderr(v any, _ []any) any {
-	if err := (&rawMarshaler{newEncoder(false, 0)}).
+	if err := (&rawMarshaler{m: newEncoder(false, 0)}).
 		marshal(v, cli.errStream); err != nil {
 		return err
 	}

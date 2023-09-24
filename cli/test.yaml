@@ -6199,7 +6199,7 @@
     boolean flag `--compact-output' cannot have an argument
   exit_code: 2
 
-- name: raw string output option
+- name: raw string output short option
   args:
     - -r
     - '.foo[]'
@@ -6231,6 +6231,38 @@
       "foo": "multiple\nline"
     }
 
+- name: raw string output with nul delimiter option
+  args:
+    - --raw-output0
+    - '.[]'
+  input: '["foo",[{},{}],1,[2,3]]'
+  expected: "foo\x00[\n  {},\n  {}\n]\x001\x00[\n  2,\n  3\n]\x00"
+
+- name: raw string output with nul delimiter option error with string containing nul character
+  args:
+    - --raw-output0
+    - '"foo","bar","b\u0000a\u0000z","qux"'
+  input: 'null'
+  expected: "foo\x00bar\x00"
+  error: |
+    cannot output a string containing NUL character: "b\x00a\x00z"
+
+- name: raw string output without and with nul delimiter options
+  args:
+    - --raw-output
+    - --raw-output0
+    - '.[]'
+  input: '["foo",1,2,3]'
+  expected: "foo\x001\x002\x003\x00"
+
+- name: raw string output with nul delimiter option with compact output option
+  args:
+    - --raw-output0
+    - --compact-output
+    - '.[]'
+  input: '["foo",[{},{}],1,[2,3]]'
+  expected: "foo\x00[{},{}]\x001\x00[2,3]\x00"
+
 - name: join output option
   args:
     - -j
@@ -6245,24 +6277,11 @@
   input: '["foo",[{},{}],1,[2,3]]'
   expected: "foo[\n  {},\n  {}\n]1[\n  2,\n  3\n]"
 
-- name: nul output option
+- name: join output option with raw string output with nul delimiter option
   args:
-    - '-0'
+    - --raw-output0
+    - --join-output
     - '.[]'
-  input: '["foo",1,2,3]'
-  expected: "foo\x001\x002\x003\x00"
-
-- name: nul output long option
-  args:
-    - --nul-output
-    - '.[]'
-  input: '["foo",[{},{}],1,[2,3]]'
-  expected: "foo\x00[\n  {},\n  {}\n]\x001\x00[\n  2,\n  3\n]\x00"
-
-- name: nul output option at the last argument
-  args:
-    - '.[]'
-    - '-0'
   input: '["foo",1,2,3]'
   expected: "foo\x001\x002\x003\x00"
 
@@ -6353,7 +6372,7 @@
     \  \e[34;1m\"foo\"\e[0m: \e[36m42\e[0m\n\
     }\n"
 
-- name: color output with compact option
+- name: color output with compact output option
   args:
     - -C
     - -c
@@ -6590,7 +6609,7 @@
       null
     ]
 
-- name: null input value option with compact option
+- name: null input value option with compact output option
   args:
     - -n
     - -c
@@ -8056,6 +8075,15 @@
   expected: |
     -1
 
+- name: query with leading hyphen
+  args:
+    - '-j0'
+  input: '0 1 2'
+  expected: |
+    -1
+    -0.7651976865579666
+    -0.22389077914123567
+
 - name: query with leading hyphen after a flag
   args:
     - -r
@@ -8063,31 +8091,6 @@
   input: '1'
   expected: |
     -1
-
-- name: query with leading -0 and spaces
-  args:
-    - '-0 + .'
-  input: '1'
-  expected: |
-    1
-
-- name: query with leading -0 but no spaces
-  args:
-    - '-0.1'
-  input: '1'
-  expected: |
-    -0.1
-
-- name: query with leading -0 before json files
-  args:
-    - -c
-    - '-0 * 1'
-    - 'testdata/1.json'
-    - 'testdata/2.json'
-  input: '1'
-  expected: |
-    0
-    0
 
 - name: double dash
   args:
@@ -8100,26 +8103,11 @@
 - name: double dash with query with leading hyphen
   args:
     - '--'
-    - '-.'
-  input: '1'
-  expected: |
-    -1
-
-- name: double dash with query with leading -0
-  args:
-    - '--'
-    - '-0'
-  input: '1'
-  expected: |
-    0
-
-- name: double dash with nul output option
-  args:
-    - '-0'
-    - '--'
-    - '-0'
-  input: '1'
-  expected: "0\x00"
+    - '-j'
+  input: 'null'
+  error: |
+    compile error: function not defined: j/0
+  exit_code: 3
 
 - name: double double dash
   args:
