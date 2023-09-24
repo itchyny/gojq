@@ -5235,7 +5235,7 @@
   expected: |
     "number"
 
-- name: debug function
+- name: debug/0 function
   args:
     - -c
     - 'recurse(debug|.[]?)'
@@ -5261,6 +5261,28 @@
     ["DEBUG:",2]
     ["DEBUG:","b"]
 
+- name: debug/1 function
+  args:
+    - 'debug("value: \(.)", [.,.])'
+  input: 'null false "test" [] {}'
+  expected: |
+    null
+    false
+    "test"
+    []
+    {}
+  error: |
+    ["DEBUG:","value: null"]
+    ["DEBUG:",[null,null]]
+    ["DEBUG:","value: false"]
+    ["DEBUG:",[false,false]]
+    ["DEBUG:","value: test"]
+    ["DEBUG:",["test","test"]]
+    ["DEBUG:","value: []"]
+    ["DEBUG:",[[],[]]]
+    ["DEBUG:","value: {}"]
+    ["DEBUG:",[{},{}]]
+
 - name: stderr function
   args:
     - -c
@@ -5283,10 +5305,11 @@
 
 - name: debug and stderr in builtins
   args:
-    - 'builtins[] | select(test("debug|stderr"))'
+    - 'builtins | sort[] | select(test("debug|stderr"))'
   input: 'null'
   expected: |
     "debug/0"
+    "debug/1"
     "stderr/0"
 
 - name: input_filename function with stdin input

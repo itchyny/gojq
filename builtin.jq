@@ -158,6 +158,7 @@ def sub($re; str; $flags):
 def gsub($re; str): sub($re; str; "g");
 def gsub($re; str; $flags): sub($re; str; $flags + "g");
 
+def debug(f): (f | debug | empty), .;
 def inputs:
   try
     repeat(input)
