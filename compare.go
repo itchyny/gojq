@@ -1,6 +1,7 @@
 package gojq
 
 import (
+	"encoding/json"
 	"math"
 	"math/big"
 )
@@ -88,7 +89,7 @@ func typeIndex(v any) int {
 			return 1
 		}
 		return 2
-	case int, float64, *big.Int:
+	case int, float64, *big.Int, json.Number:
 		return 3
 	case string:
 		return 4

@@ -7,9 +7,9 @@ import "unicode/utf8"
 // by 30 bytes, and more efficient than truncating the result of [Marshal].
 //
 // This method is used by error messages of built-in operators and functions,
-// and accepts only limited types (nil, bool, int, float64, *big.Int, string,
-// []any, and map[string]any). Note that the maximum width and trailing strings
-// on truncation may be changed in the future.
+// and accepts only limited types (nil, bool, int, float64, *big.Int,
+// json.Number, string, []any, and map[string]any). Note that the maximum width
+// and trailing strings on truncation may be changed in the future.
 func Preview(v any) string {
 	bs := jsonLimitedMarshal(v, 32)
 	if l := 30; len(bs) > l {

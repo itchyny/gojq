@@ -19,9 +19,11 @@
 - name: number input
   args:
     - '.'
-  input: '128'
+  input: '128 3.14 10.0'
   expected: |
     128
+    3.14
+    10.0
 
 - name: number query
   args:
@@ -281,6 +283,13 @@
   input: '{"foo": 4722366482869645213696}'
   expected: |
     4722366482869645213696
+
+- name: object indexing with floating-point number with trailing zeros
+  args:
+    - '.foo'
+  input: '{"foo": 100.000000}'
+  expected: |
+    100.000000
 
 - name: object indexing by keywords
   args:

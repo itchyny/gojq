@@ -310,6 +310,11 @@ func funcLength(v any) any {
 			return v
 		}
 		return new(big.Int).Abs(v)
+	case json.Number:
+		if strings.HasPrefix(v.String(), "-") {
+			return v[1:]
+		}
+		return v
 	case string:
 		return len([]rune(v))
 	case []any:
@@ -512,7 +517,7 @@ func funcAdd(v any) any {
 
 func funcToNumber(v any) any {
 	switch v := v.(type) {
-	case int, float64, *big.Int:
+	case int, float64, *big.Int, json.Number:
 		return v
 	case string:
 		if !newLexer(v).validNumber() {
@@ -525,7 +530,7 @@ func funcToNumber(v any) any {
 }
 
 func toNumber(v string) any {
-	return normalizeNumber(json.Number(v))
+	return parseNumber(json.Number(v))
 }
 
 func funcToString(v any) any {
@@ -820,7 +825,7 @@ func funcFromJSON(v any) any {
 	if _, err := dec.Token(); err != io.EOF {
 		return &func0TypeError{"fromjson", v}
 	}
-	return normalizeNumbers(w)
+	return w
 }
 
 func funcFormat(v, x any) any {
@@ -969,7 +974,7 @@ func funcIndex2(_, v, x any) any {
 		default:
 			return &expectedObjectError{v}
 		}
-	case int, float64, *big.Int:
+	case int, float64, *big.Int, json.Number:
 		i, _ := toInt(x)
 		switch v := v.(type) {
 		case nil:
@@ -1172,7 +1177,7 @@ func (iter *rangeIter) Next() (any, bool) {
 func funcRange(_ any, xs []any) any {
 	for _, x := range xs {
 		switch x.(type) {
-		case int, float64, *big.Int:
+		case int, float64, *big.Int, json.Number:
 		default:
 			return &func0TypeError{"range", x}
 		}
@@ -1352,7 +1357,7 @@ func funcJoin(v, x any) any {
 			} else {
 				ss[i] = "false"
 			}
-		case int, float64, *big.Int:
+		case int, float64, *big.Int, json.Number:
 			ss[i] = jsonMarshal(v)
 		default:
 			return &joinTypeError{v}
@@ -1568,7 +1573,7 @@ func update(v any, path []any, n any, a allocator) (any, error) {
 		default:
 			return nil, &expectedObjectError{v}
 		}
-	case int, float64, *big.Int:
+	case int, float64, *big.Int, json.Number:
 		i, _ := toInt(p)
 		switch v := v.(type) {
 		case nil:
@@ -2114,6 +2119,8 @@ func toInt(x any) (int, bool) {
 			return math.MaxInt, true
 		}
 		return math.MinInt, true
+	case json.Number:
+		return toInt(parseNumber(x))
 	default:
 		return 0, false
 	}
@@ -2137,6 +2144,9 @@ func toFloat(x any) (float64, bool) {
 		return x, true
 	case *big.Int:
 		return bigToFloat(x), true
+	case json.Number:
+		v, _ := x.Float64()
+		return v, true
 	default:
 		return 0.0, false
 	}
@@ -2150,4 +2160,22 @@ func bigToFloat(x *big.Int) float64 {
 		return f
 	}
 	return math.Inf(x.Sign())
+}
+
+func parseNumber(v json.Number) any {
+	if i, err := v.Int64(); err == nil && math.MinInt <= i && i <= math.MaxInt {
+		return int(i)
+	}
+	if strings.ContainsAny(v.String(), ".eE") {
+		if f, err := v.Float64(); err == nil {
+			return f
+		}
+	}
+	if bi, ok := new(big.Int).SetString(v.String(), 10); ok {
+		return bi
+	}
+	if strings.HasPrefix(v.String(), "-") {
+		return math.Inf(-1)
+	}
+	return math.Inf(1)
 }
