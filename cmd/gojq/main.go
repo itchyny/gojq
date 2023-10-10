@@ -4,7 +4,7 @@ package main
 import (
 	"os"
 
-	"github.com/itchyny/gojq/cli"
+	"github.com/Sosivio/gojq/cli"
 )
 
 func main() {

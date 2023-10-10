@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/itchyny/gojq"
+	"github.com/Sosivio/gojq"
 )
 
 func TestWithModuleLoaderError(t *testing.T) {

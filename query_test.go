@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/itchyny/gojq"
+	"github.com/Sosivio/gojq"
 )
 
 func ExampleQuery_Run() {

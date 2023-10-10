@@ -1,12 +1,12 @@
-module github.com/itchyny/gojq
+module github.com/Sosivio/gojq
 
 go 1.19
 
 require (
-	github.com/google/go-cmp v0.5.4
+	github.com/google/go-cmp v0.5.9
 	github.com/itchyny/timefmt-go v0.1.5
 	github.com/mattn/go-isatty v0.0.19
-	github.com/mattn/go-runewidth v0.0.14
+	github.com/mattn/go-runewidth v0.0.15
 	gopkg.in/yaml.v3 v3.0.1
 )
 
