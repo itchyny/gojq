@@ -1,6 +1,7 @@
 package gojq
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -33,7 +34,7 @@ const (
 type function struct {
 	argcount int
 	iter     bool
-	callback func(any, []any) any
+	callback func(context.Context, any, []any) any
 }
 
 func (fn function) accept(cnt int) bool {
@@ -203,7 +204,7 @@ func init() {
 
 func argFunc0(f func(any) any) function {
 	return function{
-		argcount0, false, func(v any, _ []any) any {
+		argcount0, false, func(_ context.Context, v any, _ []any) any {
 			return f(v)
 		},
 	}
@@ -211,7 +212,7 @@ func argFunc0(f func(any) any) function {
 
 func argFunc1(f func(_, _ any) any) function {
 	return function{
-		argcount1, false, func(v any, args []any) any {
+		argcount1, false, func(_ context.Context, v any, args []any) any {
 			return f(v, args[0])
 		},
 	}
@@ -219,7 +220,7 @@ func argFunc1(f func(_, _ any) any) function {
 
 func argFunc2(f func(_, _, _ any) any) function {
 	return function{
-		argcount2, false, func(v any, args []any) any {
+		argcount2, false, func(_ context.Context, v any, args []any) any {
 			return f(v, args[0], args[1])
 		},
 	}
@@ -227,7 +228,7 @@ func argFunc2(f func(_, _, _ any) any) function {
 
 func argFunc3(f func(_, _, _, _ any) any) function {
 	return function{
-		argcount3, false, func(v any, args []any) any {
+		argcount3, false, func(_ context.Context, v any, args []any) any {
 			return f(v, args[0], args[1], args[2])
 		},
 	}
@@ -747,7 +748,7 @@ func funcImplode(v any) any {
 	return sb.String()
 }
 
-func funcSplit(v any, args []any) any {
+func funcSplit(_ context.Context, v any, args []any) any {
 	s, ok := v.(string)
 	if !ok {
 		return &func0TypeError{"split", v}
@@ -838,7 +839,7 @@ func funcFormat(v, x any) any {
 	if f == nil {
 		return &formatNotFoundError{format}
 	}
-	return internalFuncs[f.Name].callback(v, nil)
+	return internalFuncs[f.Name].callback(context.Background(), v, nil)
 }
 
 var htmlEscaper = strings.NewReplacer(
@@ -1130,7 +1131,7 @@ func clampIndex(i, min, max int) int {
 	}
 }
 
-func funcFlatten(v any, args []any) any {
+func funcFlatten(_ context.Context, v any, args []any) any {
 	vs, ok := values(v)
 	if !ok {
 		return &func0TypeError{"flatten", v}
@@ -1174,7 +1175,7 @@ func (iter *rangeIter) Next() (any, bool) {
 	return v, true
 }
 
-func funcRange(_ any, xs []any) any {
+func funcRange(_ context.Context, _ any, xs []any) any {
 	for _, x := range xs {
 		switch x.(type) {
 		case int, float64, *big.Int, json.Number:
@@ -2077,7 +2078,7 @@ func funcCapture(v any) any {
 	return w
 }
 
-func funcError(v any, args []any) any {
+func funcError(_ context.Context, v any, args []any) any {
 	if len(args) > 0 {
 		v = args[0]
 	}
@@ -2092,7 +2093,7 @@ func funcHalt(any) any {
 	return &exitCodeError{nil, 0, true}
 }
 
-func funcHaltError(v any, args []any) any {
+func funcHaltError(_ context.Context, v any, args []any) any {
 	code := 5
 	if len(args) > 0 {
 		var ok bool

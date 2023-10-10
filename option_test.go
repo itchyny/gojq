@@ -1,6 +1,7 @@
 package gojq_test
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -308,13 +309,13 @@ func TestWithVariablesError2(t *testing.T) {
 
 func TestWithFunction(t *testing.T) {
 	options := []gojq.CompilerOption{
-		gojq.WithFunction("f", 0, 0, func(x any, _ []any) any {
+		gojq.WithFunction("f", 0, 0, func(_ context.Context, x any, _ []any) any {
 			if x, ok := x.(int); ok {
 				return x * 2
 			}
 			return fmt.Errorf("f cannot be applied to: %v", x)
 		}),
-		gojq.WithFunction("g", 1, 1, func(x any, xs []any) any {
+		gojq.WithFunction("g", 1, 1, func(_ context.Context, x any, xs []any) any {
 			if x, ok := x.(int); ok {
 				if y, ok := xs[0].(int); ok {
 					return x + y
@@ -375,13 +376,13 @@ func TestWithFunction(t *testing.T) {
 
 func TestWithFunctionDuplicateName(t *testing.T) {
 	options := []gojq.CompilerOption{
-		gojq.WithFunction("f", 0, 0, func(x any, _ []any) any {
+		gojq.WithFunction("f", 0, 0, func(_ context.Context, x any, _ []any) any {
 			if x, ok := x.(int); ok {
 				return x * 2
 			}
 			return fmt.Errorf("f cannot be applied to: %v", x)
 		}),
-		gojq.WithFunction("f", 1, 1, func(x any, xs []any) any {
+		gojq.WithFunction("f", 1, 1, func(_ context.Context, x any, xs []any) any {
 			if x, ok := x.(int); ok {
 				if y, ok := xs[0].(int); ok {
 					return x + y
@@ -389,13 +390,13 @@ func TestWithFunctionDuplicateName(t *testing.T) {
 			}
 			return fmt.Errorf("f cannot be applied to: %v, %v", x, xs)
 		}),
-		gojq.WithFunction("f", 0, 0, func(x any, _ []any) any {
+		gojq.WithFunction("f", 0, 0, func(_ context.Context, x any, _ []any) any {
 			if x, ok := x.(int); ok {
 				return x * 4
 			}
 			return fmt.Errorf("f cannot be applied to: %v", x)
 		}),
-		gojq.WithFunction("f", 2, 2, func(x any, xs []any) any {
+		gojq.WithFunction("f", 2, 2, func(_ context.Context, x any, xs []any) any {
 			if x, ok := x.(int); ok {
 				if y, ok := xs[0].(int); ok {
 					if z, ok := xs[1].(int); ok {
@@ -458,7 +459,7 @@ func TestWithFunctionDuplicateName(t *testing.T) {
 
 func TestWithFunctionMultipleArities(t *testing.T) {
 	options := []gojq.CompilerOption{
-		gojq.WithFunction("f", 0, 4, func(x any, xs []any) any {
+		gojq.WithFunction("f", 0, 4, func(_ context.Context, x any, xs []any) any {
 			if x, ok := x.(int); ok {
 				x *= 2
 				for _, y := range xs {
@@ -470,7 +471,7 @@ func TestWithFunctionMultipleArities(t *testing.T) {
 			}
 			return fmt.Errorf("f cannot be applied to: %v, %v", x, xs)
 		}),
-		gojq.WithFunction("f", 2, 3, func(x any, xs []any) any {
+		gojq.WithFunction("f", 2, 3, func(_ context.Context, x any, xs []any) any {
 			if x, ok := x.(int); ok {
 				for _, y := range xs {
 					if y, ok := y.(int); ok {
@@ -481,7 +482,7 @@ func TestWithFunctionMultipleArities(t *testing.T) {
 			}
 			return fmt.Errorf("f cannot be applied to: %v, %v", x, xs)
 		}),
-		gojq.WithFunction("g", 0, 30, func(x any, xs []any) any {
+		gojq.WithFunction("g", 0, 30, func(_ context.Context, x any, xs []any) any {
 			return nil
 		}),
 	}
@@ -554,7 +555,7 @@ func TestWithFunctionValueError(t *testing.T) {
 		t.Fatal(err)
 	}
 	code, err := gojq.Compile(query,
-		gojq.WithFunction("f", 0, 0, func(x any, _ []any) any {
+		gojq.WithFunction("f", 0, 0, func(_ context.Context, x any, _ []any) any {
 			return &valueError{expected}
 		}),
 	)
@@ -579,7 +580,7 @@ func TestWithFunctionCompileArgsError(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = gojq.Compile(query,
-		gojq.WithFunction("f", 0, 1, func(any, []any) any {
+		gojq.WithFunction("f", 0, 1, func(context.Context, any, []any) any {
 			return 0
 		}),
 	)
@@ -602,7 +603,7 @@ func TestWithFunctionArityError(t *testing.T) {
 				}
 			}()
 			t.Fatal(gojq.Compile(query,
-				gojq.WithFunction("f", tc.min, tc.max, func(any, []any) any {
+				gojq.WithFunction("f", tc.min, tc.max, func(context.Context, any, []any) any {
 					return 0
 				}),
 			))
@@ -616,10 +617,10 @@ func TestWithIterFunction(t *testing.T) {
 		t.Fatal(err)
 	}
 	code, err := gojq.Compile(query,
-		gojq.WithIterFunction("f", 0, 0, func(any, []any) gojq.Iter {
+		gojq.WithIterFunction("f", 0, 0, func(context.Context, any, []any) gojq.Iter {
 			return gojq.NewIter(1, 2, 3)
 		}),
-		gojq.WithIterFunction("g", 2, 2, func(_ any, xs []any) gojq.Iter {
+		gojq.WithIterFunction("g", 2, 2, func(_ context.Context, _ any, xs []any) gojq.Iter {
 			if x, ok := xs[0].(int); ok {
 				if y, ok := xs[1].(int); ok {
 					return &rangeIter{x, y}
@@ -627,7 +628,7 @@ func TestWithIterFunction(t *testing.T) {
 			}
 			return gojq.NewIter(fmt.Errorf("g cannot be applied to: %v", xs))
 		}),
-		gojq.WithIterFunction("h", 0, 0, func(any, []any) gojq.Iter {
+		gojq.WithIterFunction("h", 0, 0, func(context.Context, any, []any) gojq.Iter {
 			return gojq.NewIter()
 		}),
 	)
@@ -657,7 +658,7 @@ func TestWithIterFunctionError(t *testing.T) {
 		t.Fatal(err)
 	}
 	code, err := gojq.Compile(query,
-		gojq.WithIterFunction("f", 0, 0, func(any, []any) gojq.Iter {
+		gojq.WithIterFunction("f", 0, 0, func(context.Context, any, []any) gojq.Iter {
 			return gojq.NewIter(1, errors.New("error"), 3)
 		}),
 	)
@@ -698,7 +699,7 @@ func TestWithIterFunctionPathIndexing(t *testing.T) {
 		t.Fatal(err)
 	}
 	code, err := gojq.Compile(query,
-		gojq.WithIterFunction("f", 0, 0, func(any, []any) gojq.Iter {
+		gojq.WithIterFunction("f", 0, 0, func(context.Context, any, []any) gojq.Iter {
 			return gojq.NewIter(0, 1, 2)
 		}),
 	)
@@ -723,7 +724,7 @@ func TestWithIterFunctionPathInputValue(t *testing.T) {
 		t.Fatal(err)
 	}
 	code, err := gojq.Compile(query,
-		gojq.WithIterFunction("f", 0, 0, func(v any, _ []any) gojq.Iter {
+		gojq.WithIterFunction("f", 0, 0, func(_ context.Context, v any, _ []any) gojq.Iter {
 			return gojq.NewIter(v, v, v)
 		}),
 	)
@@ -748,7 +749,7 @@ func TestWithIterFunctionPathEmpty(t *testing.T) {
 		t.Fatal(err)
 	}
 	code, err := gojq.Compile(query,
-		gojq.WithIterFunction("f", 0, 0, func(any, []any) gojq.Iter {
+		gojq.WithIterFunction("f", 0, 0, func(context.Context, any, []any) gojq.Iter {
 			return gojq.NewIter()
 		}),
 	)
@@ -773,7 +774,7 @@ func TestWithIterFunctionInvalidPathError(t *testing.T) {
 		t.Fatal(err)
 	}
 	code, err := gojq.Compile(query,
-		gojq.WithIterFunction("f", 0, 0, func(any, []any) gojq.Iter {
+		gojq.WithIterFunction("f", 0, 0, func(context.Context, any, []any) gojq.Iter {
 			return gojq.NewIter(map[string]any{"x": 1})
 		}),
 	)
@@ -800,7 +801,7 @@ func TestWithIterFunctionPathError(t *testing.T) {
 		t.Fatal(err)
 	}
 	code, err := gojq.Compile(query,
-		gojq.WithIterFunction("f", 0, 0, func(any, []any) gojq.Iter {
+		gojq.WithIterFunction("f", 0, 0, func(context.Context, any, []any) gojq.Iter {
 			return gojq.NewIter(errors.New("error"))
 		}),
 	)
@@ -833,10 +834,10 @@ func TestWithIterFunctionDefineError(t *testing.T) {
 		}
 	}()
 	t.Fatal(gojq.Compile(query,
-		gojq.WithFunction("f", 0, 0, func(any, []any) any {
+		gojq.WithFunction("f", 0, 0, func(context.Context, any, []any) any {
 			return 0
 		}),
-		gojq.WithIterFunction("f", 0, 0, func(any, []any) gojq.Iter {
+		gojq.WithIterFunction("f", 0, 0, func(context.Context, any, []any) gojq.Iter {
 			return gojq.NewIter()
 		}),
 	))
@@ -859,7 +860,7 @@ func TestWithFunctionWithModuleLoader(t *testing.T) {
 		t.Fatal(err)
 	}
 	code, err := gojq.Compile(query,
-		gojq.WithFunction("f", 0, 0, func(x any, _ []any) any {
+		gojq.WithFunction("f", 0, 0, func(_ context.Context, x any, _ []any) any {
 			if x, ok := x.(int); ok {
 				return x * 2
 			}
