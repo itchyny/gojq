@@ -1472,7 +1472,7 @@ func funcIsnormal(v any) any {
 // functions.
 type allocator map[uintptr]struct{}
 
-func funcAllocator(any, []any) any {
+func funcAllocator(context.Context, any, []any) any {
 	return allocator{}
 }
 
@@ -1506,7 +1506,7 @@ func funcSetpath(v, p, n any) any {
 }
 
 // Used in compiler#compileAssign and compiler#compileModify.
-func funcSetpathWithAllocator(v any, args []any) any {
+func funcSetpathWithAllocator(_ context.Context, v any, args []any) any {
 	return setpath(v, args[0], args[1], args[2].(allocator))
 }
 
@@ -1527,7 +1527,7 @@ func funcDelpaths(v, p any) any {
 }
 
 // Used in compiler#compileAssign and compiler#compileModify.
-func funcDelpathsWithAllocator(v any, args []any) any {
+func funcDelpathsWithAllocator(_ context.Context, v any, args []any) any {
 	return delpaths(v, args[0], args[1].(allocator))
 }
 

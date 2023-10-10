@@ -1114,7 +1114,7 @@ func (c *compiler) compileModify() {
 	)
 }
 
-func (c *compiler) funcBuiltins(any, []any) any {
+func (c *compiler) funcBuiltins(context.Context, any, []any) any {
 	type funcNameArity struct {
 		name  string
 		arity int
@@ -1156,7 +1156,7 @@ func (c *compiler) funcBuiltins(any, []any) any {
 	return ys
 }
 
-func (c *compiler) funcInput(any, []any) any {
+func (c *compiler) funcInput(context.Context, any, []any) any {
 	v, ok := c.inputIter.Next()
 	if !ok {
 		return errors.New("break")
@@ -1164,7 +1164,7 @@ func (c *compiler) funcInput(any, []any) any {
 	return v
 }
 
-func (c *compiler) funcModulemeta(v any, _ []any) any {
+func (c *compiler) funcModulemeta(_ context.Context, v any, _ []any) any {
 	s, ok := v.(string)
 	if !ok {
 		return &func0TypeError{"modulemeta", v}
