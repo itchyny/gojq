@@ -4,7 +4,7 @@ _gojq()
 {
   _arguments -s -S \
     '(-r --raw-output --raw-output0 -j --join-output)'{-r,--raw-output}'[output raw strings]' \
-    '(-r --raw-output --raw-output0 -j --join-output)--raw-output0[implies -r with NUL character delimiter]' \
+    '(-r --raw-output               -j --join-output)--raw-output0[implies -r with NUL character delimiter]' \
     '(-r --raw-output --raw-output0 -j --join-output)'{-j,--join-output}'[implies -r with no newline delimiter]' \
     '(-c --compact-output --indent --tab --yaml-output)'{-c,--compact-output}'[output without pretty-printing]' \
     '(-c --compact-output          --tab --yaml-output)--indent=[number of spaces for indentation]:indentation count:(2 4 8)' \
