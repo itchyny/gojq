@@ -265,8 +265,12 @@ func (l *lexer) skipComment() bool {
 			return true
 		case '\\':
 			switch l.offset++; l.peek() {
-			case '\\', '\n', '\r':
+			case '\\', '\n':
 				l.offset++
+			case '\r':
+				if l.offset++; l.peek() == '\n' {
+					l.offset++
+				}
 			}
 		case '\n', '\r':
 			return false

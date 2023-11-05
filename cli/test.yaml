@@ -38,6 +38,24 @@
     3
     4
 
+- name: query with comment with newline in dos format
+  args:
+    - "1, # \r\n2, # \\\r\ncomment\\\\\r\n3"
+  input: 'null'
+  expected: |
+    1
+    2
+    3
+
+- name: query with comment with newline in mac format
+  args:
+    - "1, # \r2, # \\\rcomment\\\\\r3"
+  input: 'null'
+  expected: |
+    1
+    2
+    3
+
 - name: number input
   args:
     - '.'
