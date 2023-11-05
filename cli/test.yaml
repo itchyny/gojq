@@ -4441,6 +4441,14 @@
     {"a":[{"b":5}]}
     {"a":[{"b":5,"c":3}]}
 
+- name: pick function
+  args:
+    - -c
+    - 'pick(.x, .y[2], .y[0], .z)'
+  input: '{"x":1, "y": [1,2,3]}'
+  expected: |
+    {"x":1,"y":[1,null,3],"z":null}
+
 - name: map_values function
   args:
     - -c
