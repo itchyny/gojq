@@ -16,6 +16,28 @@
   expected: |
     128
 
+- name: query with comment
+  args:
+    - |
+      # comment
+      1,
+      # comment \
+        comment \ 0 \
+        comment
+      2,
+      # comment \
+        comment \\
+      3, #      \
+        comment \\\
+        comment \\
+      4 #
+  input: 'null'
+  expected: |
+    1
+    2
+    3
+    4
+
 - name: number input
   args:
     - '.'
