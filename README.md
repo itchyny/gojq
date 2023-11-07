@@ -1,5 +1,5 @@
 # gojq
-[![CI Status](https://github.com/itchyny/gojq/workflows/CI/badge.svg?branch=main)](https://github.com/itchyny/gojq/actions?query=branch:main)
+[![CI Status](https://github.com/itchyny/gojq/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/itchyny/gojq/actions?query=branch:main)
 [![Go Report Card](https://goreportcard.com/badge/github.com/itchyny/gojq)](https://goreportcard.com/report/github.com/itchyny/gojq)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/itchyny/gojq/blob/main/LICENSE)
 [![release](https://img.shields.io/github/release/itchyny/gojq/all.svg)](https://github.com/itchyny/gojq/releases)
