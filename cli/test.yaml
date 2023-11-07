@@ -7163,40 +7163,40 @@
 
 - name: source query from file
   args:
-    - -n
     - -f
-    - 'testdata/1.jq'
+    - testdata/1.jq
+  input: '{"foo":{"bar":42}}'
   expected: |
-    null
+    42
 
 - name: source query from file short option in clumped options
   args:
-    - -nf
-    - 'testdata/1.jq'
+    - -cfr
+    - testdata/1.jq
+  input: '{"foo":{"bar":42}}'
   expected: |
-    null
-
-- name: source query from file short option with equal sign
-  args:
-    - -n
-    - -f=testdata/1.jq
-  expected: |
-    null
+    42
 
 - name: source query from file long option
   args:
+    - --from-file
+    - testdata/1.jq
+  input: '{"foo":{"bar":42}}'
+  expected: |
+    42
+
+- name: source query from file with --args
+  args:
+    - --args
+    - --compact-output
     - --null-input
     - --from-file
-    - 'testdata/1.jq'
+    - testdata/14.jq
+    - 1
+    - 2
+    - 3
   expected: |
-    null
-
-- name: source query from file long option with equal sign
-  args:
-    - --null-input
-    - --from-file=testdata/1.jq
-  expected: |
-    null
+    {"named":{},"positional":["1","2","3"]}
 
 - name: invalid query
   args:
@@ -7295,7 +7295,7 @@
 - name: invalid multiple line query in file
   args:
     - -f
-    - 'testdata/10.jq'
+    - testdata/10.jq
   error: |
     invalid query: testdata/10.jq:5
         5 | bar ]
@@ -7305,7 +7305,7 @@
 - name: invalid multiple line query in dos format
   args:
     - -f
-    - 'testdata/11.jq'
+    - testdata/11.jq
   error: |
     invalid query: testdata/11.jq:5
         5 | bar ]
@@ -7315,7 +7315,7 @@
 - name: invalid multiple line query in mac format
   args:
     - -f
-    - 'testdata/12.jq'
+    - testdata/12.jq
   error: |
     invalid query: testdata/12.jq:5
         5 | bar ]
@@ -7325,7 +7325,7 @@
 - name: invalid query in file
   args:
     - -f
-    - 'testdata/2.jq'
+    - testdata/2.jq
   error: |
     invalid query: testdata/2.jq:3
         3 |   bar, []
@@ -7335,15 +7335,14 @@
 - name: query file not found
   args:
     - -f
-    - 'testdata/3.jq'
+    - testdata/3.jq
   error: 'open testdata/3.jq:'
 
 - name: query file not specified
   args:
     - -f
   error: |
-    expected argument for flag `-f'
-  exit_code: 2
+    expected a query file for flag `-f'
 
 - name: invalid json unexpected eof error
   input: '{'

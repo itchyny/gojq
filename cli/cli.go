@@ -69,7 +69,7 @@ type flagopts struct {
 	InputStream   bool              `long:"stream" description:"parse input in stream fashion"`
 	InputYAML     bool              `long:"yaml-input" description:"read input as YAML format"`
 	InputSlurp    bool              `short:"s" long:"slurp" description:"read all inputs into an array"`
-	FromFile      string            `short:"f" long:"from-file" description:"load query from file"`
+	FromFile      bool              `short:"f" long:"from-file" description:"load query from file"`
 	ModulePaths   []string          `short:"L" description:"directory to search modules from"`
 	Arg           map[string]string `long:"arg" description:"set a string value to a variable"`
 	ArgJSON       map[string]string `long:"argjson" description:"set a JSON value to a variable"`
@@ -205,17 +205,19 @@ Usage:
 		"positional": positional,
 	})
 	var arg, fname string
-	if opts.FromFile != "" {
-		src, err := os.ReadFile(opts.FromFile)
+	if opts.FromFile {
+		if len(args) == 0 {
+			return errors.New("expected a query file for flag `-f'")
+		}
+		src, err := os.ReadFile(args[0])
 		if err != nil {
 			return err
 		}
-		arg, fname = string(src), opts.FromFile
+		arg, args, fname = string(src), args[1:], args[0]
 	} else if len(args) == 0 {
 		arg = "."
 	} else {
-		arg, fname = strings.TrimSpace(args[0]), "<arg>"
-		args = args[1:]
+		arg, args, fname = strings.TrimSpace(args[0]), args[1:], "<arg>"
 	}
 	if opts.ExitStatus {
 		cli.exitCodeError = &exitCodeError{exitCodeNoValueErr}
