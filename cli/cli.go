@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -233,7 +232,7 @@ Usage:
 	}
 	modulePaths := opts.ModulePaths
 	if len(modulePaths) == 0 && addDefaultModulePaths {
-		modulePaths = listDefaultModulePaths()
+		modulePaths = []string{"~/.jq", "$ORIGIN/../lib/gojq", "$ORIGIN/../lib"}
 	}
 	iter := cli.createInputIter(args)
 	defer iter.Close()
@@ -274,23 +273,6 @@ Usage:
 		iter = newNullInputIter()
 	}
 	return cli.process(iter, code)
-}
-
-func listDefaultModulePaths() []string {
-	modulePaths := []string{"", "../lib/gojq", "../lib"}
-	if executable, err := os.Executable(); err == nil {
-		if executable, err := filepath.EvalSymlinks(executable); err == nil {
-			origin := filepath.Dir(executable)
-			modulePaths[1] = filepath.Join(origin, modulePaths[1])
-			modulePaths[2] = filepath.Join(origin, modulePaths[2])
-		}
-	}
-	if homeDir, err := os.UserHomeDir(); err == nil {
-		modulePaths[0] = filepath.Join(homeDir, ".jq")
-	} else {
-		modulePaths = modulePaths[1:]
-	}
-	return modulePaths
 }
 
 func slurpFile(name string) (any, error) {
