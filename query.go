@@ -1134,7 +1134,7 @@ func (e *ConstObjectKeyVal) writeTo(s *strings.Builder) {
 	if e.Key != "" {
 		s.WriteString(e.Key)
 	} else {
-		s.WriteString(e.KeyString)
+		jsonEncodeString(s, e.KeyString)
 	}
 	s.WriteString(": ")
 	e.Val.writeTo(s)
