@@ -1075,6 +1075,14 @@ func (e *ConstTerm) toValue() any {
 	}
 }
 
+func (e *ConstTerm) toString() (string, bool) {
+	if e.Object != nil || e.Array != nil ||
+		e.Number != "" || e.Null || e.True || e.False {
+		return "", false
+	}
+	return e.Str, true
+}
+
 // ConstObject ...
 type ConstObject struct {
 	KeyVals []*ConstObjectKeyVal

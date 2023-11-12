@@ -1229,13 +1229,6 @@ func listModuleDeps(q *Query) []any {
 		v := i.Meta.ToValue()
 		if v == nil {
 			v = make(map[string]any)
-		} else {
-			for k := range v {
-				// dirty hack to remove the internal fields
-				if strings.HasPrefix(k, "$$") {
-					delete(v, k)
-				}
-			}
 		}
 		relpath := i.ImportPath
 		if relpath == "" {

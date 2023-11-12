@@ -57,7 +57,7 @@ func (l *moduleLoader) LoadInitModules() ([]*Query, error) {
 		if err != nil {
 			return nil, err
 		}
-		q, err := parseModule(path, string(cnt))
+		q, err := parseModule(string(cnt), filepath.Dir(path))
 		if err != nil {
 			return nil, &queryParseError{path, string(cnt), err}
 		}
@@ -75,7 +75,7 @@ func (l *moduleLoader) LoadModuleWithMeta(name string, meta map[string]any) (*Qu
 	if err != nil {
 		return nil, err
 	}
-	q, err := parseModule(path, string(cnt))
+	q, err := parseModule(string(cnt), filepath.Dir(path))
 	if err != nil {
 		return nil, &queryParseError{path, string(cnt), err}
 	}
@@ -117,7 +117,7 @@ func (l *moduleLoader) LoadJSONWithMeta(name string, meta map[string]any) (any, 
 
 func (l *moduleLoader) lookupModule(name, extension string, meta map[string]any) (string, error) {
 	paths := l.paths
-	if path := searchPath(meta); path != "" {
+	if path, ok := meta["search"].(string); ok {
 		paths = append([]string{path}, paths...)
 	}
 	for _, base := range paths {
@@ -133,46 +133,30 @@ func (l *moduleLoader) lookupModule(name, extension string, meta map[string]any)
 	return "", fmt.Errorf("module not found: %q", name)
 }
 
-// This is a dirty hack to implement the "search" field.
-func parseModule(path, cnt string) (*Query, error) {
+func parseModule(cnt, dir string) (*Query, error) {
 	q, err := Parse(cnt)
 	if err != nil {
 		return nil, err
 	}
 	for _, i := range q.Imports {
-		if i.Meta == nil {
-			continue
+		if i.Meta != nil {
+			for _, e := range i.Meta.KeyVals {
+				if e.Key == "search" || e.KeyString == "search" {
+					if path, ok := e.Val.toString(); ok {
+						if path = resolvePath(path, dir); path != "" {
+							e.Val.Str = path
+						} else {
+							e.Val.Null = true
+						}
+					}
+				}
+			}
 		}
-		i.Meta.KeyVals = append(
-			i.Meta.KeyVals,
-			&ConstObjectKeyVal{
-				Key: "$$path",
-				Val: &ConstTerm{Str: path},
-			},
-		)
 	}
 	return q, nil
 }
 
-func searchPath(meta map[string]any) string {
-	search, ok := meta["search"]
-	if !ok {
-		return ""
-	}
-	path, ok := search.(string)
-	if !ok {
-		return ""
-	}
-	var base string
-	if p, ok := meta["$$path"]; ok {
-		if base, _ = p.(string); base != "" {
-			base = filepath.Dir(base)
-		}
-	}
-	return resolvePath(path, base)
-}
-
-func resolvePath(path, base string) string {
+func resolvePath(path, dir string) string {
 	switch {
 	case filepath.IsAbs(path):
 		return path
@@ -193,6 +177,6 @@ func resolvePath(path, base string) string {
 		}
 		return filepath.Join(filepath.Dir(exe), path[8:])
 	default:
-		return filepath.Join(base, path)
+		return filepath.Join(dir, path)
 	}
 }
