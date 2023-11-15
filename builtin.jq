@@ -116,7 +116,7 @@ def tostream:
 def map_values(f): .[] |= f;
 def del(f): delpaths([path(f)]);
 def paths: path(..) | select(. != []);
-def paths(f): paths as $p | select(getpath($p) | f) | $p;
+def paths(f): path(.. | select(f)) | select(. != []);
 def pick(f): . as $v |
   reduce path(f) as $p (null; setpath($p; $v | getpath($p)));
 
