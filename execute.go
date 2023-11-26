@@ -96,13 +96,8 @@ loop:
 					if er, ok := er.(*exitCodeError); ok && er.halt {
 						break loop
 					}
-					if v := er.Value(); v != nil {
-						env.pop()
-						env.push(v)
-					} else {
-						err = nil
-						break loop
-					}
+					env.pop()
+					env.push(er.Value())
 				default:
 					env.pop()
 					env.push(err.Error())
@@ -191,9 +186,7 @@ loop:
 				}
 				w := v[0].(func(any, []any) any)(x, args)
 				if e, ok := w.(error); ok {
-					if er, ok := e.(*exitCodeError); !ok || er.value != nil || er.halt {
-						err = e
-					}
+					err = e
 					break loop
 				}
 				env.push(w)

@@ -174,7 +174,7 @@ func (err *exitCodeError) Error() string {
 }
 
 func (err *exitCodeError) IsEmptyError() bool {
-	return err.value == nil
+	return err.value == nil && err.halt
 }
 
 func (err *exitCodeError) Value() any {

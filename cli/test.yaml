@@ -728,22 +728,6 @@
     [[1],[1]]
     [[[null],3],[[null],3]]
 
-- name: array construction with error function
-  args:
-    - -c
-    - '[error], [0, error, 1]'
-  input: 'null'
-  expected: |
-    []
-    [0,1]
-
-- name: array construction with halt_error function
-  args:
-    - -c
-    - '[halt_error], [0, halt_error, 1]'
-  input: 'null'
-  exit_code: 5
-
 - name: array iterator
   args:
     - '.foo | .[] | .'
@@ -4672,22 +4656,6 @@
   error: |
     array index too large: 200000000
 
-- name: assignment operator with error function
-  args:
-    - -c
-    - 'error = 1'
-  input: 'null'
-  expected: |
-    null
-
-- name: assignment operator with error function and valid paths
-  args:
-    - -c
-    - '(.x,error,.y) = 1'
-  input: 'null'
-  expected: |
-    {"x":1,"y":1}
-
 - name: assignment operator with select
   args:
     - -c
@@ -4937,6 +4905,8 @@
   args:
     - 'error'
   input: 'null'
+  error: |
+    error: null
 
 - name: error/0 function on string and try catch
   args:
@@ -4950,6 +4920,7 @@
     - 'null,1,[],{x:42} | try error catch .'
   input: '0'
   expected: |
+    null
     1
     []
     {
@@ -4977,6 +4948,8 @@
   args:
     - 'error(null)'
   input: '1'
+  error: |
+    error: null
 
 - name: path function identity
   args:
@@ -5130,28 +5103,6 @@
   input: 'null'
   expected: |
     []
-
-- name: path function with error function
-  args:
-    - '[path(error)]'
-  input: 'null'
-  expected: |
-    []
-
-- name: path function with error function and valid paths
-  args:
-    - -c
-    - '[path(.x,error,.y)]'
-  input: 'null'
-  expected: |
-    [["x"],["y"]]
-
-- name: path function with error message
-  args:
-    - '[path("x"|error)]'
-  input: 'null'
-  error: |
-    error: x
 
 - name: path function iterate error of array
   args:
@@ -8115,7 +8066,8 @@
     - --exit-status
     - 'error'
   input: 'null'
-  exit_code: 4
+  error: |
+    error: null
 
 - name: exit status long option with halt function
   args:
