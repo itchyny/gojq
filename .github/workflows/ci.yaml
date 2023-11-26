@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches:
-    - main
+      - main
   pull_request:
 
 permissions:
@@ -18,41 +18,41 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         go: [1.21.x, 1.20.x, 1.19.x]
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    - name: Setup Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: ${{ matrix.go }}
-    - name: Test
-      run: make test
-    - name: Test with GOARCH=386
-      run: env GOARCH=386 go test -v ./...
-      if: matrix.os != 'macos-latest'
-    - name: Lint
-      run: make lint
-    - name: Check tools
-      run: make check-tools
-    - name: Check go generate
-      run: go generate && ! git diff | grep ^
-      shell: bash
-    - name: Check command examples in README.md
-      run: |
-        ./gojq -Rnr 'reduce inputs as $x (
-          {};
-          if $x|test("^ [$] .*gojq|^```")
-          then
-            if .command
-            then .results += [{command: .command, output: .output}] | del(.command,.output)
-            end | if $x|test("gojq") then .command = $x[3:] end
-          elif .command then .output += ($x + "\n" | sub(" +#.*"; ""))
-          end
-        ) | .results[] |
-          "if got=$(diff <(printf %s \(.output | @sh)) \\
-            <(\(.command | gsub("gojq"; "./gojq")) 2>&1)); then
-            echo ok: \(.command | @sh)
-          else
-            echo ng: \(.command | @sh); echo \"$got\"; exit 1
-          fi"
-        ' README.md | bash
-      shell: bash
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go }}
+      - name: Test
+        run: make test
+      - name: Test with GOARCH=386
+        run: env GOARCH=386 go test -v ./...
+        if: matrix.os != 'macos-latest'
+      - name: Lint
+        run: make lint
+      - name: Check tools
+        run: make check-tools
+      - name: Check go generate
+        run: go generate && ! git diff | grep ^
+        shell: bash
+      - name: Check command examples in README.md
+        run: |
+          ./gojq -Rnr 'reduce inputs as $x (
+            {};
+            if $x|test("^ [$] .*gojq|^```")
+            then
+              if .command
+              then .results += [{command: .command, output: .output}] | del(.command,.output)
+              end | if $x|test("gojq") then .command = $x[3:] end
+            elif .command then .output += ($x + "\n" | sub(" +#.*"; ""))
+            end
+          ) | .results[] |
+            "if got=$(diff <(printf %s \(.output | @sh)) \\
+              <(\(.command | gsub("gojq"; "./gojq")) 2>&1)); then
+              echo ok: \(.command | @sh)
+            else
+              echo ng: \(.command | @sh); echo \"$got\"; exit 1
+            fi"
+          ' README.md | bash
+        shell: bash
