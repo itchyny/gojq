@@ -1,4 +1,21 @@
 # Changelog
+## [v0.12.14](https://github.com/itchyny/gojq/compare/v0.12.13..v0.12.14) (2023-12-01)
+* implement `abs`, `pick`, and `debug/1` functions
+* implement `--raw-output0` option, and remove `--nul-output` (`-0`) option
+* fix string multiplication by zero to emit an empty string
+* fix zero divided by zero to emit an error, not `nan`
+* fix modulo operator to emit `nan` if either side is `nan`
+* fix `implode` function to emit replacement characters on invalid code points
+* fix `stderr` function to output strings in raw format
+* fix `error` function to throw an error even for `null`
+* fix `walk` function on multiple outputs arguments
+* fix `--from-file` option to work with `--arg` and `--argjson` options
+* fix the default module search path `../lib` relative to the executable
+* improve query parser to support comment continuation with backslash
+* improve `modulemeta` function to include defined function names in the module
+* improve search path of `import` and `include` directives to support `$ORIGIN` expansion
+* remove deprecated `leaf_paths` function
+
 ## [v0.12.13](https://github.com/itchyny/gojq/compare/v0.12.12..v0.12.13) (2023-06-01)
 * implement `@urid` format string to decode URI values
 * fix functions returning arrays not to emit nil slices (`flatten`, `group_by`,
