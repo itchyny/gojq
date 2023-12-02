@@ -9,7 +9,7 @@
 * fix `stderr` function to output strings in raw format
 * fix `error` function to throw an error even for `null`
 * fix `walk` function on multiple outputs arguments
-* fix `--from-file` option to work with `--arg` and `--argjson` options
+* fix `--from-file` option to work with `--args` and `--jsonargs` options
 * fix the default module search path `../lib` relative to the executable
 * improve query parser to support comment continuation with backslash
 * improve `modulemeta` function to include defined function names in the module
