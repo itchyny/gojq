@@ -5161,6 +5161,13 @@
     2
     -4
 
+- name: bsearch function with objects
+  args:
+    - '[{x:range(.),y:range(.)}] | bsearch({x:1,y:1})'
+  input: '3'
+  expected: |
+    4
+
 - name: gmtime, localtime functions
   args:
     - -c
