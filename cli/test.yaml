@@ -3687,6 +3687,15 @@
     variable not defined: $i
   exit_code: 3
 
+- name: binding variable scope with function declaration
+  args:
+    - -n
+    - -c
+    - '"x" as $v | def f: $v; "y" as $v | [., f, $v]'
+  input: 'null'
+  expected: |
+    [null,"x","y"]
+
 - name: function scope in parenthesis
   args:
     - 'def f: 1; . | (def f: 2; f) | f, .'
@@ -7672,6 +7681,18 @@
       "bar": "42",
       "foo": "value 1"
     }
+
+- name: arg option with function declaration
+  args:
+    - -n
+    - --arg
+    - 'foo'
+    - 'bar'
+    - 'def f: $foo; "baz" as $foo | ., f, $foo'
+  expected: |
+    null
+    "bar"
+    "baz"
 
 - name: arg option arguments count error
   args:

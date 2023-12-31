@@ -538,6 +538,7 @@ func (c *compiler) compileQueryUpdate(l, r *Query, op Operator) error {
 }
 
 func (c *compiler) compileBind(e *Term, b *Bind) error {
+	defer c.newScopeDepth()()
 	c.append(&code{op: opdup})
 	c.append(&code{op: opexpbegin})
 	if err := c.compileTerm(e); err != nil {
