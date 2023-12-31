@@ -84,6 +84,13 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 	setscope := c.lazy(func() *code {
 		return &code{op: opscope, v: [3]int{scope.id, scope.variablecnt, 0}}
 	})
+	for _, name := range c.variables {
+		if !newLexer(name).validVarName() {
+			return nil, &variableNameError{name}
+		}
+		c.appendCodeInfo(name)
+		c.append(&code{op: opstore, v: c.pushVariable(name)})
+	}
 	if c.moduleLoader != nil {
 		if moduleLoader, ok := c.moduleLoader.(interface {
 			LoadInitModules() ([]*Query, error)
@@ -113,13 +120,6 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 }
 
 func (c *compiler) compile(q *Query) error {
-	for _, name := range c.variables {
-		if !newLexer(name).validVarName() {
-			return &variableNameError{name}
-		}
-		c.appendCodeInfo(name)
-		c.append(&code{op: opstore, v: c.pushVariable(name)})
-	}
 	for _, i := range q.Imports {
 		if err := c.compileImport(i); err != nil {
 			return err

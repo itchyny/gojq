@@ -146,7 +146,7 @@ type moduleLoaderInitModules struct{}
 
 func (*moduleLoaderInitModules) LoadInitModules() ([]*gojq.Query, error) {
 	query, err := gojq.Parse(`
-		def f: 42;
+		def f: $x;
 		def g: f * f;
 	`)
 	if err != nil {
@@ -162,12 +162,13 @@ func TestWithModuleLoader_LoadInitModules(t *testing.T) {
 	}
 	code, err := gojq.Compile(
 		query,
+		gojq.WithVariables([]string{"$x"}),
 		gojq.WithModuleLoader(&moduleLoaderInitModules{}),
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	iter := code.Run(nil)
+	iter := code.Run(nil, 42)
 	for {
 		got, ok := iter.Next()
 		if !ok {
