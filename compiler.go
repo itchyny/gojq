@@ -35,21 +35,42 @@ type Code struct {
 //
 // It is safe to call this method in goroutines, to reuse a compiled [*Code].
 // But for arguments, do not give values sharing same data between goroutines.
+// For sharing values across goroutines, see PrepareData and ConcurrentRun.
 func (c *Code) Run(v any, values ...any) Iter {
 	return c.RunWithContext(context.Background(), v, values...)
 }
 
 // RunWithContext runs the code with context.
+// Alternatively, see PrepareData and ConcurrentRunWithContext.
 func (c *Code) RunWithContext(ctx context.Context, v any, values ...any) Iter {
+	normalized := make([]preparedData, len(values))
+	for i, v := range values {
+		normalized[i] = PrepareData(v)
+	}
+	return c.ConcurrentRunWithContext(ctx, PrepareData(v), normalized...)
+}
+
+// PrepareData is not safe for use in goroutines, since it writes to any maps
+// with numeric values; supports ConcurrentRun and ConcurrentRunWithContext.
+func PrepareData(v any) preparedData {
+	return normalizeNumbers(v)
+}
+
+// ConcurrentRun supports reusing data across goroutines, as long as it is
+// prepared with PrepareData.
+func (c *Code) ConcurrentRun(v preparedData, values ...any) Iter {
+	return c.ConcurrentRunWithContext(context.Background(), v, values)
+}
+
+// ConcurrentRunWithContext runs the code concurrently with context.
+func (c *Code) ConcurrentRunWithContext(ctx context.Context, v preparedData, values ...preparedData) Iter {
 	if len(values) > len(c.variables) {
 		return NewIter(&tooManyVariableValuesError{})
 	} else if len(values) < len(c.variables) {
 		return NewIter(&expectedVariableError{c.variables[len(values)]})
 	}
-	for i, v := range values {
-		values[i] = normalizeNumbers(v)
-	}
-	return newEnv(ctx).execute(c, normalizeNumbers(v), values...)
+	return newEnv(ctx).execute(c, v, values...)
+
 }
 
 type scopeinfo struct {
