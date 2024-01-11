@@ -43,7 +43,7 @@ func (c *Code) Run(v any, values ...any) Iter {
 // RunWithContext runs the code with context.
 // Alternatively, see PrepareData and ConcurrentRunWithContext.
 func (c *Code) RunWithContext(ctx context.Context, v any, values ...any) Iter {
-	normalized := make([]preparedData, len(values))
+	normalized := make([]PreparedData, len(values))
 	for i, v := range values {
 		normalized[i] = PrepareData(v)
 	}
@@ -52,18 +52,18 @@ func (c *Code) RunWithContext(ctx context.Context, v any, values ...any) Iter {
 
 // PrepareData is not safe for use in goroutines, since it writes to any maps
 // with numeric values; supports ConcurrentRun and ConcurrentRunWithContext.
-func PrepareData(v any) preparedData {
+func PrepareData(v any) PreparedData {
 	return normalizeNumbers(v)
 }
 
 // ConcurrentRun supports reusing data across goroutines, as long as it is
 // prepared with PrepareData.
-func (c *Code) ConcurrentRun(v preparedData, values ...any) Iter {
+func (c *Code) ConcurrentRun(v PreparedData, values ...any) Iter {
 	return c.ConcurrentRunWithContext(context.Background(), v, values)
 }
 
 // ConcurrentRunWithContext runs the code concurrently with context.
-func (c *Code) ConcurrentRunWithContext(ctx context.Context, v preparedData, values ...preparedData) Iter {
+func (c *Code) ConcurrentRunWithContext(ctx context.Context, v PreparedData, values ...PreparedData) Iter {
 	if len(values) > len(c.variables) {
 		return NewIter(&tooManyVariableValuesError{})
 	} else if len(values) < len(c.variables) {

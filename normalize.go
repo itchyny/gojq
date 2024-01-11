@@ -25,7 +25,7 @@ func normalizeNumber(v json.Number) any {
 	return math.Inf(1)
 }
 
-func normalizeNumbers(v any) any {
+func normalizeNumbers(v any) PreparedData {
 	switch v := v.(type) {
 	case json.Number:
 		return normalizeNumber(v)
