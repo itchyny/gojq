@@ -50,12 +50,6 @@ func (c *Code) RunWithContext(ctx context.Context, v any, values ...any) Iter {
 	return c.ConcurrentRunWithContext(ctx, PrepareData(v), normalized...)
 }
 
-// PrepareData is not safe for use in goroutines, since it writes to any maps
-// with numeric values; supports ConcurrentRun and ConcurrentRunWithContext.
-func PrepareData(v any) PreparedData {
-	return normalizeNumbers(v)
-}
-
 // ConcurrentRun supports reusing data across goroutines, as long as it is
 // prepared with PrepareData.
 func (c *Code) ConcurrentRun(v PreparedData, values ...any) Iter {
