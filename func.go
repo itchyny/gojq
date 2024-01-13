@@ -682,11 +682,11 @@ func funcEndsWith(v, x any) any {
 func funcLtrimstr(v, x any) any {
 	s, ok := v.(string)
 	if !ok {
-		return v
+		return &func1TypeError{"ltrimstr", v, x}
 	}
 	t, ok := x.(string)
 	if !ok {
-		return v
+		return &func1TypeError{"ltrimstr", v, x}
 	}
 	return strings.TrimPrefix(s, t)
 }
@@ -694,11 +694,11 @@ func funcLtrimstr(v, x any) any {
 func funcRtrimstr(v, x any) any {
 	s, ok := v.(string)
 	if !ok {
-		return v
+		return &func1TypeError{"rtrimstr", v, x}
 	}
 	t, ok := x.(string)
 	if !ok {
-		return v
+		return &func1TypeError{"rtrimstr", v, x}
 	}
 	return strings.TrimSuffix(s, t)
 }

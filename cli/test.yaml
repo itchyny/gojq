@@ -2001,45 +2001,51 @@
 
 - name: ltrimstr function
   args:
-    - 'map(ltrimstr("foo")), ("x"|ltrimstr(0, null, {}))'
-  input: '["", "fo", "foo", "fooo", "barfoo", 0, null, true, {}, []]'
+    - 'ltrimstr("foo")'
+  input: |
+    ""
+    "fo"
+    "foo"
+    "fooo"
+    "barfoo"
   expected: |
-    [
-      "",
-      "fo",
-      "",
-      "o",
-      "barfoo",
-      0,
-      null,
-      true,
-      {},
-      []
-    ]
-    "x"
-    "x"
-    "x"
+    ""
+    "fo"
+    ""
+    "o"
+    "barfoo"
+
+- name: ltrimstr function error
+  args:
+    - '("x" | try ltrimstr({}) catch .), (10 | try ltrimstr("x") catch .)'
+  input: '0'
+  expected: |
+    "ltrimstr({}) cannot be applied to: string (\"x\")"
+    "ltrimstr(\"x\") cannot be applied to: number (10)"
 
 - name: rtrimstr function
   args:
-    - 'map(rtrimstr("foo")), ("x"|rtrimstr(0, null, {}))'
-  input: '["", "fo", "foo", "fooo", "barfoo", 0, null, true, {}, []]'
+    - 'rtrimstr("foo")'
+  input: |
+    ""
+    "fo"
+    "foo"
+    "fooo"
+    "barfoo"
   expected: |
-    [
-      "",
-      "fo",
-      "",
-      "fooo",
-      "bar",
-      0,
-      null,
-      true,
-      {},
-      []
-    ]
-    "x"
-    "x"
-    "x"
+    ""
+    "fo"
+    ""
+    "fooo"
+    "bar"
+
+- name: rtrimstr function error
+  args:
+    - '("x" | try rtrimstr({}) catch .), (10 | try rtrimstr("x") catch .)'
+  input: '0'
+  expected: |
+    "rtrimstr({}) cannot be applied to: string (\"x\")"
+    "rtrimstr(\"x\") cannot be applied to: number (10)"
 
 - name: explode function
   args:
