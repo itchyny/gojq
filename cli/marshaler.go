@@ -28,15 +28,23 @@ func (m *rawMarshaler) marshal(v any, w io.Writer) error {
 	return m.m.marshal(v, w)
 }
 
-func yamlFormatter(indent *int) *yamlMarshaler {
-	return &yamlMarshaler{indent}
+func yamlFormatter(indent *int, opts ...cliOption) *yamlMarshaler {
+	var c cliConfig
+	for _, opt := range opts {
+		opt(&c)
+	}
+	return &yamlMarshaler{indent, c.keys}
 }
 
 type yamlMarshaler struct {
 	indent *int
+	keys   map[uintptr][]string
 }
 
 func (m *yamlMarshaler) marshal(v any, w io.Writer) error {
+	if len(m.keys) != 0 {
+		v = wrap(v, m.keys)
+	}
 	enc := yaml.NewEncoder(w)
 	if i := m.indent; i != nil {
 		enc.SetIndent(*i)
