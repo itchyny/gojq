@@ -66,7 +66,9 @@ loop:
 					err = &objectKeyNotStringError{k}
 					break loop
 				}
-				m[s] = v
+				if _, ok := m[s]; !ok {
+					m[s] = v
+				}
 			}
 			env.push(m)
 		case opappend:
