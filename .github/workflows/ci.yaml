@@ -39,21 +39,14 @@ jobs:
         shell: bash
       - name: Check command examples in README.md
         run: |
-          ./gojq -Rnr 'reduce inputs as $x (
-            {};
-            if $x|test("^ [$] .*gojq|^```")
-            then
-              if .command
-              then .results += [{command: .command, output: .output}] | del(.command,.output)
-              end | if $x|test("gojq") then .command = $x[3:] end
-            elif .command then .output += ($x + "\n" | sub(" +#.*"; ""))
-            end
-          ) | .results[] |
-            "if got=$(diff <(printf %s \(.output | @sh)) \\
-              <(\(.command | gsub("gojq"; "./gojq")) 2>&1)); then
+          ./gojq -Rsr 'scan("```sh\n( \\$ .*?)```"; "m")[] |
+            gsub(" +#.*"; "") | splits(" \\$ ") |
+            capture("(?<command>.+?)\n(?<output>.+)"; "m") |
+            "if diff <(printf %s \(.output | @sh)) \\
+              <(\(.command | gsub("gojq"; "./gojq")) 2>&1); then
               echo ok: \(.command | @sh)
             else
-              echo ng: \(.command | @sh); echo \"$got\"; exit 1
+              echo ng: \(.command | @sh); exit 1
             fi"
           ' README.md | bash
         shell: bash
