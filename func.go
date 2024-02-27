@@ -515,10 +515,11 @@ func funcToNumber(v any) any {
 	case int, float64, *big.Int:
 		return v
 	case string:
-		if !newLexer(v).validNumber() {
+		s := strings.TrimSpace(v)
+		if !newLexer(s).validNumber() {
 			return &func0WrapError{"tonumber", v, errors.New("invalid number")}
 		}
-		return toNumber(v)
+		return toNumber(s)
 	default:
 		return &func0TypeError{"tonumber", v}
 	}
