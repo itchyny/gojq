@@ -165,15 +165,14 @@ func init() {
 		"fmod":           mathFunc2("fmod", math.Mod),
 		"hypot":          mathFunc2("hypot", math.Hypot),
 		"jn":             mathFunc2("jn", funcJn),
-		"ldexp":          mathFunc2("ldexp", funcLdexp),
 		"nextafter":      mathFunc2("nextafter", math.Nextafter),
 		"nexttoward":     mathFunc2("nexttoward", math.Nextafter),
 		"remainder":      mathFunc2("remainder", math.Remainder),
-		"scalb":          mathFunc2("scalb", funcScalb),
-		"scalbln":        mathFunc2("scalbln", funcScalbln),
+		"ldexp":          mathFunc2("ldexp", funcLdexp),
+		"scalb":          mathFunc2("scalb", funcLdexp),
+		"scalbln":        mathFunc2("scalbln", funcLdexp),
 		"yn":             mathFunc2("yn", funcYn),
 		"pow":            mathFunc2("pow", math.Pow),
-		"pow10":          mathFunc("pow10", funcExp10),
 		"fma":            mathFunc3("fma", math.FMA),
 		"infinite":       argFunc0(funcInfinite),
 		"isfinite":       argFunc0(funcIsfinite),
@@ -1409,14 +1408,6 @@ func funcJn(l, r float64) float64 {
 
 func funcLdexp(l, r float64) float64 {
 	return math.Ldexp(l, int(r))
-}
-
-func funcScalb(l, r float64) float64 {
-	return l * math.Pow(2, r)
-}
-
-func funcScalbln(l, r float64) float64 {
-	return l * math.Pow(2, r)
 }
 
 func funcYn(l, r float64) float64 {
