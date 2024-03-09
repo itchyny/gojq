@@ -163,7 +163,6 @@ func (err *func2WrapError) Error() string {
 type exitCodeError struct {
 	value any
 	code  int
-	halt  bool
 }
 
 func (err *exitCodeError) Error() string {
@@ -171,10 +170,6 @@ func (err *exitCodeError) Error() string {
 		return "error: " + s
 	}
 	return "error: " + jsonMarshal(err.value)
-}
-
-func (err *exitCodeError) IsEmptyError() bool {
-	return err.value == nil
 }
 
 func (err *exitCodeError) Value() any {
@@ -185,8 +180,26 @@ func (err *exitCodeError) ExitCode() int {
 	return err.code
 }
 
-func (err *exitCodeError) IsHaltError() bool {
-	return err.halt
+type haltError exitCodeError
+
+func (err *haltError) Error() string {
+	return (*exitCodeError)(err).Error()
+}
+
+func (err *haltError) IsEmptyError() bool {
+	return err.value == nil
+}
+
+func (err *haltError) Value() any {
+	return (*exitCodeError)(err).Value()
+}
+
+func (err *haltError) ExitCode() int {
+	return (*exitCodeError)(err).ExitCode()
+}
+
+func (err *haltError) IsHaltError() bool {
+	return true
 }
 
 type flattenDepthError struct {

@@ -13,16 +13,24 @@ import (
 //
 // Implement following optional methods. Use [NewModuleLoader] to load local modules.
 //
+//	LoadInitModules() ([]*Query, error)
 //	LoadModule(string) (*Query, error)
 //	LoadModuleWithMeta(string, map[string]any) (*Query, error)
-//	LoadInitModules() ([]*Query, error)
 //	LoadJSON(string) (any, error)
 //	LoadJSONWithMeta(string, map[string]any) (any, error)
 type ModuleLoader any
 
-// NewModuleLoader creates a new [ModuleLoader] reading local modules in the paths.
+// NewModuleLoader creates a new [ModuleLoader] loading local modules in the paths.
+// Note that user can load modules outside the paths using "search" path of metadata.
+// Empty paths are ignored, so specify "." for the current working directory.
 func NewModuleLoader(paths []string) ModuleLoader {
-	return &moduleLoader{expandHomeDir(paths)}
+	ps := make([]string, 0, len(paths))
+	for _, path := range paths {
+		if path = resolvePath(path, ""); path != "" {
+			ps = append(ps, path)
+		}
+	}
+	return &moduleLoader{ps}
 }
 
 type moduleLoader struct {
@@ -49,7 +57,7 @@ func (l *moduleLoader) LoadInitModules() ([]*Query, error) {
 		if err != nil {
 			return nil, err
 		}
-		q, err := parseModule(path, string(cnt))
+		q, err := parseModule(string(cnt), filepath.Dir(path))
 		if err != nil {
 			return nil, &queryParseError{path, string(cnt), err}
 		}
@@ -67,7 +75,7 @@ func (l *moduleLoader) LoadModuleWithMeta(name string, meta map[string]any) (*Qu
 	if err != nil {
 		return nil, err
 	}
-	q, err := parseModule(path, string(cnt))
+	q, err := parseModule(string(cnt), filepath.Dir(path))
 	if err != nil {
 		return nil, &queryParseError{path, string(cnt), err}
 	}
@@ -109,15 +117,15 @@ func (l *moduleLoader) LoadJSONWithMeta(name string, meta map[string]any) (any, 
 
 func (l *moduleLoader) lookupModule(name, extension string, meta map[string]any) (string, error) {
 	paths := l.paths
-	if path := searchPath(meta); path != "" {
+	if path, ok := meta["search"].(string); ok {
 		paths = append([]string{path}, paths...)
 	}
 	for _, base := range paths {
-		path := filepath.Clean(filepath.Join(base, name+extension))
+		path := filepath.Join(base, name+extension)
 		if _, err := os.Stat(path); err == nil {
 			return path, err
 		}
-		path = filepath.Clean(filepath.Join(base, name, filepath.Base(name)+extension))
+		path = filepath.Join(base, name, filepath.Base(name)+extension)
 		if _, err := os.Stat(path); err == nil {
 			return path, err
 		}
@@ -125,66 +133,50 @@ func (l *moduleLoader) lookupModule(name, extension string, meta map[string]any)
 	return "", fmt.Errorf("module not found: %q", name)
 }
 
-// This is a dirty hack to implement the "search" field.
-func parseModule(path, cnt string) (*Query, error) {
+func parseModule(cnt, dir string) (*Query, error) {
 	q, err := Parse(cnt)
 	if err != nil {
 		return nil, err
 	}
 	for _, i := range q.Imports {
-		if i.Meta == nil {
-			continue
+		if i.Meta != nil {
+			for _, e := range i.Meta.KeyVals {
+				if e.Key == "search" || e.KeyString == "search" {
+					if path, ok := e.Val.toString(); ok {
+						if path = resolvePath(path, dir); path != "" {
+							e.Val.Str = path
+						} else {
+							e.Val.Null = true
+						}
+					}
+				}
+			}
 		}
-		i.Meta.KeyVals = append(
-			i.Meta.KeyVals,
-			&ConstObjectKeyVal{
-				Key: "$$path",
-				Val: &ConstTerm{Str: path},
-			},
-		)
 	}
 	return q, nil
 }
 
-func searchPath(meta map[string]any) string {
-	x, ok := meta["search"]
-	if !ok {
-		return ""
-	}
-	s, ok := x.(string)
-	if !ok {
-		return ""
-	}
-	if filepath.IsAbs(s) {
-		return s
-	}
-	if strings.HasPrefix(s, "~") {
-		if homeDir, err := os.UserHomeDir(); err == nil {
-			return filepath.Join(homeDir, s[1:])
+func resolvePath(path, dir string) string {
+	switch {
+	case filepath.IsAbs(path):
+		return path
+	case strings.HasPrefix(path, "~/"):
+		dir, err := os.UserHomeDir()
+		if err != nil {
+			return ""
 		}
-	}
-	var path string
-	if x, ok := meta["$$path"]; ok {
-		path, _ = x.(string)
-	}
-	if path == "" {
-		return s
-	}
-	return filepath.Join(filepath.Dir(path), s)
-}
-
-func expandHomeDir(paths []string) []string {
-	var homeDir string
-	var err error
-	for i, path := range paths {
-		if strings.HasPrefix(path, "~") {
-			if homeDir == "" && err == nil {
-				homeDir, err = os.UserHomeDir()
-			}
-			if homeDir != "" {
-				paths[i] = filepath.Join(homeDir, path[1:])
-			}
+		return filepath.Join(dir, path[2:])
+	case strings.HasPrefix(path, "$ORIGIN/"):
+		exe, err := os.Executable()
+		if err != nil {
+			return ""
 		}
+		exe, err = filepath.EvalSymlinks(exe)
+		if err != nil {
+			return ""
+		}
+		return filepath.Join(filepath.Dir(exe), path[8:])
+	default:
+		return filepath.Join(dir, path)
 	}
-	return paths
 }

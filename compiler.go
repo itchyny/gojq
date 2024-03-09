@@ -84,6 +84,13 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 	setscope := c.lazy(func() *code {
 		return &code{op: opscope, v: [3]int{scope.id, scope.variablecnt, 0}}
 	})
+	for _, name := range c.variables {
+		if !newLexer(name).validVarName() {
+			return nil, &variableNameError{name}
+		}
+		c.appendCodeInfo(name)
+		c.append(&code{op: opstore, v: c.pushVariable(name)})
+	}
 	if c.moduleLoader != nil {
 		if moduleLoader, ok := c.moduleLoader.(interface {
 			LoadInitModules() ([]*Query, error)
@@ -113,13 +120,6 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 }
 
 func (c *compiler) compile(q *Query) error {
-	for _, name := range c.variables {
-		if !newLexer(name).validVarName() {
-			return &variableNameError{name}
-		}
-		c.appendCodeInfo(name)
-		c.append(&code{op: opstore, v: c.pushVariable(name)})
-	}
 	for _, i := range q.Imports {
 		if err := c.compileImport(i); err != nil {
 			return err
@@ -538,6 +538,7 @@ func (c *compiler) compileQueryUpdate(l, r *Query, op Operator) error {
 }
 
 func (c *compiler) compileBind(e *Term, b *Bind) error {
+	defer c.newScopeDepth()()
 	c.append(&code{op: opdup})
 	c.append(&code{op: opexpbegin})
 	if err := c.compileTerm(e); err != nil {
@@ -1196,35 +1197,52 @@ func (c *compiler) funcModulemeta(v any, _ []any) any {
 	if meta == nil {
 		meta = make(map[string]any)
 	}
-	deps := []any{}
-	for _, i := range q.Imports {
+	meta["defs"] = listModuleDefs(q)
+	meta["deps"] = listModuleDeps(q)
+	return meta
+}
+
+func listModuleDefs(q *Query) []any {
+	type funcNameArity struct {
+		name  string
+		arity int
+	}
+	var xs []*funcNameArity
+	for _, fd := range q.FuncDefs {
+		if fd.Name[0] != '_' {
+			xs = append(xs, &funcNameArity{fd.Name, len(fd.Args)})
+		}
+	}
+	sort.Slice(xs, func(i, j int) bool {
+		return xs[i].name < xs[j].name ||
+			xs[i].name == xs[j].name && xs[i].arity < xs[j].arity
+	})
+	defs := make([]any, len(xs))
+	for i, x := range xs {
+		defs[i] = x.name + "/" + strconv.Itoa(x.arity)
+	}
+	return defs
+}
+
+func listModuleDeps(q *Query) []any {
+	deps := make([]any, len(q.Imports))
+	for j, i := range q.Imports {
 		v := i.Meta.ToValue()
 		if v == nil {
 			v = make(map[string]any)
-		} else {
-			for k := range v {
-				// dirty hack to remove the internal fields
-				if strings.HasPrefix(k, "$$") {
-					delete(v, k)
-				}
-			}
 		}
-		if i.ImportPath == "" {
-			v["relpath"] = i.IncludePath
-		} else {
-			v["relpath"] = i.ImportPath
+		relpath := i.ImportPath
+		if relpath == "" {
+			relpath = i.IncludePath
 		}
-		if err != nil {
-			return err
-		}
+		v["relpath"] = relpath
 		if i.ImportAlias != "" {
 			v["as"] = strings.TrimPrefix(i.ImportAlias, "$")
 		}
 		v["is_data"] = strings.HasPrefix(i.ImportAlias, "$")
-		deps = append(deps, v)
+		deps[j] = v
 	}
-	meta["deps"] = deps
-	return meta
+	return deps
 }
 
 func (c *compiler) compileObject(e *Object) error {

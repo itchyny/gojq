@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"github.com/momiji/xqml"
 	"io"
 	"strings"
@@ -13,11 +14,15 @@ type marshaler interface {
 }
 
 type rawMarshaler struct {
-	m marshaler
+	m        marshaler
+	checkNul bool
 }
 
 func (m *rawMarshaler) marshal(v any, w io.Writer) error {
 	if s, ok := v.(string); ok {
+		if m.checkNul && strings.ContainsRune(s, '\x00') {
+			return fmt.Errorf("cannot output a string containing NUL character: %q", s)
+		}
 		_, err := w.Write([]byte(s))
 		return err
 	}

@@ -16,6 +16,46 @@
   expected: |
     128
 
+- name: query with comment
+  args:
+    - |
+      # comment
+      1,
+      # comment \
+        comment \ 0 \
+        comment
+      2,
+      # comment \
+        comment \\
+      3, #      \
+        comment \\\
+        comment \\
+      4 #
+  input: 'null'
+  expected: |
+    1
+    2
+    3
+    4
+
+- name: query with comment with newline in dos format
+  args:
+    - "1, # \r\n2, # \\\r\ncomment\\\\\r\n3"
+  input: 'null'
+  expected: |
+    1
+    2
+    3
+
+- name: query with comment with newline in mac format
+  args:
+    - "1, # \r2, # \\\rcomment\\\\\r3"
+  input: 'null'
+  expected: |
+    1
+    2
+    3
+
 - name: number input
   args:
     - '.'
@@ -688,22 +728,6 @@
     [[1],[1]]
     [[[null],3],[[null],3]]
 
-- name: array construction with error function
-  args:
-    - -c
-    - '[error], [0, error, 1]'
-  input: 'null'
-  expected: |
-    []
-    [0,1]
-
-- name: array construction with halt_error function
-  args:
-    - -c
-    - '[halt_error], [0, halt_error, 1]'
-  input: 'null'
-  exit_code: 5
-
 - name: array iterator
   args:
     - '.foo | .[] | .'
@@ -846,11 +870,13 @@
 
 - name: unary operator with variable binding
   args:
-    - '-1 as $x | 1, $x'
+    - '[-1 as $x | 1, $x]'
   input: 'null'
   expected: |
-    1
-    -1
+    [
+      1,
+      -1
+    ]
 
 - name: object construction
   args:
@@ -894,10 +920,19 @@
       "null": 4
     }
 
+- name: object construction with duplicate keys
+  args:
+    - -c
+    - '{foo: 1, foo: 2, bar: 3}, {foo, bar, foo: length}'
+  input: '{"foo": 1, "bar": 2, "baz": 3}'
+  expected: |
+    {"bar":3,"foo":2}
+    {"bar":2,"foo":3}
+
 - name: object construction with pipe in value
   args:
-    - '{ "bar": { "baz": . } | . | select(true) }'
-  input: '{ "foo": 100 }'
+    - '{"bar": {"baz":.} | select(.baz)}'
+  input: '{"foo":100}'
   expected: |
     {
       "bar": {
@@ -905,6 +940,30 @@
           "foo": 100
         }
       }
+    }
+
+- name: object construction with unary operator
+  args:
+    - '{x:-1}, {x:-.}, {x:-.|abs}'
+  input: '1'
+  expected: |
+    {
+      "x": -1
+    }
+    {
+      "x": -1
+    }
+    {
+      "x": 1
+    }
+
+- name: object construction with condition
+  args:
+    - '{x: if true then -. end}'
+  input: '1'
+  expected: |
+    {
+      "x": -1
     }
 
 - name: empty object
@@ -1977,45 +2036,51 @@
 
 - name: ltrimstr function
   args:
-    - 'map(ltrimstr("foo")), ("x"|ltrimstr(0, null, {}))'
-  input: '["", "fo", "foo", "fooo", "barfoo", 0, null, true, {}, []]'
+    - 'ltrimstr("foo")'
+  input: |
+    ""
+    "fo"
+    "foo"
+    "fooo"
+    "barfoo"
   expected: |
-    [
-      "",
-      "fo",
-      "",
-      "o",
-      "barfoo",
-      0,
-      null,
-      true,
-      {},
-      []
-    ]
-    "x"
-    "x"
-    "x"
+    ""
+    "fo"
+    ""
+    "o"
+    "barfoo"
+
+- name: ltrimstr function error
+  args:
+    - '("x" | try ltrimstr({}) catch .), (10 | try ltrimstr("x") catch .)'
+  input: '0'
+  expected: |
+    "ltrimstr({}) cannot be applied to: string (\"x\")"
+    "ltrimstr(\"x\") cannot be applied to: number (10)"
 
 - name: rtrimstr function
   args:
-    - 'map(rtrimstr("foo")), ("x"|rtrimstr(0, null, {}))'
-  input: '["", "fo", "foo", "fooo", "barfoo", 0, null, true, {}, []]'
+    - 'rtrimstr("foo")'
+  input: |
+    ""
+    "fo"
+    "foo"
+    "fooo"
+    "barfoo"
   expected: |
-    [
-      "",
-      "fo",
-      "",
-      "fooo",
-      "bar",
-      0,
-      null,
-      true,
-      {},
-      []
-    ]
-    "x"
-    "x"
-    "x"
+    ""
+    "fo"
+    ""
+    "fooo"
+    "bar"
+
+- name: rtrimstr function error
+  args:
+    - '("x" | try rtrimstr({}) catch .), (10 | try rtrimstr("x") catch .)'
+  input: '0'
+  expected: |
+    "rtrimstr({}) cannot be applied to: string (\"x\")"
+    "rtrimstr(\"x\") cannot be applied to: number (10)"
 
 - name: explode function
   args:
@@ -2046,19 +2111,17 @@
     "１２３４５"
     "\n\t"
 
+- name: implode function replacement character
+  args:
+    - 'implode'
+  input: '[-1,0,1114111,1114112]'
+  expected: "\"\ufffd\\u0000\U0010ffff\ufffd\"\n"
+
 - name: implode function error
   args:
     - 'try implode catch .'
-  input: |
-    [0]
-    [-1]
-    [1114112]
-    [[]]
-    [{}]
+  input: '[[]] [{}]'
   expected: |
-    "\u0000"
-    "implode cannot be applied to: array ([-1])"
-    "implode cannot be applied to: array ([1114112])"
     "implode cannot be applied to: array ([[]])"
     "implode cannot be applied to: array ([{}])"
 
@@ -2982,6 +3045,15 @@
   expected: |
     7
 
+- name: condition with unary operator
+  args:
+    - '[-if true then -. end]'
+  input: '1'
+  expected: |
+    [
+      1
+    ]
+
 - name: condition with optional operator
   args:
     - 'if . then tonumber end ?'
@@ -3005,13 +3077,10 @@
 
 - name: condition with suffix
   args:
-    - 'if . then 1 end []'
+    - 'if true then [.] end []'
   input: '1'
-  error: |
-    invalid query: if . then 1 end []
-        if . then 1 end []
-                        ^  unexpected token "["
-  exit_code: 3
+  expected: |
+    1
 
 - name: not function
   args:
@@ -3098,12 +3167,21 @@
     - 'try 0 .[error(0)]'
   input: 'null'
 
-- name: try catch precedence
+- name: try catch and arithmetic operator precedence
   args:
     - '1 + try 2 catch 3 + 4'
   input: 'null'
   expected: |
     7
+
+- name: try and unary operator
+  args:
+    - '[-try .]'
+  input: '1'
+  expected: |
+    [
+      -1
+    ]
 
 - name: reduce iterator
   args:
@@ -3145,6 +3223,15 @@
         2
       ],
       1
+    ]
+
+- name: reduce with unary operator
+  args:
+    - '[-reduce -.[] as $i (0; . + $i)]'
+  input: '[1,2,3]'
+  expected: |
+    [
+      6
     ]
 
 - name: reduce variable scope
@@ -3198,6 +3285,17 @@
     5
     0
     1
+
+- name: foreach with unary operator
+  args:
+    - '[-foreach -.[] as $i (0; . + $i)]'
+  input: '[1,2,3]'
+  expected: |
+    [
+      1,
+      3,
+      6
+    ]
 
 - name: foreach variable scope
   args:
@@ -3665,6 +3763,15 @@
     variable not defined: $i
   exit_code: 3
 
+- name: binding variable scope with function declaration
+  args:
+    - -n
+    - -c
+    - '"x" as $v | def f: $v; "y" as $v | [., f, $v]'
+  input: 'null'
+  expected: |
+    [null,"x","y"]
+
 - name: function scope in parenthesis
   args:
     - 'def f: 1; . | (def f: 2; f) | f, .'
@@ -3843,196 +3950,206 @@
   expected: |
     false
 
-- name: trigonometric functions
+- name: sin, cos, tan functions
   args:
     - -c
-    - 'map(sin),map(cos),map(tan) | map(. * 1000000000 | floor / 1000000000)'
+    - 'map(sin), map(cos), map(tan) | map(. * 1000000000 | floor / 1000000000)'
   input: '[0, 1, 2]'
   expected: |
     [0,0.841470984,0.909297426]
     [1,0.540302305,-0.416146837]
     [0,1.557407724,-2.185039864]
 
-- name: inverse trigonometric functions
+- name: asin, acos, atan functions
   args:
     - -c
-    - 'map(asin),map(acos),map(atan) | map(. * 1000000000 | floor / 1000000000)'
+    - 'map(asin), map(acos), map(atan) | map(. * 1000000000 | floor / 1000000000)'
   input: '[0, 1, 2]'
   expected: |
     [0,1.570796326,null]
     [1.570796326,0,null]
     [0,0.785398163,1.107148717]
 
-- name: hyperbolic functions
+- name: sinh, cosh, tanh functions
   args:
     - -c
-    - 'map(sinh),map(cosh),map(tanh) | map(. * 1000000000 | floor / 1000000000)'
+    - 'map(sinh), map(cosh), map(tanh) | map(. * 1000000000 | floor / 1000000000)'
   input: '[0, 1, 2]'
   expected: |
     [0,1.175201193,3.626860407]
     [1,1.543080634,3.762195691]
     [0,0.761594155,0.96402758]
 
-- name: inverse hyperbolic functions
+- name: asinh, acosh, atanh functions
   args:
     - -c
-    - 'map(asinh),map(acosh),map(atanh) | map(. * 1000000000 | floor / 1000000000)'
+    - 'map(asinh), map(acosh), map(atanh) | map(. * 1000000000 | floor / 1000000000)'
   input: '[0, 1, 2]'
   expected: |
     [0,0.881373587,1.443635475]
     [null,0,1.316957896]
     [0,1.7976931348623157e+308,null]
 
-- name: floor, round, nearbyint, rint, ceil, trunc, fabs, sqrt and cbrt functions
+- name: floor, ceil, trunc, fabs functions
   args:
     - -c
-    - 'range(.) | sin | (fabs,sqrt,cbrt,sin) * 100000 | [(floor,round,nearbyint,rint,ceil,trunc) / 100000]'
-  input: '5'
+    - 'map(floor), map(ceil), map(trunc), map(fabs)'
+  input: '[-3.7, -3.3, -2.5, -1.7, -1.0, -0.7, -0.3, 0.0, 0.3, 0.5, 0.7, 1.0, 1.7, 2.5, 3.3, 3.7]'
   expected: |
-    [0,0,0,0,0,0]
-    [0,0,0,0,0,0]
-    [0,0,0,0,0,0]
-    [0,0,0,0,0,0]
-    [0.84147,0.84147,0.84147,0.84147,0.84148,0.84147]
-    [0.91731,0.91732,0.91732,0.91732,0.91732,0.91731]
-    [0.94408,0.94409,0.94409,0.94409,0.94409,0.94408]
-    [0.74562,0.74562,0.74562,0.74562,0.74563,0.74562]
-    [0.90929,0.9093,0.9093,0.9093,0.9093,0.90929]
-    [0.95357,0.95357,0.95357,0.95357,0.95358,0.95357]
-    [0.9688,0.9688,0.9688,0.9688,0.96881,0.9688]
-    [0.78907,0.78907,0.78907,0.78907,0.78908,0.78907]
-    [0.14112,0.14112,0.14112,0.14112,0.14113,0.14112]
-    [0.37565,0.37566,0.37566,0.37566,0.37566,0.37565]
-    [0.52063,0.52063,0.52063,0.52063,0.52064,0.52063]
-    [0.14065,0.14065,0.14065,0.14065,0.14066,0.14065]
-    [0.7568,0.7568,0.7568,0.7568,0.75681,0.7568]
-    [null,null,null,null,null,null]
-    [-0.9113,-0.9113,-0.9113,-0.9113,-0.91129,-0.91129]
-    [-0.68661,-0.6866,-0.6866,-0.6866,-0.6866,-0.6866]
+    [-4,-4,-3,-2,-1,-1,-1,0,0,0,0,1,1,2,3,3]
+    [-3,-3,-2,-1,-1,-0,-0,0,1,1,1,1,2,3,4,4]
+    [-3,-3,-2,-1,-1,-0,-0,0,0,0,0,1,1,2,3,3]
+    [3.7,3.3,2.5,1.7,1,0.7,0.3,0,0.3,0.5,0.7,1,1.7,2.5,3.3,3.7]
+
+- name: round, nearbyint, rint functions
+  args:
+    - -c
+    - 'map(round), map(nearbyint), map(rint)'
+  input: '[-2.5, -1.7, -1.5, -1.2, -0.7, -0.5, -0.3, 0.0, 0.3, 0.5, 0.7, 1.2, 1.5, 1.7, 2.5]'
+  expected: |
+    [-3,-2,-2,-1,-1,-1,-0,0,0,1,1,1,2,2,3]
+    [-2,-2,-2,-1,-1,-0,-0,0,0,0,1,1,2,2,2]
+    [-2,-2,-2,-1,-1,-0,-0,0,0,0,1,1,2,2,2]
+
+- name: sqrt and cbrt functions
+  args:
+    - -c
+    - 'map(sqrt), map(cbrt) | map(. * 1000000000 | floor / 1000000000)'
+  input: '[-8, -3.375, 0, 0.125, 1, 4, 8, 9, 16.777216]'
+  expected: |
+    [null,null,0,0.35355339,1,2,2.828427124,3,4.096]
+    [-2,-1.5,0,0.5,1,1.587401051,2,2.080083823,2.56]
 
 - name: significand function
   args:
     - -c
-    - '(range(10)|tan),nan | significand | . * 100000 | floor / 100000'
-  input: '0'
+    - 'map(significand)'
+  input: '[0, -0.5, 1, -1.5, 2, 10, 64, 100]'
   expected: |
-    0
-    1.5574
-    -1.09252
-    -1.14038
-    1.15782
-    -1.69026
-    -1.16403
-    1.74289
-    -1.69993
-    -1.80927
-    null
+    [0,-1,1,-1.5,1,1.25,1,1.5625]
 
-- name: exp, exp10, exp2, expm1, pow10 functions
+- name: exp, exp10, exp2, expm1 functions
   args:
     - -c
-    - '[range(.)] | map(exp),map(exp10),map(exp2),map(expm1),map(pow10) | map(. * 100000 | floor / 100000)'
-  input: '10'
+    - 'map(exp), map(exp10), map(exp2), map(expm1) | map(. * 1000000000 | floor / 1000000000)'
+  input: '[0, -0.5, 1, -1.5, 2, 10, 100]'
   expected: |
-    [1,2.71828,7.38905,20.08553,54.59815,148.41315,403.42879,1096.63315,2980.95798,8103.08392]
-    [1,10,100,1000,10000,100000,1000000,10000000,100000000,1000000000]
-    [1,2,4,8,16,32,64,128,256,512]
-    [0,1.71828,6.38905,19.08553,53.59815,147.41315,402.42879,1095.63315,2979.95798,8102.08392]
-    [1,10,100,1000,10000,100000,1000000,10000000,100000000,1000000000]
+    [1,0.606530659,2.718281828,0.22313016,7.389056098,22026.465794806,2.6881171418161356e+43]
+    [1,0.316227766,10,0.031622776,100,10000000000,1.0000000000000002e+100]
+    [1,0.707106781,2,0.35355339,4,1024,1.2676506002282294e+30]
+    [0,-0.393469341,1.718281828,-0.77686984,6.389056098,22025.465794806,2.6881171418161356e+43]
 
 - name: frexp, modf function
   args:
     - -c
-    - '[range(.) | tan] | map(frexp),map(modf) | map(map(. * 100000 | floor / 100000))'
-  input: '10'
+    - 'map(frexp), map(modf)'
+  input: '[0, 0.25, -0.5, 1, -1.5, 2, 3.125]'
   expected: |
-    [[0,0],[0.7787,1],[-0.54626,2],[-0.57019,-2],[0.57891,1],[-0.84513,2],[-0.58202,-1],[0.87144,0],[-0.84997,3],[-0.90464,-1]]
-    [[0,0],[0.5574,1],[-0.18504,-2],[-0.14255,-0],[0.15782,1],[-0.38052,-3],[-0.29101,-0],[0.87144,0],[-0.79972,-6],[-0.45232,-0]]
+    [[0,0],[0.5,-1],[-0.5,0],[0.5,1],[-0.75,1],[0.5,2],[0.78125,2]]
+    [[0,0],[0.25,0],[-0.5,-0],[0,1],[-0.5,-1],[0,2],[0.125,3]]
 
 - name: log, log10, log1p, log2, logb functions
   args:
     - -c
-    - '[range(.) | tan] | map(log),map(log10),map(log1p),map(log2),map(logb) | map(. * 100000 | floor / 100000)'
-  input: '10'
+    - 'map(log), map(log10), map(log1p), map(log2), map(logb) | map(. * 1000000000 | floor / 1000000000)'
+  input: '[0, -0.5, 1, 1.5, 2, 10, 64, 100]'
   expected: |
-    [-1.7976931348623157e+308,0.44302,null,null,0.14654,null,null,-0.1376,null,null]
-    [-1.7976931348623157e+308,0.1924,null,null,0.06364,null,null,-0.05976,null,null]
-    [0,0.93899,null,-0.15379,0.76909,null,-0.34391,0.62671,null,-0.60206]
-    [-1.7976931348623157e+308,0.63914,null,null,0.21141,null,null,-0.19852,null,null]
-    [-1.7976931348623157e+308,0,1,-3,0,1,-2,-1,2,-2]
+    [-1.7976931348623157e+308,null,0,0.405465108,0.69314718,2.302585092,4.158883083,4.605170185]
+    [-1.7976931348623157e+308,null,0,0.176091259,0.301029995,1,1.806179973,2]
+    [0,-0.693147181,0.69314718,0.916290731,1.098612288,2.397895272,4.174387269,4.615120516]
+    [-1.7976931348623157e+308,null,0,0.5849625,1,3.321928094,6,6.643856189]
+    [-1.7976931348623157e+308,-1,0,0,1,3,6,6]
 
 - name: gamma, tgamma, lgamma functions
   args:
     - -c
-    - '[range(.) | tan] | map(gamma),map(tgamma),map(lgamma) | map(. * 100000 | floor / 100000)'
-  input: '10'
+    - 'map(gamma), map(tgamma), map(lgamma) | map(. * 1000000000 | floor / 1000000000)'
+  input: '[0, -0.5, 1, -1.5, 2, 10]'
   expected: |
-    [1.7976931348623157e+308,0.88943,-2.39565,-7.75522,0.93049,0.34209,-4.41241,1.09278,-0.00159,-3.58744]
-    [1.7976931348623157e+308,0.88943,-2.39565,-7.75522,0.93049,0.34209,-4.41241,1.09278,-0.00159,-3.58744]
-    [1.7976931348623157e+308,-0.11718,0.87365,2.04836,-0.07204,-1.07268,1.48441,0.08872,-6.44927,1.27743]
+    [1.7976931348623157e+308,-3.544907702,1,2.363271801,1,362880]
+    [1.7976931348623157e+308,-3.544907702,1,2.363271801,1,362880]
+    [1.7976931348623157e+308,1.265512123,0,0.860047015,0,12.80182748]
 
 - name: erf, erfc, j0, j1, y0, y1 functions
   args:
     - -c
-    - '[range(.) | tan] | map(erf),map(erfc),map(j0),map(j1),map(y0),map(y1) | map(. * 100000 | floor / 100000)'
-  input: '10'
+    - 'map(erf), map(erfc), map(j0), map(j1), map(y0), map(y1) | map(. * 1000000000 | floor / 1000000000)'
+  input: '[0, -0.5, 1, -1.5, 2, 10]'
   expected: |
-    [0,0.97237,-0.998,-0.15977,0.89845,-1,-0.31933,0.7822,-1,-0.47762]
-    [1,0.02762,1.99799,1.15976,0.10154,1.99999,1.31932,0.21779,2,1.47761]
-    [1,0.47958,0.11869,0.99492,0.69191,-0.36073,0.97894,0.81896,0.29307,0.9495]
-    [0,0.56529,-0.55806,-0.0711,0.48717,-0.18735,-0.14397,0.39565,0.0653,-0.22043]
-    [-1.7976931348623157e+308,0.40504,null,null,0.20121,null,null,-0.01971,null,null]
-    [-1.7976931348623157e+308,-0.37491,null,null,-0.653,null,null,-0.90154,null,null]
+    [0,-0.520499878,0.842700792,-0.966105147,0.995322265,1]
+    [1,1.520499877,0.157299207,1.966105146,0.004677734,0]
+    [1,0.938469807,0.765197686,0.511827671,0.223890779,-0.245935765]
+    [0,-0.242268458,0.440050585,-0.557936508,0.576724807,0.043472746]
+    [-1.7976931348623157e+308,null,0.088256964,null,0.510375672,0.055671167]
+    [-1.7976931348623157e+308,null,-0.781212822,null,-0.107032432,0.249015424]
 
-- name: atan2/2, copysign/2, drem/2, fdim/2, fmax/2, fmin/2, fmod/2, hypot/2, jn/2, ldexp/2, nextafter/2, nexttoward/2, remainder/2, scalb/2, scalbln/2, pow/2, yn/2 functions
+- name: fdim/2, fmax/2, fmin/2 functions
   args:
     - -c
-    - '[range(-.;.)] |
-         [atan2(.[]; .[])],
-         [copysign(.[]; .[])],
-         [drem(.[]; .[])],
-         [fdim(.[]; .[])],
-         [fmax(.[]; .[])],
-         [fmin(.[]; .[])],
-         [fmod(.[]; .[])],
-         [hypot(.[]; .[])],
-         [jn(.[]; .[])],
-         [ldexp(.[]; .[])],
-         [nextafter(.[]; .[])],
-         [nexttoward(.[]; .[])],
-         [remainder(.[]; .[])],
-         [scalb(.[]; .[])],
-         [scalbln(.[]; .[])],
-         [pow(.[]; .[])],
-         [yn(.[]; .[])]
-       | map(. * 10000 | round | . / 10000)'
-  input: '3'
+    - '[fdim(0.25,0.625; 0.125,0.375)], [fmax(0.1,0.3; 0.2,0.4)], [fmin(0.1,0.3; 0.2,0.4)]'
+  input: 'null'
   expected: |
-    [-2.3562,-2.5536,-2.8198,3.1416,2.8198,2.5536,-2.1588,-2.3562,-2.6779,3.1416,2.6779,2.3562,-1.8925,-2.0344,-2.3562,3.1416,2.3562,2.0344,-1.5708,-1.5708,-1.5708,0,1.5708,1.5708,-1.249,-1.1071,-0.7854,0,0.7854,1.1071,-0.9828,-0.7854,-0.4636,0,0.4636,0.7854]
-    [-3,-2,-1,-0,-1,-2,-3,-2,-1,-0,-1,-2,-3,-2,-1,-0,-1,-2,3,2,1,0,1,2,3,2,1,0,1,2,3,2,1,0,1,2]
-    [-0,1,-1,0,1,-1,1,-0,-1,0,1,0,-0,-0,-0,0,0,0,null,null,null,null,null,null,-0,-0,-0,0,0,0,1,-0,-1,0,1,0]
-    [0,1,2,3,4,5,0,0,1,2,3,4,0,0,0,1,2,3,0,0,0,0,1,2,0,0,0,0,0,1,0,0,0,0,0,0]
-    [-3,-2,-1,0,1,2,-2,-2,-1,0,1,2,-1,-1,-1,0,1,2,0,0,0,0,1,2,1,1,1,1,1,2,2,2,2,2,2,2]
-    [-3,-3,-3,-3,-3,-3,-3,-2,-2,-2,-2,-2,-3,-2,-1,-1,-1,-1,-3,-2,-1,0,0,0,-3,-2,-1,0,1,1,-3,-2,-1,0,1,2]
-    [-0,-2,-1,0,1,2,-1,-0,-1,0,1,0,-0,-0,-0,0,0,0,null,null,null,null,null,null,-0,-0,-0,0,0,0,-1,-0,-1,0,1,0]
-    [4.2426,3.6056,3.1623,3,3.1623,3.6056,3.6056,2.8284,2.2361,2,2.2361,2.8284,3.1623,2.2361,1.4142,1,1.4142,2.2361,3,2,1,0,1,2,3.1623,2.2361,1.4142,1,1.4142,2.2361,3.6056,2.8284,2.2361,2,2.2361,2.8284]
-    [0.3091,0.4861,0.3391,-0.2601,-0.3391,0.4861,0.1289,0.3528,0.5767,0.2239,-0.5767,0.3528,0.0196,0.1149,0.4401,0.7652,-0.4401,0.1149,0,0,0,1,0,0,-0.0196,0.1149,-0.4401,0.7652,0.4401,0.1149,-0.1289,0.3528,-0.5767,0.2239,0.5767,0.3528]
-    [-0.375,-0.25,-0.125,0,0.125,0.25,-0.75,-0.5,-0.25,0,0.25,0.5,-1.5,-1,-0.5,0,0.5,1,-3,-2,-1,0,1,2,-6,-4,-2,0,2,4,-12,-8,-4,0,4,8]
-    [-3,-2,-1,-0,1,2,-3,-2,-1,-0,1,2,-3,-2,-1,-0,1,2,-3,-2,-1,0,1,2,-3,-2,-1,0,1,2,-3,-2,-1,0,1,2]
-    [-3,-2,-1,-0,1,2,-3,-2,-1,-0,1,2,-3,-2,-1,-0,1,2,-3,-2,-1,0,1,2,-3,-2,-1,0,1,2,-3,-2,-1,0,1,2]
-    [-0,1,-1,0,1,-1,1,-0,-1,0,1,0,-0,-0,-0,0,0,0,null,null,null,null,null,null,-0,-0,-0,0,0,0,1,-0,-1,0,1,0]
-    [-0.375,-0.25,-0.125,0,0.125,0.25,-0.75,-0.5,-0.25,0,0.25,0.5,-1.5,-1,-0.5,0,0.5,1,-3,-2,-1,0,1,2,-6,-4,-2,0,2,4,-12,-8,-4,0,4,8]
-    [-0.375,-0.25,-0.125,0,0.125,0.25,-0.75,-0.5,-0.25,0,0.25,0.5,-1.5,-1,-0.5,0,0.5,1,-3,-2,-1,0,1,2,-6,-4,-2,0,2,4,-12,-8,-4,0,4,8]
-    [-0.037,-0.125,-1,1.7976931348623157e+308,1,0.125,0.1111,0.25,1,1.7976931348623157e+308,1,0.25,-0.3333,-0.5,-1,1.7976931348623157e+308,1,0.5,1,1,1,1,1,1,-3,-2,-1,0,1,2,9,4,1,0,1,4]
-    [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,1.7976931348623157e+308,-1.7976931348623157e+308,1.7976931348623157e+308,-1.7976931348623157e+308,-1.7976931348623157e+308,-1.7976931348623157e+308,5.8215,-1.6507,0.7812,0.0883,-0.7812,-1.6507,1.1278,-0.6174,0.107,0.5104,-0.107,-0.6174]
+    [0.125,0.5,0,0.25]
+    [0.2,0.3,0.4,0.4]
+    [0.1,0.2,0.1,0.3]
+
+- name: copysign/2, drem/2, fmod/2, remainder/2 functions
+  args:
+    - -c
+    - '[copysign(0,0.5,-1.5; 0,1,-3.5)], [drem(0.5,-0.75,1.125; 0.5,-0.25)],
+       [fmod(0.5,-0.75,1.125; 0.5,-0.25)], [remainder(0.5,-0.75,1.125; 0.5,-0.25)]'
+  input: 'null'
+  expected: |
+    [0,0.5,1.5,0,0.5,1.5,-0,-0.5,-1.5]
+    [0,0.25,0.125,0,-0,0.125]
+    [0,-0.25,0.125,0,-0,0.125]
+    [0,0.25,0.125,0,-0,0.125]
+
+- name: nextafter/2, nexttoward/2 functions
+  args:
+    - -c
+    - '[nextafter(0,0.5,-0.75; 0.5,-0.25)], [nexttoward(0,0.5,-0.75; 0.5,-0.25)]'
+  input: 'null'
+  expected: |
+    [5e-324,0.5,-0.7499999999999999,-5e-324,0.49999999999999994,-0.7499999999999999]
+    [5e-324,0.5,-0.7499999999999999,-5e-324,0.49999999999999994,-0.7499999999999999]
+
+- name: atan2/2, hypot/2 functions
+  args:
+    - -c
+    - '[atan2(0,1; 0,1,-3)], [hypot(0,-3.75,12; 0,5,-16)]'
+  input: 'null'
+  expected: |
+    [0,1.5707963267948966,0,0.7853981633974483,3.141592653589793,2.819842099193151]
+    [0,3.75,12,5,6.25,13,16,16.433578429544795,20]
+
+- name: ldexp/2, scalb/2, scalbln/2 functions
+  args:
+    - -c
+    - '[ldexp(0,0.5,2; 0,0.5,-2,3,10)], [scalb(0,0.5,2; 0,0.5,-2,3,10)], [scalbln(0,0.5,2; 0,0.5,-2,3,10)]'
+  input: 'null'
+  expected: |
+    [0,0.5,2,0,0.5,2,0,0.125,0.5,0,4,16,0,512,2048]
+    [0,0.5,2,0,0.5,2,0,0.125,0.5,0,4,16,0,512,2048]
+    [0,0.5,2,0,0.5,2,0,0.125,0.5,0,4,16,0,512,2048]
+
+- name: jn/2, pow/2, yn/2 functions
+  args:
+    - -c
+    - '[jn(0,0.5,2; 0,0.5,-2,3,10)], [pow(0,0.5,2; 0,0.5,-2,3,10)], [yn(0,0.5,2; 0.5,-2,3,10)] | map(. * 1000000000 | floor / 1000000000)'
+  input: 'null'
+  expected: |
+    [1,1,0,0.938469807,0.938469807,0.030604023,0.223890779,0.223890779,0.352834028,-0.260051955,-0.260051955,0.48609126,-0.245935765,-0.245935765,0.254630313]
+    [1,1,1,0,0.707106781,1.414213562,1.7976931348623157e+308,4,0.25,0,0.125,8,0,0.000976562,1024]
+    [-0.444518734,-0.444518734,-5.441370838,null,null,null,0.37685001,0.37685001,-0.160400394,0.055671167,0.055671167,-0.005868083]
 
 - name: fma/3 function
   args:
     - -c
-    - '[range(.) | . * 2 | sin] | [fma(.[]; .[]; .[])] | map(. * 100000 | floor / 100000)'
-  input: '3'
+    - '[fma(1.5,2.5; 3.5,4.5; 5.25,6.75)]'
+  input: 'null'
   expected: |
-    [0,0,0,0,0.82682,-0.68816,0,-0.68816,0.57275,0.90929,0.90929,0.90929,0.90929,1.73611,0.22113,0.90929,0.22113,1.48204,-0.75681,-0.75681,-0.75681,-0.75681,0.07001,-1.44497,-0.75681,-1.44497,-0.18406]
+    [10.5,14,12,16.5,12,15.5,13.5,18]
 
 - name: infinite function
   args:
@@ -4403,6 +4520,14 @@
     {"a":[{"b":5}]}
     {"a":[{"b":5,"c":3}]}
 
+- name: pick function
+  args:
+    - -c
+    - 'pick(.x, .y[2], .y[0], .z)'
+  input: '{"x":1, "y": [1,2,3]}'
+  expected: |
+    {"x":1,"y":[1,null,3],"z":null}
+
 - name: map_values function
   args:
     - -c
@@ -4625,22 +4750,6 @@
   input: '[]'
   error: |
     array index too large: 200000000
-
-- name: assignment operator with error function
-  args:
-    - -c
-    - 'error = 1'
-  input: 'null'
-  expected: |
-    null
-
-- name: assignment operator with error function and valid paths
-  args:
-    - -c
-    - '(.x,error,.y) = 1'
-  input: 'null'
-  expected: |
-    {"x":1,"y":1}
 
 - name: assignment operator with select
   args:
@@ -4891,6 +5000,8 @@
   args:
     - 'error'
   input: 'null'
+  error: |
+    error: null
 
 - name: error/0 function on string and try catch
   args:
@@ -4904,6 +5015,7 @@
     - 'null,1,[],{x:42} | try error catch .'
   input: '0'
   expected: |
+    null
     1
     []
     {
@@ -4931,6 +5043,8 @@
   args:
     - 'error(null)'
   input: '1'
+  error: |
+    error: null
 
 - name: path function identity
   args:
@@ -5085,28 +5199,6 @@
   expected: |
     []
 
-- name: path function with error function
-  args:
-    - '[path(error)]'
-  input: 'null'
-  expected: |
-    []
-
-- name: path function with error function and valid paths
-  args:
-    - -c
-    - '[path(.x,error,.y)]'
-  input: 'null'
-  expected: |
-    [["x"],["y"]]
-
-- name: path function with error message
-  args:
-    - '[path("x"|error)]'
-  input: 'null'
-  error: |
-    error: x
-
 - name: path function iterate error of array
   args:
     - '[.[]][].a = 1'
@@ -5163,6 +5255,13 @@
     -3
     2
     -4
+
+- name: bsearch function with objects
+  args:
+    - '[{x:range(.),y:range(.)}] | bsearch({x:1,y:1})'
+  input: '3'
+  expected: |
+    4
 
 - name: gmtime, localtime functions
   args:
@@ -5237,7 +5336,7 @@
   expected: |
     "number"
 
-- name: debug function
+- name: debug/0 function
   args:
     - -c
     - 'recurse(debug|.[]?)'
@@ -5263,6 +5362,28 @@
     ["DEBUG:",2]
     ["DEBUG:","b"]
 
+- name: debug/1 function
+  args:
+    - 'debug("value: \(.)", [.,.])'
+  input: 'null false "test" [] {}'
+  expected: |
+    null
+    false
+    "test"
+    []
+    {}
+  error: |
+    ["DEBUG:","value: null"]
+    ["DEBUG:",[null,null]]
+    ["DEBUG:","value: false"]
+    ["DEBUG:",[false,false]]
+    ["DEBUG:","value: test"]
+    ["DEBUG:",["test","test"]]
+    ["DEBUG:","value: []"]
+    ["DEBUG:",[[],[]]]
+    ["DEBUG:","value: {}"]
+    ["DEBUG:",[{},{}]]
+
 - name: stderr function
   args:
     - -c
@@ -5285,10 +5406,11 @@
 
 - name: debug and stderr in builtins
   args:
-    - 'builtins[] | select(test("debug|stderr"))'
+    - 'builtins | sort[] | select(test("debug|stderr"))'
   input: 'null'
   expected: |
     "debug/0"
+    "debug/1"
     "stderr/0"
 
 - name: input_filename function with stdin input
@@ -6201,7 +6323,7 @@
     boolean flag `--compact-output' cannot have an argument
   exit_code: 2
 
-- name: raw string output option
+- name: raw string output short option
   args:
     - -r
     - '.foo[]'
@@ -6233,6 +6355,38 @@
       "foo": "multiple\nline"
     }
 
+- name: raw string output with nul delimiter option
+  args:
+    - --raw-output0
+    - '.[]'
+  input: '["foo",[{},{}],1,[2,3]]'
+  expected: "foo\x00[\n  {},\n  {}\n]\x001\x00[\n  2,\n  3\n]\x00"
+
+- name: raw string output with nul delimiter option error with string containing nul character
+  args:
+    - --raw-output0
+    - '"foo","bar","b\u0000a\u0000z","qux"'
+  input: 'null'
+  expected: "foo\x00bar\x00"
+  error: |
+    cannot output a string containing NUL character: "b\x00a\x00z"
+
+- name: raw string output without and with nul delimiter options
+  args:
+    - --raw-output
+    - --raw-output0
+    - '.[]'
+  input: '["foo",1,2,3]'
+  expected: "foo\x001\x002\x003\x00"
+
+- name: raw string output with nul delimiter option with compact output option
+  args:
+    - --raw-output0
+    - --compact-output
+    - '.[]'
+  input: '["foo",[{},{}],1,[2,3]]'
+  expected: "foo\x00[{},{}]\x001\x00[2,3]\x00"
+
 - name: join output option
   args:
     - -j
@@ -6247,24 +6401,11 @@
   input: '["foo",[{},{}],1,[2,3]]'
   expected: "foo[\n  {},\n  {}\n]1[\n  2,\n  3\n]"
 
-- name: nul output option
+- name: join output option with raw string output with nul delimiter option
   args:
-    - '-0'
+    - --raw-output0
+    - --join-output
     - '.[]'
-  input: '["foo",1,2,3]'
-  expected: "foo\x001\x002\x003\x00"
-
-- name: nul output long option
-  args:
-    - --nul-output
-    - '.[]'
-  input: '["foo",[{},{}],1,[2,3]]'
-  expected: "foo\x00[\n  {},\n  {}\n]\x001\x00[\n  2,\n  3\n]\x00"
-
-- name: nul output option at the last argument
-  args:
-    - '.[]'
-    - '-0'
   input: '["foo",1,2,3]'
   expected: "foo\x001\x002\x003\x00"
 
@@ -6355,7 +6496,7 @@
     \  \e[34;1m\"foo\"\e[0m: \e[36m42\e[0m\n\
     }\n"
 
-- name: color output with compact option
+- name: color output with compact output option
   args:
     - -C
     - -c
@@ -6592,7 +6733,7 @@
       null
     ]
 
-- name: null input value option with compact option
+- name: null input value option with compact output option
   args:
     - -n
     - -c
@@ -7075,40 +7216,40 @@
 
 - name: source query from file
   args:
-    - -n
     - -f
-    - 'testdata/1.jq'
+    - testdata/1.jq
+  input: '{"foo":{"bar":42}}'
   expected: |
-    null
+    42
 
 - name: source query from file short option in clumped options
   args:
-    - -nf
-    - 'testdata/1.jq'
+    - -cfr
+    - testdata/1.jq
+  input: '{"foo":{"bar":42}}'
   expected: |
-    null
-
-- name: source query from file short option with equal sign
-  args:
-    - -n
-    - -f=testdata/1.jq
-  expected: |
-    null
+    42
 
 - name: source query from file long option
   args:
+    - --from-file
+    - testdata/1.jq
+  input: '{"foo":{"bar":42}}'
+  expected: |
+    42
+
+- name: source query from file with --args
+  args:
+    - --args
+    - --compact-output
     - --null-input
     - --from-file
-    - 'testdata/1.jq'
+    - testdata/14.jq
+    - 1
+    - 2
+    - 3
   expected: |
-    null
-
-- name: source query from file long option with equal sign
-  args:
-    - --null-input
-    - --from-file=testdata/1.jq
-  expected: |
-    null
+    {"named":{},"positional":["1","2","3"]}
 
 - name: invalid query
   args:
@@ -7207,7 +7348,7 @@
 - name: invalid multiple line query in file
   args:
     - -f
-    - 'testdata/10.jq'
+    - testdata/10.jq
   error: |
     invalid query: testdata/10.jq:5
         5 | bar ]
@@ -7217,7 +7358,7 @@
 - name: invalid multiple line query in dos format
   args:
     - -f
-    - 'testdata/11.jq'
+    - testdata/11.jq
   error: |
     invalid query: testdata/11.jq:5
         5 | bar ]
@@ -7227,7 +7368,7 @@
 - name: invalid multiple line query in mac format
   args:
     - -f
-    - 'testdata/12.jq'
+    - testdata/12.jq
   error: |
     invalid query: testdata/12.jq:5
         5 | bar ]
@@ -7237,7 +7378,7 @@
 - name: invalid query in file
   args:
     - -f
-    - 'testdata/2.jq'
+    - testdata/2.jq
   error: |
     invalid query: testdata/2.jq:3
         3 |   bar, []
@@ -7247,15 +7388,14 @@
 - name: query file not found
   args:
     - -f
-    - 'testdata/3.jq'
+    - testdata/3.jq
   error: 'open testdata/3.jq:'
 
 - name: query file not specified
   args:
     - -f
   error: |
-    expected argument for flag `-f'
-  exit_code: 2
+    expected a query file for flag `-f'
 
 - name: invalid json unexpected eof error
   input: '{'
@@ -7593,14 +7733,14 @@
     - -c
     - -L
     - 'testdata'
-    - 'tostring | modulemeta'
+    - 'tostring | modulemeta | .defs |= sort'
   input: '4 5 6 8 9'
   expected: |
-    {"deps":[{"is_data":false,"relpath":"5"},{"as":"bar","is_data":false,"relpath":"6"}]}
-    {"deps":[{"as":"foo","is_data":false,"relpath":"6","test":"foo"}]}
-    {"deps":[{"as":"x","is_data":true,"relpath":"7"}]}
-    {"deps":[]}
-    {"deps":[],"description":"This is a description","name":"sample-module","x":[[],{},{"y":10,"z":20}],"y":{"z":[128,"",false,true,null,[[]]]}}
+    {"defs":["f/0","g/0"],"deps":[{"is_data":false,"relpath":"5"},{"as":"bar","is_data":false,"relpath":"6"}]}
+    {"defs":["h/0"],"deps":[{"as":"foo","is_data":false,"relpath":"6","test":"foo"}]}
+    {"defs":["g/0","i/0"],"deps":[{"as":"x","is_data":true,"relpath":"7"}]}
+    {"defs":[],"deps":[]}
+    {"defs":["f/1"],"deps":[],"description":"This is a description","name":"sample-module","x":[[],{},{"y":10,"z":20}],"y":{"z":[128,"",false,true,null,[[]]]}}
 
 - name: modulemeta function error
   args:
@@ -7627,6 +7767,18 @@
       "bar": "42",
       "foo": "value 1"
     }
+
+- name: arg option with function declaration
+  args:
+    - -n
+    - --arg
+    - 'foo'
+    - 'bar'
+    - 'def f: $foo; "baz" as $foo | ., f, $foo'
+  expected: |
+    null
+    "bar"
+    "baz"
 
 - name: arg option arguments count error
   args:
@@ -8028,7 +8180,8 @@
     - --exit-status
     - 'error'
   input: 'null'
-  exit_code: 4
+  error: |
+    error: null
 
 - name: exit status long option with halt function
   args:
@@ -8058,6 +8211,15 @@
   expected: |
     -1
 
+- name: query with leading hyphen
+  args:
+    - '-j0'
+  input: '0 1 2'
+  expected: |
+    -1
+    -0.7651976865579666
+    -0.22389077914123567
+
 - name: query with leading hyphen after a flag
   args:
     - -r
@@ -8065,31 +8227,6 @@
   input: '1'
   expected: |
     -1
-
-- name: query with leading -0 and spaces
-  args:
-    - '-0 + .'
-  input: '1'
-  expected: |
-    1
-
-- name: query with leading -0 but no spaces
-  args:
-    - '-0.1'
-  input: '1'
-  expected: |
-    -0.1
-
-- name: query with leading -0 before json files
-  args:
-    - -c
-    - '-0 * 1'
-    - 'testdata/1.json'
-    - 'testdata/2.json'
-  input: '1'
-  expected: |
-    0
-    0
 
 - name: double dash
   args:
@@ -8102,26 +8239,11 @@
 - name: double dash with query with leading hyphen
   args:
     - '--'
-    - '-.'
-  input: '1'
-  expected: |
-    -1
-
-- name: double dash with query with leading -0
-  args:
-    - '--'
-    - '-0'
-  input: '1'
-  expected: |
-    0
-
-- name: double dash with nul output option
-  args:
-    - '-0'
-    - '--'
-    - '-0'
-  input: '1'
-  expected: "0\x00"
+    - '-j'
+  input: 'null'
+  error: |
+    compile error: function not defined: j/0
+  exit_code: 3
 
 - name: double double dash
   args:

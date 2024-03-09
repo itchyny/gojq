@@ -66,7 +66,9 @@ loop:
 					err = &objectKeyNotStringError{k}
 					break loop
 				}
-				m[s] = v
+				if _, ok := m[s]; !ok {
+					m[s] = v
+				}
 			}
 			env.push(m)
 		case opappend:
@@ -86,23 +88,15 @@ loop:
 				if err == nil {
 					break loop
 				}
-				switch er := err.(type) {
+				switch e := err.(type) {
 				case *tryEndError:
-					err = er.err
+					err = e.err
 					break loop
-				case *breakError:
+				case *breakError, *haltError:
 					break loop
 				case ValueError:
-					if er, ok := er.(*exitCodeError); ok && er.halt {
-						break loop
-					}
-					if v := er.Value(); v != nil {
-						env.pop()
-						env.push(v)
-					} else {
-						err = nil
-						break loop
-					}
+					env.pop()
+					env.push(e.Value())
 				default:
 					env.pop()
 					env.push(err.Error())
@@ -191,9 +185,7 @@ loop:
 				}
 				w := v[0].(func(any, []any) any)(x, args)
 				if e, ok := w.(error); ok {
-					if er, ok := e.(*exitCodeError); !ok || er.value != nil || er.halt {
-						err = e
-					}
+					err = e
 					break loop
 				}
 				env.push(w)

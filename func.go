@@ -128,8 +128,8 @@ func init() {
 		"atanh":          mathFunc("atanh", math.Atanh),
 		"floor":          mathFunc("floor", math.Floor),
 		"round":          mathFunc("round", math.Round),
-		"nearbyint":      mathFunc("nearbyint", math.Round),
-		"rint":           mathFunc("rint", math.Round),
+		"nearbyint":      mathFunc("nearbyint", math.RoundToEven),
+		"rint":           mathFunc("rint", math.RoundToEven),
 		"ceil":           mathFunc("ceil", math.Ceil),
 		"trunc":          mathFunc("trunc", math.Trunc),
 		"significand":    mathFunc("significand", funcSignificand),
@@ -165,15 +165,14 @@ func init() {
 		"fmod":           mathFunc2("fmod", math.Mod),
 		"hypot":          mathFunc2("hypot", math.Hypot),
 		"jn":             mathFunc2("jn", funcJn),
-		"ldexp":          mathFunc2("ldexp", funcLdexp),
 		"nextafter":      mathFunc2("nextafter", math.Nextafter),
 		"nexttoward":     mathFunc2("nexttoward", math.Nextafter),
 		"remainder":      mathFunc2("remainder", math.Remainder),
-		"scalb":          mathFunc2("scalb", funcScalb),
-		"scalbln":        mathFunc2("scalbln", funcScalbln),
+		"ldexp":          mathFunc2("ldexp", funcLdexp),
+		"scalb":          mathFunc2("scalb", funcLdexp),
+		"scalbln":        mathFunc2("scalbln", funcLdexp),
 		"yn":             mathFunc2("yn", funcYn),
 		"pow":            mathFunc2("pow", math.Pow),
-		"pow10":          mathFunc("pow10", funcExp10),
 		"fma":            mathFunc3("fma", math.FMA),
 		"infinite":       argFunc0(funcInfinite),
 		"isfinite":       argFunc0(funcIsfinite),
@@ -682,11 +681,11 @@ func funcEndsWith(v, x any) any {
 func funcLtrimstr(v, x any) any {
 	s, ok := v.(string)
 	if !ok {
-		return v
+		return &func1TypeError{"ltrimstr", v, x}
 	}
 	t, ok := x.(string)
 	if !ok {
-		return v
+		return &func1TypeError{"ltrimstr", v, x}
 	}
 	return strings.TrimPrefix(s, t)
 }
@@ -694,11 +693,11 @@ func funcLtrimstr(v, x any) any {
 func funcRtrimstr(v, x any) any {
 	s, ok := v.(string)
 	if !ok {
-		return v
+		return &func1TypeError{"rtrimstr", v, x}
 	}
 	t, ok := x.(string)
 	if !ok {
-		return v
+		return &func1TypeError{"rtrimstr", v, x}
 	}
 	return strings.TrimSuffix(s, t)
 }
@@ -729,8 +728,12 @@ func funcImplode(v any) any {
 	var sb strings.Builder
 	sb.Grow(len(vs))
 	for _, v := range vs {
-		if r, ok := toInt(v); ok && 0 <= r && r <= utf8.MaxRune {
-			sb.WriteRune(rune(r))
+		if r, ok := toInt(v); ok {
+			if 0 <= r && r <= utf8.MaxRune {
+				sb.WriteRune(rune(r))
+			} else {
+				sb.WriteRune(utf8.RuneError)
+			}
 		} else {
 			return &func0TypeError{"implode", vs}
 		}
@@ -1407,14 +1410,6 @@ func funcLdexp(l, r float64) float64 {
 	return math.Ldexp(l, int(r))
 }
 
-func funcScalb(l, r float64) float64 {
-	return l * math.Pow(2, r)
-}
-
-func funcScalbln(l, r float64) float64 {
-	return l * math.Pow(2, r)
-}
-
 func funcYn(l, r float64) float64 {
 	return math.Yn(int(l), r)
 }
@@ -2072,15 +2067,11 @@ func funcError(v any, args []any) any {
 	if len(args) > 0 {
 		v = args[0]
 	}
-	code := 5
-	if v == nil {
-		code = 0
-	}
-	return &exitCodeError{v, code, false}
+	return &exitCodeError{v, 5}
 }
 
 func funcHalt(any) any {
-	return &exitCodeError{nil, 0, true}
+	return &haltError{nil, 0}
 }
 
 func funcHaltError(v any, args []any) any {
@@ -2091,7 +2082,7 @@ func funcHaltError(v any, args []any) any {
 			return &func0TypeError{"halt_error", args[0]}
 		}
 	}
-	return &exitCodeError{v, code, true}
+	return &haltError{v, code}
 }
 
 func toInt(x any) (int, bool) {

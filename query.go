@@ -1075,6 +1075,14 @@ func (e *ConstTerm) toValue() any {
 	}
 }
 
+func (e *ConstTerm) toString() (string, bool) {
+	if e.Object != nil || e.Array != nil ||
+		e.Number != "" || e.Null || e.True || e.False {
+		return "", false
+	}
+	return e.Str, true
+}
+
 // ConstObject ...
 type ConstObject struct {
 	KeyVals []*ConstObjectKeyVal
@@ -1134,7 +1142,7 @@ func (e *ConstObjectKeyVal) writeTo(s *strings.Builder) {
 	if e.Key != "" {
 		s.WriteString(e.Key)
 	} else {
-		s.WriteString(e.KeyString)
+		jsonEncodeString(s, e.KeyString)
 	}
 	s.WriteString(": ")
 	e.Val.writeTo(s)

@@ -3,57 +3,144 @@ name: CI
 on:
   push:
     branches:
-    - main
+      - main
+    tags:
+      - v*
   pull_request:
 
 permissions:
   contents: read
 
 jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.22.x
+      - name: Build
+        run: make build
+      - name: Check command examples
+        run: |
+          # shellcheck disable=SC2016
+          ./gojq -Rsr 'scan("```sh\n( \\$ .*?)```"; "m")[] |
+            gsub(" +#.*"; "") | splits(" \\$ ") |
+            capture("(?<command>.+?)\n(?<output>.+)"; "m") |
+            "if diff <(printf %s \(.output | @sh)) \\
+              <(\(.command | gsub("gojq"; "./gojq")) 2>&1); then
+              echo ok: \(.command | @sh)
+            else
+              echo ng: \(.command | @sh); exit 1
+            fi"
+          ' README.md | bash
+        shell: bash
+      - name: Cross build
+        run: make cross
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: goxz
+          path: goxz
+      - name: Clean
+        run: make clean
+
   test:
     name: Test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        go: [1.20.x, 1.19.x, 1.18.x]
+        go: [1.22.x, 1.21.x, 1.20.x]
+      fail-fast: false
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-    - name: Setup Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: ${{ matrix.go }}
-    - name: Test
-      run: make test
-    - name: Test with GOARCH=386
-      run: env GOARCH=386 go test -v ./...
-      if: matrix.os != 'macos-latest'
-    - name: Lint
-      run: make lint
-      if: matrix.go >= '1.19.x'
-    - name: Check tools
-      run: make check-tools
-    - name: Check go generate
-      run: go generate && ! git diff | grep ^
-      shell: bash
-    - name: Check command examples in README.md
-      run: |
-        ./gojq -Rnr 'reduce inputs as $x (
-          {};
-          if $x|test("^ [$] .*gojq|^```")
-          then
-            if .command
-            then .results += [{command: .command, output: .output}] | del(.command,.output)
-            end | if $x|test("gojq") then .command = $x[3:] end
-          elif .command then .output += ($x + "\n" | sub(" +#.*"; ""))
-          end
-        ) | .results[] |
-          "if got=$(diff <(printf %s \(.output | @sh)) \\
-            <(\(.command | gsub("gojq"; "./gojq")) 2>&1)); then
-            echo ok: \(.command | @sh)
-          else
-            echo ng: \(.command | @sh); echo \"$got\"; exit 1
-          fi"
-        ' README.md | bash
-      shell: bash
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+      - name: Test
+        run: make test
+      - name: Test with GOARCH=386
+        run: env GOARCH=386 go test -v ./...
+        if: matrix.os != 'macos-latest'
+      - name: Lint
+        run: make lint
+      - name: Check tools
+        run: make check-tools
+      - name: Check go generate
+        run: go generate && ! git diff | grep ^
+        shell: bash
+
+  docker:
+    name: Docker
+    permissions:
+      packages: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Docker metadata
+        uses: docker/metadata-action@v5
+        id: metadata
+        with:
+          images: |
+            ${{ github.repository }}
+            ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=semver,pattern={{major}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=sha,format=long,enable=${{ !startsWith(github.ref, 'refs/tags/v') }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and release Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ startsWith(github.ref, 'refs/tags/v') }}
+          provenance: false
+          platforms: linux/amd64, linux/arm64
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+
+  release:
+    name: Release
+    needs: [build, test, docker]
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: goxz
+          path: goxz
+      - name: Setup release body
+        run: sed -n '/\[${{ github.ref_name }}\]/,/^$/{//!p}' CHANGELOG.md >release-body.txt
+      - name: Create release
+        uses: ncipollo/release-action@v1
+        with:
+          name: Release ${{ github.ref_name }}
+          bodyFile: release-body.txt
+          artifacts: goxz/*

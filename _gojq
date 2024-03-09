@@ -3,9 +3,9 @@
 _gojq()
 {
   _arguments -s -S \
-    '(-r --raw-output -j --join-output -0 --nul-output)'{-r,--raw-output}'[output raw strings]' \
-    '(-r --raw-output -j --join-output -0 --nul-output)'{-j,--join-output}'[output without newlines]' \
-    '(-r --raw-output -j --join-output -0 --nul-output)'{-0,--nul-output}'[output with NUL character]' \
+    '(-r --raw-output --raw-output0 -j --join-output)'{-r,--raw-output}'[output raw strings]' \
+    '(-r --raw-output               -j --join-output)--raw-output0[implies -r with NUL character delimiter]' \
+    '(-r --raw-output --raw-output0 -j --join-output)'{-j,--join-output}'[implies -r with no newline delimiter]' \
     '(-c --compact-output --indent --tab --yaml-output)'{-c,--compact-output}'[output without pretty-printing]' \
     '(-c --compact-output          --tab --yaml-output)--indent=[number of spaces for indentation]:indentation count:(2 4 8)' \
     '(-c --compact-output --indent       --yaml-output)--tab[use tabs for indentation]' \
@@ -17,7 +17,7 @@ _gojq()
     '(-R --raw-input          --yaml-input)--stream[parse input in stream fashion]' \
     '(-R --raw-input --stream             )--yaml-input[read input as YAML format]' \
     '(-s --slurp)'{-s,--slurp}'[read all inputs into an array]' \
-    '(-f --from-file 1)'{-f,--from-file}='[load query from file]:filename of jq query:_files' \
+    '(-f --from-file 1)'{-f,--from-file}'[load query from file]:filename of jq query:_files' \
     '*-L=[directory to search modules from]:module directory:_directories' \
     '*--arg[set a string value to a variable]:variable name: :string value' \
     '*--argjson[set a JSON value to a variable]:variable name: :JSON value' \

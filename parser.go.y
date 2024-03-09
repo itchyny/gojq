@@ -172,37 +172,9 @@ query
         $1.(*Term).SuffixList = append($1.(*Term).SuffixList, &Suffix{Bind: &Bind{$3.([]*Pattern), $5.(*Query)}})
         $$ = &Query{Term: $1.(*Term)}
     }
-    | tokReduce term tokAs pattern '(' query ';' query ')'
-    {
-        $$ = &Query{Term: &Term{Type: TermTypeReduce, Reduce: &Reduce{$2.(*Term), $4.(*Pattern), $6.(*Query), $8.(*Query)}}}
-    }
-    | tokForeach term tokAs pattern '(' query ';' query ')'
-    {
-        $$ = &Query{Term: &Term{Type: TermTypeForeach, Foreach: &Foreach{$2.(*Term), $4.(*Pattern), $6.(*Query), $8.(*Query), nil}}}
-    }
-    | tokForeach term tokAs pattern '(' query ';' query ';' query ')'
-    {
-        $$ = &Query{Term: &Term{Type: TermTypeForeach, Foreach: &Foreach{$2.(*Term), $4.(*Pattern), $6.(*Query), $8.(*Query), $10.(*Query)}}}
-    }
-    | tokIf query tokThen query ifelifs ifelse tokEnd
-    {
-        $$ = &Query{Term: &Term{Type: TermTypeIf, If: &If{$2.(*Query), $4.(*Query), $5.([]*IfElif), $6.(*Query)}}}
-    }
-    | tokTry query trycatch
-    {
-        $$ = &Query{Term: &Term{Type: TermTypeTry, Try: &Try{$2.(*Query), $3.(*Query)}}}
-    }
     | tokLabel tokVariable '|' query
     {
         $$ = &Query{Term: &Term{Type: TermTypeLabel, Label: &Label{$2, $4.(*Query)}}}
-    }
-    | query '?'
-    {
-        if t := $1.(*Query).Term; t != nil {
-            t.SuffixList = append(t.SuffixList, &Suffix{Optional: true})
-        } else {
-            $$ = &Query{Term: &Term{Type: TermTypeQuery, Query: $1.(*Query), SuffixList: []*Suffix{{Optional: true}}}}
-        }
     }
     | query ',' query
     {
@@ -364,34 +336,6 @@ term
     {
         $$ = &Term{Type: TermTypeFunc, Func: &Func{Name: $1}}
     }
-    | tokNumber
-    {
-        $$ = &Term{Type: TermTypeNumber, Number: $1}
-    }
-    | tokFormat
-    {
-        $$ = &Term{Type: TermTypeFormat, Format: $1}
-    }
-    | tokFormat string
-    {
-        $$ = &Term{Type: TermTypeFormat, Format: $1, Str: $2.(*String)}
-    }
-    | string
-    {
-        $$ = &Term{Type: TermTypeString, Str: $1.(*String)}
-    }
-    | '(' query ')'
-    {
-        $$ = &Term{Type: TermTypeQuery, Query: $2.(*Query)}
-    }
-    | '+' term
-    {
-        $$ = &Term{Type: TermTypeUnary, Unary: &Unary{OpAdd, $2.(*Term)}}
-    }
-    | '-' term
-    {
-        $$ = &Term{Type: TermTypeUnary, Unary: &Unary{OpSub, $2.(*Term)}}
-    }
     | '{' '}'
     {
         $$ = &Term{Type: TermTypeObject, Object: &Object{}}
@@ -412,9 +356,57 @@ term
     {
         $$ = &Term{Type: TermTypeArray, Array: &Array{$2.(*Query)}}
     }
+    | tokNumber
+    {
+        $$ = &Term{Type: TermTypeNumber, Number: $1}
+    }
+    | '+' term
+    {
+        $$ = &Term{Type: TermTypeUnary, Unary: &Unary{OpAdd, $2.(*Term)}}
+    }
+    | '-' term
+    {
+        $$ = &Term{Type: TermTypeUnary, Unary: &Unary{OpSub, $2.(*Term)}}
+    }
+    | tokFormat
+    {
+        $$ = &Term{Type: TermTypeFormat, Format: $1}
+    }
+    | tokFormat string
+    {
+        $$ = &Term{Type: TermTypeFormat, Format: $1, Str: $2.(*String)}
+    }
+    | string
+    {
+        $$ = &Term{Type: TermTypeString, Str: $1.(*String)}
+    }
+    | tokIf query tokThen query ifelifs ifelse tokEnd
+    {
+        $$ = &Term{Type: TermTypeIf, If: &If{$2.(*Query), $4.(*Query), $5.([]*IfElif), $6.(*Query)}}
+    }
+    | tokTry query trycatch
+    {
+        $$ = &Term{Type: TermTypeTry, Try: &Try{$2.(*Query), $3.(*Query)}}
+    }
+    | tokReduce term tokAs pattern '(' query ';' query ')'
+    {
+        $$ = &Term{Type: TermTypeReduce, Reduce: &Reduce{$2.(*Term), $4.(*Pattern), $6.(*Query), $8.(*Query)}}
+    }
+    | tokForeach term tokAs pattern '(' query ';' query ')'
+    {
+        $$ = &Term{Type: TermTypeForeach, Foreach: &Foreach{$2.(*Term), $4.(*Pattern), $6.(*Query), $8.(*Query), nil}}
+    }
+    | tokForeach term tokAs pattern '(' query ';' query ';' query ')'
+    {
+        $$ = &Term{Type: TermTypeForeach, Foreach: &Foreach{$2.(*Term), $4.(*Pattern), $6.(*Query), $8.(*Query), $10.(*Query)}}
+    }
     | tokBreak tokVariable
     {
         $$ = &Term{Type: TermTypeBreak, Break: $2}
+    }
+    | '(' query ')'
+    {
+        $$ = &Term{Type: TermTypeQuery, Query: $2.(*Query)}
     }
     | term tokIndex
     {
