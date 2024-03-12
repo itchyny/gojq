@@ -333,6 +333,8 @@ func binopTypeSwitchNormalize(value any) any {
 		return int(v.Unix())
 	case modo.Timestamp:
 		return int(v.Time.Unix())
+	case reflect.Value:
+		return binopTypeSwitchNormalize(v.Interface())
 	default:
 		rvalue := reflect.ValueOf(v)
 		switch rvalue.Kind() {

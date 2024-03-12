@@ -2,6 +2,7 @@ package gojq
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -113,6 +114,10 @@ func TestBinopTypeSwitchNormalize(t *testing.T) {
 		{
 			have: struct{ Foo int }{Foo: 1},
 			want: map[string]any{"Foo": 1},
+		},
+		{
+			have: reflect.ValueOf(int64(0)),
+			want: 0,
 		},
 	}
 
