@@ -665,7 +665,7 @@ func funcIndices(v, x any) any {
 }
 
 func indices(vs, xs reflect.Value) any {
-	rs := []any{}
+	var rs []any
 	if xs.Len() == 0 {
 		return rs
 	}
@@ -1158,7 +1158,7 @@ func index(vs []any, i int) any {
 func indexValue(vs reflect.Value, i int) any {
 	i = clampIndex(i, -1, vs.Len())
 	if 0 <= i && i < vs.Len() {
-		return vs.Index(i)
+		return vs.Index(i).Interface()
 	}
 	return nil
 }
