@@ -85,6 +85,10 @@ func TestMarshal(t *testing.T) {
 			value:    []bool{true, false},
 			expected: `[true,false]`,
 		},
+		{
+			value:    map[string]int{"foo": 1, "bar": 2, "baz": 3},
+			expected: `{"bar":2,"baz":3,"foo":1}`,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("%v", tc.value), func(t *testing.T) {

@@ -341,6 +341,8 @@ func funcLength(v any) any {
 			return funcLength(value.Elem().Interface())
 		case reflect.Struct:
 			return value.Type().NumField()
+		case reflect.Map:
+			return value.Len()
 		case reflect.Slice: // this an interface{} that happens to mask a []any
 			return value.Len()
 		default:
@@ -384,6 +386,12 @@ func funcKeys(v any) any {
 			w := make([]any, typ.NumField())
 			for i := 0; i < typ.NumField(); i++ {
 				w[i] = typ.Field(i).Name
+			}
+			return w
+		case reflect.Map:
+			w := make([]any, value.Len())
+			for i, k := range value.MapKeys() {
+				w[i] = k.Interface()
 			}
 			return w
 		case reflect.Slice: // this an interface{} that happens to mask a []any
@@ -431,6 +439,15 @@ func values(v any) ([]any, bool) {
 			vs := make([]any, value.Type().NumField())
 			for i := 0; i < len(vs); i++ {
 				vs[i] = value.Field(i)
+			}
+			return vs, true
+		case reflect.Map:
+			vs := make([]any, value.Len())
+			var i int
+			iter := value.MapRange()
+			for iter.Next() {
+				vs[i] = iter.Value().Interface()
+				i++
 			}
 			return vs, true
 		case reflect.Slice: // this an interface{} that happens to mask a []any
@@ -1085,6 +1102,8 @@ func funcIndex2(_, v, x any) any {
 					return nil
 				}
 				return f.Interface()
+			case reflect.Map:
+				return value.MapIndex(reflect.ValueOf(x)).Interface()
 			default:
 				return &expectedObjectError{v}
 			}
@@ -1458,7 +1477,7 @@ func funcGroupBy(v, x any) any {
 	if err != nil {
 		return err
 	}
-	rs := []any{}
+	var rs []any
 	var last any
 	for i, r := range items {
 		if i == 0 || compare(last, r.key) != 0 {
@@ -1483,7 +1502,7 @@ func uniqueBy(name string, v, x any) any {
 	if err != nil {
 		return err
 	}
-	rs := []any{}
+	var rs []any
 	var last any
 	for i, r := range items {
 		if i == 0 || compare(last, r.key) != 0 {
@@ -1948,6 +1967,17 @@ func deleteEmpty(v any) any {
 				}
 			}
 			return ret
+		case reflect.Map:
+			iter := value.MapRange()
+			for iter.Next() {
+				v := iter.Value()
+				if v.IsZero() {
+					value.SetMapIndex(iter.Key(), reflect.Value{})
+				} else {
+					value.SetMapIndex(iter.Key(), reflect.ValueOf(deleteEmpty(v.Interface())))
+				}
+			}
+			return value.Interface()
 		case reflect.Slice: // this an interface{} that happens to mask a []any
 			ret := make([]any, 0, value.Len())
 			for i := 0; i < value.Len(); i++ {

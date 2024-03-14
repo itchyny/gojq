@@ -47,6 +47,8 @@ func TypeOf(v any) string {
 			return "struct"
 		case reflect.Slice: // this an interface{} that happens to mask a []any
 			return "array"
+		case reflect.Map:
+			return "object"
 		default:
 			panic(fmt.Sprintf("invalid type: %[1]T (%[1]v)", v))
 		}
