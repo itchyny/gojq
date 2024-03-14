@@ -119,6 +119,8 @@ func (e *encoder) encode(v any) {
 			e.encodeStruct(value)
 		case reflect.Slice: // this an interface{} that happens to mask a []any
 			e.encodeValueSlice(value)
+		case reflect.Map:
+			e.encodeValueMap(value)
 		default:
 			panic(fmt.Sprintf("invalid type: %[1]T (%[1]v)", v))
 		}
@@ -218,18 +220,35 @@ func (e *encoder) encodeArray(vs []any) {
 	e.w.WriteByte(']')
 }
 
+type keyVal struct {
+	key string
+	val any
+}
+
 func (e *encoder) encodeObject(vs map[string]any) {
 	e.w.WriteByte('{')
-	type keyVal struct {
-		key string
-		val any
-	}
 	kvs := make([]keyVal, len(vs))
 	var i int
 	for k, v := range vs {
 		kvs[i] = keyVal{k, v}
 		i++
 	}
+	e.encodeKeyValues(kvs)
+}
+
+func (e *encoder) encodeValueMap(vs reflect.Value) {
+	e.w.WriteByte('{')
+	kvs := make([]keyVal, vs.Len())
+	var i int
+	iter := vs.MapRange()
+	for iter.Next() {
+		kvs[i] = keyVal{iter.Key().Interface().(string), iter.Value().Interface()}
+		i++
+	}
+	e.encodeKeyValues(kvs)
+}
+
+func (e *encoder) encodeKeyValues(kvs []keyVal) {
 	sort.Slice(kvs, func(i, j int) bool {
 		return kvs[i].key < kvs[j].key
 	})
