@@ -3869,7 +3869,7 @@
     - '(def f: 1; f) | f'
   input: '0'
   error: |
-    function not defined: f
+    function not defined: f/0
   exit_code: 3
 
 - name: function scope error in array
@@ -3877,7 +3877,7 @@
     - '[def f: 1; f] | f'
   input: '0'
   error: |
-    function not defined: f
+    function not defined: f/0
   exit_code: 3
 
 - name: function scope error in object
@@ -3885,7 +3885,7 @@
     - '{x: (def f: 1; f)} | f'
   input: '0'
   error: |
-    function not defined: f
+    function not defined: f/0
   exit_code: 3
 
 - name: function scope error in object key
@@ -3893,7 +3893,7 @@
     - '{(def f: 1; f): f}'
   input: '"x"'
   error: |
-    function not defined: f
+    function not defined: f/0
   exit_code: 3
 
 - name: first/0, last/0 functions
@@ -5661,8 +5661,7 @@
     1
     2
     3
-  error: |
-    123
+  error: 123
   exit_code: 5
 
 - name: halt_error/1 function
@@ -7685,7 +7684,8 @@
     - 'testdata'
     - 'include "5"; i'
   input: '0'
-  error: 'function not defined: i/0'
+  error: |
+    function not defined: i/0
   exit_code: 3
 
 - name: module directory option variable error
