@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"github.com/momiji/xqml"
 	"io"
 	"strings"
 
@@ -26,6 +27,31 @@ func (m *rawMarshaler) marshal(v any, w io.Writer) error {
 		return err
 	}
 	return m.m.marshal(v, w)
+}
+
+func xmlFormatter(indent *int, root string, element string) *xmlMarshaller {
+	return &xmlMarshaller{indent, root, element}
+}
+
+type xmlMarshaller struct {
+	indent  *int
+	root    string
+	element string
+}
+
+func (m *xmlMarshaller) marshal(v any, w io.Writer) error {
+	enc := xqml.NewEncoder(w)
+	if i := m.indent; i != nil {
+		indent := strings.Repeat(" ", *m.indent)
+		enc.Indent = indent
+	}
+	if m.root != "" {
+		enc.Root = m.root
+	}
+	if m.element != "" {
+		enc.Element = m.element
+	}
+	return enc.Encode(v)
 }
 
 func yamlFormatter(indent *int) *yamlMarshaler {
