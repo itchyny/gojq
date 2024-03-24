@@ -116,6 +116,12 @@ func main() {
 			break
 		}
 		if err, ok := v.(error); ok {
+			if err, ok := err.(gojq.HaltError); ok {
+				if err.Value() != nil {
+					log.Fatalln(err)
+				}
+				break
+			}
 			log.Fatalln(err)
 		}
 		fmt.Printf("%#v\n", v)
@@ -129,7 +135,12 @@ func main() {
   - or alternatively, compile the query using [`gojq.Compile`](https://pkg.go.dev/github.com/itchyny/gojq#Compile) and then [`code.Run`](https://pkg.go.dev/github.com/itchyny/gojq#Code.Run) or [`code.RunWithContext`](https://pkg.go.dev/github.com/itchyny/gojq#Code.RunWithContext). You can reuse the `*Code` against multiple inputs to avoid compilation of the same query. But for arguments of `code.Run`, do not give values sharing same data between multiple calls.
   - In either case, you cannot use custom type values as the query input. The type should be `[]any` for an array and `map[string]any` for a map (just like decoded to an `any` using the [encoding/json](https://golang.org/pkg/encoding/json/) package). You can't use `[]int` or `map[string]string`, for example. If you want to query your custom struct, marshal to JSON, unmarshal to `any` and use it as the query input.
 - Thirdly, iterate through the results using [`iter.Next() (any, bool)`](https://pkg.go.dev/github.com/itchyny/gojq#Iter). The iterator can emit an error so make sure to handle it. The method returns `true` with results, and `false` when the iterator terminates.
-  - The return type is not `(any, error)` because iterators can emit multiple errors and you can continue after an error. It is difficult for the iterator to tell the termination in this situation.
+  - The return type is not `(any, error)` because the iterator may emit multiple errors. The `jq` and `gojq` commands stop the iteration on the first error, but the library user can choose to stop the iteration on errors, or to continue until it terminates.
+    - In any case, it is recommended to stop the iteration on [`HaltError`](https://pkg.go.dev/github.com/itchyny/gojq#HaltError), which is emitted on `halt` and `halt_error` functions, although these functions are not commonly used.
+      If the error value of `HaltError` is `nil`, stop the iteration without handling the error.
+      Technically speaking, we can fix the iterator to terminate on the halting error, but it does not terminate at the moment.
+      The `halt` function in jq not only stops the iteration, but also terminates the command execution, even if there are still input values.
+      So, gojq leaves it up to the library user how to handle the halting error.
   - Note that the result iterator may emit infinite number of values; `repeat(0)` and `range(infinite)`. It may stuck with no output value; `def f: f; f`. Use `RunWithContext` when you want to limit the execution time.
 
 [`gojq.Compile`](https://pkg.go.dev/github.com/itchyny/gojq#Compile) allows to configure the following compiler options.

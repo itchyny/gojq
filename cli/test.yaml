@@ -5598,11 +5598,13 @@
 - name: halt function and raw string input option
   args:
     - -R
-    - 'halt'
+    - '., halt, .'
   input: |
-    1
-    2
-    3
+    foo
+    bar
+    baz
+  expected: |
+    "foo"
 
 - name: halt function and json file arguments
   args:
@@ -5624,6 +5626,16 @@
   input: 'null'
   error: |
     null
+  exit_code: 5
+
+- name: halt_error/0 function on string
+  args:
+    - 'halt_error'
+  input: '"foo\nbar\nbaz\n"'
+  error: |
+    foo
+    bar
+    baz
   exit_code: 5
 
 - name: halt_error/0 function and try catch
@@ -5649,8 +5661,6 @@
     3
   error: |
     1
-    2
-    3
   exit_code: 5
 
 - name: halt_error/0 function and raw string input option
@@ -5658,10 +5668,10 @@
     - -R
     - 'halt_error'
   input: |
-    1
-    2
-    3
-  error: 123
+    foo
+    bar
+    baz
+  error: foo
   exit_code: 5
 
 - name: halt_error/1 function
@@ -5669,6 +5679,27 @@
     - 'halt_error(42)'
   input: 'null'
   exit_code: 42
+
+- name: halt_error/1 function on string
+  args:
+    - 'halt_error(42)'
+  input: '"foo\nbar\nbaz\n"'
+  error: |
+    foo
+    bar
+    baz
+  exit_code: 42
+
+- name: halt_error/1 function with multiple input values
+  args:
+    - 'halt_error(.)'
+  input: |
+    1
+    2
+    3
+  error: |
+    1
+  exit_code: 1
 
 - name: builtins function
   args:
