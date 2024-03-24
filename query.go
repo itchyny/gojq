@@ -34,6 +34,21 @@ func (e *Query) RunWithContext(ctx context.Context, v any) Iter {
 	return code.RunWithContext(ctx, v)
 }
 
+// ConcurrentRun supports reusing data across goroutines, as long as it is
+// prepared with PrepareData.
+func (e *Query) ConcurrentRun(v PreparedData) Iter {
+	return e.ConcurrentRunWithContext(context.Background(), v)
+}
+
+// ConcurrentRunWithContext runs the code concurrently with context.
+func (e *Query) ConcurrentRunWithContext(ctx context.Context, v PreparedData) Iter {
+	code, err := Compile(e)
+	if err != nil {
+		return NewIter(err)
+	}
+	return code.ConcurrentRunWithContext(ctx, v)
+}
+
 func (e *Query) String() string {
 	var s strings.Builder
 	e.writeTo(&s)
