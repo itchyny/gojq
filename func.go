@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/itchyny/timefmt-go"
@@ -70,6 +71,9 @@ func init() {
 		"endswith":       argFunc1(funcEndsWith),
 		"ltrimstr":       argFunc1(funcLtrimstr),
 		"rtrimstr":       argFunc1(funcRtrimstr),
+		"ltrim":          argFunc0(funcLtrim),
+		"rtrim":          argFunc0(funcRtrim),
+		"trim":           argFunc0(funcTrim),
 		"explode":        argFunc0(funcExplode),
 		"implode":        argFunc0(funcImplode),
 		"split":          {argcount1 | argcount2, false, funcSplit},
@@ -700,6 +704,30 @@ func funcRtrimstr(v, x any) any {
 		return &func1TypeError{"rtrimstr", v, x}
 	}
 	return strings.TrimSuffix(s, t)
+}
+
+func funcLtrim(v any) any {
+	s, ok := v.(string)
+	if !ok {
+		return &func0TypeError{"ltrim", v}
+	}
+	return strings.TrimLeftFunc(s, unicode.IsSpace)
+}
+
+func funcRtrim(v any) any {
+	s, ok := v.(string)
+	if !ok {
+		return &func0TypeError{"rtrim", v}
+	}
+	return strings.TrimRightFunc(s, unicode.IsSpace)
+}
+
+func funcTrim(v any) any {
+	s, ok := v.(string)
+	if !ok {
+		return &func0TypeError{"trim", v}
+	}
+	return strings.TrimSpace(s)
 }
 
 func funcExplode(v any) any {

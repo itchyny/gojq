@@ -11,6 +11,18 @@ type ValueError interface {
 	Value() any
 }
 
+// HaltError is an interface for errors of halt and halt_error functions.
+// Any HaltError is [ValueError], and if the value is nil, discard the
+// error and stop the iteration. Consider a query like "1, halt, 2";
+// the first value is 1, and the second value is a HaltError with nil value.
+// You might think the iterator should not emit an error this case, but it
+// should so that we can recognize the halt error to stop the outer loop
+// of iterating input values; echo 1 2 3 | gojq "., halt".
+type HaltError interface {
+	ValueError
+	isHaltError()
+}
+
 type expectedObjectError struct {
 	v any
 }
@@ -183,11 +195,7 @@ func (err *exitCodeError) ExitCode() int {
 type haltError exitCodeError
 
 func (err *haltError) Error() string {
-	return (*exitCodeError)(err).Error()
-}
-
-func (err *haltError) IsEmptyError() bool {
-	return err.value == nil
+	return "halt " + (*exitCodeError)(err).Error()
 }
 
 func (err *haltError) Value() any {
@@ -198,9 +206,7 @@ func (err *haltError) ExitCode() int {
 	return (*exitCodeError)(err).ExitCode()
 }
 
-func (err *haltError) IsHaltError() bool {
-	return true
-}
+func (err *haltError) isHaltError() {}
 
 type flattenDepthError struct {
 	v float64

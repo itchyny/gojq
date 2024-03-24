@@ -2082,6 +2082,63 @@
     "rtrimstr({}) cannot be applied to: string (\"x\")"
     "rtrimstr(\"x\") cannot be applied to: number (10)"
 
+- name: ltrim function
+  args:
+    - 'ltrim'
+  input: |
+    ""
+    "  \tfoo\n  "
+    "\t\u000b\u000c\u0085\u00a0f\ro\no\u2000\u2001\u200a\u3000"
+  expected: "\"\"\n\"foo\\n  \"\n\"f\\ro\\no\u2000\u2001\u200a\u3000\"\n"
+
+- name: ltrim function error
+  args:
+    - 'try ltrim catch .'
+  input: '0 [] {}'
+  expected: |
+    "ltrim cannot be applied to: number (0)"
+    "ltrim cannot be applied to: array ([])"
+    "ltrim cannot be applied to: object ({})"
+
+- name: rtrim function
+  args:
+    - 'rtrim'
+  input: |
+    ""
+    "  \tfoo\n  "
+    "\t\u000b\u000c\u0085\u00a0f\ro\no\u2000\u2001\u200a\u3000"
+  expected: "\"\"\n\"  \\tfoo\"\n\"\\t\\u000b\\f\u0085\u00a0f\\ro\\no\"\n"
+
+- name: rtrim function error
+  args:
+    - 'try rtrim catch .'
+  input: '0 [] {}'
+  expected: |
+    "rtrim cannot be applied to: number (0)"
+    "rtrim cannot be applied to: array ([])"
+    "rtrim cannot be applied to: object ({})"
+
+- name: trim function
+  args:
+    - 'trim'
+  input: |
+    ""
+    "  \tfoo\n  "
+    "\t\u000b\u000c\u0085\u00a0f\ro\no\u2000\u2001\u200a\u3000"
+  expected: |
+    ""
+    "foo"
+    "f\ro\no"
+
+- name: trim function error
+  args:
+    - 'try trim catch .'
+  input: '0 [] {}'
+  expected: |
+    "trim cannot be applied to: number (0)"
+    "trim cannot be applied to: array ([])"
+    "trim cannot be applied to: object ({})"
+
 - name: explode function
   args:
     - -c
@@ -3812,7 +3869,7 @@
     - '(def f: 1; f) | f'
   input: '0'
   error: |
-    function not defined: f
+    function not defined: f/0
   exit_code: 3
 
 - name: function scope error in array
@@ -3820,7 +3877,7 @@
     - '[def f: 1; f] | f'
   input: '0'
   error: |
-    function not defined: f
+    function not defined: f/0
   exit_code: 3
 
 - name: function scope error in object
@@ -3828,7 +3885,7 @@
     - '{x: (def f: 1; f)} | f'
   input: '0'
   error: |
-    function not defined: f
+    function not defined: f/0
   exit_code: 3
 
 - name: function scope error in object key
@@ -3836,7 +3893,7 @@
     - '{(def f: 1; f): f}'
   input: '"x"'
   error: |
-    function not defined: f
+    function not defined: f/0
   exit_code: 3
 
 - name: first/0, last/0 functions
@@ -5541,11 +5598,13 @@
 - name: halt function and raw string input option
   args:
     - -R
-    - 'halt'
+    - '., halt, .'
   input: |
-    1
-    2
-    3
+    foo
+    bar
+    baz
+  expected: |
+    "foo"
 
 - name: halt function and json file arguments
   args:
@@ -5567,6 +5626,16 @@
   input: 'null'
   error: |
     null
+  exit_code: 5
+
+- name: halt_error/0 function on string
+  args:
+    - 'halt_error'
+  input: '"foo\nbar\nbaz\n"'
+  error: |
+    foo
+    bar
+    baz
   exit_code: 5
 
 - name: halt_error/0 function and try catch
@@ -5592,8 +5661,6 @@
     3
   error: |
     1
-    2
-    3
   exit_code: 5
 
 - name: halt_error/0 function and raw string input option
@@ -5601,11 +5668,10 @@
     - -R
     - 'halt_error'
   input: |
-    1
-    2
-    3
-  error: |
-    123
+    foo
+    bar
+    baz
+  error: foo
   exit_code: 5
 
 - name: halt_error/1 function
@@ -5613,6 +5679,27 @@
     - 'halt_error(42)'
   input: 'null'
   exit_code: 42
+
+- name: halt_error/1 function on string
+  args:
+    - 'halt_error(42)'
+  input: '"foo\nbar\nbaz\n"'
+  error: |
+    foo
+    bar
+    baz
+  exit_code: 42
+
+- name: halt_error/1 function with multiple input values
+  args:
+    - 'halt_error(.)'
+  input: |
+    1
+    2
+    3
+  error: |
+    1
+  exit_code: 1
 
 - name: builtins function
   args:
@@ -7628,7 +7715,8 @@
     - 'testdata'
     - 'include "5"; i'
   input: '0'
-  error: 'function not defined: i/0'
+  error: |
+    function not defined: i/0
   exit_code: 3
 
 - name: module directory option variable error

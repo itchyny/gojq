@@ -105,7 +105,9 @@ var addDefaultModulePaths = true
 
 func (cli *cli) run(args []string) int {
 	if err := cli.runInternal(args); err != nil {
-		cli.printError(err)
+		if _, ok := err.(interface{ isEmptyError() }); !ok {
+			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
+		}
 		if err, ok := err.(interface{ ExitCode() int }); ok {
 			return err.ExitCode()
 		}
@@ -363,18 +365,35 @@ func (cli *cli) process(iter inputIter, code *gojq.Code) error {
 	for {
 		v, ok := iter.Next()
 		if !ok {
-			return err
+			break
 		}
-		if er, ok := v.(error); ok {
-			cli.printError(er)
-			err = &emptyError{er}
+		if e, ok := v.(error); ok {
+			fmt.Fprintf(cli.errStream, "%s: %s\n", name, e)
+			err = e
 			continue
 		}
-		if er := cli.printValues(code.Run(v, cli.argvalues...)); er != nil {
-			cli.printError(er)
-			err = &emptyError{er}
+		if e := cli.printValues(code.Run(v, cli.argvalues...)); e != nil {
+			if e, ok := e.(gojq.HaltError); ok {
+				if v := e.Value(); v != nil {
+					if str, ok := v.(string); ok {
+						cli.errStream.Write([]byte(str))
+					} else {
+						bs, _ := gojq.Marshal(v)
+						cli.errStream.Write(bs)
+						cli.errStream.Write([]byte{'\n'})
+					}
+				}
+				err = e
+				break
+			}
+			fmt.Fprintf(cli.errStream, "%s: %s\n", name, e)
+			err = e
 		}
 	}
+	if err != nil {
+		return &emptyError{err}
+	}
+	return nil
 }
 
 func (cli *cli) printValues(iter gojq.Iter) error {
@@ -452,21 +471,4 @@ func (cli *cli) funcStderr(v any, _ []any) any {
 		return err
 	}
 	return v
-}
-
-func (cli *cli) printError(err error) {
-	if er, ok := err.(interface{ IsEmptyError() bool }); !ok || !er.IsEmptyError() {
-		if er, ok := err.(interface{ IsHaltError() bool }); !ok || !er.IsHaltError() {
-			fmt.Fprintf(cli.errStream, "%s: %s\n", name, err)
-		} else if er, ok := err.(gojq.ValueError); ok {
-			v := er.Value()
-			if str, ok := v.(string); ok {
-				cli.errStream.Write([]byte(str))
-			} else {
-				bs, _ := gojq.Marshal(v)
-				cli.errStream.Write(bs)
-				cli.errStream.Write([]byte{'\n'})
-			}
-		}
-	}
 }
