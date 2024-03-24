@@ -70,25 +70,39 @@ type inputIter interface {
 type jsonInputIter struct {
 	dec    *json.Decoder
 	ir     *inputReader
+	keys   map[uintptr][]string
 	fname  string
 	offset int64
 	line   int
 	err    error
 }
 
-func newJSONInputIter(r io.Reader, fname string) inputIter {
+func newJSONInputIter(r io.Reader, fname string, opts ...cliOption) inputIter {
+	var c cliConfig
+	for _, opt := range opts {
+		opt(&c)
+	}
 	ir := newInputReader(r)
 	dec := json.NewDecoder(ir)
 	dec.UseNumber()
-	return &jsonInputIter{dec: dec, ir: ir, fname: fname}
+	return &jsonInputIter{dec: dec, ir: ir, keys: c.keys, fname: fname}
 }
 
 func (i *jsonInputIter) Next() (any, bool) {
 	if i.err != nil {
 		return nil, false
 	}
+
 	var v any
-	if err := i.dec.Decode(&v); err != nil {
+	var w anyWithOrderedKeys
+	var ptr any
+	if i.keys != nil {
+		ptr = &w
+	} else {
+		ptr = &v
+	}
+
+	if err := i.dec.Decode(ptr); err != nil {
 		if err == io.EOF {
 			i.err = err
 			return nil, false
@@ -102,10 +116,15 @@ func (i *jsonInputIter) Next() (any, bool) {
 		i.err = &jsonParseError{i.fname, i.ir.getContents(offset, line), i.line, err}
 		return i.err, true
 	}
+
 	if buf := i.ir.buf; buf != nil && buf.Len() >= 16*1024 {
 		i.offset += int64(buf.Len())
 		i.line += bytes.Count(buf.Bytes(), []byte{'\n'})
 		buf.Reset()
+	}
+
+	if i.keys != nil {
+		v = w.unwrap(i.keys)
 	}
 	return v, true
 }
@@ -145,18 +164,20 @@ func (i *nullInputIter) Name() string {
 }
 
 type filesInputIter struct {
-	newIter func(io.Reader, string) inputIter
+	newIter func(io.Reader, string, ...cliOption) inputIter
 	fnames  []string
 	stdin   io.Reader
 	iter    inputIter
 	file    io.Reader
 	err     error
+	opts    []cliOption
 }
 
 func newFilesInputIter(
-	newIter func(io.Reader, string) inputIter, fnames []string, stdin io.Reader,
+	newIter func(io.Reader, string, ...cliOption) inputIter,
+	fnames []string, stdin io.Reader, opts ...cliOption,
 ) inputIter {
-	return &filesInputIter{newIter: newIter, fnames: fnames, stdin: stdin}
+	return &filesInputIter{newIter: newIter, fnames: fnames, stdin: stdin, opts: opts}
 }
 
 func (i *filesInputIter) Next() (any, bool) {
@@ -187,7 +208,7 @@ func (i *filesInputIter) Next() (any, bool) {
 			if i.iter != nil {
 				i.iter.Close()
 			}
-			i.iter = i.newIter(i.file, fname)
+			i.iter = i.newIter(i.file, fname, i.opts...)
 		}
 		if v, ok := i.iter.Next(); ok {
 			return v, ok
@@ -223,7 +244,7 @@ type rawInputIter struct {
 	err   error
 }
 
-func newRawInputIter(r io.Reader, fname string) inputIter {
+func newRawInputIter(r io.Reader, fname string, opts ...cliOption) inputIter {
 	return &rawInputIter{r: bufio.NewReader(r), fname: fname}
 }
 
@@ -262,7 +283,7 @@ type streamInputIter struct {
 	err    error
 }
 
-func newStreamInputIter(r io.Reader, fname string) inputIter {
+func newStreamInputIter(r io.Reader, fname string, opts ...cliOption) inputIter {
 	ir := newInputReader(r)
 	dec := json.NewDecoder(ir)
 	dec.UseNumber()
@@ -308,22 +329,36 @@ func (i *streamInputIter) Name() string {
 type yamlInputIter struct {
 	dec   *yaml.Decoder
 	ir    *inputReader
+	keys  map[uintptr][]string
 	fname string
 	err   error
 }
 
-func newYAMLInputIter(r io.Reader, fname string) inputIter {
+func newYAMLInputIter(r io.Reader, fname string, opts ...cliOption) inputIter {
+	var c cliConfig
+	for _, opt := range opts {
+		opt(&c)
+	}
 	ir := newInputReader(r)
 	dec := yaml.NewDecoder(ir)
-	return &yamlInputIter{dec: dec, ir: ir, fname: fname}
+	return &yamlInputIter{dec: dec, ir: ir, keys: c.keys, fname: fname}
 }
 
 func (i *yamlInputIter) Next() (any, bool) {
 	if i.err != nil {
 		return nil, false
 	}
+
 	var v any
-	if err := i.dec.Decode(&v); err != nil {
+	var w anyWithOrderedKeys
+	var ptr any
+	if i.keys != nil {
+		ptr = &w
+	} else {
+		ptr = &v
+	}
+
+	if err := i.dec.Decode(ptr); err != nil {
 		if err == io.EOF {
 			i.err = err
 			return nil, false
@@ -331,7 +366,11 @@ func (i *yamlInputIter) Next() (any, bool) {
 		i.err = &yamlParseError{i.fname, i.ir.getContents(nil, nil), err}
 		return i.err, true
 	}
-	return normalizeYAML(v), true
+
+	if i.keys != nil {
+		v = w.unwrap(i.keys)
+	}
+	return normalizeYAML(v, i.keys), true
 }
 
 func (i *yamlInputIter) Close() error {
@@ -391,7 +430,7 @@ type readAllIter struct {
 	err   error
 }
 
-func newReadAllIter(r io.Reader, fname string) inputIter {
+func newReadAllIter(r io.Reader, fname string, opts ...cliOption) inputIter {
 	return &readAllIter{r: r, fname: fname}
 }
 

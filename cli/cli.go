@@ -49,6 +49,9 @@ type cli struct {
 	argnames  []string
 	argvalues []any
 
+	keys    map[uintptr][]string
+	cliOpts []cliOption
+
 	outputYAMLSeparator bool
 	exitCodeError       error
 }
@@ -76,9 +79,22 @@ type flagopts struct {
 	RawFile       map[string]string `long:"rawfile" description:"set the contents of a file to a variable"`
 	Args          []any             `long:"args" positional:"" description:"consume remaining arguments as positional string values"`
 	JSONArgs      []any             `long:"jsonargs" positional:"" description:"consume remaining arguments as positional JSON values"`
+	KeyOrder      bool              `short:"k" long:"key-order" description:"preserve order of keys"`
 	ExitStatus    bool              `short:"e" long:"exit-status" description:"exit 1 when the last value is false or null"`
 	Version       bool              `short:"v" long:"version" description:"display version information"`
 	Help          bool              `short:"h" long:"help" description:"display this help information"`
+}
+
+type cliConfig struct {
+	keys map[uintptr][]string
+}
+
+type cliOption func(*cliConfig)
+
+func withKeys(keys map[uintptr][]string) cliOption {
+	return func(c *cliConfig) {
+		c.keys = keys
+	}
 }
 
 var addDefaultModulePaths = true
@@ -126,6 +142,12 @@ Usage:
 		cli.outputCompact, cli.outputIndent, cli.outputTab, cli.outputYAML =
 		opts.OutputRaw, opts.OutputRaw0, opts.OutputJoin,
 		opts.OutputCompact, opts.OutputIndent, opts.OutputTab, opts.OutputYAML
+
+	if opts.KeyOrder {
+		cli.keys = map[uintptr][]string{}
+		cli.cliOpts = append(cli.cliOpts, withKeys(cli.keys))
+	}
+
 	defer func(x bool) { noColor = x }(noColor)
 	if opts.OutputColor || opts.OutputMono {
 		noColor = opts.OutputMono
@@ -159,7 +181,7 @@ Usage:
 		cli.argvalues = append(cli.argvalues, v)
 	}
 	for k, v := range opts.ArgJSON {
-		val, _ := newJSONInputIter(strings.NewReader(v), "$"+k).Next()
+		val, _ := newJSONInputIter(strings.NewReader(v), "$"+k, cli.cliOpts...).Next()
 		if err, ok := val.(error); ok {
 			return err
 		}
@@ -167,7 +189,7 @@ Usage:
 		cli.argvalues = append(cli.argvalues, val)
 	}
 	for k, v := range opts.SlurpFile {
-		val, err := slurpFile(v)
+		val, err := slurpFile(v, cli.cliOpts...)
 		if err != nil {
 			return err
 		}
@@ -189,7 +211,7 @@ Usage:
 	positional := opts.Args
 	for i, v := range opts.JSONArgs {
 		if v != nil {
-			val, _ := newJSONInputIter(strings.NewReader(v.(string)), "--jsonargs").Next()
+			val, _ := newJSONInputIter(strings.NewReader(v.(string)), "--jsonargs", cli.cliOpts...).Next()
 			if err, ok := val.(error); ok {
 				return err
 			}
@@ -236,7 +258,7 @@ Usage:
 	if len(modulePaths) == 0 && addDefaultModulePaths {
 		modulePaths = []string{"~/.jq", "$ORIGIN/../lib/gojq", "$ORIGIN/../lib"}
 	}
-	iter := cli.createInputIter(args)
+	iter := cli.createInputIter(args, cli.cliOpts...)
 	defer iter.Close()
 	code, err := gojq.Compile(query,
 		gojq.WithModuleLoader(gojq.NewModuleLoader(modulePaths)),
@@ -277,9 +299,9 @@ Usage:
 	return cli.process(iter, code)
 }
 
-func slurpFile(name string) (any, error) {
+func slurpFile(name string, opts ...cliOption) (any, error) {
 	iter := newSlurpInputIter(
-		newFilesInputIter(newJSONInputIter, []string{name}, nil),
+		newFilesInputIter(newJSONInputIter, []string{name}, nil, opts...),
 	)
 	defer iter.Close()
 	val, _ := iter.Next()
@@ -289,8 +311,8 @@ func slurpFile(name string) (any, error) {
 	return val, nil
 }
 
-func (cli *cli) createInputIter(args []string) (iter inputIter) {
-	var newIter func(io.Reader, string) inputIter
+func (cli *cli) createInputIter(args []string, opts ...cliOption) (iter inputIter) {
+	var newIter func(io.Reader, string, ...cliOption) inputIter
 	switch {
 	case cli.inputRaw:
 		if cli.inputSlurp {
@@ -315,9 +337,9 @@ func (cli *cli) createInputIter(args []string) (iter inputIter) {
 		}()
 	}
 	if len(args) == 0 {
-		return newIter(cli.inStream, "<stdin>")
+		return newIter(cli.inStream, "<stdin>", cli.cliOpts...)
 	}
-	return newFilesInputIter(newIter, args, cli.inStream)
+	return newFilesInputIter(newIter, args, cli.inStream, opts...)
 }
 
 func (cli *cli) process(iter inputIter, code *gojq.Code) error {
@@ -394,7 +416,7 @@ func (cli *cli) printValues(iter gojq.Iter) error {
 
 func (cli *cli) createMarshaler() marshaler {
 	if cli.outputYAML {
-		return yamlFormatter(cli.outputIndent)
+		return yamlFormatter(cli.outputIndent, cli.cliOpts...)
 	}
 	indent := 2
 	if cli.outputCompact {
@@ -404,7 +426,7 @@ func (cli *cli) createMarshaler() marshaler {
 	} else if i := cli.outputIndent; i != nil {
 		indent = *i
 	}
-	f := newEncoder(cli.outputTab, indent)
+	f := newEncoder(cli.outputTab, indent, cli.cliOpts...)
 	if cli.outputRaw || cli.outputRaw0 || cli.outputJoin {
 		return &rawMarshaler{f, cli.outputRaw0}
 	}
@@ -412,7 +434,7 @@ func (cli *cli) createMarshaler() marshaler {
 }
 
 func (cli *cli) funcDebug(v any, _ []any) any {
-	if err := newEncoder(false, 0).
+	if err := newEncoder(false, 0, cli.cliOpts...).
 		marshal([]any{"DEBUG:", v}, cli.errStream); err != nil {
 		return err
 	}
@@ -423,7 +445,7 @@ func (cli *cli) funcDebug(v any, _ []any) any {
 }
 
 func (cli *cli) funcStderr(v any, _ []any) any {
-	if err := (&rawMarshaler{m: newEncoder(false, 0)}).
+	if err := (&rawMarshaler{m: newEncoder(false, 0, cli.cliOpts...)}).
 		marshal(v, cli.errStream); err != nil {
 		return err
 	}
