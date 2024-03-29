@@ -1,20 +1,6 @@
 %{
 package gojq
 
-// Parse a query string, and returns the query struct.
-//
-// If parsing failed, it returns an error of type [*ParseError], which has
-// the byte offset and the invalid token. The byte offset is the scanned bytes
-// when the error occurred. The token is empty if the error occurred after
-// scanning the entire query string.
-func Parse(src string) (*Query, error) {
-	l := newLexer(src)
-	if yyParse(l) > 0 {
-		return nil, l.err
-	}
-	return l.result, nil
-}
-
 func reverseFuncDef(xs []*FuncDef) []*FuncDef {
 	for i, j := 0, len(xs)-1; i < j; i, j = i+1, j-1 {
 		xs[i], xs[j] = xs[j], xs[i]
