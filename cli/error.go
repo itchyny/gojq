@@ -2,12 +2,14 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
 	"strings"
 	"unicode/utf8"
 
+	"github.com/itchyny/gojq"
 	"github.com/mattn/go-runewidth"
 )
 
@@ -73,10 +75,9 @@ type queryParseError struct {
 
 func (err *queryParseError) Error() string {
 	var offset int
-	if e, ok := err.err.(interface{ Token() (string, int) }); ok {
-		var token string
-		token, offset = e.Token()
-		offset -= len(token) - 1
+	var e *gojq.ParseError
+	if errors.As(err.err, &e) {
+		offset = e.Offset - len(e.Token) + 1
 	}
 	linestr, line, column := getLineByOffset(err.contents, offset)
 	if err.fname != "<arg>" || containsNewline(err.contents) {

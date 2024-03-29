@@ -130,6 +130,7 @@ func main() {
 ```
 
 - Firstly, use [`gojq.Parse(string) (*Query, error)`](https://pkg.go.dev/github.com/itchyny/gojq#Parse) to get the query from a string.
+  - Use [`gojq.ParseError`](https://pkg.go.dev/github.com/itchyny/gojq#ParseError) to get the error position and token of the parsing error.
 - Secondly, get the result iterator
   - using [`query.Run`](https://pkg.go.dev/github.com/itchyny/gojq#Query.Run) or [`query.RunWithContext`](https://pkg.go.dev/github.com/itchyny/gojq#Query.RunWithContext)
   - or alternatively, compile the query using [`gojq.Compile`](https://pkg.go.dev/github.com/itchyny/gojq#Compile) and then [`code.Run`](https://pkg.go.dev/github.com/itchyny/gojq#Code.Run) or [`code.RunWithContext`](https://pkg.go.dev/github.com/itchyny/gojq#Code.RunWithContext). You can reuse the `*Code` against multiple inputs to avoid compilation of the same query. But for arguments of `code.Run`, do not give values sharing same data between multiple calls.
