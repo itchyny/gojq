@@ -103,7 +103,7 @@ func (env *env) debugCodes() {
 				s = "\t## " + name
 			}
 		}
-		fmt.Fprintf(debugOut, "\t%d\t%s%s%s\n", i, formatOp(c.op, false), debugOperand(c), s)
+		fmt.Fprintf(debugOut, "\t%d\t%-*s%s%s\n", i, 25, c.op, debugOperand(c), s)
 	}
 	fmt.Fprintln(debugOut, "\t"+strings.Repeat("-", 40)+"+")
 }
@@ -114,7 +114,11 @@ func (env *env) debugState(pc int, backtrack bool) {
 	}
 	var sb strings.Builder
 	c := env.codes[pc]
-	fmt.Fprintf(&sb, "\t%d\t%s%s\t|", pc, formatOp(c.op, backtrack), debugOperand(c))
+	op := c.op.String()
+	if backtrack {
+		op += " <backtrack>"
+	}
+	fmt.Fprintf(&sb, "\t%d\t%-*s%s\t|", pc, 25, op, debugOperand(c))
 	var xs []int
 	for i := env.stack.index; i >= 0; i = env.stack.data[i].next {
 		xs = append(xs, i)
@@ -149,13 +153,6 @@ func (env *env) debugState(pc int, backtrack bool) {
 	fmt.Fprintln(debugOut, sb.String())
 }
 
-func formatOp(c opcode, backtrack bool) string {
-	if backtrack {
-		return c.String() + " <backtrack>" + strings.Repeat(" ", 13-len(c.String()))
-	}
-	return c.String() + strings.Repeat(" ", 25-len(c.String()))
-}
-
 func (env *env) debugForks(pc int, op string) {
 	if !debug {
 		return
@@ -173,7 +170,7 @@ func (env *env) debugForks(pc int, op string) {
 			sb.WriteByte('>')
 		}
 	}
-	fmt.Fprintf(debugOut, "\t-\t%s%s%d\t|\t%s\n", op, strings.Repeat(" ", 22), pc, sb.String())
+	fmt.Fprintf(debugOut, "\t-\t%-*s%d\t|\t%s\n", 25, op, pc, sb.String())
 }
 
 func debugOperand(c *code) string {

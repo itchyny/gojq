@@ -84,8 +84,8 @@ func (err *queryParseError) Error() string {
 		return fmt.Sprintf("invalid query: %s:%d\n%s  %s",
 			err.fname, line, formatLineInfo(linestr, line, column), err.err)
 	}
-	return fmt.Sprintf("invalid query: %s\n    %s\n%s    ^  %s",
-		err.contents, linestr, strings.Repeat(" ", column), err.err)
+	return fmt.Sprintf("invalid query: %s\n    %s\n    %*c  %s",
+		err.contents, linestr, column+1, '^', err.err)
 }
 
 func (err *queryParseError) ExitCode() int {
@@ -110,8 +110,8 @@ func (err *jsonParseError) Error() string {
 		return fmt.Sprintf("invalid json: %s:%d\n%s  %s",
 			err.fname, line, formatLineInfo(linestr, line, column), err.err)
 	}
-	return fmt.Sprintf("invalid json: %s\n    %s\n%s    ^  %s",
-		err.fname, linestr, strings.Repeat(" ", column), err.err)
+	return fmt.Sprintf("invalid json: %s\n    %s\n    %*c  %s",
+		err.fname, linestr, column+1, '^', err.err)
 }
 
 type yamlParseError struct {
@@ -210,8 +210,7 @@ func trimLastInvalidRune(s string) string {
 
 func formatLineInfo(linestr string, line, column int) string {
 	l := strconv.Itoa(line)
-	return "    " + l + " | " + linestr + "\n" +
-		strings.Repeat(" ", len(l)+column) + "       ^"
+	return fmt.Sprintf("    %s | %s\n    %*c", l, linestr, column+len(l)+4, '^')
 }
 
 type stringScanner struct {
