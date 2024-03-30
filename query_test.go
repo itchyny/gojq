@@ -105,7 +105,7 @@ func TestQueryRun_Halt(t *testing.T) {
 			break
 		}
 		if err, ok := v.(error); ok {
-			if _, ok := err.(gojq.HaltError); ok {
+			if _, ok := err.(*gojq.HaltError); ok {
 				break
 			}
 			t.Errorf("should emit a halt error but got: %v", err)
@@ -127,7 +127,7 @@ func TestQueryRun_HaltError(t *testing.T) {
 			break
 		}
 		if err, ok := v.(error); ok {
-			if _, ok := err.(gojq.HaltError); ok {
+			if _, ok := err.(*gojq.HaltError); ok {
 				if expected := "halt error: foo"; err.Error() != expected {
 					t.Errorf("expected: %v, got: %v", expected, err)
 				}

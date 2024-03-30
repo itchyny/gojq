@@ -116,10 +116,7 @@ func main() {
 			break
 		}
 		if err, ok := v.(error); ok {
-			if err, ok := err.(gojq.HaltError); ok {
-				if err.Value() != nil {
-					log.Fatalln(err)
-				}
+			if err, ok := err.(*gojq.HaltError); ok && err.Value() == nil {
 				break
 			}
 			log.Fatalln(err)
@@ -137,8 +134,8 @@ func main() {
   - In either case, you cannot use custom type values as the query input. The type should be `[]any` for an array and `map[string]any` for a map (just like decoded to an `any` using the [encoding/json](https://golang.org/pkg/encoding/json/) package). You can't use `[]int` or `map[string]string`, for example. If you want to query your custom struct, marshal to JSON, unmarshal to `any` and use it as the query input.
 - Thirdly, iterate through the results using [`iter.Next() (any, bool)`](https://pkg.go.dev/github.com/itchyny/gojq#Iter). The iterator can emit an error so make sure to handle it. The method returns `true` with results, and `false` when the iterator terminates.
   - The return type is not `(any, error)` because the iterator may emit multiple errors. The `jq` and `gojq` commands stop the iteration on the first error, but the library user can choose to stop the iteration on errors, or to continue until it terminates.
-    - In any case, it is recommended to stop the iteration on [`HaltError`](https://pkg.go.dev/github.com/itchyny/gojq#HaltError), which is emitted on `halt` and `halt_error` functions, although these functions are not commonly used.
-      If the error value of `HaltError` is `nil`, stop the iteration without handling the error.
+    - In any case, it is recommended to stop the iteration on [`gojq.HaltError`](https://pkg.go.dev/github.com/itchyny/gojq#HaltError), which is emitted by `halt` and `halt_error` functions, although these functions are rarely used.
+      The error implements [`gojq.ValueError`](https://pkg.go.dev/github.com/itchyny/gojq#ValueError), and if the error value is `nil`, stop the iteration without handling the error.
       Technically speaking, we can fix the iterator to terminate on the halting error, but it does not terminate at the moment.
       The `halt` function in jq not only stops the iteration, but also terminates the command execution, even if there are still input values.
       So, gojq leaves it up to the library user how to handle the halting error.
