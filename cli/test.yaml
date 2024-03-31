@@ -8376,3 +8376,163 @@
   error: |
     unknown flag `--qqq'
   exit_code: 2
+
+- name: key order, json to json
+  args:
+    - '-c'
+    - '-k'
+    - '.'
+  input: '{"d":4, "c":{"y": 5, "z": 10, "x": 20}, "b":[{"open": 1, "close": 0}, {"close": 2, "open": 4}], "a":1}'
+  expected: |
+    {"d":4,"c":{"y":5,"z":10,"x":20},"b":[{"open":1,"close":0},{"close":2,"open":4}],"a":1}
+
+- name: key order, json to json (control)
+  args:
+    - '-c'
+    - '.'
+  input: '{"d":4, "c":{"y": 5, "z": 10, "x": 20}, "b":[{"open": 1, "close": 0}, {"close": 2, "open": 4}], "a":1}'
+  expected: |
+    {"a":1,"b":[{"close":0,"open":1},{"close":2,"open":4}],"c":{"x":20,"y":5,"z":10},"d":4}
+
+- name: key order, yaml to json
+  args:
+    - '-c'
+    - '-k'
+    - '--yaml-input'
+    - '.'
+  input: |
+    d: 4
+    c:
+      y: 5
+      z: 10
+      x: 20
+    b:
+      - open: 1
+        close: 0
+      - close: 2
+        open: 4
+    a: 1
+  expected: |
+    {"d":4,"c":{"y":5,"z":10,"x":20},"b":[{"open":1,"close":0},{"close":2,"open":4}],"a":1}
+
+- name: key order, yaml to json (control)
+  args:
+    - '-c'
+    - '--yaml-input'
+    - '.'
+  input: |
+    d: 4
+    c:
+      y: 5
+      z: 10
+      x: 20
+    b:
+      - open: 1
+        close: 0
+      - close: 2
+        open: 4
+    a: 1
+  expected: |
+    {"a":1,"b":[{"close":0,"open":1},{"close":2,"open":4}],"c":{"x":20,"y":5,"z":10},"d":4}
+
+- name: key order, json to yaml
+  args:
+    - '-c'
+    - '-k'
+    - '--yaml-output'
+    - '.'
+  input: '{"d":4, "c":{"y": 5, "z": 10, "x": 20}, "b":[{"open": 1, "close": 0}, {"close": 2, "open": 4}], "a":1}'
+  expected: |
+    d: 4
+    c:
+      "y": 5
+      z: 10
+      x: 20
+    b:
+      - open: 1
+        close: 0
+      - close: 2
+        open: 4
+    a: 1
+
+- name: key order, json to yaml (control)
+  args:
+    - '-c'
+    - '--yaml-output'
+    - '.'
+  input: '{"d":4, "c":{"y": 5, "z": 10, "x": 20}, "b":[{"open": 1, "close": 0}, {"close": 2, "open": 4}], "a":1}'
+  expected: |
+    a: 1
+    b:
+      - close: 0
+        open: 1
+      - close: 2
+        open: 4
+    c:
+      x: 20
+      "y": 5
+      z: 10
+    d: 4
+
+- name: key order, yaml to yaml
+  args:
+    - '-c'
+    - '-k'
+    - '--yaml-input'
+    - '--yaml-output'
+    - '.'
+  input: |
+    d: 4
+    c:
+      y: 5
+      z: 10
+      x: 20
+    b:
+      - open: 1
+        close: 0
+      - close: 2
+        open: 4
+    a: 1
+  expected: |
+    d: 4
+    c:
+      "y": 5
+      z: 10
+      x: 20
+    b:
+      - open: 1
+        close: 0
+      - close: 2
+        open: 4
+    a: 1
+
+- name: key order, yaml to yaml (control)
+  args:
+    - '-c'
+    - '--yaml-input'
+    - '--yaml-output'
+    - '.'
+  input: |
+    d: 4
+    c:
+      y: 5
+      z: 10
+      x: 20
+    b:
+      - open: 1
+        close: 0
+      - close: 2
+        open: 4
+    a: 1
+  expected: |
+    a: 1
+    b:
+      - close: 0
+        open: 1
+      - close: 2
+        open: 4
+    c:
+      x: 20
+      "y": 5
+      z: 10
+    d: 4

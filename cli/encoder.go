@@ -6,6 +6,7 @@ import (
 	"io"
 	"math"
 	"math/big"
+	"reflect"
 	"sort"
 	"strconv"
 	"unicode/utf8"
@@ -18,11 +19,16 @@ type encoder struct {
 	indent int
 	depth  int
 	buf    [64]byte
+	keys   map[uintptr][]string
 }
 
-func newEncoder(tab bool, indent int) *encoder {
+func newEncoder(tab bool, indent int, opts ...cliOption) *encoder {
+	var c cliConfig
+	for _, opt := range opts {
+		opt(&c)
+	}
 	// reuse the buffer in multiple calls of marshal
-	return &encoder{w: new(bytes.Buffer), tab: tab, indent: indent}
+	return &encoder{w: new(bytes.Buffer), tab: tab, indent: indent, keys: c.keys}
 }
 
 func (e *encoder) flush() error {
@@ -185,22 +191,45 @@ func (e *encoder) encodeArray(vs []any) error {
 	return nil
 }
 
+type keyVal struct {
+	key string
+	val any
+}
+
+func orderKvs(vs map[string]any, keys map[uintptr][]string) ([]keyVal, bool) {
+	ptr := uintptr(reflect.ValueOf(vs).UnsafePointer())
+	keyList := keys[ptr]
+	if len(keyList) != len(vs) {
+		return nil, false
+	}
+	kvs := make([]keyVal, len(vs))
+	for i, k := range keyList {
+		v, has := vs[k]
+		if !has {
+			return nil, false
+		}
+		kvs[i] = keyVal{k, v}
+	}
+	return kvs, true
+}
+
 func (e *encoder) encodeObject(vs map[string]any) error {
 	e.writeByte('{', objectColor)
 	e.depth += e.indent
-	type keyVal struct {
-		key string
-		val any
+
+	kvs, ok := orderKvs(vs, e.keys)
+	if !ok {
+		kvs = make([]keyVal, len(vs))
+		var i int
+		for k, v := range vs {
+			kvs[i] = keyVal{k, v}
+			i++
+		}
+		sort.Slice(kvs, func(i, j int) bool {
+			return kvs[i].key < kvs[j].key
+		})
 	}
-	kvs := make([]keyVal, len(vs))
-	var i int
-	for k, v := range vs {
-		kvs[i] = keyVal{k, v}
-		i++
-	}
-	sort.Slice(kvs, func(i, j int) bool {
-		return kvs[i].key < kvs[j].key
-	})
+
 	for i, kv := range kvs {
 		if i > 0 {
 			e.writeByte(',', objectColor)
