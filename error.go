@@ -193,10 +193,13 @@ func (err *HaltError) Error() string {
 	return "halt " + (*exitCodeError)(err).Error()
 }
 
+// Value returns the value of the error. This implements [ValueError],
+// but halt error is not catchable by try-catch.
 func (err *HaltError) Value() any {
 	return (*exitCodeError)(err).Value()
 }
 
+// ExitCode returns the exit code of the error.
 func (err *HaltError) ExitCode() int {
 	return (*exitCodeError)(err).ExitCode()
 }
