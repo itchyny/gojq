@@ -235,7 +235,8 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 	default:
 		if ch >= utf8.RuneSelf {
 			r, size := utf8.DecodeRuneInString(l.source[l.offset-1:])
-			l.offset += size
+			// -1 to adjust for first byte consumed by next()
+			l.offset += size - 1
 			l.token = string(r)
 		}
 	}
