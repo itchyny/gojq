@@ -643,9 +643,8 @@ func (c *compiler) compilePattern(vs [][2]int, p *Pattern) ([][2]int, error) {
 			}
 		}
 		return vs, nil
-	} else {
-		return nil, fmt.Errorf("invalid pattern: %s", p)
 	}
+	return nil, fmt.Errorf("invalid pattern: %s", p)
 }
 
 func (c *compiler) compileIf(e *If) error {
@@ -1439,9 +1438,9 @@ func formatToFunc(format string) *Func {
 		return &Func{Name: "_tobase64"}
 	case "@base64d":
 		return &Func{Name: "_tobase64d"}
-	default:
-		return nil
 	}
+
+	return nil
 }
 
 func (c *compiler) compileString(s *String, f *Func) error {
@@ -1489,9 +1488,8 @@ func (c *compiler) compileTermSuffix(e *Term, s *Suffix) error {
 		return c.compileTry(&Try{Body: &Query{Term: e}})
 	} else if s.Bind != nil {
 		return c.compileBind(e, s.Bind)
-	} else {
-		return fmt.Errorf("invalid suffix: %s", s)
 	}
+	return fmt.Errorf("invalid suffix: %s", s)
 }
 
 func (c *compiler) compileCall(name string, args []*Query) error {

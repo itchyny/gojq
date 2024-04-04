@@ -756,14 +756,15 @@ func funcImplode(v any) any {
 	var sb strings.Builder
 	sb.Grow(len(vs))
 	for _, v := range vs {
-		if r, ok := toInt(v); ok {
-			if 0 <= r && r <= utf8.MaxRune {
-				sb.WriteRune(rune(r))
-			} else {
-				sb.WriteRune(utf8.RuneError)
-			}
-		} else {
+		r, ok := toInt(v)
+		if !ok {
 			return &func0TypeError{"implode", vs}
+		}
+
+		if 0 <= r && r <= utf8.MaxRune {
+			sb.WriteRune(rune(r))
+		} else {
+			sb.WriteRune(utf8.RuneError)
 		}
 	}
 	return sb.String()
@@ -1079,18 +1080,18 @@ func funcSlice(_, v, e, s any) (r any) {
 func slice(vs []any, e, s any) any {
 	var start, end int
 	if s != nil {
-		if i, ok := toInt(s); ok {
-			start = clampIndex(i, 0, len(vs))
-		} else {
+		i, ok := toInt(s)
+		if !ok {
 			return &arrayIndexNotNumberError{s}
 		}
+		start = clampIndex(i, 0, len(vs))
 	}
 	if e != nil {
-		if i, ok := toInt(e); ok {
-			end = clampIndex(i, start, len(vs))
-		} else {
+		i, ok := toInt(e)
+		if !ok {
 			return &arrayIndexNotNumberError{e}
 		}
+		end = clampIndex(i, start, len(vs))
 	} else {
 		end = len(vs)
 	}
@@ -1101,18 +1102,18 @@ func sliceString(v string, e, s any) any {
 	var start, end int
 	l := len([]rune(v))
 	if s != nil {
-		if i, ok := toInt(s); ok {
-			start = clampIndex(i, 0, l)
-		} else {
+		i, ok := toInt(s)
+		if !ok {
 			return &stringIndexNotNumberError{s}
 		}
+		start = clampIndex(i, 0, l)
 	}
 	if e != nil {
-		if i, ok := toInt(e); ok {
-			end = clampIndex(i, start, l)
-		} else {
+		i, ok := toInt(e)
+		if !ok {
 			return &stringIndexNotNumberError{e}
 		}
+		end = clampIndex(i, start, l)
 	} else {
 		end = l
 	}
@@ -1147,9 +1148,9 @@ func clampIndex(i, min, max int) int {
 		return min
 	} else if i < max {
 		return i
-	} else {
-		return max
 	}
+
+	return max
 }
 
 func funcFlatten(v any, args []any) any {
@@ -1946,11 +1947,12 @@ func arrayToTime(a []any, loc *time.Location) (time.Time, error) {
 	if y, ok = toInt(a[0]); !ok {
 		return t, &timeArrayError{}
 	}
-	if m, ok = toInt(a[1]); ok {
-		m++
-	} else {
+	m, ok = toInt(a[1])
+	if !ok {
 		return t, &timeArrayError{}
 	}
+	m++
+
 	if d, ok = toInt(a[2]); !ok {
 		return t, &timeArrayError{}
 	}
@@ -1960,12 +1962,13 @@ func arrayToTime(a []any, loc *time.Location) (time.Time, error) {
 	if min, ok = toInt(a[4]); !ok {
 		return t, &timeArrayError{}
 	}
-	if x, ok := toFloat(a[5]); ok {
-		sec = int(x)
-		nsec = int((x - math.Floor(x)) * 1e9)
-	} else {
+	x, ok := toFloat(a[5])
+	if !ok {
 		return t, &timeArrayError{}
 	}
+	sec = int(x)
+	nsec = int((x - math.Floor(x)) * 1e9)
+
 	if _, ok = toFloat(a[6]); !ok {
 		return t, &timeArrayError{}
 	}

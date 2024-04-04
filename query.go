@@ -804,9 +804,8 @@ func (e *Suffix) toTerm() *Term {
 		return &Term{Type: TermTypeIndex, Index: e.Index}
 	} else if e.Iter {
 		return &Term{Type: TermTypeIdentity, SuffixList: []*Suffix{{Iter: true}}}
-	} else {
-		return nil
 	}
+	return nil
 }
 
 func (e *Suffix) toIndices(xs []any) []any {
@@ -1084,9 +1083,9 @@ func (e *ConstTerm) toValue() any {
 		return true
 	} else if e.False {
 		return false
-	} else {
-		return e.Str
 	}
+
+	return e.Str
 }
 
 func (e *ConstTerm) toString() (string, bool) {
