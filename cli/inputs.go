@@ -140,7 +140,7 @@ func (i *nullInputIter) Close() error {
 	return nil
 }
 
-func (i *nullInputIter) Name() string {
+func (*nullInputIter) Name() string {
 	return ""
 }
 

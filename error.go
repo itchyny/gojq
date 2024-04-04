@@ -85,7 +85,7 @@ func (err *expectedStartEndError) Error() string {
 
 type lengthMismatchError struct{}
 
-func (err *lengthMismatchError) Error() string {
+func (*lengthMismatchError) Error() string {
 	return "length mismatch"
 }
 
@@ -222,7 +222,7 @@ func (err *joinTypeError) Error() string {
 
 type timeArrayError struct{}
 
-func (err *timeArrayError) Error() string {
+func (*timeArrayError) Error() string {
 	return "expected an array of 8 numbers"
 }
 
@@ -279,7 +279,7 @@ func (err *formatRowError) Error() string {
 
 type tooManyVariableValuesError struct{}
 
-func (err *tooManyVariableValuesError) Error() string {
+func (*tooManyVariableValuesError) Error() string {
 	return "too many variable values provided"
 }
 
@@ -316,7 +316,7 @@ func (err *breakError) Error() string {
 	return "label not defined: " + err.n
 }
 
-func (err *breakError) ExitCode() int {
+func (*breakError) ExitCode() int {
 	return 3
 }
 
