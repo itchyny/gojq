@@ -2,6 +2,7 @@ package gojq
 
 import (
 	"context"
+	"errors"
 	"math"
 	"reflect"
 	"sort"
@@ -88,15 +89,19 @@ loop:
 				if err == nil {
 					break loop
 				}
-				switch e := err.(type) {
-				case *tryEndError:
-					err = e.err
+				var tryEndErr *tryEndError
+				var breakErr *breakError
+				var haltErr *HaltError
+				var valueErr ValueError
+				switch  {
+				case errors.As(err, &tryEndErr):
+					err = tryEndErr.err
 					break loop
-				case *breakError, *HaltError:
+				case  errors.As(err, &breakErr),  errors.As(err, &haltErr):
 					break loop
-				case ValueError:
+				case errors.As(err, &valueErr):
 					env.pop()
-					env.push(e.Value())
+					env.push(valueErr.Value())
 				default:
 					env.pop()
 					env.push(err.Error())
@@ -125,7 +130,8 @@ loop:
 		case opforklabel:
 			if backtrack {
 				label := env.pop()
-				if e, ok := err.(*breakError); ok && e.v == label {
+				var breakErr *breakError
+				if errors.As(err, &breakErr) && breakErr.v == label {
 					err = nil
 				}
 				break loop

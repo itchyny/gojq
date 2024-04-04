@@ -845,7 +845,7 @@ func funcFromJSON(v any) any {
 	if err := dec.Decode(&w); err != nil {
 		return &func0WrapError{"fromjson", v, err}
 	}
-	if _, err := dec.Token(); err != io.EOF {
+	if _, err := dec.Token(); !errors.Is(err, io.EOF) {
 		return &func0TypeError{"fromjson", v}
 	}
 	return normalizeNumbers(w)
@@ -2068,7 +2068,7 @@ func compileRegexp(re, flags string) (*regexp.Regexp, error) {
 	}
 	r, err := regexp.Compile(re)
 	if err != nil {
-		return nil, fmt.Errorf("invalid regular expression %q: %s", re, err)
+		return nil, fmt.Errorf("invalid regular expression %q: %w", re, err)
 	}
 	return r, nil
 }

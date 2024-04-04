@@ -333,8 +333,9 @@ func (cli *cli) process(iter inputIter, code *gojq.Code) error {
 			continue
 		}
 		if e := cli.printValues(code.Run(v, cli.argvalues...)); e != nil {
-			if e, ok := e.(*gojq.HaltError); ok {
-				if v := e.Value(); v != nil {
+			var haltErr *gojq.HaltError
+			if errors.As(e, &haltErr) {
+				if v := haltErr.Value(); v != nil {
 					if str, ok := v.(string); ok {
 						cli.errStream.Write([]byte(str))
 					} else {
@@ -343,7 +344,7 @@ func (cli *cli) process(iter inputIter, code *gojq.Code) error {
 						cli.errStream.Write([]byte{'\n'})
 					}
 				}
-				err = e
+				err = haltErr
 				break
 			}
 			fmt.Fprintf(cli.errStream, "%s: %s\n", name, e)

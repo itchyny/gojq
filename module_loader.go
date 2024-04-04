@@ -2,6 +2,7 @@ package gojq
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -98,7 +99,7 @@ func (l *moduleLoader) LoadJSONWithMeta(name string, meta map[string]any) (any, 
 	for {
 		var val any
 		if err := dec.Decode(&val); err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 			if _, err := f.Seek(0, io.SeekStart); err != nil {
