@@ -100,10 +100,11 @@ type jsonParseError struct {
 
 func (err *jsonParseError) Error() string {
 	var offset int
-	if err.err == io.ErrUnexpectedEOF {
+	var syntaxErr *json.SyntaxError
+	if errors.Is(err.err, io.ErrUnexpectedEOF) {
 		offset = len(err.contents) + 1
-	} else if e, ok := err.err.(*json.SyntaxError); ok {
-		offset = int(e.Offset)
+	} else if errors.As(err.err, &syntaxErr) {
+		offset = int(syntaxErr.Offset)
 	}
 	linestr, line, column := getLineByOffset(err.contents, offset)
 	if line += err.line; line > 1 {
