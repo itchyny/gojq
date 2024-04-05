@@ -9,8 +9,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/itchyny/gojq"
 	"github.com/mattn/go-runewidth"
+
+	"github.com/itchyny/gojq"
 )
 
 type emptyError struct {
@@ -38,7 +39,7 @@ func (err *exitCodeError) Error() string {
 	return "exit code: " + strconv.Itoa(err.code)
 }
 
-func (err *exitCodeError) isEmptyError() {}
+func (*exitCodeError) isEmptyError() {}
 
 func (err *exitCodeError) ExitCode() int {
 	return err.code
@@ -52,7 +53,7 @@ func (err *flagParseError) Error() string {
 	return err.err.Error()
 }
 
-func (err *flagParseError) ExitCode() int {
+func (*flagParseError) ExitCode() int {
 	return exitCodeFlagParseErr
 }
 
@@ -64,7 +65,7 @@ func (err *compileError) Error() string {
 	return "compile error: " + err.err.Error()
 }
 
-func (err *compileError) ExitCode() int {
+func (*compileError) ExitCode() int {
 	return exitCodeCompileErr
 }
 
@@ -88,7 +89,7 @@ func (err *queryParseError) Error() string {
 		err.contents, linestr, column+1, '^', err.err)
 }
 
-func (err *queryParseError) ExitCode() int {
+func (*queryParseError) ExitCode() int {
 	return exitCodeCompileErr
 }
 
