@@ -1103,7 +1103,11 @@ func funcIndex2(_, v, x any) any {
 				}
 				return f.Interface()
 			case reflect.Map:
-				return value.MapIndex(reflect.ValueOf(x)).Interface()
+				v := value.MapIndex(reflect.ValueOf(x))
+				if !v.IsValid() {
+					return nil
+				}
+				return v.Interface()
 			default:
 				return &expectedObjectError{v}
 			}
