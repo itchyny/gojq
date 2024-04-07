@@ -4,14 +4,12 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"github.com/itchyny/gojq"
+	"github.com/mattn/go-isatty"
 	"io"
 	"os"
 	"runtime"
 	"strings"
-
-	"github.com/mattn/go-isatty"
-
-	"github.com/itchyny/gojq"
 )
 
 const name = "gojq"
@@ -96,8 +94,7 @@ type flagopts struct {
 	Args          []any             `long:"args" positional:"" description:"consume remaining arguments as positional string values"`
 	JSONArgs      []any             `long:"jsonargs" positional:"" description:"consume remaining arguments as positional JSON values"`
 	ExitStatus    bool              `short:"e" long:"exit-status" description:"exit 1 when the last value is false or null"`
-	Version       bool              `short:"V" long:"version" description:"display version information"`
-	OldVersion    bool              `short:"v" description:"display version information"`
+	Version       bool              `short:"v" long:"version" description:"display version information"`
 	Help          bool              `short:"h" long:"help" description:"display this help information"`
 }
 
@@ -138,7 +135,7 @@ Usage:
 		fmt.Fprintln(cli.outStream, formatFlags(&opts))
 		return nil
 	}
-	if opts.Version || opts.OldVersion {
+	if opts.Version {
 		fmt.Fprintf(cli.outStream, "%s %s (rev: %s/%s)\n", name, version, revision, runtime.Version())
 		return nil
 	}
