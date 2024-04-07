@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -9,6 +10,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/mattn/go-runewidth"
+
+	"github.com/itchyny/gojq"
 )
 
 type emptyError struct {
@@ -36,7 +39,7 @@ func (err *exitCodeError) Error() string {
 	return "exit code: " + strconv.Itoa(err.code)
 }
 
-func (err *exitCodeError) isEmptyError() {}
+func (*exitCodeError) isEmptyError() {}
 
 func (err *exitCodeError) ExitCode() int {
 	return err.code
@@ -50,7 +53,7 @@ func (err *flagParseError) Error() string {
 	return err.err.Error()
 }
 
-func (err *flagParseError) ExitCode() int {
+func (*flagParseError) ExitCode() int {
 	return exitCodeFlagParseErr
 }
 
@@ -62,7 +65,7 @@ func (err *compileError) Error() string {
 	return "compile error: " + err.err.Error()
 }
 
-func (err *compileError) ExitCode() int {
+func (*compileError) ExitCode() int {
 	return exitCodeCompileErr
 }
 
@@ -73,21 +76,20 @@ type queryParseError struct {
 
 func (err *queryParseError) Error() string {
 	var offset int
-	if e, ok := err.err.(interface{ Token() (string, int) }); ok {
-		var token string
-		token, offset = e.Token()
-		offset -= len(token) - 1
+	var e *gojq.ParseError
+	if errors.As(err.err, &e) {
+		offset = e.Offset - len(e.Token) + 1
 	}
 	linestr, line, column := getLineByOffset(err.contents, offset)
 	if err.fname != "<arg>" || containsNewline(err.contents) {
 		return fmt.Sprintf("invalid query: %s:%d\n%s  %s",
 			err.fname, line, formatLineInfo(linestr, line, column), err.err)
 	}
-	return fmt.Sprintf("invalid query: %s\n    %s\n%s    ^  %s",
-		err.contents, linestr, strings.Repeat(" ", column), err.err)
+	return fmt.Sprintf("invalid query: %s\n    %s\n    %*c  %s",
+		err.contents, linestr, column+1, '^', err.err)
 }
 
-func (err *queryParseError) ExitCode() int {
+func (*queryParseError) ExitCode() int {
 	return exitCodeCompileErr
 }
 
@@ -109,8 +111,8 @@ func (err *jsonParseError) Error() string {
 		return fmt.Sprintf("invalid json: %s:%d\n%s  %s",
 			err.fname, line, formatLineInfo(linestr, line, column), err.err)
 	}
-	return fmt.Sprintf("invalid json: %s\n    %s\n%s    ^  %s",
-		err.fname, linestr, strings.Repeat(" ", column), err.err)
+	return fmt.Sprintf("invalid json: %s\n    %s\n    %*c  %s",
+		err.fname, linestr, column+1, '^', err.err)
 }
 
 type yamlParseError struct {
@@ -209,8 +211,7 @@ func trimLastInvalidRune(s string) string {
 
 func formatLineInfo(linestr string, line, column int) string {
 	l := strconv.Itoa(line)
-	return "    " + l + " | " + linestr + "\n" +
-		strings.Repeat(" ", len(l)+column) + "       ^"
+	return fmt.Sprintf("    %s | %s\n    %*c", l, linestr, column+len(l)+4, '^')
 }
 
 type stringScanner struct {

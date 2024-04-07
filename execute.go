@@ -92,7 +92,7 @@ loop:
 				case *tryEndError:
 					err = e.err
 					break loop
-				case *breakError, *haltError:
+				case *breakError, *HaltError:
 					break loop
 				case ValueError:
 					env.pop()

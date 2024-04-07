@@ -2099,7 +2099,7 @@ func funcError(v any, args []any) any {
 }
 
 func funcHalt(any) any {
-	return &haltError{nil, 0}
+	return &HaltError{nil, 0}
 }
 
 func funcHaltError(v any, args []any) any {
@@ -2110,7 +2110,7 @@ func funcHaltError(v any, args []any) any {
 			return &func0TypeError{"halt_error", args[0]}
 		}
 	}
-	return &haltError{v, code}
+	return &HaltError{v, code}
 }
 
 func toInt(x any) (int, bool) {

@@ -16,7 +16,7 @@ import (
 
 const name = "gojq"
 
-const version = "0.12.14"
+const version = "0.12.15"
 
 var revision = "HEAD"
 
@@ -373,7 +373,7 @@ func (cli *cli) process(iter inputIter, code *gojq.Code) error {
 			continue
 		}
 		if e := cli.printValues(code.Run(v, cli.argvalues...)); e != nil {
-			if e, ok := e.(gojq.HaltError); ok {
+			if e, ok := e.(*gojq.HaltError); ok {
 				if v := e.Value(); v != nil {
 					if str, ok := v.(string); ok {
 						cli.errStream.Write([]byte(str))
