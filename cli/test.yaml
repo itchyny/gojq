@@ -1466,6 +1466,14 @@
       "x": 0
     }
 
+- name: add function with slicing
+  args:
+    - -c
+    - '[.[:2], [0], .[1:]] | add'
+  input: '[1,2,3]'
+  expected: |
+    [1,2,0,2,3]
+
 - name: add function error
   args:
     - 'add'
@@ -2857,14 +2865,24 @@
     [1,2]
     []
 
-- name: ensure arrays are immutable during addition
+- name: arrays are immutable on addition
   args:
     - -c
-    - '. as $first | .[:0] + [6, 7, 8] | ., $first'
+    - '. as $v | .[:0] + [6, 7, 8] | ., $v'
   input: |
     [1,2,3,4,5]
   expected: |
     [6,7,8]
+    [1,2,3,4,5]
+
+- name: arrays are immutable on subtraction
+  args:
+    - -c
+    - '. as $v | . - [2, 3] | ., $v'
+  input: |
+    [1,2,3,4,5]
+  expected: |
+    [1,4,5]
     [1,2,3,4,5]
 
 - name: subtract arrays
