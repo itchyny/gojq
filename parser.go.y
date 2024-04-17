@@ -22,22 +22,21 @@ func prependFuncDef(xs []*FuncDef, x *FuncDef) []*FuncDef {
   operator Operator
 }
 
-%type<value> program moduleheader programbody imports import metaopt funcdefs funcdef funcdefargs query
+%type<value> program header imports import meta body funcdefs funcdef funcargs query
 %type<value> bindpatterns pattern arraypatterns objectpatterns objectpattern
 %type<value> term string stringparts suffix args ifelifs ifelse trycatch
 %type<value> objectkeyvals objectkeyval objectval
 %type<value> constterm constobject constobjectkeyvals constobjectkeyval constarray constarrayelems
 %type<token> tokIdentVariable tokIdentModuleIdent tokVariableModuleVariable tokKeyword objectkey
-%token<operator> tokAltOp tokUpdateOp tokDestAltOp tokOrOp tokAndOp tokCompareOp
-%token<token> tokModule tokImport tokInclude tokDef tokAs tokLabel tokBreak
+%token<operator> tokAltOp tokUpdateOp tokDestAltOp tokCompareOp
+%token<token> tokOrOp tokAndOp tokModule tokImport tokInclude tokDef tokAs tokLabel tokBreak
 %token<token> tokNull tokTrue tokFalse
-%token<token> tokIdent tokVariable tokModuleIdent tokModuleVariable
-%token<token> tokIndex tokNumber tokFormat
-%token<token> tokString tokStringStart tokStringQuery tokStringEnd
 %token<token> tokIf tokThen tokElif tokElse tokEnd
 %token<token> tokTry tokCatch tokReduce tokForeach
-%token tokRecurse tokFuncDefPost tokTermPost tokEmptyCatch
-%token tokInvalid tokInvalidEscapeSequence tokUnterminatedString
+%token<token> tokIdent tokVariable tokModuleIdent tokModuleVariable
+%token<token> tokRecurse tokIndex tokNumber tokFormat
+%token<token> tokString tokStringStart tokStringQuery tokStringEnd
+%token<token> tokInvalid tokInvalidEscapeSequence tokUnterminatedString
 
 %nonassoc tokFuncDefPost tokTermPost
 %right '|'
@@ -55,31 +54,22 @@ func prependFuncDef(xs []*FuncDef, x *FuncDef) []*FuncDef {
 %%
 
 program
-    : moduleheader programbody
+    : header imports body
     {
-        if $1 != nil { $2.(*Query).Meta = $1.(*ConstObject) }
-        yylex.(*lexer).result = $2.(*Query)
+        query := $3.(*Query)
+        query.Meta = $1.(*ConstObject)
+        query.Imports = $2.([]*Import)
+        yylex.(*lexer).result = query
     }
 
-moduleheader
+header
     :
     {
-        $$ = nil
+        $$ = (*ConstObject)(nil)
     }
     | tokModule constobject ';'
     {
         $$ = $2;
-    }
-
-programbody
-    : imports funcdefs
-    {
-        $$ = &Query{Imports: $1.([]*Import), FuncDefs: reverseFuncDef($2.([]*FuncDef)), Term: &Term{Type: TermTypeIdentity}}
-    }
-    | imports query
-    {
-        if $1 != nil { $2.(*Query).Imports = $1.([]*Import) }
-        $$ = $2
     }
 
 imports
@@ -93,21 +83,28 @@ imports
     }
 
 import
-    : tokImport tokString tokAs tokIdentVariable metaopt ';'
+    : tokImport tokString tokAs tokIdentVariable meta ';'
     {
         $$ = &Import{ImportPath: $2, ImportAlias: $4, Meta: $5.(*ConstObject)}
     }
-    | tokInclude tokString metaopt ';'
+    | tokInclude tokString meta ';'
     {
         $$ = &Import{IncludePath: $2, Meta: $3.(*ConstObject)}
     }
 
-metaopt
+meta
     :
     {
         $$ = (*ConstObject)(nil)
     }
-    | constobject {}
+    | constobject
+
+body
+    : funcdefs
+    {
+        $$ = &Query{FuncDefs: reverseFuncDef($1.([]*FuncDef)), Term: &Term{Type: TermTypeIdentity}}
+    }
+    | query
 
 funcdefs
     :
@@ -124,30 +121,31 @@ funcdef
     {
         $$ = &FuncDef{Name: $2, Body: $4.(*Query)}
     }
-    | tokDef tokIdent '(' funcdefargs ')' ':' query ';'
+    | tokDef tokIdent '(' funcargs ')' ':' query ';'
     {
         $$ = &FuncDef{$2, $4.([]string), $7.(*Query)}
     }
 
-funcdefargs
+funcargs
     : tokIdentVariable
     {
         $$ = []string{$1}
     }
-    | funcdefargs ';' tokIdentVariable
+    | funcargs ';' tokIdentVariable
     {
         $$ = append($1.([]string), $3)
     }
 
 tokIdentVariable
-    : tokIdent {}
-    | tokVariable {}
+    : tokIdent
+    | tokVariable
 
 query
     : funcdef query %prec tokFuncDefPost
     {
-        $2.(*Query).FuncDefs = prependFuncDef($2.(*Query).FuncDefs, $1.(*FuncDef))
-        $$ = $2
+        query := $2.(*Query)
+        query.FuncDefs = prependFuncDef(query.FuncDefs, $1.(*FuncDef))
+        $$ = query
     }
     | query '|' query
     {
@@ -155,8 +153,9 @@ query
     }
     | term tokAs bindpatterns '|' query
     {
-        $1.(*Term).SuffixList = append($1.(*Term).SuffixList, &Suffix{Bind: &Bind{$3.([]*Pattern), $5.(*Query)}})
-        $$ = &Query{Term: $1.(*Term)}
+        term := $1.(*Term)
+        term.SuffixList = append(term.SuffixList, &Suffix{Bind: &Bind{$3.([]*Pattern), $5.(*Query)}})
+        $$ = &Query{Term: term}
     }
     | tokLabel tokVariable '|' query
     {
@@ -288,10 +287,11 @@ term
     }
     | '.' suffix
     {
-        if $2.(*Suffix).Iter {
-            $$ = &Term{Type: TermTypeIdentity, SuffixList: []*Suffix{$2.(*Suffix)}}
+        suffix := $2.(*Suffix)
+        if suffix.Iter {
+            $$ = &Term{Type: TermTypeIdentity, SuffixList: []*Suffix{suffix}}
         } else {
-            $$ = &Term{Type: TermTypeIndex, Index: $2.(*Suffix).Index}
+            $$ = &Term{Type: TermTypeIndex, Index: suffix.Index}
         }
     }
     | '.' string
@@ -441,12 +441,12 @@ stringparts
     }
 
 tokIdentModuleIdent
-    : tokIdent {}
-    | tokModuleIdent {}
+    : tokIdent
+    | tokModuleIdent
 
 tokVariableModuleVariable
-    : tokVariable {}
-    | tokModuleVariable {}
+    : tokVariable
+    | tokModuleVariable
 
 suffix
     : '[' ']'
@@ -543,9 +543,9 @@ objectkeyval
     }
 
 objectkey
-    : tokIdent {}
-    | tokVariable {}
-    | tokKeyword {}
+    : tokIdent
+    | tokVariable
+    | tokKeyword
 
 objectval
     : term
@@ -646,26 +646,26 @@ constarrayelems
     }
 
 tokKeyword
-    : tokOrOp {}
-    | tokAndOp {}
-    | tokModule {}
-    | tokImport {}
-    | tokInclude {}
-    | tokDef {}
-    | tokAs {}
-    | tokLabel {}
-    | tokBreak {}
-    | tokNull {}
-    | tokTrue {}
-    | tokFalse {}
-    | tokIf {}
-    | tokThen {}
-    | tokElif {}
-    | tokElse {}
-    | tokEnd {}
-    | tokTry {}
-    | tokCatch {}
-    | tokReduce {}
-    | tokForeach {}
+    : tokOrOp
+    | tokAndOp
+    | tokModule
+    | tokImport
+    | tokInclude
+    | tokDef
+    | tokAs
+    | tokLabel
+    | tokBreak
+    | tokNull
+    | tokTrue
+    | tokFalse
+    | tokIf
+    | tokThen
+    | tokElif
+    | tokElse
+    | tokEnd
+    | tokTry
+    | tokCatch
+    | tokReduce
+    | tokForeach
 
 %%
