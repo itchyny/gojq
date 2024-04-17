@@ -63,13 +63,8 @@ func (e *Query) writeTo(s *strings.Builder) {
 	for _, im := range e.Imports {
 		im.writeTo(s)
 	}
-	for i, fd := range e.FuncDefs {
-		if i > 0 {
-			s.WriteByte(' ')
-		}
+	for _, fd := range e.FuncDefs {
 		fd.writeTo(s)
-	}
-	if len(e.FuncDefs) > 0 {
 		s.WriteByte(' ')
 	}
 	if e.Func != "" {
