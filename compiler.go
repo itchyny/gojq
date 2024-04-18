@@ -398,6 +398,8 @@ func (c *compiler) compileQuery(e *Query) error {
 		return c.compileTerm(e.Term)
 	}
 	switch e.Op {
+	case Operator(0):
+		return errors.New(`missing query (try ".")`)
 	case OpPipe:
 		if err := c.compileQuery(e.Left); err != nil {
 			return err

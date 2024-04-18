@@ -837,7 +837,7 @@ yydefault:
 		yyDollar = yyS[yypt-1 : yypt+1]
 //line parser.go.y:104
 		{
-			yyVAL.value = &Query{FuncDefs: reverseFuncDef(yyDollar[1].value.([]*FuncDef)), Term: &Term{Type: TermTypeIdentity}}
+			yyVAL.value = &Query{FuncDefs: reverseFuncDef(yyDollar[1].value.([]*FuncDef))}
 		}
 	case 12:
 		yyDollar = yyS[yypt-0 : yypt+1]

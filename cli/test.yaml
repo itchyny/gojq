@@ -1,22 +1,36 @@
 - name: empty input
+  args:
+    - '.'
   input: ''
   expected: ''
 
-- name: empty query
+- name: empty args
+  input: 'null'
+  expected: |
+    null
+
+- name: missing query
   args:
     - ''
-  input: '128'
-  expected: |
-    128
-
-- name: comment only query
-  args:
-    - '# comment'
-  input: '128'
-  expected: |
-    128
+  error: |
+    compile error: missing query (try ".")
+  exit_code: 3
 
 - name: query with comment
+  args:
+    - '. # comment'
+  input: 'null'
+  expected: |
+    null
+
+- name: missing query with comment
+  args:
+    - '# comment'
+  error: |
+    compile error: missing query (try ".")
+  exit_code: 3
+
+- name: query with comment with newline
   args:
     - |
       # comment
@@ -2572,6 +2586,13 @@
     invalid query: def $f: .; $f
         def $f: .; $f
             ^  unexpected token "$f"
+  exit_code: 3
+
+- name: function declaration without query
+  args:
+    - 'def f: 0;'
+  error: |
+    compile error: missing query (try ".")
   exit_code: 3
 
 - name: add, subtract, multiply, divide, modulo numbers

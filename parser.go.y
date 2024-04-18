@@ -102,7 +102,7 @@ meta
 body
     : funcdefs
     {
-        $$ = &Query{FuncDefs: reverseFuncDef($1.([]*FuncDef)), Term: &Term{Type: TermTypeIdentity}}
+        $$ = &Query{FuncDefs: reverseFuncDef($1.([]*FuncDef))}
     }
     | query
 
