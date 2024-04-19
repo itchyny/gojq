@@ -1504,10 +1504,7 @@ func (a allocator) makeObject(l int) map[string]any {
 }
 
 func (a allocator) makeArray(l, c int) []any {
-	if c < l {
-		c = l
-	}
-	v := make([]any, l, c)
+	v := make([]any, l, max(l, c))
 	if a != nil {
 		a[reflect.ValueOf(v).Pointer()] = struct{}{}
 	}

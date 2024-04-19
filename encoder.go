@@ -79,11 +79,7 @@ func (e *encoder) encodeFloat64(f float64) {
 		e.w.WriteString("null")
 		return
 	}
-	if f >= math.MaxFloat64 {
-		f = math.MaxFloat64
-	} else if f <= -math.MaxFloat64 {
-		f = -math.MaxFloat64
-	}
+	f = min(max(f, -math.MaxFloat64), math.MaxFloat64)
 	format := byte('f')
 	if x := math.Abs(f); x != 0 && x < 1e-6 || x >= 1e21 {
 		format = 'e'
