@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/modopayments/go-modo/v8"
-	"github.com/modopayments/go-modo/v8/uuid"
+	"github.com/modopayments/go-modo/v9/db"
+	"github.com/modopayments/go-modo/v9/uuid"
 )
 
 // Operator ...
@@ -331,7 +331,7 @@ func binopTypeSwitchNormalize(value any) any {
 		return v.UUID.String()
 	case time.Time:
 		return int(v.Unix())
-	case modo.Timestamp:
+	case db.Timestamp:
 		return int(v.Time.Unix())
 	case reflect.Value:
 		return binopTypeSwitchNormalize(v.Interface())
@@ -369,7 +369,7 @@ func funcOpPlus(v any) any {
 	switch v := v.(type) {
 	case uint, uint8, uint16, uint32, uint64, int, int8, int16, int32, int64:
 		return v
-	case time.Time, modo.Timestamp:
+	case time.Time, db.Timestamp:
 		return v
 	case uuid.UUID, uuid.NullUUID:
 		return v

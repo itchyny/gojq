@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/modopayments/go-modo/v8"
-	"github.com/modopayments/go-modo/v8/uuid"
+	"github.com/modopayments/go-modo/v9/db"
+	"github.com/modopayments/go-modo/v9/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -108,7 +108,7 @@ func TestBinopTypeSwitchNormalize(t *testing.T) {
 			want: nil,
 		},
 		{
-			have: modo.Timestamp{Time: time.Unix(100, 10)},
+			have: db.Timestamp{Time: time.Unix(100, 10)},
 			want: 100,
 		},
 		{

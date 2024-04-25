@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/modopayments/go-modo/v8"
-	"github.com/modopayments/go-modo/v8/uuid"
+	"github.com/modopayments/go-modo/v9/db"
+	"github.com/modopayments/go-modo/v9/uuid"
 )
 
 // TypeOf returns the jq-flavored type name of v.
@@ -32,7 +32,7 @@ func TypeOf(v any) string {
 		return "uuid"
 	case uuid.NullUUID:
 		return "nullUUID"
-	case time.Time, modo.Timestamp:
+	case time.Time, db.Timestamp:
 		return "time"
 	default:
 		t := reflect.TypeOf(v)

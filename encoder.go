@@ -14,8 +14,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/modopayments/go-modo/v8"
-	"github.com/modopayments/go-modo/v8/uuid"
+	"github.com/modopayments/go-modo/v9/db"
+	"github.com/modopayments/go-modo/v9/uuid"
 )
 
 // Marshal returns the jq-flavored JSON encoding of v.
@@ -104,7 +104,7 @@ func (e *encoder) encode(v any) {
 		}
 	case time.Time:
 		e.w.Write(strconv.AppendInt(e.buf[:0], v.Unix(), 10))
-	case modo.Timestamp:
+	case db.Timestamp:
 		e.w.Write(strconv.AppendInt(e.buf[:0], v.Unix(), 10))
 	default:
 		value := reflect.ValueOf(v)
