@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"unicode/utf8"
 
-	"github.com/modopayments/go-modo/v8/uuid"
+	"github.com/modopayments/go-modo/v9/uuid"
 )
 
 // Preview returns the preview string of v. The preview string is basically the
