@@ -11,6 +11,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/itchyny/gojq"
+	"github.com/momiji/xqml"
 )
 
 type inputReader struct {
@@ -302,6 +303,51 @@ func (i *streamInputIter) Close() error {
 }
 
 func (i *streamInputIter) Name() string {
+	return i.fname
+}
+
+type xmlInputIter struct {
+	dec   *xqml.Decoder
+	ir    *inputReader
+	fname string
+	err   error
+}
+
+func newXMLInputIter(r io.Reader, fname string, attributes bool, namespaces bool, forceList []string, html bool) inputIter {
+	ir := newInputReader(r)
+	dec := xqml.NewDecoder(ir)
+	dec.Attributes = attributes
+	dec.Namespaces = namespaces
+	dec.ForceList = forceList
+	dec.Html = html
+	dec.Cast = true
+	dec.Partials = true
+	return &xmlInputIter{dec: dec, ir: ir, fname: fname}
+}
+
+func (i *xmlInputIter) Next() (any, bool) {
+	if i.err != nil {
+		return nil, false
+	}
+	var v any
+	err := i.dec.Decode(&v)
+	if err != nil {
+		if err == io.EOF {
+			i.err = err
+			return nil, false
+		}
+		i.err = err
+		return i.err, true
+	}
+	return v, true
+}
+
+func (i *xmlInputIter) Close() error {
+	i.err = io.EOF
+	return nil
+}
+
+func (i *xmlInputIter) Name() string {
 	return i.fname
 }
 
