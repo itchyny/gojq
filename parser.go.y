@@ -24,7 +24,7 @@ func prependFuncDef(xs []*FuncDef, x *FuncDef) []*FuncDef {
 
 %type<value> program header imports import meta body funcdefs funcdef funcargs query
 %type<value> bindpatterns pattern arraypatterns objectpatterns objectpattern
-%type<value> term string stringparts suffix args ifelifs ifelse trycatch
+%type<value> expr term string stringparts suffix args ifelifs ifelse trycatch
 %type<value> objectkeyvals objectkeyval objectval
 %type<value> constterm constobject constobjectkeyvals constobjectkeyval constarray constarrayelems
 %type<token> tokIdentVariable tokIdentModuleIdent tokVariableModuleVariable tokKeyword objectkey
@@ -38,7 +38,7 @@ func prependFuncDef(xs []*FuncDef, x *FuncDef) []*FuncDef {
 %token<token> tokString tokStringStart tokStringQuery tokStringEnd
 %token<token> tokInvalid tokInvalidEscapeSequence tokUnterminatedString
 
-%nonassoc tokFuncDefPost tokTermPost
+%nonassoc tokFuncDefQuery tokExpr tokTerm
 %right '|'
 %left ','
 %right tokAltOp
@@ -141,7 +141,7 @@ tokIdentVariable
     | tokVariable
 
 query
-    : funcdef query %prec tokFuncDefPost
+    : funcdef query %prec tokFuncDefQuery
     {
         query := $2.(*Query)
         query.FuncDefs = prependFuncDef(query.FuncDefs, $1.(*FuncDef))
@@ -165,47 +165,50 @@ query
     {
         $$ = &Query{Left: $1.(*Query), Op: OpComma, Right: $3.(*Query)}
     }
-    | query tokAltOp query
+    | expr %prec tokExpr
+
+expr
+    : expr tokAltOp expr
     {
         $$ = &Query{Left: $1.(*Query), Op: $2, Right: $3.(*Query)}
     }
-    | query tokUpdateOp query
+    | expr tokUpdateOp expr
     {
         $$ = &Query{Left: $1.(*Query), Op: $2, Right: $3.(*Query)}
     }
-    | query tokOrOp query
+    | expr tokOrOp expr
     {
         $$ = &Query{Left: $1.(*Query), Op: OpOr, Right: $3.(*Query)}
     }
-    | query tokAndOp query
+    | expr tokAndOp expr
     {
         $$ = &Query{Left: $1.(*Query), Op: OpAnd, Right: $3.(*Query)}
     }
-    | query tokCompareOp query
+    | expr tokCompareOp expr
     {
         $$ = &Query{Left: $1.(*Query), Op: $2, Right: $3.(*Query)}
     }
-    | query '+' query
+    | expr '+' expr
     {
         $$ = &Query{Left: $1.(*Query), Op: OpAdd, Right: $3.(*Query)}
     }
-    | query '-' query
+    | expr '-' expr
     {
         $$ = &Query{Left: $1.(*Query), Op: OpSub, Right: $3.(*Query)}
     }
-    | query '*' query
+    | expr '*' expr
     {
         $$ = &Query{Left: $1.(*Query), Op: OpMul, Right: $3.(*Query)}
     }
-    | query '/' query
+    | expr '/' expr
     {
         $$ = &Query{Left: $1.(*Query), Op: OpDiv, Right: $3.(*Query)}
     }
-    | query '%' query
+    | expr '%' expr
     {
         $$ = &Query{Left: $1.(*Query), Op: OpMod, Right: $3.(*Query)}
     }
-    | term %prec tokTermPost
+    | term %prec tokTerm
     {
         $$ = &Query{Term: $1.(*Term)}
     }
@@ -370,21 +373,21 @@ term
     {
         $$ = &Term{Type: TermTypeIf, If: &If{$2.(*Query), $4.(*Query), $5.([]*IfElif), $6.(*Query)}}
     }
-    | tokTry query trycatch
+    | tokTry expr trycatch
     {
         $$ = &Term{Type: TermTypeTry, Try: &Try{$2.(*Query), $3.(*Query)}}
     }
-    | tokReduce term tokAs pattern '(' query ';' query ')'
+    | tokReduce expr tokAs pattern '(' query ';' query ')'
     {
-        $$ = &Term{Type: TermTypeReduce, Reduce: &Reduce{$2.(*Term), $4.(*Pattern), $6.(*Query), $8.(*Query)}}
+        $$ = &Term{Type: TermTypeReduce, Reduce: &Reduce{$2.(*Query), $4.(*Pattern), $6.(*Query), $8.(*Query)}}
     }
-    | tokForeach term tokAs pattern '(' query ';' query ')'
+    | tokForeach expr tokAs pattern '(' query ';' query ')'
     {
-        $$ = &Term{Type: TermTypeForeach, Foreach: &Foreach{$2.(*Term), $4.(*Pattern), $6.(*Query), $8.(*Query), nil}}
+        $$ = &Term{Type: TermTypeForeach, Foreach: &Foreach{$2.(*Query), $4.(*Pattern), $6.(*Query), $8.(*Query), nil}}
     }
-    | tokForeach term tokAs pattern '(' query ';' query ';' query ')'
+    | tokForeach expr tokAs pattern '(' query ';' query ';' query ')'
     {
-        $$ = &Term{Type: TermTypeForeach, Foreach: &Foreach{$2.(*Term), $4.(*Pattern), $6.(*Query), $8.(*Query), $10.(*Query)}}
+        $$ = &Term{Type: TermTypeForeach, Foreach: &Foreach{$2.(*Query), $4.(*Pattern), $6.(*Query), $8.(*Query), $10.(*Query)}}
     }
     | tokBreak tokVariable
     {
@@ -505,7 +508,7 @@ trycatch
     {
         $$ = (*Query)(nil)
     }
-    | tokCatch query
+    | tokCatch expr
     {
         $$ = $2
     }
@@ -523,15 +526,15 @@ objectkeyvals
 objectkeyval
     : objectkey ':' objectval
     {
-        $$ = &ObjectKeyVal{Key: $1, Val: $3.(*ObjectVal)}
+        $$ = &ObjectKeyVal{Key: $1, Val: $3.(*Query)}
     }
     | string ':' objectval
     {
-        $$ = &ObjectKeyVal{KeyString: $1.(*String), Val: $3.(*ObjectVal)}
+        $$ = &ObjectKeyVal{KeyString: $1.(*String), Val: $3.(*Query)}
     }
     | '(' query ')' ':' objectval
     {
-        $$ = &ObjectKeyVal{KeyQuery: $2.(*Query), Val: $5.(*ObjectVal)}
+        $$ = &ObjectKeyVal{KeyQuery: $2.(*Query), Val: $5.(*Query)}
     }
     | objectkey
     {
@@ -548,14 +551,11 @@ objectkey
     | tokKeyword
 
 objectval
-    : term
+    : objectval '|' objectval
     {
-        $$ = &ObjectVal{[]*Query{{Term: $1.(*Term)}}}
+        $$ = &Query{Left: $1.(*Query), Op: OpPipe, Right: $3.(*Query)}
     }
-    | objectval '|' term
-    {
-        $$ = &ObjectVal{append($1.(*ObjectVal).Queries, &Query{Term: $3.(*Term)})}
-    }
+    | expr
 
 constterm
     : constobject

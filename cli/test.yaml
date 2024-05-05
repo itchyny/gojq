@@ -971,6 +971,17 @@
       "x": 1
     }
 
+- name: object construction with binary operators
+  args:
+    - '{x: 1 + 2, y: false or true, z: null // 3}'
+  input: 'null'
+  expected: |
+    {
+      "x": 3,
+      "y": true,
+      "z": 3
+    }
+
 - name: object construction with condition
   args:
     - '{x: if true then -. end}'
@@ -3330,6 +3341,20 @@
       6
     ]
 
+- name: reduce with binary operator
+  args:
+    - 'reduce .[] / .[] as $i (0; . + $i)'
+  input: '[1,2]'
+  expected: |
+    4.5
+
+- name: reduce with variable binding
+  args:
+    - 'reduce .[] as $x (0; . + $x) as $x | $x'
+  input: '[1,2,3]'
+  expected: |
+    6
+
 - name: reduce variable scope
   args:
     - -c
@@ -3385,6 +3410,29 @@
 - name: foreach with unary operator
   args:
     - '[-foreach -.[] as $i (0; . + $i)]'
+  input: '[1,2,3]'
+  expected: |
+    [
+      1,
+      3,
+      6
+    ]
+
+- name: foreach with binary operator
+  args:
+    - '[foreach .[] / .[] as $i (0; . + $i)]'
+  input: '[1,2]'
+  expected: |
+    [
+      1,
+      3,
+      3.5,
+      4.5
+    ]
+
+- name: foreach with variable binding
+  args:
+    - '[foreach .[] as $x (0; . + $x) as $x | $x]'
   input: '[1,2,3]'
   expected: |
     [
@@ -3802,15 +3850,6 @@
   expected: |
     [1,{"foo":"bar"}]
     [2,{"foo":"bar"}]
-
-- name: binding variable scope in try catch
-  args:
-    - -c
-    - '. as $x | try .foo as $x | $x | error catch $x'
-  input: |
-    {"foo":42}
-  expected: |
-    {"foo":42}
 
 - name: binding variable scope in reduce
   args:

@@ -150,7 +150,7 @@ def sub($re; str; $flags):
     else
       .matches[-1] as $r |
       {
-        string: (($r | _capture | str) + $str[$r.offset+$r.length:.offset] + .string),
+        string: ($r | _capture | str) + $str[$r.offset+$r.length:.offset] + .string,
         offset: $r.offset,
         matches: .matches[:-1],
       } |

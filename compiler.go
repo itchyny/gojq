@@ -737,7 +737,7 @@ func (c *compiler) compileReduce(e *Reduce) error {
 	}
 	f()
 	c.append(&code{op: opstore, v: v})
-	if err := c.compileTerm(e.Term); err != nil {
+	if err := c.compileQuery(e.Query); err != nil {
 		return err
 	}
 	if _, err := c.compilePattern(nil, e.Pattern); err != nil {
@@ -768,7 +768,7 @@ func (c *compiler) compileForeach(e *Foreach) error {
 	}
 	f()
 	c.append(&code{op: opstore, v: v})
-	if err := c.compileTerm(e.Term); err != nil {
+	if err := c.compileQuery(e.Query); err != nil {
 		return err
 	}
 	if _, err := c.compilePattern(nil, e.Pattern); err != nil {
@@ -1347,10 +1347,8 @@ func (c *compiler) compileObjectKeyVal(v [2]int, kv *ObjectKeyVal) error {
 	}
 	if kv.Val != nil {
 		c.append(&code{op: opload, v: v})
-		for _, e := range kv.Val.Queries {
-			if err := c.compileQuery(e); err != nil {
-				return err
-			}
+		if err := c.compileQuery(kv.Val); err != nil {
+			return err
 		}
 	}
 	return nil
