@@ -993,6 +993,22 @@ func (c *compiler) compileFunc(e *Func) error {
 				true,
 				-1,
 			)
+		case "debug":
+			setfork := c.lazy(func() *code {
+				return &code{op: opfork, v: len(c.codes)}
+			})
+			if err := c.compileQuery(e.Args[0]); err != nil {
+				return err
+			}
+			if err := c.compileFunc(&Func{Name: "debug"}); err != nil {
+				if _, ok := err.(*funcNotFoundError); ok {
+					err = &funcNotFoundError{e}
+				}
+				return err
+			}
+			c.append(&code{op: opbacktrack})
+			setfork()
+			return nil
 		default:
 			return c.compileCall(e.Name, e.Args)
 		}

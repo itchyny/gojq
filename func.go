@@ -51,6 +51,7 @@ func init() {
 		"builtins":       argFunc0(nil),
 		"input":          argFunc0(nil),
 		"modulemeta":     argFunc0(nil),
+		"debug":          argFunc1(nil),
 		"abs":            argFunc0(funcAbs),
 		"length":         argFunc0(funcLength),
 		"utf8bytelength": argFunc0(funcUtf8ByteLength),

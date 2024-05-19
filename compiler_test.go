@@ -353,8 +353,6 @@ func BenchmarkCompile(b *testing.B) {
 		_, err := gojq.Compile(
 			query,
 			gojq.WithInputIter(gojq.NewIter()),
-			gojq.WithFunction("debug", 0, 0,
-				func(v any, _ []any) any { return v }),
 		)
 		if err != nil {
 			b.Fatal(err)
