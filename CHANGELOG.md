@@ -1,4 +1,11 @@
 # Changelog
+## [v0.12.16](https://github.com/itchyny/gojq/compare/v0.12.15..v0.12.16) (2024-06-01)
+* fix offset of query parsing error on multi-byte characters
+* fix tests of `exp10` and `atan2` failing on some platforms
+* fix `debug/1` to be available only when `debug/0` is defined
+* improve parser to allow binary operators as object values
+* improve compiler to emit error if query is missing
+
 ## [v0.12.15](https://github.com/itchyny/gojq/compare/v0.12.14..v0.12.15) (2024-04-01)
 * implement `ltrim`, `rtrim`, and `trim` functions
 * implement `gojq.ParseError` for getting the offset and token of query parsing error
