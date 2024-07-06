@@ -68,6 +68,7 @@ $(GOBIN)/gocredits:
 .PHONY: test
 test: build
 	go test -v -race ./...
+	MEM_THRESHOLD=20 go test -bench=Leak -benchtime 999999x
 
 .PHONY: lint
 lint: $(GOBIN)/staticcheck
