@@ -20,6 +20,7 @@ def range($end): _range(0; $end; 1);
 def range($start; $end): _range($start; $end; 1);
 def range($start; $end; $step): _range($start; $end; $step);
 
+def add(f): [f] | add;
 def min_by(f): _min_by(map([f]));
 def max_by(f): _max_by(map([f]));
 def sort_by(f): _sort_by(map([f]));

@@ -1453,7 +1453,7 @@
   expected: |
     {"xa":2,"xb":3}
 
-- name: add function
+- name: add/0 function
   args:
     - -c
     - 'add'
@@ -1478,7 +1478,7 @@
     "abc"
     [1,2,3,4]
 
-- name: add function with a variable
+- name: add/0 function with a variable
   args:
     - '. as $x | [$x, {y:1}] | add, $x'
   input: '{"x":0}'
@@ -1491,7 +1491,7 @@
       "x": 0
     }
 
-- name: add function with slicing
+- name: add/0 function with slicing
   args:
     - -c
     - '[.[:2], [0], .[1:]] | add'
@@ -1499,19 +1499,50 @@
   expected: |
     [1,2,0,2,3]
 
-- name: add function error
+- name: add/0 function error
   args:
     - 'add'
   input: '[{}, [], {}]'
   error: |
     cannot add: object ({}) and array ([])
 
-- name: add function error
+- name: add/0 function error
   args:
     - 'add'
   input: '["x", null, "y", {}, "z"]'
   error: |
     cannot add: string ("xy") and object ({})
+
+- name: add/1 function
+  args:
+    - 'add(.), add(empty), add(1,2,3), add(range(10))'
+  input: 'null'
+  expected: |
+    null
+    null
+    6
+    45
+
+- name: add/1 function with iterator
+  args:
+    - 'add(.[])'
+  input: |
+    [1,2,3]
+    ["a","b","c"]
+  expected: |
+    6
+    "abc"
+
+- name: add/1 function with update operator
+  args:
+    - -c
+    - '.y = add(.x[])'
+  input: |
+    {"x":[1,2,3]}
+    {"x":["a","b","c"]}
+  expected: |
+    {"x":[1,2,3],"y":6}
+    {"x":["a","b","c"],"y":"abc"}
 
 - name: flatten/0 function
   args:
