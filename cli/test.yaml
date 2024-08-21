@@ -6285,9 +6285,9 @@
   args:
     - '@uri'
   input: |
-    [1, {"foo": "<div>&'\"()</div>"}]
+    [1, {"foo": "<div>&'\"()+</div>"}]
   expected: |
-    "%5B1%2C%7B%22foo%22%3A%22%3Cdiv%3E%26%27%5C%22%28%29%3C%2Fdiv%3E%22%7D%5D"
+    "%5B1%2C%7B%22foo%22%3A%22%3Cdiv%3E%26%27%5C%22%28%29%2B%3C%2Fdiv%3E%22%7D%5D"
 
 - name: format strings @uri with string interpolation
   args:
@@ -6301,9 +6301,9 @@
   args:
     - '@urid'
   input: |
-    "%5B1%2C%7B%22foo%22%3A%22%3Cdiv%3E%26%27%5C%22%28%29%3C%2Fdiv%3E%22%7D%5D"
+    "%5B1%2C%7B%22foo%22%3A%22%3Cdiv%3E%26%27%5C%22%28%29%2B%3C%2Fdiv%3E%22%7D%5D"
   expected: |
-    "[1,{\"foo\":\"<div>&'\\\"()</div>\"}]"
+    "[1,{\"foo\":\"<div>&'\\\"()+</div>\"}]"
 
 - name: format strings @urid error
   args:

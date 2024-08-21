@@ -884,7 +884,7 @@ func funcToHTML(v any) any {
 func funcToURI(v any) any {
 	switch x := funcToString(v).(type) {
 	case string:
-		return url.QueryEscape(x)
+		return strings.ReplaceAll(url.QueryEscape(x), "+", "%20")
 	default:
 		return x
 	}
@@ -893,7 +893,7 @@ func funcToURI(v any) any {
 func funcToURId(v any) any {
 	switch x := funcToString(v).(type) {
 	case string:
-		x, err := url.QueryUnescape(x)
+		x, err := url.QueryUnescape(strings.ReplaceAll(x, "+", "%2B"))
 		if err != nil {
 			return &func0WrapError{"@urid", v, err}
 		}
