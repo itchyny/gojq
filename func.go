@@ -1936,41 +1936,30 @@ func funcStrptime(v, x any) any {
 
 func arrayToTime(a []any, loc *time.Location) (time.Time, error) {
 	var t time.Time
-	if len(a) != 8 {
-		return t, &timeArrayError{}
+	var year, month, day, hour, minute,
+		second, nanosecond, weekday, yearday int
+	for i, p := range []*int{
+		&year, &month, &day, &hour, &minute,
+		&second, &weekday, &yearday,
+	} {
+		if i >= len(a) {
+			break
+		}
+		if i == 5 {
+			if v, ok := toFloat(a[i]); ok {
+				*p = int(v)
+				nanosecond = int((v - math.Floor(v)) * 1e9)
+			} else {
+				return t, &timeArrayError{}
+			}
+		} else if v, ok := toInt(a[i]); ok {
+			*p = v
+		} else {
+			return t, &timeArrayError{}
+		}
 	}
-	var y, m, d, h, min, sec, nsec int
-	var ok bool
-	if y, ok = toInt(a[0]); !ok {
-		return t, &timeArrayError{}
-	}
-	if m, ok = toInt(a[1]); ok {
-		m++
-	} else {
-		return t, &timeArrayError{}
-	}
-	if d, ok = toInt(a[2]); !ok {
-		return t, &timeArrayError{}
-	}
-	if h, ok = toInt(a[3]); !ok {
-		return t, &timeArrayError{}
-	}
-	if min, ok = toInt(a[4]); !ok {
-		return t, &timeArrayError{}
-	}
-	if x, ok := toFloat(a[5]); ok {
-		sec = int(x)
-		nsec = int((x - math.Floor(x)) * 1e9)
-	} else {
-		return t, &timeArrayError{}
-	}
-	if _, ok = toFloat(a[6]); !ok {
-		return t, &timeArrayError{}
-	}
-	if _, ok = toFloat(a[7]); !ok {
-		return t, &timeArrayError{}
-	}
-	return time.Date(y, time.Month(m), d, h, min, sec, nsec, loc), nil
+	return time.Date(year, time.Month(month+1), day,
+		hour, minute, second, nanosecond, loc), nil
 }
 
 func funcNow(any) any {
