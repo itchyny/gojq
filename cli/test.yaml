@@ -4005,21 +4005,21 @@
     function not defined: f/0
   exit_code: 3
 
-- name: first/0, last/0 functions
+- name: first/0, last/0, nth/1 functions
   args:
     - -c
-    - '[first, last]'
+    - '[first, last, nth(-6,-5,-1,0,2,5)]'
   input: '[1,2,3,4,5]'
   expected: |
-    [1,5]
+    [1,5,null,1,5,1,3,null]
 
-- name: first/1, last/1, nth functions
+- name: first/1, last/1, nth/2 functions
   args:
     - -c
-    - '[first(.[]), last(.[]), nth(0,3,5), nth(0,3,5;.[]), nth(9; range(infinite))]'
+    - '[first(.[]), last(.[]), nth(0,3,5;.[]), nth(9;range(infinite))]'
   input: '[1,2,3,4,5]'
   expected: |
-    [1,5,1,4,null,1,4,9]
+    [1,5,1,4,9]
 
 - name: first/1 function with optional operator
   args:
@@ -4039,6 +4039,13 @@
   input: 'null'
   expected: |
     null
+
+- name: nth/2 function with negative index
+  args:
+    - 'nth(-1;.[])'
+  input: '[]'
+  error: |
+    error: nth doesn't support negative indices
 
 - name: all/2 function in first/1 argument
   args:
