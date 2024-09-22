@@ -4479,13 +4479,16 @@
 - name: fromstream function
   args:
     - -c
-    - 'fromstream(0,1,2|truncate_stream([[0],1],[[1,0],2],[[1,0]],[[1]]))'
+    - 'fromstream(range(5) | truncate_stream({x:[1,{y:[2]},3],z:[4]} | tostream))'
   input: 'null'
   expected: |
-    [1,[2]]
+    {"x":[1,{"y":[2]},3],"z":[4]}
+    [1,{"y":[2]},3]
+    [4]
+    {"y":[2]}
     [2]
 
-- name: stream function
+- name: tostream function
   args:
     - -c
     - 'tostream'
@@ -5975,17 +5978,28 @@
     [["a",2]]
     [["a"]]
 
+- name: inputs function with stream option and fromstream function
+  args:
+    - -n
+    - -c
+    - --stream
+    - 'fromstream(inputs)'
+  input: 'null [false] {"x":[null]}'
+  expected: |
+    null
+    [false]
+    {"x":[null]}
+
 - name: inputs function with stream option and truncate_stream function
   args:
     - -n
+    - -c
     - --stream
-    - 'fromstream(1 | truncate_stream(inputs) | select(length > 1) | .[0] |= .[1:])'
-  input: '{"a":[1,true,null,"x"]}'
+    - 'fromstream(1 | truncate_stream(inputs))'
+  input: '{"x":[1,{"y":[2]},3],"z":[4]}'
   expected: |
-    1
-    true
-    null
-    "x"
+    [1,{"y":[2]},3]
+    [4]
 
 - name: inputs function with stream option
   args:

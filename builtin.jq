@@ -96,17 +96,17 @@ def truncate_stream(f):
   . as $n | null | f |
   if .[0] | length > $n then .[0] |= .[$n:] else empty end;
 def fromstream(f):
-  { x: null, e: false } as $init |
-  foreach f as $i (
-    $init;
-    if .e then $init end |
-    if $i | length == 2 then
-      setpath(["e"]; $i[0] | length == 0) |
-      setpath(["x"] + $i[0]; $i[1])
+  foreach f as $pv (
+    null;
+    if .e then null end |
+    $pv as [$p, $v] |
+    if $pv | length == 2 then
+      setpath(["v"] + $p; $v) |
+      setpath(["e"]; $p | length == 0)
     else
-      setpath(["e"]; $i[0] | length == 1)
+      setpath(["e"]; $p | length == 1)
     end;
-    if .e then .x else empty end
+    if .e then .v else empty end
   );
 def tostream:
   path(def r: (.[]? | r), .; r) as $p |
