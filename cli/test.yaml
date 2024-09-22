@@ -4021,6 +4021,14 @@
   expected: |
     [1,5,1,4,9]
 
+- name: first/1, last/1, nth/2 functions on empty
+  args:
+    - -c
+    - '[first(.[]), last(.[]), nth(0;.[])]'
+  input: '[]'
+  expected: |
+    []
+
 - name: first/1 function with optional operator
   args:
     - 'first(.), first(.?), first(.,.), first(.?,.), first(.,.?), first(.?,.?)'

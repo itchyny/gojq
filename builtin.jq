@@ -59,7 +59,6 @@ def walk(f):
 def first: .[0];
 def first(g): label $out | g | ., break $out;
 def last: .[-1];
-def last(g): reduce g as $item (null; $item);
 def isempty(g): label $out | (g | false, break $out), true;
 def all: all(.);
 def all(y): all(.[]; y);
