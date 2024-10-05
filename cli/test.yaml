@@ -4053,7 +4053,23 @@
     - 'nth(-1;.[])'
   input: '[]'
   error: |
-    error: nth doesn't support negative indices
+    error: nth doesn't support negative index
+
+- name: nth/2 function with infinite range
+  args:
+    - 'nth(range(3); range(infinite))'
+  input: 'null'
+  expected: |
+    0
+    1
+    2
+
+- name: nth/2 function with error
+  args:
+    - 'nth(1; 0,1,error)'
+  input: 'null'
+  expected: |
+    1
 
 - name: all/2 function in first/1 argument
   args:
@@ -4069,6 +4085,28 @@
   input: 'null'
   expected: |
     [0,1,2,0,1,2,3,4,5,6,7,8,9,10,11,12]
+
+- name: limit/2 function with negative count
+  args:
+    - 'limit(-1; range(3))'
+  input: 'null'
+  error: |
+    limit doesn't support negative count
+
+- name: skip/2 function
+  args:
+    - -c
+    - '[skip(0,3,5,7; range(5))]'
+  input: 'null'
+  expected: |
+    [0,1,2,3,4,3,4]
+
+- name: skip/2 function with negative count
+  args:
+    - 'skip(-1; range(3))'
+  input: 'null'
+  error: |
+    skip doesn't support negative count
 
 - name: all/0, any/0 functions
   args:

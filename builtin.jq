@@ -77,19 +77,26 @@ def limit($n; g):
   elif $n == 0 then
     empty
   else
+    error("limit doesn't support negative count")
+  end;
+def skip($n; g):
+  if $n > 0 then
+    foreach g as $item (
+      $n;
+      . - 1;
+      if . < 0 then $item else empty end
+    )
+  elif $n == 0 then
     g
+  else
+    error("skip doesn't support negative count")
   end;
 def nth($n): .[$n];
 def nth($n; g):
-  if $n < 0 then
-    error("nth doesn't support negative indices")
+  if $n >= 0 then
+    first(skip($n; g))
   else
-    label $out |
-    foreach g as $item (
-      $n + 1;
-      . - 1;
-      if . <= 0 then $item, break $out else empty end
-    )
+    error("nth doesn't support negative index")
   end;
 
 def truncate_stream(f):
