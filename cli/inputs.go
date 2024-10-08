@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"os"
 	"strings"
@@ -89,15 +90,16 @@ func (i *jsonInputIter) Next() (any, bool) {
 	}
 	var v any
 	if err := i.dec.Decode(&v); err != nil {
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			i.err = err
 			return nil, false
 		}
 		var offset *int64
 		var line *int
-		if err, ok := err.(*json.SyntaxError); ok {
-			err.Offset -= i.offset
-			offset, line = &err.Offset, &i.line
+		var syntaxErr *json.SyntaxError
+		if errors.As(err, &syntaxErr) {
+			syntaxErr.Offset -= i.offset
+			offset, line = &syntaxErr.Offset, &i.line
 		}
 		i.err = &jsonParseError{i.fname, i.ir.getContents(offset, line), i.line, err}
 		return i.err, true
@@ -275,15 +277,16 @@ func (i *streamInputIter) Next() (any, bool) {
 	}
 	v, err := i.stream.next()
 	if err != nil {
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			i.err = err
 			return nil, false
 		}
 		var offset *int64
 		var line *int
-		if err, ok := err.(*json.SyntaxError); ok {
-			err.Offset -= i.offset
-			offset, line = &err.Offset, &i.line
+		var syntaxErr *json.SyntaxError
+		if errors.As(err, &syntaxErr) {
+			syntaxErr.Offset -= i.offset
+			offset, line = &syntaxErr.Offset, &i.line
 		}
 		i.err = &jsonParseError{i.fname, i.ir.getContents(offset, line), i.line, err}
 		return i.err, true
@@ -324,7 +327,7 @@ func (i *yamlInputIter) Next() (any, bool) {
 	}
 	var v any
 	if err := i.dec.Decode(&v); err != nil {
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			i.err = err
 			return nil, false
 		}

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 )
 
@@ -47,7 +48,7 @@ func (s *jsonStream) next() (any, error) {
 	for {
 		token, err := s.dec.Token()
 		if err != nil {
-			if err == io.EOF && s.states[len(s.states)-1] != jsonStateTopValue {
+			if errors.Is(err, io.EOF) && s.states[len(s.states)-1] != jsonStateTopValue {
 				err = io.ErrUnexpectedEOF
 			}
 			return nil, err
