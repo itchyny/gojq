@@ -7,6 +7,12 @@ import (
 	"strings"
 )
 
+// PrepareData is not safe for use in goroutines, since it writes to any maps
+// with numeric values; supports ConcurrentRun and ConcurrentRunWithContext.
+func PrepareData(v any) PreparedData {
+	return normalizeNumbers(v)
+}
+
 func normalizeNumber(v json.Number) any {
 	if i, err := v.Int64(); err == nil && math.MinInt <= i && i <= math.MaxInt {
 		return int(i)
@@ -25,7 +31,7 @@ func normalizeNumber(v json.Number) any {
 	return math.Inf(1)
 }
 
-func normalizeNumbers(v any) any {
+func normalizeNumbers(v any) PreparedData {
 	switch v := v.(type) {
 	case json.Number:
 		return normalizeNumber(v)
