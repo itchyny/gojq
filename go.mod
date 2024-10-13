@@ -7,6 +7,7 @@ require (
 	github.com/itchyny/timefmt-go v0.1.6
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mattn/go-runewidth v0.0.15
+	github.com/momiji/xqml v0.0.9
 	gopkg.in/yaml.v3 v3.0.1
 )
 

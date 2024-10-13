@@ -4,14 +4,12 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"github.com/itchyny/gojq"
+	"github.com/mattn/go-isatty"
 	"io"
 	"os"
 	"runtime"
 	"strings"
-
-	"github.com/mattn/go-isatty"
-
-	"github.com/itchyny/gojq"
 )
 
 const name = "gojq"
@@ -40,11 +38,20 @@ type cli struct {
 	outputCompact bool
 	outputIndent  *int
 	outputTab     bool
+	outputXML     bool
 	outputYAML    bool
 	inputRaw      bool
 	inputStream   bool
+	inputJSON     bool
+	inputXML      bool
 	inputYAML     bool
 	inputSlurp    bool
+	stripSpaceXML bool
+	stripAttrsXML bool
+	forceListXML  []string
+	htmlXML       bool
+	rootXML       string
+	elementXML    string
 
 	argnames  []string
 	argvalues []any
@@ -60,13 +67,22 @@ type flagopts struct {
 	OutputCompact bool              `short:"c" long:"compact-output" description:"output without pretty-printing"`
 	OutputIndent  *int              `long:"indent" description:"number of spaces for indentation"`
 	OutputTab     bool              `long:"tab" description:"use tabs for indentation"`
-	OutputYAML    bool              `long:"yaml-output" description:"output in YAML format"`
+	OutputYAML    bool              `short:"y" long:"yaml-output" description:"output in YAML format"`
+	OutputXML     bool              `short:"x" long:"xml-output" description:"output in XML format"`
 	OutputColor   bool              `short:"C" long:"color-output" description:"output with colors even if piped"`
 	OutputMono    bool              `short:"M" long:"monochrome-output" description:"output without colors"`
 	InputNull     bool              `short:"n" long:"null-input" description:"use null as input value"`
 	InputRaw      bool              `short:"R" long:"raw-input" description:"read input as raw strings"`
 	InputStream   bool              `long:"stream" description:"parse input in stream fashion"`
-	InputYAML     bool              `long:"yaml-input" description:"read input as YAML format"`
+	InputJSON     bool              `short:"J" long:"json-input" description:"read input as JSON format"`
+	InputXML      bool              `short:"X" long:"xml-input" description:"read input as XML format"`
+	StripAttrsXML bool              `long:"xml-no-attributes" description:"remove attributes from XML elements"`
+	StripSpaceXML bool              `long:"xml-no-namespaces" description:"remove namespace from XML elements and attributes"`
+	ForceListXML  []string          `long:"xml-force-list" description:"force XML elements as array"`
+	RootXML       string            `long:"xml-root" description:"root XML element name"`
+	ElementXML    string            `long:"xml-element" description:"element XML element name"`
+	HtmlXML       bool              `short:"H" long:"xml-html" description:"read input as XML with HTML compatibility mode"`
+	InputYAML     bool              `short:"Y" long:"yaml-input" description:"read input as YAML format"`
 	InputSlurp    bool              `short:"s" long:"slurp" description:"read all inputs into an array"`
 	FromFile      bool              `short:"f" long:"from-file" description:"load query from file"`
 	ModulePaths   []string          `short:"L" description:"directory to search modules from"`
@@ -123,9 +139,9 @@ Usage:
 		return nil
 	}
 	cli.outputRaw, cli.outputRaw0, cli.outputJoin,
-		cli.outputCompact, cli.outputIndent, cli.outputTab, cli.outputYAML =
+		cli.outputCompact, cli.outputIndent, cli.outputTab, cli.outputXML, cli.outputYAML =
 		opts.OutputRaw, opts.OutputRaw0, opts.OutputJoin,
-		opts.OutputCompact, opts.OutputIndent, opts.OutputTab, opts.OutputYAML
+		opts.OutputCompact, opts.OutputIndent, opts.OutputTab, opts.OutputXML, opts.OutputYAML
 	defer func(x bool) { noColor = x }(noColor)
 	if opts.OutputColor || opts.OutputMono {
 		noColor = opts.OutputMono
@@ -154,6 +170,8 @@ Usage:
 	}
 	cli.inputRaw, cli.inputStream, cli.inputYAML, cli.inputSlurp =
 		opts.InputRaw, opts.InputStream, opts.InputYAML, opts.InputSlurp
+	cli.inputJSON, cli.inputXML, cli.stripAttrsXML, cli.stripSpaceXML, cli.forceListXML, cli.rootXML, cli.elementXML, cli.htmlXML =
+		opts.InputJSON, opts.InputXML, opts.StripAttrsXML, opts.StripSpaceXML, opts.ForceListXML, opts.RootXML, opts.ElementXML, opts.HtmlXML
 	for k, v := range opts.Arg {
 		cli.argnames = append(cli.argnames, "$"+k)
 		cli.argvalues = append(cli.argvalues, v)
@@ -300,10 +318,28 @@ func (cli *cli) createInputIter(args []string) (iter inputIter) {
 		}
 	case cli.inputStream:
 		newIter = newStreamInputIter
+	case cli.inputJSON:
+		newIter = newJSONInputIter
+	case cli.inputXML || cli.htmlXML:
+		newIter = func(r io.Reader, fname string) inputIter {
+			return newXMLInputIter(r, fname, !cli.stripAttrsXML, !cli.stripSpaceXML, cli.forceListXML, cli.htmlXML)
+		}
 	case cli.inputYAML:
 		newIter = newYAMLInputIter
 	default:
-		newIter = newJSONInputIter
+		// automatically detect between JSON / YAML / XML format
+		newIter = func(r io.Reader, fname string) inputIter {
+			rd, f := detectInputType(r, 100)
+			switch f {
+			case JsonFormat:
+				return newJSONInputIter(rd, fname)
+			case YamlFormat:
+				return newYAMLInputIter(rd, fname)
+			case XmlFormat:
+				return newXMLInputIter(rd, fname, !cli.stripAttrsXML, !cli.stripSpaceXML, cli.forceListXML, cli.htmlXML)
+			}
+			return newJSONInputIter(rd, fname)
+		}
 	}
 	if cli.inputSlurp {
 		defer func() {
@@ -403,6 +439,9 @@ func (cli *cli) createMarshaler() marshaler {
 		indent = 1
 	} else if i := cli.outputIndent; i != nil {
 		indent = *i
+	}
+	if cli.outputXML {
+		return xmlFormatter(&indent, cli.rootXML, cli.elementXML)
 	}
 	f := newEncoder(cli.outputTab, indent)
 	if cli.outputRaw || cli.outputRaw0 || cli.outputJoin {
