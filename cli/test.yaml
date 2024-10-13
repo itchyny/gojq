@@ -1,22 +1,36 @@
 - name: empty input
+  args:
+    - '.'
   input: ''
   expected: ''
 
-- name: empty query
+- name: empty args
+  input: 'null'
+  expected: |
+    null
+
+- name: missing query
   args:
     - ''
-  input: '128'
-  expected: |
-    128
-
-- name: comment only query
-  args:
-    - '# comment'
-  input: '128'
-  expected: |
-    128
+  error: |
+    compile error: missing query (try ".")
+  exit_code: 3
 
 - name: query with comment
+  args:
+    - '. # comment'
+  input: 'null'
+  expected: |
+    null
+
+- name: missing query with comment
+  args:
+    - '# comment'
+  error: |
+    compile error: missing query (try ".")
+  exit_code: 3
+
+- name: query with comment with newline
   args:
     - |
       # comment
@@ -957,6 +971,17 @@
       "x": 1
     }
 
+- name: object construction with binary operators
+  args:
+    - '{x: 1 + 2, y: false or true, z: null // 3}'
+  input: 'null'
+  expected: |
+    {
+      "x": 3,
+      "y": true,
+      "z": 3
+    }
+
 - name: object construction with condition
   args:
     - '{x: if true then -. end}'
@@ -1428,7 +1453,7 @@
   expected: |
     {"xa":2,"xb":3}
 
-- name: add function
+- name: add/0 function
   args:
     - -c
     - 'add'
@@ -1453,7 +1478,7 @@
     "abc"
     [1,2,3,4]
 
-- name: add function with a variable
+- name: add/0 function with a variable
   args:
     - '. as $x | [$x, {y:1}] | add, $x'
   input: '{"x":0}'
@@ -1466,19 +1491,58 @@
       "x": 0
     }
 
-- name: add function error
+- name: add/0 function with slicing
+  args:
+    - -c
+    - '[.[:2], [0], .[1:]] | add'
+  input: '[1,2,3]'
+  expected: |
+    [1,2,0,2,3]
+
+- name: add/0 function error
   args:
     - 'add'
   input: '[{}, [], {}]'
   error: |
     cannot add: object ({}) and array ([])
 
-- name: add function error
+- name: add/0 function error
   args:
     - 'add'
   input: '["x", null, "y", {}, "z"]'
   error: |
     cannot add: string ("xy") and object ({})
+
+- name: add/1 function
+  args:
+    - 'add(.), add(empty), add(1,2,3), add(range(10))'
+  input: 'null'
+  expected: |
+    null
+    null
+    6
+    45
+
+- name: add/1 function with iterator
+  args:
+    - 'add(.[])'
+  input: |
+    [1,2,3]
+    ["a","b","c"]
+  expected: |
+    6
+    "abc"
+
+- name: add/1 function with update operator
+  args:
+    - -c
+    - '.y = add(.x[])'
+  input: |
+    {"x":[1,2,3]}
+    {"x":["a","b","c"]}
+  expected: |
+    {"x":[1,2,3],"y":6}
+    {"x":["a","b","c"],"y":"abc"}
 
 - name: flatten/0 function
   args:
@@ -2566,6 +2630,13 @@
             ^  unexpected token "$f"
   exit_code: 3
 
+- name: function declaration without query
+  args:
+    - 'def f: 0;'
+  error: |
+    compile error: missing query (try ".")
+  exit_code: 3
+
 - name: add, subtract, multiply, divide, modulo numbers
   args:
     - -c
@@ -2857,14 +2928,24 @@
     [1,2]
     []
 
-- name: ensure arrays are immutable during addition
+- name: arrays are immutable on addition
   args:
     - -c
-    - '. as $first | .[:0] + [6, 7, 8] | ., $first'
+    - '. as $v | .[:0] + [6, 7, 8] | ., $v'
   input: |
     [1,2,3,4,5]
   expected: |
     [6,7,8]
+    [1,2,3,4,5]
+
+- name: arrays are immutable on subtraction
+  args:
+    - -c
+    - '. as $v | . - [2, 3] | ., $v'
+  input: |
+    [1,2,3,4,5]
+  expected: |
+    [1,4,5]
     [1,2,3,4,5]
 
 - name: subtract arrays
@@ -3291,6 +3372,20 @@
       6
     ]
 
+- name: reduce with binary operator
+  args:
+    - 'reduce .[] / .[] as $i (0; . + $i)'
+  input: '[1,2]'
+  expected: |
+    4.5
+
+- name: reduce with variable binding
+  args:
+    - 'reduce .[] as $x (0; . + $x) as $x | $x'
+  input: '[1,2,3]'
+  expected: |
+    6
+
 - name: reduce variable scope
   args:
     - -c
@@ -3346,6 +3441,29 @@
 - name: foreach with unary operator
   args:
     - '[-foreach -.[] as $i (0; . + $i)]'
+  input: '[1,2,3]'
+  expected: |
+    [
+      1,
+      3,
+      6
+    ]
+
+- name: foreach with binary operator
+  args:
+    - '[foreach .[] / .[] as $i (0; . + $i)]'
+  input: '[1,2]'
+  expected: |
+    [
+      1,
+      3,
+      3.5,
+      4.5
+    ]
+
+- name: foreach with variable binding
+  args:
+    - '[foreach .[] as $x (0; . + $x) as $x | $x]'
   input: '[1,2,3]'
   expected: |
     [
@@ -3764,15 +3882,6 @@
     [1,{"foo":"bar"}]
     [2,{"foo":"bar"}]
 
-- name: binding variable scope in try catch
-  args:
-    - -c
-    - '. as $x | try .foo as $x | $x | error catch $x'
-  input: |
-    {"foo":42}
-  expected: |
-    {"foo":42}
-
 - name: binding variable scope in reduce
   args:
     - '[range(.)] | 3 as $x | reduce .[] as $i (.[5] as $x | $x; . + $x + $i)'
@@ -3896,21 +4005,29 @@
     function not defined: f/0
   exit_code: 3
 
-- name: first/0, last/0 functions
+- name: first/0, last/0, nth/1 functions
   args:
     - -c
-    - '[first, last]'
+    - '[first, last, nth(-6,-5,-1,0,2,5)]'
   input: '[1,2,3,4,5]'
   expected: |
-    [1,5]
+    [1,5,null,1,5,1,3,null]
 
-- name: first/1, last/1, nth functions
+- name: first/1, last/1, nth/2 functions
   args:
     - -c
-    - '[first(.[]), last(.[]), nth(0,3,5), nth(0,3,5;.[]), nth(9; range(infinite))]'
+    - '[first(.[]), last(.[]), nth(0,3,5;.[]), nth(9;range(infinite))]'
   input: '[1,2,3,4,5]'
   expected: |
-    [1,5,1,4,null,1,4,9]
+    [1,5,1,4,9]
+
+- name: first/1, last/1, nth/2 functions on empty
+  args:
+    - -c
+    - '[first(.[]), last(.[]), nth(0;.[])]'
+  input: '[]'
+  expected: |
+    []
 
 - name: first/1 function with optional operator
   args:
@@ -3931,6 +4048,29 @@
   expected: |
     null
 
+- name: nth/2 function with negative index
+  args:
+    - 'nth(-1;.[])'
+  input: '[]'
+  error: |
+    error: nth doesn't support negative index
+
+- name: nth/2 function with infinite range
+  args:
+    - 'nth(range(3); range(infinite))'
+  input: 'null'
+  expected: |
+    0
+    1
+    2
+
+- name: nth/2 function with error
+  args:
+    - 'nth(1; 0,1,error)'
+  input: 'null'
+  expected: |
+    1
+
 - name: all/2 function in first/1 argument
   args:
     - 'first(range(1; 200) | . as $x | select(all(range(1; 7); $x % . == 0)))'
@@ -3945,6 +4085,28 @@
   input: 'null'
   expected: |
     [0,1,2,0,1,2,3,4,5,6,7,8,9,10,11,12]
+
+- name: limit/2 function with negative count
+  args:
+    - 'limit(-1; range(3))'
+  input: 'null'
+  error: |
+    limit doesn't support negative count
+
+- name: skip/2 function
+  args:
+    - -c
+    - '[skip(0,3,5,7; range(5))]'
+  input: 'null'
+  expected: |
+    [0,1,2,3,4,3,4]
+
+- name: skip/2 function with negative count
+  args:
+    - 'skip(-1; range(3))'
+  input: 'null'
+  error: |
+    skip doesn't support negative count
 
 - name: all/0, any/0 functions
   args:
@@ -4355,13 +4517,16 @@
 - name: fromstream function
   args:
     - -c
-    - 'fromstream(0,1,2|truncate_stream([[0],1],[[1,0],2],[[1,0]],[[1]]))'
+    - 'fromstream(range(5) | truncate_stream({x:[1,{y:[2]},3],z:[4]} | tostream))'
   input: 'null'
   expected: |
-    [1,[2]]
+    {"x":[1,{"y":[2]},3],"z":[4]}
+    [1,{"y":[2]},3]
+    [4]
+    {"y":[2]}
     [2]
 
-- name: stream function
+- name: tostream function
   args:
     - -c
     - 'tostream'
@@ -5341,6 +5506,8 @@
     [2017,6,14,2,40,0,5,194]
     [2019,8,7,21,2,3.4560000889999998,6,249]
     [2020,8,13,12,26,40.111000061,0,256]
+    [2024,7,20]
+    [2025]
   expected: |
     1500000000
     "2017-07-14T02:40:00Z"
@@ -5360,6 +5527,18 @@
     "2020-09-13T12:26:40-0700"
     "2020-09-13T05:26:40-0700"
     "2020-09-13T12:26:40Z"
+    1724112000
+    "2024-08-20T00:00:00Z"
+    "2024-08-20T00:00:00Z"
+    "2024-08-20T00:00:00-0700"
+    "2024-08-19T17:00:00-0700"
+    "2024-08-20T00:00:00Z"
+    1735603200
+    "2024-12-31T00:00:00Z"
+    "2024-12-31T00:00:00Z"
+    "2024-12-31T00:00:00-0700"
+    "2024-12-30T17:00:00-0700"
+    "2024-12-31T00:00:00Z"
 
 - name: strptime, fromdate functions
   args:
@@ -5837,17 +6016,28 @@
     [["a",2]]
     [["a"]]
 
+- name: inputs function with stream option and fromstream function
+  args:
+    - -n
+    - -c
+    - --stream
+    - 'fromstream(inputs)'
+  input: 'null [false] {"x":[null]}'
+  expected: |
+    null
+    [false]
+    {"x":[null]}
+
 - name: inputs function with stream option and truncate_stream function
   args:
     - -n
+    - -c
     - --stream
-    - 'fromstream(1 | truncate_stream(inputs) | select(length > 1) | .[0] |= .[1:])'
-  input: '{"a":[1,true,null,"x"]}'
+    - 'fromstream(1 | truncate_stream(inputs))'
+  input: '{"x":[1,{"y":[2]},3],"z":[4]}'
   expected: |
-    1
-    true
-    null
-    "x"
+    [1,{"y":[2]},3]
+    [4]
 
 - name: inputs function with stream option
   args:
@@ -6162,9 +6352,9 @@
   args:
     - '@uri'
   input: |
-    [1, {"foo": "<div>&'\"()</div>"}]
+    [1, {"foo": "<div>&'\"()+</div>"}]
   expected: |
-    "%5B1%2C%7B%22foo%22%3A%22%3Cdiv%3E%26%27%5C%22%28%29%3C%2Fdiv%3E%22%7D%5D"
+    "%5B1%2C%7B%22foo%22%3A%22%3Cdiv%3E%26%27%5C%22%28%29%2B%3C%2Fdiv%3E%22%7D%5D"
 
 - name: format strings @uri with string interpolation
   args:
@@ -6178,9 +6368,9 @@
   args:
     - '@urid'
   input: |
-    "%5B1%2C%7B%22foo%22%3A%22%3Cdiv%3E%26%27%5C%22%28%29%3C%2Fdiv%3E%22%7D%5D"
+    "%5B1%2C%7B%22foo%22%3A%22%3Cdiv%3E%26%27%5C%22%28%29%2B%3C%2Fdiv%3E%22%7D%5D"
   expected: |
-    "[1,{\"foo\":\"<div>&'\\\"()</div>\"}]"
+    "[1,{\"foo\":\"<div>&'\\\"()+</div>\"}]"
 
 - name: format strings @urid error
   args:

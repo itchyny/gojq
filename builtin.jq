@@ -20,6 +20,7 @@ def range($end): _range(0; $end; 1);
 def range($start; $end): _range($start; $end; 1);
 def range($start; $end; $step): _range($start; $end; $step);
 
+def add(f): [f] | add;
 def min_by(f): _min_by(map([f]));
 def max_by(f): _max_by(map([f]));
 def sort_by(f): _sort_by(map([f]));
@@ -58,7 +59,6 @@ def walk(f):
 def first: .[0];
 def first(g): label $out | g | ., break $out;
 def last: .[-1];
-def last(g): reduce g as $item (null; $item);
 def isempty(g): label $out | (g | false, break $out), true;
 def all: all(.);
 def all(y): all(.[]; y);
@@ -77,36 +77,43 @@ def limit($n; g):
   elif $n == 0 then
     empty
   else
+    error("limit doesn't support negative count")
+  end;
+def skip($n; g):
+  if $n > 0 then
+    foreach g as $item (
+      $n;
+      . - 1;
+      if . < 0 then $item else empty end
+    )
+  elif $n == 0 then
     g
+  else
+    error("skip doesn't support negative count")
   end;
 def nth($n): .[$n];
 def nth($n; g):
-  if $n < 0 then
-    error("nth doesn't support negative indices")
+  if $n >= 0 then
+    first(skip($n; g))
   else
-    label $out |
-    foreach g as $item (
-      $n + 1;
-      . - 1;
-      if . <= 0 then $item, break $out else empty end
-    )
+    error("nth doesn't support negative index")
   end;
 
 def truncate_stream(f):
   . as $n | null | f |
   if .[0] | length > $n then .[0] |= .[$n:] else empty end;
 def fromstream(f):
-  { x: null, e: false } as $init |
-  foreach f as $i (
-    $init;
-    if .e then $init end |
-    if $i | length == 2 then
-      setpath(["e"]; $i[0] | length == 0) |
-      setpath(["x"] + $i[0]; $i[1])
+  foreach f as $pv (
+    null;
+    if .e then null end |
+    $pv as [$p, $v] |
+    if $pv | length == 2 then
+      setpath(["v"] + $p; $v) |
+      setpath(["e"]; $p | length == 0)
     else
-      setpath(["e"]; $i[0] | length == 1)
+      setpath(["e"]; $p | length == 1)
     end;
-    if .e then .x else empty end
+    if .e then .v else empty end
   );
 def tostream:
   path(def r: (.[]? | r), .; r) as $p |
@@ -150,7 +157,7 @@ def sub($re; str; $flags):
     else
       .matches[-1] as $r |
       {
-        string: (($r | _capture | str) + $str[$r.offset+$r.length:.offset] + .string),
+        string: ($r | _capture | str) + $str[$r.offset+$r.length:.offset] + .string,
         offset: $r.offset,
         matches: .matches[:-1],
       } |
@@ -160,7 +167,6 @@ def sub($re; str; $flags):
 def gsub($re; str): sub($re; str; "g");
 def gsub($re; str; $flags): sub($re; str; $flags + "g");
 
-def debug(f): (f | debug | empty), .;
 def inputs:
   try
     repeat(input)

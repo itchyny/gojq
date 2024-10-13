@@ -345,7 +345,7 @@ func BenchmarkCompile(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	query, err := gojq.Parse(string(cnt))
+	query, err := gojq.Parse(string(cnt) + ".")
 	if err != nil {
 		b.Fatal(err)
 	}

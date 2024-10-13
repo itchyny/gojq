@@ -9,10 +9,6 @@ import (
 // The result will be 0 if l == r, -1 if l < r, and +1 if l > r.
 // This comparison is used by built-in operators and functions.
 func Compare(l, r any) int {
-	return compare(l, r)
-}
-
-func compare(l, r any) int {
 	return binopTypeSwitch(l, r,
 		compareInt,
 		func(l, r float64) any {
@@ -39,12 +35,8 @@ func compare(l, r any) int {
 			}
 		},
 		func(l, r []any) any {
-			n := len(l)
-			if len(r) < n {
-				n = len(r)
-			}
-			for i := 0; i < n; i++ {
-				if cmp := compare(l[i], r[i]); cmp != 0 {
+			for i, n := 0, min(len(l), len(r)); i < n; i++ {
+				if cmp := Compare(l[i], r[i]); cmp != 0 {
 					return cmp
 				}
 			}
@@ -52,11 +44,11 @@ func compare(l, r any) int {
 		},
 		func(l, r map[string]any) any {
 			lk, rk := funcKeys(l), funcKeys(r)
-			if cmp := compare(lk, rk); cmp != 0 {
+			if cmp := Compare(lk, rk); cmp != 0 {
 				return cmp
 			}
 			for _, k := range lk.([]any) {
-				if cmp := compare(l[k.(string)], r[k.(string)]); cmp != 0 {
+				if cmp := Compare(l[k.(string)], r[k.(string)]); cmp != 0 {
 					return cmp
 				}
 			}

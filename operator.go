@@ -371,7 +371,7 @@ func funcOpSub(_, l, r any) any {
 		L:
 			for _, l := range l {
 				for _, r := range r {
-					if compare(l, r) == 0 {
+					if Compare(l, r) == 0 {
 						continue L
 					}
 				}
@@ -525,25 +525,25 @@ func funcOpAlt(_, l, r any) any {
 }
 
 func funcOpEq(_, l, r any) any {
-	return compare(l, r) == 0
+	return Compare(l, r) == 0
 }
 
 func funcOpNe(_, l, r any) any {
-	return compare(l, r) != 0
+	return Compare(l, r) != 0
 }
 
 func funcOpGt(_, l, r any) any {
-	return compare(l, r) > 0
+	return Compare(l, r) > 0
 }
 
 func funcOpLt(_, l, r any) any {
-	return compare(l, r) < 0
+	return Compare(l, r) < 0
 }
 
 func funcOpGe(_, l, r any) any {
-	return compare(l, r) >= 0
+	return Compare(l, r) >= 0
 }
 
 func funcOpLe(_, l, r any) any {
-	return compare(l, r) <= 0
+	return Compare(l, r) <= 0
 }

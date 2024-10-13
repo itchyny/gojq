@@ -118,7 +118,9 @@ func (l *moduleLoader) LoadJSONWithMeta(name string, meta map[string]any) (any, 
 func (l *moduleLoader) lookupModule(name, extension string, meta map[string]any) (string, error) {
 	paths := l.paths
 	if path, ok := meta["search"].(string); ok {
-		paths = append([]string{path}, paths...)
+		if path = resolvePath(path, ""); path != "" {
+			paths = append([]string{path}, paths...)
+		}
 	}
 	for _, base := range paths {
 		path := filepath.Join(base, name+extension)
