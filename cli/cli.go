@@ -38,7 +38,6 @@ type cli struct {
 	outputCompact bool
 	outputIndent  *int
 	outputTab     bool
-	outputJSON    bool
 	outputXML     bool
 	outputYAML    bool
 	inputRaw      bool
