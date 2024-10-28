@@ -41,32 +41,21 @@ func validColor(x string) bool {
 			return false
 		}
 	}
-	return num || x == ""
+	return num
 }
 
 func setColors(colors string) error {
-	var i int
 	var color string
 	for _, target := range []*[]byte{
 		&nullColor, &falseColor, &trueColor, &numberColor,
 		&stringColor, &objectKeyColor, &arrayColor, &objectColor,
 	} {
-		if i < len(colors) {
-			if j := strings.IndexByte(colors[i:], ':'); j >= 0 {
-				color = colors[i : i+j]
-				i += j + 1
-			} else {
-				color = colors[i:]
-				i = len(colors)
-			}
+		color, colors, _ = strings.Cut(colors, ":")
+		if color != "" {
 			if !validColor(color) {
 				return fmt.Errorf("invalid color: %q", color)
 			}
-			if color == "" {
-				*target = nil
-			} else {
-				*target = newColor(color)
-			}
+			*target = newColor(color)
 		} else {
 			*target = nil
 		}

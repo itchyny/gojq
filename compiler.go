@@ -913,8 +913,8 @@ func (c *compiler) compileFunc(e *Func) error {
 			env := make(map[string]any)
 			if c.environLoader != nil {
 				for _, kv := range c.environLoader() {
-					if i := strings.IndexByte(kv, '='); i > 0 {
-						env[kv[:i]] = kv[i+1:]
+					if k, v, ok := strings.Cut(kv, "="); ok && k != "" {
+						env[k] = v
 					}
 				}
 			}
