@@ -68,7 +68,7 @@ type inputIter interface {
 }
 
 type jsonInputIter struct {
-	dec    *json.Decoder
+	next   func() (any, error)
 	ir     *inputReader
 	fname  string
 	offset int64
@@ -80,15 +80,16 @@ func newJSONInputIter(r io.Reader, fname string) inputIter {
 	ir := newInputReader(r)
 	dec := json.NewDecoder(ir)
 	dec.UseNumber()
-	return &jsonInputIter{dec: dec, ir: ir, fname: fname}
+	next := func() (v any, err error) { err = dec.Decode(&v); return }
+	return &jsonInputIter{next: next, ir: ir, fname: fname}
 }
 
 func (i *jsonInputIter) Next() (any, bool) {
 	if i.err != nil {
 		return nil, false
 	}
-	var v any
-	if err := i.dec.Decode(&v); err != nil {
+	v, err := i.next()
+	if err != nil {
 		if err == io.EOF {
 			i.err = err
 			return nil, false
@@ -117,6 +118,13 @@ func (i *jsonInputIter) Close() error {
 
 func (i *jsonInputIter) Name() string {
 	return i.fname
+}
+
+func newStreamInputIter(r io.Reader, fname string) inputIter {
+	ir := newInputReader(r)
+	dec := json.NewDecoder(ir)
+	dec.UseNumber()
+	return &jsonInputIter{next: newJSONStream(dec).next, ir: ir, fname: fname}
 }
 
 type nullInputIter struct {
@@ -250,58 +258,6 @@ func (i *rawInputIter) Close() error {
 }
 
 func (i *rawInputIter) Name() string {
-	return i.fname
-}
-
-type streamInputIter struct {
-	stream *jsonStream
-	ir     *inputReader
-	fname  string
-	offset int64
-	line   int
-	err    error
-}
-
-func newStreamInputIter(r io.Reader, fname string) inputIter {
-	ir := newInputReader(r)
-	dec := json.NewDecoder(ir)
-	dec.UseNumber()
-	return &streamInputIter{stream: newJSONStream(dec), ir: ir, fname: fname}
-}
-
-func (i *streamInputIter) Next() (any, bool) {
-	if i.err != nil {
-		return nil, false
-	}
-	v, err := i.stream.next()
-	if err != nil {
-		if err == io.EOF {
-			i.err = err
-			return nil, false
-		}
-		var offset *int64
-		var line *int
-		if err, ok := err.(*json.SyntaxError); ok {
-			err.Offset -= i.offset
-			offset, line = &err.Offset, &i.line
-		}
-		i.err = &jsonParseError{i.fname, i.ir.getContents(offset, line), i.line, err}
-		return i.err, true
-	}
-	if buf := i.ir.buf; buf != nil && buf.Len() >= 16*1024 {
-		i.offset += int64(buf.Len())
-		i.line += bytes.Count(buf.Bytes(), []byte{'\n'})
-		buf.Reset()
-	}
-	return v, true
-}
-
-func (i *streamInputIter) Close() error {
-	i.err = io.EOF
-	return nil
-}
-
-func (i *streamInputIter) Name() string {
 	return i.fname
 }
 
