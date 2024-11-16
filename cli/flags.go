@@ -203,7 +203,7 @@ func formatFlags(opts any) string {
 		} else {
 			sb.WriteString("=")
 		}
-		sb.WriteString("                       "[:24-sb.Len()+m])
+		sb.WriteString(strings.Repeat(" ", 24-(sb.Len()-m)))
 		sb.WriteString(tag.Get("description"))
 		sb.WriteString("\n")
 	}
