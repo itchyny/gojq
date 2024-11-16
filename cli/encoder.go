@@ -256,7 +256,7 @@ func (e *encoder) writeByte(b byte, color []byte) {
 	}
 }
 
-func (e *encoder) write(bs []byte, color []byte) {
+func (e *encoder) write(bs, color []byte) {
 	if color == nil {
 		e.w.Write(bs)
 	} else {
