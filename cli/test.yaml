@@ -7902,7 +7902,7 @@
 - name: module directory option
   args:
     - -c
-    - -L
+    - --library-path
     - 'testdata'
     - 'import "7" as $foo; $foo, $foo::foo'
   input: '0'
@@ -7913,7 +7913,7 @@
 - name: module directory option
   args:
     - -c
-    - -L
+    - --library-path
     - 'testdata'
     - 'import "m1" as $x; $x, $x::x, $x[1].m1*100000000000000000000'
   input: '0'

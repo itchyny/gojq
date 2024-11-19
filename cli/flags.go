@@ -186,22 +186,10 @@ func formatFlags(opts any) string {
 			}
 			sb.WriteString("--")
 			sb.WriteString(flag)
-			switch val.Field(i).Kind() {
-			case reflect.Bool:
-				sb.WriteString(" ")
-			case reflect.Map:
-				if strings.HasSuffix(flag, "file") {
-					sb.WriteString(" name file")
-				} else {
-					sb.WriteString(" name value")
-				}
-			default:
-				if _, ok = tag.Lookup("positional"); !ok {
-					sb.WriteString("=")
-				}
-			}
-		} else {
-			sb.WriteString("=")
+		}
+		if args, ok := tag.Lookup("args"); ok {
+			sb.WriteString(" ")
+			sb.WriteString(args)
 		}
 		sb.WriteString(strings.Repeat(" ", 24-(sb.Len()-m)))
 		sb.WriteString(tag.Get("description"))

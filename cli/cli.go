@@ -58,7 +58,7 @@ type flagopts struct {
 	OutputRaw0    bool              `long:"raw-output0" description:"implies -r with NUL character delimiter"`
 	OutputJoin    bool              `short:"j" long:"join-output" description:"implies -r with no newline delimiter"`
 	OutputCompact bool              `short:"c" long:"compact-output" description:"output without pretty-printing"`
-	OutputIndent  *int              `long:"indent" description:"number of spaces for indentation"`
+	OutputIndent  *int              `long:"indent" args:"number" description:"number of spaces for indentation"`
 	OutputTab     bool              `long:"tab" description:"use tabs for indentation"`
 	OutputYAML    bool              `long:"yaml-output" description:"output in YAML format"`
 	OutputColor   bool              `short:"C" long:"color-output" description:"output with colors even if piped"`
@@ -69,11 +69,11 @@ type flagopts struct {
 	InputYAML     bool              `long:"yaml-input" description:"read input as YAML format"`
 	InputSlurp    bool              `short:"s" long:"slurp" description:"read all inputs into an array"`
 	FromFile      bool              `short:"f" long:"from-file" description:"load query from file"`
-	ModulePaths   []string          `short:"L" description:"directory to search modules from"`
-	Arg           map[string]string `long:"arg" description:"set a string value to a variable"`
-	ArgJSON       map[string]string `long:"argjson" description:"set a JSON value to a variable"`
-	SlurpFile     map[string]string `long:"slurpfile" description:"set the JSON contents of a file to a variable"`
-	RawFile       map[string]string `long:"rawfile" description:"set the contents of a file to a variable"`
+	ModulePaths   []string          `short:"L" long:"library-path" args:"dir" description:"directory to search modules from"`
+	Arg           map[string]string `long:"arg" args:"name value" description:"set a string value to a variable"`
+	ArgJSON       map[string]string `long:"argjson" args:"name value" description:"set a JSON value to a variable"`
+	SlurpFile     map[string]string `long:"slurpfile" args:"name file" description:"set the JSON contents of a file to a variable"`
+	RawFile       map[string]string `long:"rawfile" args:"name file" description:"set the contents of a file to a variable"`
 	Args          []any             `long:"args" positional:"" description:"consume remaining arguments as positional string values"`
 	JSONArgs      []any             `long:"jsonargs" positional:"" description:"consume remaining arguments as positional JSON values"`
 	ExitStatus    bool              `short:"e" long:"exit-status" description:"exit 1 when the last value is false or null"`
