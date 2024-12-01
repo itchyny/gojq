@@ -1,4 +1,14 @@
 # Changelog
+## [v0.12.17](https://github.com/itchyny/gojq/compare/v0.12.16..v0.12.17) (2024-12-01)
+* implement `add/1`, `skip/2` functions
+* implement `--library-path` option as the alias of `-L` option
+* fix `reduce` syntax to emit results for each initial value
+* fix `last/1` to yield no values when the argument yields no values
+* fix `limit/2` to emit an error on negative count
+* fix `@uri` and `@urid` formats not to convert space between plus sign
+* fix resolving search paths of import statements in the query
+* improve time functions to accept fewer element arrays
+
 ## [v0.12.16](https://github.com/itchyny/gojq/compare/v0.12.15..v0.12.16) (2024-06-01)
 * fix offset of query parsing error on multi-byte characters
 * fix tests of `exp10` and `atan2` failing on some platforms
