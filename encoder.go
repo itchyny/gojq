@@ -12,6 +12,8 @@ import (
 	"unicode/utf8"
 )
 
+const NilString = "null"
+
 // Marshal returns the jq-flavored JSON encoding of v.
 //
 // This method accepts only limited types (nil, bool, int, float64, *big.Int,
@@ -49,7 +51,7 @@ type encoder struct {
 func (e *encoder) encode(v any) {
 	switch v := v.(type) {
 	case nil:
-		e.w.WriteString("null")
+		e.w.WriteString(NilString)
 	case bool:
 		if v {
 			e.w.WriteString("true")
