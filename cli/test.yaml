@@ -2853,7 +2853,7 @@
 
 - name: multiply strings
   args:
-    - '[-1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.7, 10, 9444732965739290427392 / 4722366482869645213696, 100000000, infinite, -infinite, nan, -1e300, 1e300][] * "abc"'
+    - '(-1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.7, 10, nan) * "abc"'
   input: 'null'
   expected: |
     null
@@ -2864,13 +2864,17 @@
     "abc"
     "abcabcabc"
     "abcabcabcabcabcabcabcabcabcabc"
-    "abcabc"
     null
-    null
-    null
-    null
-    null
-    null
+
+- name: multiply strings error
+  args:
+    - -r
+    - '(infinite, 1e300, 720000000) as $n | try ($n * "abc") catch .'
+  input: 'null'
+  expected: |
+    repeat string result too large: "abc" * 1.7976931348623157e+308
+    repeat string result too large: "abc" * 1e+300
+    repeat string result too large: "abc" * 720000000
 
 - name: multiply empty string
   args:

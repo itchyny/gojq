@@ -51,6 +51,15 @@ func (err *arrayIndexTooLargeError) Error() string {
 	return "array index too large: " + Preview(err.v)
 }
 
+type repeatStringTooLargeError struct {
+	s string
+	n float64
+}
+
+func (err *repeatStringTooLargeError) Error() string {
+	return "repeat string result too large: " + Preview(err.s) + " * " + Preview(err.n)
+}
+
 type objectKeyNotStringError struct {
 	v any
 }
