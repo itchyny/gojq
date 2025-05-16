@@ -94,3 +94,11 @@ func WithInputIter(inputIter Iter) CompilerOption {
 		c.inputIter = inputIter
 	}
 }
+
+// WithoutNormalize ensures any given data won't be modified when executing code.
+// Note that the input data is expected to be normalized using the [Normalize] function.
+func WithoutNormalize() CompilerOption {
+	return func(c *compiler) {
+		c.skipNormalize = true
+	}
+}
