@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"gopkg.in/yaml.v3"
+	"github.com/goccy/go-yaml"
 )
 
 type marshaler interface {
@@ -37,12 +37,12 @@ type yamlMarshaler struct {
 }
 
 func (m *yamlMarshaler) marshal(v any, w io.Writer) error {
-	enc := yaml.NewEncoder(w)
+	indent := 2
 	if i := m.indent; i != nil {
-		enc.SetIndent(*i)
-	} else {
-		enc.SetIndent(2)
+		indent = *i
 	}
+	_, isArray := v.([]any) // https://github.com/goccy/go-yaml/issues/291
+	enc := yaml.NewEncoder(w, yaml.Indent(indent), yaml.IndentSequence(!isArray))
 	if err := enc.Encode(v); err != nil {
 		return err
 	}

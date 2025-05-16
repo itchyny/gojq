@@ -7336,11 +7336,11 @@
     foo: 2021-01-02
     bar: 2021-01-02t10:11:12Z
     baz: "2021-01-02"
-  expected: | # it is impossible to keep the original timestamp strings
+  expected: |
     {
-      "bar": "2021-01-02T10:11:12Z",
+      "bar": "2021-01-02t10:11:12Z",
       "baz": "2021-01-02",
-      "foo": "2021-01-02T00:00:00Z"
+      "foo": "2021-01-02"
     }
 
 - name: yaml input option with slurp option
@@ -7397,7 +7397,7 @@
   error: |
     invalid yaml: <stdin>:2
         2 | 10
-            ^  could not find expected ':'
+            ^  non-map value is specified
 
 - name: yaml input option multiple errors
   args:
@@ -7410,7 +7410,7 @@
   error: |
     invalid yaml: <stdin>:3
         3 | foo: 3
-            ^  mapping key "foo" already defined at line 1
+            ^  mapping key "foo" already defined at [1:1]
 
 - name: yaml file input error
   args:
@@ -7420,7 +7420,7 @@
   error: |
     invalid yaml: testdata/2.yaml:5
         5 |   a: b: c
-            ^  mapping values are not allowed in this context
+                 ^  mapping value is not allowed in this context
 
 - name: yaml file input error in dos format
   args:
@@ -7430,7 +7430,7 @@
   error: |
     invalid yaml: testdata/3.yaml:5
         5 |   a: b: c
-            ^  mapping values are not allowed in this context
+                 ^  mapping value is not allowed in this context
 
 - name: yaml file input error in mac format
   args:
@@ -7440,7 +7440,7 @@
   error: |
     invalid yaml: testdata/4.yaml:5
         5 |   a: b: c
-            ^  mapping values are not allowed in this context
+                 ^  mapping value is not allowed in this context
 
 - name: yaml output option
   args:

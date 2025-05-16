@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"gopkg.in/yaml.v3"
+	"github.com/goccy/go-yaml"
 
 	"github.com/itchyny/gojq"
 )
@@ -287,7 +287,7 @@ func (i *yamlInputIter) Next() (any, bool) {
 		i.err = &yamlParseError{i.fname, i.ir.getContents(nil, nil), err}
 		return i.err, true
 	}
-	return normalizeYAML(v), true
+	return v, true
 }
 
 func (i *yamlInputIter) Close() error {
