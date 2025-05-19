@@ -48,6 +48,7 @@ func run(input, output string) error {
 	}
 	fds["_assign"] = nil
 	fds["_modify"] = nil
+	fds["_last"] = nil
 	t, err := astgen.Build(fds)
 	if err != nil {
 		return err

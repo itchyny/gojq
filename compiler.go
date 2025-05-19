@@ -953,7 +953,7 @@ func (c *compiler) compileFunc(e *Func) error {
 				c.compileAssign()
 			case "_modify":
 				c.compileModify()
-			case "last":
+			case "_last":
 				c.compileLast()
 			}
 		}
@@ -1145,7 +1145,7 @@ func (c *compiler) compileModify() {
 // Appends the compiled code for the `last/1` function to
 // maximize performance avoiding unnecessary boxing.
 func (c *compiler) compileLast() {
-	defer c.appendBuiltin("last", 1)()
+	defer c.appendBuiltin("_last", 1)()
 	scope := c.newScope()
 	v, g, x := [2]int{scope.id, 0}, [2]int{scope.id, 1}, [2]int{scope.id, 2}
 	c.appends(
