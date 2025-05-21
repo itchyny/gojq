@@ -59,7 +59,7 @@ loop:
 			}
 			n := code.v.(int)
 			m := make(map[string]any, n)
-			for i := 0; i < n; i++ {
+			for range n {
 				v, k := env.pop(), env.pop()
 				s, ok := k.(string)
 				if !ok {
@@ -180,7 +180,7 @@ loop:
 			case [3]any:
 				argcnt := v[1].(int)
 				x, args := env.pop(), env.args[:argcnt]
-				for i := 0; i < argcnt; i++ {
+				for i := range argcnt {
 					args[i] = env.pop()
 				}
 				w := v[0].(func(any, []any) any)(x, args)

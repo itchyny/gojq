@@ -1317,7 +1317,7 @@ func (c *compiler) compileObject(e *Object) error {
 	if pc+l*3+1 != len(c.codes) {
 		return nil
 	}
-	for i := 0; i < l; i++ {
+	for i := range l {
 		if c.codes[pc+i*3].op != oppush ||
 			c.codes[pc+i*3+1].op != opload ||
 			c.codes[pc+i*3+2].op != opconst {
@@ -1325,7 +1325,7 @@ func (c *compiler) compileObject(e *Object) error {
 		}
 	}
 	w := make(map[string]any, l)
-	for i := 0; i < l; i++ {
+	for i := range l {
 		w[c.codes[pc+i*3].v.(string)] = c.codes[pc+i*3+2].v
 	}
 	c.codes[pc-1] = &code{op: opconst, v: w}
@@ -1417,7 +1417,7 @@ func (c *compiler) compileArray(e *Array) error {
 		return nil
 	}
 	l := (len(c.codes) - pc - 3) / 3
-	for i := 0; i < l; i++ {
+	for i := range l {
 		if c.codes[pc+i].op != opfork ||
 			c.codes[pc+i*2+l].op != opconst ||
 			(i < l-1 && c.codes[pc+i*2+l+1].op != opjump) {
@@ -1425,7 +1425,7 @@ func (c *compiler) compileArray(e *Array) error {
 		}
 	}
 	v := make([]any, l)
-	for i := 0; i < l; i++ {
+	for i := range l {
 		v[i] = c.codes[pc+i*2+l].v
 	}
 	c.codes[pc-2] = &code{op: opconst, v: v}
@@ -1656,31 +1656,31 @@ func (c *compiler) optimizeTailRec() {
 	var pcs []int
 	scopes := map[int]bool{}
 L:
-	for i, l := 0, len(c.codes); i < l; i++ {
-		switch c.codes[i].op {
+	for i, code := range c.codes {
+		switch code.op {
 		case opscope:
 			pcs = append(pcs, i)
-			if v := c.codes[i].v.([3]int); v[2] == 0 {
+			if v := code.v.([3]int); v[2] == 0 {
 				scopes[i] = v[1] == 0
 			}
 		case opcall:
 			var canjump bool
-			if j, ok := c.codes[i].v.(int); !ok ||
+			if j, ok := code.v.(int); !ok ||
 				len(pcs) == 0 || pcs[len(pcs)-1] != j {
 				break
 			} else if canjump, ok = scopes[j]; !ok {
 				break
 			}
-			for j := i + 1; j < l; {
+			for j := i + 1; j < len(c.codes); {
 				switch c.codes[j].op {
 				case opjump:
 					j = c.codes[j].v.(int)
 				case opret:
 					if canjump {
-						c.codes[i].op = opjump
-						c.codes[i].v = pcs[len(pcs)-1] + 1
+						code.op = opjump
+						code.v = pcs[len(pcs)-1] + 1
 					} else {
-						c.codes[i].op = opcallrec
+						code.op = opcallrec
 					}
 					continue L
 				default:

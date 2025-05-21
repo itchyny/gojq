@@ -14,7 +14,7 @@ func parseFlags(args []string, opts any) ([]string, error) {
 	longToValue := map[string]reflect.Value{}
 	longToPositional := map[string]struct{}{}
 	shortToValue := map[string]reflect.Value{}
-	for i, l := 0, val.NumField(); i < l; i++ {
+	for i := range val.NumField() {
 		if flag, ok := typ.Field(i).Tag.Lookup("long"); ok {
 			longToValue[flag] = val.Field(i)
 			if _, ok := typ.Field(i).Tag.Lookup("positional"); ok {
@@ -163,9 +163,9 @@ func formatFlags(opts any) string {
 	typ := val.Type()
 	var sb strings.Builder
 	sb.WriteString("Command Options:\n")
-	for i, l := 0, typ.NumField(); i < l; i++ {
+	for i := range typ.NumField() {
 		tag := typ.Field(i).Tag
-		if i == l-1 {
+		if i == typ.NumField()-1 {
 			sb.WriteString("\nHelp Option:\n")
 		}
 		sb.WriteString("  ")

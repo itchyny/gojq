@@ -330,7 +330,7 @@ func TestQueryRun_Race(t *testing.T) {
 		t.Fatal(err)
 	}
 	var wg sync.WaitGroup
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -377,7 +377,7 @@ func BenchmarkRun(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		iter := query.Run(nil)
 		for {
 			_, ok := iter.Next()
@@ -394,7 +394,7 @@ func BenchmarkParse(b *testing.B) {
 		b.Fatal(err)
 	}
 	src := string(cnt)
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, err := gojq.Parse(src)
 		if err != nil {
 			b.Fatal(err)

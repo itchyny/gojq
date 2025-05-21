@@ -316,7 +316,7 @@ func TestCodeRun_Race(t *testing.T) {
 		t.Fatal(err)
 	}
 	var wg sync.WaitGroup
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -349,7 +349,7 @@ func BenchmarkCompile(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, err := gojq.Compile(
 			query,
 			gojq.WithInputIter(gojq.NewIter()),

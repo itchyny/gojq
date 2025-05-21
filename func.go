@@ -602,7 +602,7 @@ func indices(vs, xs []any) any {
 	if len(xs) == 0 {
 		return rs
 	}
-	for i := 0; i <= len(vs)-len(xs); i++ {
+	for i := range len(vs) - len(xs) + 1 {
 		if Compare(vs[i:i+len(xs)], xs) == 0 {
 			rs = append(rs, i)
 		}
@@ -615,7 +615,7 @@ func funcIndex(v, x any) any {
 		if len(xs) == 0 {
 			return nil
 		}
-		for i := 0; i <= len(vs)-len(xs); i++ {
+		for i := range len(vs) - len(xs) + 1 {
 			if Compare(vs[i:i+len(xs)], xs) == 0 {
 				return i
 			}

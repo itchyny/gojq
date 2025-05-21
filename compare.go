@@ -35,7 +35,7 @@ func Compare(l, r any) int {
 			}
 		},
 		func(l, r []any) any {
-			for i, n := 0, min(len(l), len(r)); i < n; i++ {
+			for i := range min(len(l), len(r)) {
 				if cmp := Compare(l[i], r[i]); cmp != 0 {
 					return cmp
 				}

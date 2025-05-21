@@ -507,7 +507,7 @@ func quoteAndEscape(src string, quote bool, controls int) []byte {
 		buf[len(buf)-1] = '"'
 		j++
 	}
-	for i := 0; i < len(src); i++ {
+	for i := range len(src) {
 		if ch := src[i]; ch < ' ' {
 			const hex = "0123456789abcdef"
 			copy(buf[j:], `\u00`)
