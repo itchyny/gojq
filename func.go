@@ -60,6 +60,7 @@ func init() {
 		"to_entries":     argFunc0(funcToEntries),
 		"from_entries":   argFunc0(funcFromEntries),
 		"add":            argFunc0(funcAdd),
+		"toboolean":      argFunc0(funcToBoolean),
 		"tonumber":       argFunc0(funcToNumber),
 		"tostring":       argFunc0(funcToString),
 		"type":           argFunc0(funcType),
@@ -512,6 +513,24 @@ func funcAdd(v any) any {
 		v = sb.String()
 	}
 	return v
+}
+
+func funcToBoolean(v any) any {
+	switch v := v.(type) {
+	case bool:
+		return v
+	case string:
+		switch v {
+		case "true":
+			return true
+		case "false":
+			return false
+		default:
+			return &func0WrapError{"toboolean", v, errors.New("invalid boolean")}
+		}
+	default:
+		return &func0TypeError{"toboolean", v}
+	}
 }
 
 func funcToNumber(v any) any {

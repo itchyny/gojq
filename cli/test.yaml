@@ -1799,6 +1799,38 @@
     "range cannot be applied to: string (\"\")"
     "range cannot be applied to: array ([])"
 
+- name: toboolean function
+  args:
+    - 'toboolean'
+  input: |
+    "true"
+    "false"
+    true
+    false
+  expected: |
+    true
+    false
+    true
+    false
+
+- name: toboolean function error
+  args:
+    - 'try toboolean catch .'
+  input: |
+    null
+    ""
+    " true "
+    "FALSE"
+    []
+    {}
+  expected: |
+    "toboolean cannot be applied to: null"
+    "toboolean cannot be applied to \"\": invalid boolean"
+    "toboolean cannot be applied to \" true \": invalid boolean"
+    "toboolean cannot be applied to \"FALSE\": invalid boolean"
+    "toboolean cannot be applied to: array ([])"
+    "toboolean cannot be applied to: object ({})"
+
 - name: tonumber function
   args:
     - 'tonumber'
