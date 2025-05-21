@@ -20,13 +20,15 @@ type compiler struct {
 	builtinScope  *scopeinfo
 	scopes        []*scopeinfo
 	scopecnt      int
+	skipNormalize bool
 }
 
 // Code is a compiled jq query.
 type Code struct {
-	variables []string
-	codes     []*code
-	codeinfos []codeinfo
+	variables     []string
+	codes         []*code
+	codeinfos     []codeinfo
+	skipNormalize bool
 }
 
 // Run runs the code with the variable values (which should be in the
@@ -47,9 +49,16 @@ func (c *Code) RunWithContext(ctx context.Context, v any, values ...any) Iter {
 		return NewIter(&expectedVariableError{c.variables[len(values)]})
 	}
 	for i, v := range values {
-		values[i] = normalizeNumbers(v)
+		values[i] = c.normalize(v)
 	}
-	return newEnv(ctx).execute(c, normalizeNumbers(v), values...)
+	return newEnv(ctx).execute(c, c.normalize(v), values...)
+}
+
+func (c *Code) normalize(v any) any {
+	if c.skipNormalize {
+		return v
+	}
+	return Normalize(v)
 }
 
 type scopeinfo struct {
@@ -113,9 +122,10 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 	c.optimizeTailRec()
 	c.optimizeCodeOps()
 	return &Code{
-		variables: c.variables,
-		codes:     c.codes,
-		codeinfos: c.codeinfos,
+		variables:     c.variables,
+		codes:         c.codes,
+		codeinfos:     c.codeinfos,
+		skipNormalize: c.skipNormalize,
 	}, nil
 }
 
@@ -130,6 +140,14 @@ func (c *compiler) compile(q *Query) error {
 	}
 	c.append(&code{op: opret})
 	return nil
+}
+
+func (c *compiler) normalize(v any) any {
+	if c.skipNormalize {
+		return v
+	}
+
+	return Normalize(v)
 }
 
 func (c *compiler) compileImport(i *Import) error {
@@ -160,7 +178,7 @@ func (c *compiler) compileImport(i *Import) error {
 		} else {
 			return fmt.Errorf("module not found: %q", path)
 		}
-		vals = normalizeNumbers(vals)
+		vals = c.normalize(vals)
 		c.append(&code{op: oppush, v: vals})
 		c.append(&code{op: opstore, v: c.pushVariable(alias)})
 		c.append(&code{op: oppush, v: vals})
@@ -1218,7 +1236,7 @@ func (c *compiler) funcInput(any, []any) any {
 	if !ok {
 		return errors.New("break")
 	}
-	return normalizeNumbers(v)
+	return c.normalize(v)
 }
 
 func (c *compiler) funcModulemeta(v any, _ []any) any {

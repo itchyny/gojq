@@ -848,7 +848,7 @@ func funcFromJSON(v any) any {
 	if _, err := dec.Token(); err != io.EOF {
 		return &func0TypeError{"fromjson", v}
 	}
-	return normalizeNumbers(w)
+	return Normalize(w)
 }
 
 func funcFormat(v, x any) any {
