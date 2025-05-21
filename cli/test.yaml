@@ -2178,6 +2178,32 @@
     "rtrimstr({}) cannot be applied to: string (\"x\")"
     "rtrimstr(\"x\") cannot be applied to: number (10)"
 
+- name: trimstr function
+  args:
+    - 'trimstr("foo")'
+  input: |
+    ""
+    "fo"
+    "foo"
+    "fofoo"
+    "foobarfoo"
+    "foofoofoo"
+  expected: |
+    ""
+    "fo"
+    ""
+    "fo"
+    "bar"
+    "foo"
+
+- name: trimstr function error
+  args:
+    - '("x" | try trimstr({}) catch .), (10 | try trimstr("x") catch .)'
+  input: '0'
+  expected: |
+    "trimstr({}) cannot be applied to: string (\"x\")"
+    "trimstr(\"x\") cannot be applied to: number (10)"
+
 - name: ltrim function
   args:
     - 'ltrim'

@@ -73,6 +73,7 @@ func init() {
 		"endswith":       argFunc1(funcEndsWith),
 		"ltrimstr":       argFunc1(funcLtrimstr),
 		"rtrimstr":       argFunc1(funcRtrimstr),
+		"trimstr":        argFunc1(funcTrimstr),
 		"ltrim":          argFunc0(funcLtrim),
 		"rtrim":          argFunc0(funcRtrim),
 		"trim":           argFunc0(funcTrim),
@@ -724,6 +725,18 @@ func funcRtrimstr(v, x any) any {
 		return &func1TypeError{"rtrimstr", v, x}
 	}
 	return strings.TrimSuffix(s, t)
+}
+
+func funcTrimstr(v, x any) any {
+	s, ok := v.(string)
+	if !ok {
+		return &func1TypeError{"trimstr", v, x}
+	}
+	t, ok := x.(string)
+	if !ok {
+		return &func1TypeError{"trimstr", v, x}
+	}
+	return strings.TrimSuffix(strings.TrimPrefix(s, t), t)
 }
 
 func funcLtrim(v any) any {
