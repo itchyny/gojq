@@ -1685,7 +1685,7 @@ func updateArrayIndex(v []any, i int, path []any, n any, a allocator) (any, erro
 		if n == struct{}{} {
 			return v, nil
 		}
-		if i >= 0x8000000 {
+		if i >= 0x20000000 {
 			return nil, &arrayIndexTooLargeError{i}
 		}
 	}

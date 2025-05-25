@@ -5073,10 +5073,10 @@
 
 - name: assignment operator array index limit error
   args:
-    - '.[200000000] = 1'
+    - '.[999999999] = 1'
   input: '[]'
   error: |
-    array index too large: 200000000
+    array index too large: 999999999
 
 - name: assignment operator with select
   args:
