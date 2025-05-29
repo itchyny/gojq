@@ -6951,7 +6951,12 @@
     - '.'
   input: '{ "foo": ["hello", "world"] }'
   expected: |
-    {"foo":["hello","world"]}
+    {
+    "foo": [
+    "hello",
+    "world"
+    ]
+    }
 
 - name: indent option with deeply nested array
   args:

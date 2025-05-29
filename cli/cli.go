@@ -398,7 +398,7 @@ func (cli *cli) createMarshaler() marshaler {
 	}
 	indent := 2
 	if cli.outputCompact {
-		indent = 0
+		indent = -1
 	} else if cli.outputTab {
 		indent = 1
 	} else if i := cli.outputIndent; i != nil {
@@ -412,7 +412,7 @@ func (cli *cli) createMarshaler() marshaler {
 }
 
 func (cli *cli) funcDebug(v any, _ []any) any {
-	if err := newEncoder(false, 0).
+	if err := newEncoder(false, -1).
 		marshal([]any{"DEBUG:", v}, cli.errStream); err != nil {
 		return err
 	}
@@ -423,7 +423,7 @@ func (cli *cli) funcDebug(v any, _ []any) any {
 }
 
 func (cli *cli) funcStderr(v any, _ []any) any {
-	if err := (&rawMarshaler{m: newEncoder(false, 0)}).
+	if err := (&rawMarshaler{m: newEncoder(false, -1)}).
 		marshal(v, cli.errStream); err != nil {
 		return err
 	}
