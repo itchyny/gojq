@@ -349,7 +349,7 @@ func BenchmarkCompile(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	for range b.N {
+	for b.Loop() {
 		_, err := gojq.Compile(
 			query,
 			gojq.WithInputIter(gojq.NewIter()),

@@ -132,9 +132,8 @@ func TestQueryRun_HaltError(t *testing.T) {
 					t.Errorf("expected: %v, got: %v", expected, err)
 				}
 				break
-			} else {
-				t.Errorf("should emit a halt error but got: %v", err)
 			}
+			t.Errorf("should emit a halt error but got: %v", err)
 		} else {
 			t.Errorf("should emit an error but got: %v", v)
 		}
@@ -377,7 +376,7 @@ func BenchmarkRun(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	for range b.N {
+	for b.Loop() {
 		iter := query.Run(nil)
 		for {
 			_, ok := iter.Next()
@@ -394,7 +393,7 @@ func BenchmarkParse(b *testing.B) {
 		b.Fatal(err)
 	}
 	src := string(cnt)
-	for range b.N {
+	for b.Loop() {
 		_, err := gojq.Parse(src)
 		if err != nil {
 			b.Fatal(err)

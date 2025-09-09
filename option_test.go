@@ -482,7 +482,7 @@ func TestWithFunctionMultipleArities(t *testing.T) {
 			}
 			return fmt.Errorf("f cannot be applied to: %v, %v", x, xs)
 		}),
-		gojq.WithFunction("g", 0, 30, func(x any, xs []any) any {
+		gojq.WithFunction("g", 0, 30, func(any, []any) any {
 			return nil
 		}),
 	}
@@ -555,7 +555,7 @@ func TestWithFunctionValueError(t *testing.T) {
 		t.Fatal(err)
 	}
 	code, err := gojq.Compile(query,
-		gojq.WithFunction("f", 0, 0, func(x any, _ []any) any {
+		gojq.WithFunction("f", 0, 0, func(any, []any) any {
 			return &valueError{expected}
 		}),
 	)
