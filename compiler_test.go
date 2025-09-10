@@ -340,6 +340,36 @@ func TestCodeRun_Race(t *testing.T) {
 	wg.Wait()
 }
 
+func TestCode_RunWithoutNormalize(t *testing.T) {
+	query, err := gojq.Parse(".foo")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	code, err := gojq.Compile(query)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	input := map[string]any{"foo": int32(1)}
+	_ = code.RunWithContext(context.Background(), input)
+	switch v := input["foo"].(type) {
+	case int: // ok
+	default:
+		t.Fatalf("expected int, got %T", v)
+	}
+
+	code, err = gojq.Compile(query, gojq.WithoutNormalize())
+	if err != nil {
+		log.Fatalln(err)
+	}
+	input = map[string]any{"foo": int32(1)} //need to recreate it as it was modified
+	_ = code.RunWithContext(context.Background(), input)
+	switch v := input["foo"].(type) {
+	case int32: // ok
+	default:
+		t.Fatalf("expected int32, got %T", v)
+	}
+}
+
 func BenchmarkCompile(b *testing.B) {
 	cnt, err := os.ReadFile("builtin.jq")
 	if err != nil {

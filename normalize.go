@@ -25,7 +25,16 @@ func normalizeNumber(v json.Number) any {
 	return math.Inf(1)
 }
 
-func normalizeNumbers(v any) any {
+// Normalize any given data.
+//
+// This function will in particular change any given map[any]any
+// so that all the integer values will be of type int and all the
+// floating point values will be of type float64. This method will
+// modify the given data in place.
+//
+// Typically running a gojq query will normalize the data automatically
+// unless the [WithoutNormalize] option has been specified.
+func Normalize(v any) any {
 	switch v := v.(type) {
 	case json.Number:
 		return normalizeNumber(v)
@@ -70,12 +79,12 @@ func normalizeNumbers(v any) any {
 		return float64(v)
 	case []any:
 		for i, x := range v {
-			v[i] = normalizeNumbers(x)
+			v[i] = Normalize(x)
 		}
 		return v
 	case map[string]any:
 		for k, x := range v {
-			v[k] = normalizeNumbers(x)
+			v[k] = Normalize(x)
 		}
 		return v
 	default:
