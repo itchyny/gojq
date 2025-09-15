@@ -2948,6 +2948,16 @@
     ""
     ""
 
+- name: add objects
+  args:
+    - -c
+    - '.[0] + .[]'
+  input: '[{"a": 1}, {"b": 2}, {"a": 3}]'
+  expected: |
+    {"a":1}
+    {"a":1,"b":2}
+    {"a":3}
+
 - name: multiply objects
   args:
     - -c

@@ -1,6 +1,7 @@
 package gojq
 
 import (
+	"maps"
 	"math"
 	"math/big"
 	"strings"
@@ -334,12 +335,8 @@ func funcOpAdd(_, l, r any) any {
 				return l
 			}
 			m := make(map[string]any, len(l)+len(r))
-			for k, v := range l {
-				m[k] = v
-			}
-			for k, v := range r {
-				m[k] = v
-			}
+			maps.Copy(m, l)
+			maps.Copy(m, r)
 			return m
 		},
 		func(l, r any) any {
@@ -416,9 +413,7 @@ func funcOpMul(_, l, r any) any {
 
 func deepMergeObjects(l, r map[string]any) any {
 	m := make(map[string]any, len(l)+len(r))
-	for k, v := range l {
-		m[k] = v
-	}
+	maps.Copy(m, l)
 	for k, v := range r {
 		if mk, ok := m[k]; ok {
 			if mk, ok := mk.(map[string]any); ok {

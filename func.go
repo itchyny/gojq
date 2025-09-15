@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"math"
 	"math/big"
 	"net/url"
@@ -489,16 +490,10 @@ func funcAdd(v any) any {
 		case map[string]any:
 			switch w := v.(type) {
 			case nil:
-				m := make(map[string]any, len(x))
-				for k, e := range x {
-					m[k] = e
-				}
-				v = m
+				v = maps.Clone(x)
 				continue
 			case map[string]any:
-				for k, e := range x {
-					w[k] = e
-				}
+				maps.Copy(w, x)
 				continue
 			}
 		}
@@ -1664,9 +1659,7 @@ func updateObject(v map[string]any, k string, path []any, n any, a allocator) (a
 		return v, nil
 	}
 	w := a.makeObject(len(v) + 1)
-	for k, v := range v {
-		w[k] = v
-	}
+	maps.Copy(w, v)
 	w[k] = u
 	return w, nil
 }
