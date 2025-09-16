@@ -7,7 +7,10 @@ import (
 	"sort"
 )
 
-func (env *env) execute(bc *Code, v any, vars ...any) Iter {
+// PreparedData will have gone through normalizeNumbers.
+type PreparedData any
+
+func (env *env) execute(bc *Code, v PreparedData, vars ...PreparedData) Iter {
 	env.codes = bc.codes
 	env.codeinfos = bc.codeinfos
 	env.push(v)
