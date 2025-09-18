@@ -542,6 +542,17 @@
     [[],[],[0],[0,1],[],[0],[0,1],[0,1,2]]
     [[],[],[],[],[2],[0,1],[],[0],[0,1],[0,1,2],[1],[],[],[1],[1,2],[],[],[],[],[2],[],[],[],[],[]]
 
+- name: array indexing and slicing by floating-point number
+  args:
+    - -c
+    - '[.[-2.8,-1.2,0.3,1.7,2.2]], [.[0.3,1.7:]], [.[:0.3,1.7]], [.[0.3,1.7,2.2:0.3,1.7,2.2]]'
+  input: '[0, 1, 2]'
+  expected: |
+    [1,2,0,1,2]
+    [[0,1,2],[1,2]]
+    [[0],[0,1]]
+    [[0],[0,1],[0,1,2],[],[1],[1,2],[],[],[2]]
+
 - name: array indexing and slicing by large number
   args:
     - -c
@@ -702,13 +713,28 @@
   error: |
     expected a number for indexing an array but got: object ({})
 
-- name: string indexing and slicing
+- name: string indexing
   args:
-    - -c
-    - '[.[-5],.[-1],.[0],.[3],.[4],.[6],.[2:4],.[-4:-2]]'
+    - '.[-5,-1,0,3,4,6]'
   input: '"１２３４５"'
   expected: |
-    ["１","５","１","４","５",null,"３４","２３"]
+    "１"
+    "５"
+    "１"
+    "４"
+    "５"
+    null
+
+- name: string slicing
+  args:
+    - '.[3:], .[:3], .[2:4], .[-4:-2], .[1.5:3.5]'
+  input: '"１２３４５"'
+  expected: |
+    "４５"
+    "１２３"
+    "３４"
+    "２３"
+    "２３４"
 
 - name: string indexing not number error
   args:

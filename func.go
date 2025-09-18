@@ -1114,7 +1114,7 @@ func slice(vs []any, e, s any) any {
 		}
 	}
 	if e != nil {
-		if i, ok := toInt(e); ok {
+		if i, ok := toIntCeil(e); ok {
 			end = clampIndex(i, start, len(vs))
 		} else {
 			return &arrayIndexNotNumberError{e}
@@ -1136,7 +1136,7 @@ func sliceString(v string, e, s any) any {
 		}
 	}
 	if e != nil {
-		if i, ok := toInt(e); ok {
+		if i, ok := toIntCeil(e); ok {
 			end = clampIndex(i, start, l)
 		} else {
 			return &stringIndexNotNumberError{e}
@@ -2144,6 +2144,13 @@ func toInt(x any) (int, bool) {
 	default:
 		return 0, false
 	}
+}
+
+func toIntCeil(x any) (int, bool) {
+	if f, ok := x.(float64); ok {
+		x = math.Ceil(f)
+	}
+	return toInt(x)
 }
 
 func floatToInt(x float64) int {
