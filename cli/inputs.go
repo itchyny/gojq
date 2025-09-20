@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/goccy/go-yaml"
+	"github.com/itchyny/go-yaml"
 
 	"github.com/itchyny/gojq"
 )

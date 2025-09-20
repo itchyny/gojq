@@ -7417,12 +7417,12 @@
     - '.'
   input: |
     foo:
-      - 42: bar
+      - 42.10: bar
   expected: |
     {
       "foo": [
         {
-          "42": "bar"
+          "42.10": "bar"
         }
       ]
     }
@@ -7435,11 +7435,13 @@
     foo: 2021-01-02
     bar: 2021-01-02t10:11:12Z
     baz: "2021-01-02"
+    qux: !!timestamp 2021-01-02
   expected: |
     {
       "bar": "2021-01-02t10:11:12Z",
       "baz": "2021-01-02",
-      "foo": "2021-01-02"
+      "foo": "2021-01-02",
+      "qux": "2021-01-02"
     }
 
 - name: yaml input option with slurp option
@@ -7496,7 +7498,7 @@
   error: |
     invalid yaml: <stdin>:2
         2 | 10
-            ^  non-map value is specified
+            ^  could not find expected ':'
 
 - name: yaml input option multiple errors
   args:
@@ -7506,10 +7508,11 @@
     foo: 1
     bar: 2
     foo: 3
+    bar: 4
   error: |
     invalid yaml: <stdin>:3
         3 | foo: 3
-            ^  mapping key "foo" already defined at [1:1]
+            ^  mapping key "foo" already defined at line 1
 
 - name: yaml file input error
   args:
@@ -7519,7 +7522,7 @@
   error: |
     invalid yaml: testdata/2.yaml:5
         5 |   a: b: c
-                 ^  mapping value is not allowed in this context
+                  ^  mapping values are not allowed in this context
 
 - name: yaml file input error in dos format
   args:
@@ -7529,7 +7532,7 @@
   error: |
     invalid yaml: testdata/3.yaml:5
         5 |   a: b: c
-                 ^  mapping value is not allowed in this context
+                  ^  mapping values are not allowed in this context
 
 - name: yaml file input error in mac format
   args:
@@ -7539,7 +7542,7 @@
   error: |
     invalid yaml: testdata/4.yaml:5
         5 |   a: b: c
-                 ^  mapping value is not allowed in this context
+                  ^  mapping values are not allowed in this context
 
 - name: yaml output option
   args:

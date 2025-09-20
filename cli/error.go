@@ -9,7 +9,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/goccy/go-yaml"
+	"github.com/itchyny/go-yaml"
 	"github.com/mattn/go-runewidth"
 
 	"github.com/itchyny/gojq"
@@ -123,13 +123,23 @@ type yamlParseError struct {
 
 func (err *yamlParseError) Error() string {
 	var offset int
-	var e *yaml.SyntaxError
-	if errors.As(err.err, &e) {
-		offset = e.Token.Position.Offset
+	var message string
+	var pe *yaml.ParserError
+	var te *yaml.TypeError
+	if errors.As(err.err, &pe) {
+		offset, message = pe.Index, pe.Message
+	} else if errors.As(err.err, &te) {
+		var ue *yaml.UnmarshalError
+		for _, e := range te.Errors {
+			if errors.As(e, &ue) {
+				offset, message = ue.Index+1, ue.Err.Error()
+				break
+			}
+		}
 	}
 	linestr, line, column := getLineByOffset(err.contents, offset)
 	return fmt.Sprintf("invalid yaml: %s:%d\n%s  %s",
-		err.fname, line, formatLineInfo(linestr, line, column), e.Message)
+		err.fname, line, formatLineInfo(linestr, line, column), message)
 }
 
 func getLineByOffset(str string, offset int) (linestr string, line, column int) {

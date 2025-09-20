@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/goccy/go-yaml"
 	"github.com/google/go-cmp/cmp"
+	"github.com/itchyny/go-yaml"
 )
 
 func init() {
