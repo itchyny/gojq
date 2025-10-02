@@ -7444,6 +7444,27 @@
       "qux": "2021-01-02"
     }
 
+- name: yaml input option with large numbers
+  args:
+    - --yaml-input
+    - '.[] + 1'
+  input: |
+    - 9223372036854775807
+    - 18446744073709551615
+    - 18446744073709551616
+    - 99999999999999999999999
+    - 0b111111111111111111111111111111111111111111111111111111111111111
+    - 0o777777777777777777777
+    - 0x7FFFFFFFFFFFFFFF
+  expected: |
+    9223372036854775808
+    18446744073709551616
+    18446744073709551617
+    100000000000000000000000
+    9223372036854775808
+    9223372036854775808
+    9223372036854775808
+
 - name: yaml input option with slurp option
   args:
     - --yaml-input
@@ -7499,6 +7520,19 @@
     invalid yaml: <stdin>:2
         2 | 10
             ^  could not find expected ':'
+
+- name: yaml input option error
+  args:
+    - --yaml-input
+    - '.'
+  input: |
+    foo: 10
+    bar: ]
+    baz:
+  error: |
+    invalid yaml: <stdin>:2
+        2 | bar: ]
+                 ^  did not find expected node content
 
 - name: yaml input option multiple errors
   args:

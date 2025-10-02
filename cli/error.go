@@ -122,22 +122,22 @@ type yamlParseError struct {
 }
 
 func (err *yamlParseError) Error() string {
-	var offset int
+	var index int
 	var message string
 	var pe *yaml.ParserError
 	var te *yaml.TypeError
 	if errors.As(err.err, &pe) {
-		offset, message = pe.Index, pe.Message
+		index, message = pe.Index, pe.Message
 	} else if errors.As(err.err, &te) {
 		var ue *yaml.UnmarshalError
 		for _, e := range te.Errors {
 			if errors.As(e, &ue) {
-				offset, message = ue.Index+1, ue.Err.Error()
+				index, message = ue.Index, ue.Err.Error()
 				break
 			}
 		}
 	}
-	linestr, line, column := getLineByOffset(err.contents, offset)
+	linestr, line, column := getLineByOffset(err.contents, index+1)
 	return fmt.Sprintf("invalid yaml: %s:%d\n%s  %s",
 		err.fname, line, formatLineInfo(linestr, line, column), message)
 }
