@@ -1,6 +1,7 @@
 package gojq_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"math/big"
@@ -56,6 +57,14 @@ func TestPreview(t *testing.T) {
 		},
 		{
 			new(big.Int).SetBytes([]byte("\x0c\x9f\x2c\x9c\xd0\x46\x74\xed\xea\x40\x00\x00\x00")),
+			"10000000000000000000000000 ...",
+		},
+		{
+			json.Number("42.0"),
+			"42.0",
+		},
+		{
+			json.Number("10000000000000000000000000000000000000000"),
 			"10000000000000000000000000 ...",
 		},
 		{

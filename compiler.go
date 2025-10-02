@@ -34,7 +34,6 @@ type Code struct {
 // a result iterator.
 //
 // It is safe to call this method in goroutines, to reuse a compiled [*Code].
-// But for arguments, do not give values sharing same data between goroutines.
 func (c *Code) Run(v any, values ...any) Iter {
 	return c.RunWithContext(context.Background(), v, values...)
 }
@@ -46,10 +45,7 @@ func (c *Code) RunWithContext(ctx context.Context, v any, values ...any) Iter {
 	} else if len(values) < len(c.variables) {
 		return NewIter(&expectedVariableError{c.variables[len(values)]})
 	}
-	for i, v := range values {
-		values[i] = normalizeNumbers(v)
-	}
-	return newEnv(ctx).execute(c, normalizeNumbers(v), values...)
+	return newEnv(ctx).execute(c, v, values...)
 }
 
 type scopeinfo struct {
@@ -160,7 +156,6 @@ func (c *compiler) compileImport(i *Import) error {
 		} else {
 			return fmt.Errorf("module not found: %q", path)
 		}
-		vals = normalizeNumbers(vals)
 		c.append(&code{op: oppush, v: vals})
 		c.append(&code{op: opstore, v: c.pushVariable(alias)})
 		c.append(&code{op: oppush, v: vals})
@@ -1218,7 +1213,7 @@ func (c *compiler) funcInput(any, []any) any {
 	if !ok {
 		return errors.New("break")
 	}
-	return normalizeNumbers(v)
+	return v
 }
 
 func (c *compiler) funcModulemeta(v any, _ []any) any {

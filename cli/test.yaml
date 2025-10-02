@@ -73,9 +73,13 @@
 - name: number input
   args:
     - '.'
-  input: '128'
+  input: '128 3.14 10.0 6.02e23 5e1000'
   expected: |
     128
+    3.14
+    10.0
+    6.02e23
+    5e1000
 
 - name: number query
   args:
@@ -335,6 +339,13 @@
   input: '{"foo": 4722366482869645213696}'
   expected: |
     4722366482869645213696
+
+- name: object indexing with floating-point number with trailing zeros
+  args:
+    - '.foo'
+  input: '{"foo": 100.000}'
+  expected: |
+    100.000
 
 - name: object indexing by keywords
   args:
@@ -918,6 +929,14 @@
       -1
     ]
 
+- name: unary operator with type function
+  args:
+    - '., -. | type'
+  input: '-100'
+  expected: |
+    "number"
+    "number"
+
 - name: object construction
   args:
     - -c
@@ -1277,7 +1296,7 @@
     0
     42
     42
-    0
+    0.0
     3.14
     3.14
     4722366482869645213696

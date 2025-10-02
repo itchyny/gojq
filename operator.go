@@ -1,6 +1,7 @@
 package gojq
 
 import (
+	"encoding/json"
 	"maps"
 	"math"
 	"math/big"
@@ -217,6 +218,12 @@ func binopTypeSwitch(
 	callbackArrays func(_, _ []any) any,
 	callbackMaps func(_, _ map[string]any) any,
 	fallback func(_, _ any) any) any {
+	if n, ok := l.(json.Number); ok {
+		l = parseNumber(n)
+	}
+	if n, ok := r.(json.Number); ok {
+		r = parseNumber(n)
+	}
 	switch l := l.(type) {
 	case int:
 		switch r := r.(type) {
@@ -285,6 +292,8 @@ func funcOpPlus(v any) any {
 		return v
 	case *big.Int:
 		return v
+	case json.Number:
+		return v
 	default:
 		return &unaryTypeError{"plus", v}
 	}
@@ -298,6 +307,11 @@ func funcOpNegate(v any) any {
 		return -v
 	case *big.Int:
 		return new(big.Int).Neg(v)
+	case json.Number:
+		if strings.HasPrefix(v.String(), "-") {
+			return v[1:]
+		}
+		return "-" + v
 	default:
 		return &unaryTypeError{"negate", v}
 	}

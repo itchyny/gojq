@@ -1,6 +1,7 @@
 package gojq_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"math/big"
@@ -24,10 +25,10 @@ func TestMarshal(t *testing.T) {
 		},
 		{
 			value: []any{
-				42, 3.14, 1e-6, 1e-7, -1e-9, 1e-10, math.NaN(), math.Inf(1), math.Inf(-1),
+				42, 3.14, 1e-6, 1e-7, -1e-9, 1e-10, math.NaN(), math.Inf(1), math.Inf(-1), json.Number("42.0"),
 				new(big.Int).SetBytes([]byte("\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff")),
 			},
-			expected: "[42,3.14,0.000001,1e-7,-1e-9,1e-10,null,1.7976931348623157e+308,-1.7976931348623157e+308,340282366920938463463374607431768211455]",
+			expected: "[42,3.14,0.000001,1e-7,-1e-9,1e-10,null,1.7976931348623157e+308,-1.7976931348623157e+308,42.0,340282366920938463463374607431768211455]",
 		},
 		{
 			value:    []any{"", "abcde", "foo\x00\x1f\r\n\t\f\b<=>!\"#$%'& \\\x7fbar"},
