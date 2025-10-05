@@ -89,9 +89,8 @@ clean:
 .PHONY: update
 update: export GOPROXY=direct
 update:
-	go get -u ./... && go mod tidy
-	go mod edit -modfile=go.dev.mod -droprequire=github.com/itchyny/{astgen,timefmt}-go
-	go get -u -modfile=go.dev.mod github.com/itchyny/{astgen,timefmt}-go && go generate
+	go get -u ./... && go get github.com/itchyny/go-yaml@gojq && go mod tidy
+	rm go.dev.sum && go get -u -modfile=go.dev.mod github.com/itchyny/{astgen,timefmt}-go && go generate
 
 .PHONY: bump
 bump: $(GOBIN)/gobump
