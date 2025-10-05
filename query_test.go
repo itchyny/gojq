@@ -67,7 +67,7 @@ func ExampleQuery_RunWithContext() {
 func TestQueryRun_Concurrently(t *testing.T) {
 	query, err := gojq.Parse(".foo")
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	v := map[string]any{"foo": 1}
 	var wg sync.WaitGroup
