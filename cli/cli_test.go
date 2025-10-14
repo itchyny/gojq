@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -18,6 +19,23 @@ func setLocation(loc *time.Location) func() {
 	orig := time.Local
 	time.Local = loc
 	return func() { time.Local = orig }
+}
+
+// This reader does not implement io.Seeker to emulate standard input.
+type stringReader string
+
+func newStringReader(s string) io.Reader {
+	r := stringReader(s)
+	return &r
+}
+
+func (r *stringReader) Read(b []byte) (n int, err error) {
+	n = copy(b, *r)
+	*r = (*r)[n:]
+	if len(*r) == 0 {
+		err = io.EOF
+	}
+	return
 }
 
 func TestCliRun(t *testing.T) {
@@ -61,7 +79,7 @@ func TestCliRun(t *testing.T) {
 			}()
 			var outStream, errStream strings.Builder
 			cli := cli{
-				inStream:  strings.NewReader(tc.Input),
+				inStream:  newStringReader(tc.Input),
 				outStream: &outStream,
 				errStream: &errStream,
 			}
