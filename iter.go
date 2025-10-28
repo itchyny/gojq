@@ -6,14 +6,14 @@ type Iter interface {
 }
 
 // NewIter creates a new [Iter] from values.
-func NewIter(values ...any) Iter {
+func NewIter[T any](values ...T) Iter {
 	switch len(values) {
 	case 0:
 		return emptyIter{}
 	case 1:
 		return &unitIter{value: values[0]}
 	default:
-		iter := sliceIter(values)
+		iter := sliceIter[T](values)
 		return &iter
 	}
 }
@@ -37,9 +37,9 @@ func (iter *unitIter) Next() (any, bool) {
 	return iter.value, true
 }
 
-type sliceIter []any
+type sliceIter[T any] []T
 
-func (iter *sliceIter) Next() (any, bool) {
+func (iter *sliceIter[T]) Next() (any, bool) {
 	if len(*iter) == 0 {
 		return nil, false
 	}

@@ -629,7 +629,7 @@ func TestWithIterFunction(t *testing.T) {
 			return gojq.NewIter(fmt.Errorf("g cannot be applied to: %v", xs))
 		}),
 		gojq.WithIterFunction("h", 0, 0, func(any, []any) gojq.Iter {
-			return gojq.NewIter()
+			return gojq.NewIter[any]()
 		}),
 	)
 	if err != nil {
@@ -659,7 +659,7 @@ func TestWithIterFunctionError(t *testing.T) {
 	}
 	code, err := gojq.Compile(query,
 		gojq.WithIterFunction("f", 0, 0, func(any, []any) gojq.Iter {
-			return gojq.NewIter(1, errors.New("error"), 3)
+			return gojq.NewIter[any](1, errors.New("error"), 3)
 		}),
 	)
 	if err != nil {
@@ -750,7 +750,7 @@ func TestWithIterFunctionPathEmpty(t *testing.T) {
 	}
 	code, err := gojq.Compile(query,
 		gojq.WithIterFunction("f", 0, 0, func(any, []any) gojq.Iter {
-			return gojq.NewIter()
+			return gojq.NewIter[any]()
 		}),
 	)
 	if err != nil {
@@ -838,7 +838,7 @@ func TestWithIterFunctionDefineError(t *testing.T) {
 			return 0
 		}),
 		gojq.WithIterFunction("f", 0, 0, func(any, []any) gojq.Iter {
-			return gojq.NewIter()
+			return gojq.NewIter[any]()
 		}),
 	))
 }
