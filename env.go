@@ -44,5 +44,6 @@ type fork struct {
 	scopelimit int
 	pathindex  int
 	pathlimit  int
+	offset     int
 	expdepth   int
 }

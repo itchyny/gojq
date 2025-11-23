@@ -238,8 +238,7 @@ loop:
 					callpc, saveindex = env.popscope()
 				}
 			} else {
-				saveindex, _ = env.scopes.save()
-				env.scopes.index = index
+				saveindex = env.scopes.index
 			}
 			if outerindex = index; outerindex >= 0 {
 				if s := env.scopes.data[outerindex].value; s.id == xs[0] {
@@ -377,7 +376,7 @@ func (env *env) popscope() (int, int) {
 }
 
 func (env *env) pushfork(pc int) {
-	f := fork{pc: pc, expdepth: env.expdepth}
+	f := fork{pc: pc, offset: env.offset, expdepth: env.expdepth}
 	f.stackindex, f.stacklimit = env.stack.save()
 	f.scopeindex, f.scopelimit = env.scopes.save()
 	f.pathindex, f.pathlimit = env.paths.save()
@@ -388,7 +387,8 @@ func (env *env) pushfork(pc int) {
 func (env *env) popfork() int {
 	f := env.forks[len(env.forks)-1]
 	env.debugForks(f.pc, "<<<")
-	env.forks, env.expdepth = env.forks[:len(env.forks)-1], f.expdepth
+	env.forks, env.offset, env.expdepth =
+		env.forks[:len(env.forks)-1], f.offset, f.expdepth
 	env.stack.restore(f.stackindex, f.stacklimit)
 	env.scopes.restore(f.scopeindex, f.scopelimit)
 	env.paths.restore(f.pathindex, f.pathlimit)
