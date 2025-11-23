@@ -43,7 +43,6 @@ func run(input, output string) error {
 	}
 	fds := make(map[string][]*gojq.FuncDef)
 	for _, fd := range q.FuncDefs {
-		fd.Minify()
 		fds[fd.Name] = append(fds[fd.Name], fd)
 	}
 	fds["_assign"] = nil

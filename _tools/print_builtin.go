@@ -21,7 +21,6 @@ func main() {
 	}
 	fds := make(map[string][]*gojq.FuncDef)
 	for _, fd := range q.FuncDefs {
-		fd.Minify()
 		fds[fd.Name] = append(fds[fd.Name], fd)
 	}
 	count := len(fds)
@@ -39,9 +38,6 @@ func main() {
 		q, err := gojq.Parse(sb.String())
 		if err != nil {
 			panic(fmt.Sprintf("%s: %s", err, sb.String()))
-		}
-		for _, fd := range q.FuncDefs {
-			fd.Minify()
 		}
 		if !reflect.DeepEqual(q.FuncDefs, fds[n]) {
 			fmt.Printf("failed: %s: %s %s\n", n, q.FuncDefs, fds[n])

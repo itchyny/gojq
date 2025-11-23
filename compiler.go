@@ -374,22 +374,7 @@ func (c *compiler) compileQuery(e *Query) error {
 			return err
 		}
 	}
-	if e.Func != "" {
-		switch e.Func {
-		case ".":
-			return c.compileTerm(&Term{Type: TermTypeIdentity})
-		case "..":
-			return c.compileTerm(&Term{Type: TermTypeRecurse})
-		case "null":
-			return c.compileTerm(&Term{Type: TermTypeNull})
-		case "true":
-			return c.compileTerm(&Term{Type: TermTypeTrue})
-		case "false":
-			return c.compileTerm(&Term{Type: TermTypeFalse})
-		default:
-			return c.compileFunc(&Func{Name: e.Func})
-		}
-	} else if e.Term != nil {
+	if e.Term != nil {
 		return c.compileTerm(e.Term)
 	}
 	switch e.Op {
@@ -524,7 +509,7 @@ func (c *compiler) compileQueryUpdate(l, r *Query, op Operator) error {
 							Name: op.getFunc(),
 							Args: []*Query{
 								{Term: &Term{Type: TermTypeIdentity}},
-								{Func: name},
+								{Term: &Term{Type: TermTypeFunc, Func: &Func{Name: name}}},
 							},
 						},
 					}},
