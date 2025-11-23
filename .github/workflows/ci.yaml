@@ -41,7 +41,7 @@ jobs:
       - name: Cross build
         run: make cross
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: goxz
           path: goxz
@@ -134,7 +134,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
       - name: Download artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: goxz
           path: goxz
