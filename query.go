@@ -26,8 +26,9 @@ type Query struct {
 	FuncDefs []*FuncDef
 	Term     *Term
 	Left     *Query
-	Op       Operator
 	Right    *Query
+	Patterns []*Pattern
+	Op       Operator
 }
 
 // Run the query.
@@ -69,13 +70,20 @@ func (e *Query) writeTo(s *strings.Builder) {
 		e.Term.writeTo(s)
 	} else if e.Right != nil {
 		e.Left.writeTo(s)
-		if e.Op == OpComma {
-			s.WriteString(", ")
-		} else {
-			s.WriteByte(' ')
-			s.WriteString(e.Op.String())
+		if e.Op != OpComma {
 			s.WriteByte(' ')
 		}
+		for i, p := range e.Patterns {
+			if i == 0 {
+				s.WriteString("as ")
+			} else {
+				s.WriteString("?// ")
+			}
+			p.writeTo(s)
+			s.WriteByte(' ')
+		}
+		s.WriteString(e.Op.String())
+		s.WriteByte(' ')
 		e.Right.writeTo(s)
 	}
 }
@@ -592,7 +600,6 @@ type Suffix struct {
 	Index    *Index
 	Iter     bool
 	Optional bool
-	Bind     *Bind
 }
 
 func (e *Suffix) String() string {
@@ -612,8 +619,6 @@ func (e *Suffix) writeTo(s *strings.Builder) {
 		s.WriteString("[]")
 	} else if e.Optional {
 		s.WriteByte('?')
-	} else if e.Bind != nil {
-		e.Bind.writeTo(s)
 	}
 }
 
@@ -632,34 +637,6 @@ func (e *Suffix) toIndices(xs []any) []any {
 		return nil
 	}
 	return e.Index.toIndices(xs)
-}
-
-// Bind ...
-type Bind struct {
-	Patterns []*Pattern
-	Body     *Query
-}
-
-func (e *Bind) String() string {
-	var s strings.Builder
-	e.writeTo(&s)
-	return s.String()
-}
-
-func (e *Bind) writeTo(s *strings.Builder) {
-	for i, p := range e.Patterns {
-		if i == 0 {
-			s.WriteString(" as ")
-			p.writeTo(s)
-			s.WriteByte(' ')
-		} else {
-			s.WriteString("?// ")
-			p.writeTo(s)
-			s.WriteByte(' ')
-		}
-	}
-	s.WriteString("| ")
-	e.Body.writeTo(s)
 }
 
 // If ...

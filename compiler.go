@@ -381,6 +381,9 @@ func (c *compiler) compileQuery(e *Query) error {
 	case Operator(0):
 		return errors.New(`missing query (try ".")`)
 	case OpPipe:
+		if len(e.Patterns) > 0 {
+			return c.compileBind(e.Left, e.Right, e.Patterns)
+		}
 		if err := c.compileQuery(e.Left); err != nil {
 			return err
 		}
@@ -519,19 +522,19 @@ func (c *compiler) compileQueryUpdate(l, r *Query, op Operator) error {
 	}
 }
 
-func (c *compiler) compileBind(e *Term, b *Bind) error {
+func (c *compiler) compileBind(l, r *Query, patterns []*Pattern) error {
 	defer c.newScopeDepth()()
 	c.append(&code{op: opdup})
 	c.append(&code{op: opexpbegin})
-	if err := c.compileTerm(e); err != nil {
+	if err := c.compileQuery(l); err != nil {
 		return err
 	}
 	var pc int
 	var vs [][2]int
-	for i, p := range b.Patterns {
+	for i, p := range patterns {
 		var pcc int
 		var err error
-		if i < len(b.Patterns)-1 {
+		if i < len(patterns)-1 {
 			defer c.lazy(func() *code {
 				return &code{op: opforkalt, v: pcc}
 			})()
@@ -545,22 +548,22 @@ func (c *compiler) compileBind(e *Term, b *Bind) error {
 		if vs, err = c.compilePattern(vs[:0], p); err != nil {
 			return err
 		}
-		if i < len(b.Patterns)-1 {
+		if i < len(patterns)-1 {
 			defer c.lazy(func() *code {
 				return &code{op: opjump, v: pc}
 			})()
 			pcc = len(c.codes)
 		}
 	}
-	if len(b.Patterns) > 1 {
+	if len(patterns) > 1 {
 		pc = len(c.codes)
 	}
-	if len(b.Patterns) == 1 && c.codes[len(c.codes)-2].op == opexpbegin {
+	if len(patterns) == 1 && c.codes[len(c.codes)-2].op == opexpbegin {
 		c.codes[len(c.codes)-2].op = opnop
 	} else {
 		c.append(&code{op: opexpend})
 	}
-	return c.compileQuery(b.Body)
+	return c.compileQuery(r)
 }
 
 func (c *compiler) compilePattern(vs [][2]int, p *Pattern) ([][2]int, error) {
@@ -1516,8 +1519,6 @@ func (c *compiler) compileTermSuffix(e *Term, s *Suffix) error {
 			}
 		}
 		return c.compileTry(&Try{Body: &Query{Term: e}})
-	} else if s.Bind != nil {
-		return c.compileBind(e, s.Bind)
 	} else {
 		return fmt.Errorf("invalid suffix: %s", s)
 	}

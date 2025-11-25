@@ -937,6 +937,22 @@
     "number"
     "number"
 
+- name: arithmetic operator with variable binding
+  args:
+    - '1 + 2 as $x | -$x'
+  input: 'null'
+  expected: |
+    -3
+
+- name: alternative operator with variable binding
+  args:
+    - 'true // 1 as $x | [$x]'
+  input: 'null'
+  expected: |
+    [
+      true
+    ]
+
 - name: object construction
   args:
     - -c

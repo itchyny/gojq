@@ -151,11 +151,9 @@ query
     {
         $$ = &Query{Left: $1.(*Query), Op: OpPipe, Right: $3.(*Query)}
     }
-    | term tokAs bindpatterns '|' query
+    | query tokAs bindpatterns '|' query
     {
-        term := $1.(*Term)
-        term.SuffixList = append(term.SuffixList, &Suffix{Bind: &Bind{$3.([]*Pattern), $5.(*Query)}})
-        $$ = &Query{Term: term}
+        $$ = &Query{Left: $1.(*Query), Op: OpPipe, Right: $5.(*Query), Patterns: $3.([]*Pattern)}
     }
     | tokLabel tokVariable '|' query
     {
