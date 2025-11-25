@@ -1177,16 +1177,16 @@ func sliceString(v string, e, s any) any {
 	return v[start:end]
 }
 
-func clampIndex(i, min, max int) int {
+func clampIndex(i, minimum, maximum int) int {
 	if i < 0 {
-		i += max
+		i += maximum
 	}
-	if i < min {
-		return min
-	} else if i < max {
+	if i < minimum {
+		return minimum
+	} else if i < maximum {
 		return i
 	} else {
-		return max
+		return maximum
 	}
 }
 
