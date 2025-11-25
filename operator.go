@@ -156,19 +156,15 @@ func (op Operator) GoString() (str string) {
 
 func (op Operator) getFunc() string {
 	switch op {
-	case OpPipe:
-		panic("unreachable")
-	case OpComma:
-		panic("unreachable")
-	case OpAdd:
+	case OpAdd, OpUpdateAdd:
 		return "_add"
-	case OpSub:
+	case OpSub, OpUpdateSub:
 		return "_subtract"
-	case OpMul:
+	case OpMul, OpUpdateMul:
 		return "_multiply"
-	case OpDiv:
+	case OpDiv, OpUpdateDiv:
 		return "_divide"
-	case OpMod:
+	case OpMod, OpUpdateMod:
 		return "_modulo"
 	case OpEq:
 		return "_equal"
@@ -182,26 +178,10 @@ func (op Operator) getFunc() string {
 		return "_greatereq"
 	case OpLe:
 		return "_lesseq"
-	case OpAnd:
-		panic("unreachable")
-	case OpOr:
-		panic("unreachable")
-	case OpAlt:
-		panic("unreachable")
 	case OpAssign:
 		return "_assign"
 	case OpModify:
 		return "_modify"
-	case OpUpdateAdd:
-		return "_add"
-	case OpUpdateSub:
-		return "_subtract"
-	case OpUpdateMul:
-		return "_multiply"
-	case OpUpdateDiv:
-		return "_divide"
-	case OpUpdateMod:
-		return "_modulo"
 	case OpUpdateAlt:
 		return "_alternative"
 	default:
