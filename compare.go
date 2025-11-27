@@ -1,6 +1,7 @@
 package gojq
 
 import (
+	"cmp"
 	"encoding/json"
 	"math"
 	"math/big"
@@ -11,8 +12,8 @@ import (
 // This comparison is used by built-in operators and functions.
 func Compare(l, r any) int {
 	return binopTypeSwitch(l, r,
-		compareInt,
-		func(l, r float64) any {
+		cmp.Compare,
+		func(l, r float64) int {
 			switch {
 			case l < r || math.IsNaN(l):
 				return -1
@@ -22,28 +23,17 @@ func Compare(l, r any) int {
 				return 1
 			}
 		},
-		func(l, r *big.Int) any {
-			return l.Cmp(r)
-		},
-		func(l, r string) any {
-			switch {
-			case l < r:
-				return -1
-			case l == r:
-				return 0
-			default:
-				return 1
-			}
-		},
-		func(l, r []any) any {
+		(*big.Int).Cmp,
+		cmp.Compare,
+		func(l, r []any) int {
 			for i := range min(len(l), len(r)) {
 				if cmp := Compare(l[i], r[i]); cmp != 0 {
 					return cmp
 				}
 			}
-			return compareInt(len(l), len(r))
+			return cmp.Compare(len(l), len(r))
 		},
-		func(l, r map[string]any) any {
+		func(l, r map[string]any) int {
 			lk, rk := funcKeys(l), funcKeys(r)
 			if cmp := Compare(lk, rk); cmp != 0 {
 				return cmp
@@ -55,21 +45,10 @@ func Compare(l, r any) int {
 			}
 			return 0
 		},
-		func(l, r any) any {
-			return compareInt(typeIndex(l), typeIndex(r))
+		func(l, r any) int {
+			return cmp.Compare(typeIndex(l), typeIndex(r))
 		},
-	).(int)
-}
-
-func compareInt(l, r int) any {
-	switch {
-	case l < r:
-		return -1
-	case l == r:
-		return 0
-	default:
-		return 1
-	}
+	)
 }
 
 func typeIndex(v any) int {

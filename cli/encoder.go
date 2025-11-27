@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"cmp"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -34,11 +35,7 @@ func (e *encoder) flush() error {
 
 func (e *encoder) marshal(v any, w io.Writer) error {
 	e.out = w
-	err := e.encode(v)
-	if ferr := e.flush(); ferr != nil && err == nil {
-		err = ferr
-	}
-	return err
+	return cmp.Or(e.encode(v), e.flush())
 }
 
 func (e *encoder) encode(v any) error {

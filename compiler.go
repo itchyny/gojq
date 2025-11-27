@@ -1663,7 +1663,7 @@ L:
 					} else {
 						code.op = opcallrec
 					}
-					continue L
+					fallthrough
 				default:
 					continue L
 				}

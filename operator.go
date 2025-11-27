@@ -189,15 +189,15 @@ func (op Operator) getFunc() string {
 	}
 }
 
-func binopTypeSwitch(
+func binopTypeSwitch[T any](
 	l, r any,
-	callbackInts func(_, _ int) any,
-	callbackFloats func(_, _ float64) any,
-	callbackBigInts func(_, _ *big.Int) any,
-	callbackStrings func(_, _ string) any,
-	callbackArrays func(_, _ []any) any,
-	callbackMaps func(_, _ map[string]any) any,
-	fallback func(_, _ any) any) any {
+	callbackInts func(_, _ int) T,
+	callbackFloats func(_, _ float64) T,
+	callbackBigInts func(_, _ *big.Int) T,
+	callbackStrings func(_, _ string) T,
+	callbackArrays func(_, _ []any) T,
+	callbackMaps func(_, _ map[string]any) T,
+	fallback func(_, _ any) T) T {
 	if n, ok := l.(json.Number); ok {
 		l = parseNumber(n)
 	}

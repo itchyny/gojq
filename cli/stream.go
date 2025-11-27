@@ -82,8 +82,6 @@ func (s *jsonStream) next() (any, error) {
 				}
 				s.states[len(s.states)-1] = jsonStateObjectEnd
 				return []any{s.copyPath()}, nil
-			default:
-				panic(d)
 			}
 		} else {
 			switch s.states[len(s.states)-1] {
