@@ -3034,17 +3034,24 @@
   args:
     - -c
     - '.[] / .[]'
-  input: '["abc", "a", "b"]'
+  input: '["abc", "a", "b", ""]'
   expected: |
     ["",""]
     ["a"]
     ["b"]
+    []
     ["","bc"]
     ["",""]
     ["b"]
+    []
     ["a","c"]
     ["a"]
     ["",""]
+    []
+    ["a","b","c"]
+    ["a"]
+    ["b"]
+    []
 
 - name: add and subtract arrays
   args:
@@ -6984,6 +6991,17 @@
     - --monochrome-output
     - '.'
   input: '{"foo":42}'
+  expected: |
+    {
+      "foo": 42
+    }
+
+- name: NO_COLOR environment variable
+  args:
+    - '.'
+  input: '{"foo":42}'
+  env:
+    - NO_COLOR=1
   expected: |
     {
       "foo": 42
