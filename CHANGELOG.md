@@ -1,4 +1,18 @@
 # Changelog
+## [v0.12.18](https://github.com/itchyny/gojq/compare/v0.12.17..v0.12.18) (2025-12-02)
+* implement `trimstr/1`, `toboolean/0` function
+* fix `last/1` to be included in `builtins/0`
+* fix `--indent 0` to preserve newlines
+* fix string repetition to emit error when the result is too large
+* increase the array index limit to 536870912 (`2^29`)
+* stop numeric normalization for concurrent execution (see 1ace748d08df)
+* support binding expressions with binary operators  (`1 + 2 as $x | -$x`)
+* improve `gojq.NewIter` to be a generic function
+* improve logic for getting file contents on JSON parse error
+* improve JSON parsing to preserve the precision of floating-point numbers
+* improve YAML parsing performance and preserve the precision of large integers
+* improve performance and reduce memory allocation of long-running queries
+
 ## [v0.12.17](https://github.com/itchyny/gojq/compare/v0.12.16..v0.12.17) (2024-12-01)
 * implement `add/1`, `skip/2` functions
 * implement `--library-path` option as the alias of `-L` option
