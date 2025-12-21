@@ -56,7 +56,7 @@ gojq: invalid json: <stdin>
 brew install gojq
 ```
 
-### Using [mise](https://github.com/jdx/mise)
+### Using mise-en-place
 ```sh
 mise use -g gojq@latest
 ```
