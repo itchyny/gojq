@@ -19,6 +19,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/itchyny/go-yaml"
 	"github.com/itchyny/timefmt-go"
 )
 
@@ -85,6 +86,8 @@ func init() {
 		"ascii_upcase":   argFunc0(funcASCIIUpcase),
 		"tojson":         argFunc0(funcToJSON),
 		"fromjson":       argFunc0(funcFromJSON),
+		"toyaml":         argFunc0(funcToYAML),
+		"fromyaml":       argFunc0(funcFromYAML),
 		"format":         argFunc1(funcFormat),
 		"_tohtml":        argFunc0(funcToHTML),
 		"_touri":         argFunc0(funcToURI),
@@ -871,6 +874,14 @@ func funcToJSON(v any) any {
 	return jsonMarshal(v)
 }
 
+func funcToYAML(v any) any {
+	s, err := yamlMarshal(v)
+	if err != nil {
+		return &func0WrapError{"toyaml", v, err}
+	}
+	return s
+}
+
 func funcFromJSON(v any) any {
 	s, ok := v.(string)
 	if !ok {
@@ -884,6 +895,19 @@ func funcFromJSON(v any) any {
 	}
 	if _, err := dec.Token(); err != io.EOF {
 		return &func0TypeError{"fromjson", v}
+	}
+	return w
+}
+
+func funcFromYAML(v any) any {
+	s, ok := v.(string)
+	if !ok {
+		return &func0TypeError{"fromyaml", v}
+	}
+	var w any
+	dec := yaml.NewDecoder(strings.NewReader(s))
+	if err := dec.Decode(&w); err != nil {
+		return &func0WrapError{"fromyaml", v, err}
 	}
 	return w
 }
