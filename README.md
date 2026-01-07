@@ -56,6 +56,11 @@ gojq: invalid json: <stdin>
 brew install gojq
 ```
 
+### mise
+```sh
+mise use -g gojq@latest
+```
+
 ### Zero Install
 ```sh
 0install add gojq https://apps.0install.net/utils/gojq.xml
