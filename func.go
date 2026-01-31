@@ -814,7 +814,7 @@ func funcSplit(v any, args []any) any {
 	}
 	x, ok := args[0].(string)
 	if !ok {
-		return &func0TypeError{"split", x}
+		return &func0TypeError{"split", args[0]}
 	}
 	var ss []string
 	if len(args) == 1 {
@@ -1962,8 +1962,7 @@ func funcStrptime(v, x any) any {
 	if err != nil {
 		return &func1WrapError{"strptime", v, x, err}
 	}
-	var u time.Time
-	if t == u {
+	if t.Equal(time.Time{}) {
 		return &func1TypeError{"strptime", v, x}
 	}
 	return epochToArray(timeToEpoch(t), time.UTC)
@@ -2008,11 +2007,11 @@ func funcMatch(v, re, fs, testing any) any {
 	}
 	var flags string
 	if fs != nil {
-		v, ok := fs.(string)
+		var ok bool
+		flags, ok = fs.(string)
 		if !ok {
 			return &func2TypeError{name, v, re, fs}
 		}
-		flags = v
 	}
 	s, ok := v.(string)
 	if !ok {
