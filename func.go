@@ -1658,6 +1658,9 @@ func update(v any, path []any, n any, a allocator) (any, error) {
 func updateObject(v map[string]any, k string, path []any, n any, a allocator) (any, error) {
 	x, ok := v[k]
 	if !ok && n == struct{}{} {
+		if v == nil {
+			return nil, nil
+		}
 		return v, nil
 	}
 	u, err := update(x, path, n, a)
@@ -1678,6 +1681,9 @@ func updateArrayIndex(v []any, i int, path []any, n any, a allocator) (any, erro
 	var x any
 	if j := clampIndex(i, -1, len(v)); j < 0 {
 		if n == struct{}{} {
+			if v == nil {
+				return nil, nil
+			}
 			return v, nil
 		}
 		return nil, &arrayIndexNegativeError{i}
@@ -1686,6 +1692,9 @@ func updateArrayIndex(v []any, i int, path []any, n any, a allocator) (any, erro
 		x = v[i]
 	} else {
 		if n == struct{}{} {
+			if v == nil {
+				return nil, nil
+			}
 			return v, nil
 		}
 		if i >= 0x20000000 {
@@ -1735,6 +1744,9 @@ func updateArraySlice(v []any, m map[string]any, path []any, n any, a allocator)
 		end = len(v)
 	}
 	if start == end && n == struct{}{} {
+		if v == nil {
+			return nil, nil
+		}
 		return v, nil
 	}
 	u, err := update(v[start:end], path, n, a)

@@ -4864,6 +4864,17 @@
     {"x":[]}
     {}
 
+- name: delpaths function against null
+  args:
+    - 'delpaths([["a"]]), delpaths([["a","b"]]), delpaths([[0]]), delpaths([[-1]]), delpaths([[{start:1,end:2}]])'
+  input: 'null'
+  expected: |
+    null
+    null
+    null
+    null
+    null
+
 - name: delpaths function error
   args:
     - 'delpaths([{}])'
@@ -4991,6 +5002,17 @@
   input: '50000'
   expected: |
     []
+
+- name: del function against null
+  args:
+    - 'del(.a), del(.a.b), del(.[0]), del(.[-1]), del(.[1:2])'
+  input: 'null'
+  expected: |
+    null
+    null
+    null
+    null
+    null
 
 - name: assignment operator against object
   args:
