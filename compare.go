@@ -15,7 +15,7 @@ func Compare(l, r any) int {
 		cmp.Compare,
 		func(l, r float64) int {
 			switch {
-			case l < r || math.IsNaN(l):
+			case lt(l, r):
 				return -1
 			case l == r:
 				return 0
@@ -49,6 +49,10 @@ func Compare(l, r any) int {
 			return cmp.Compare(typeIndex(l), typeIndex(r))
 		},
 	)
+}
+
+func lt(l, r float64) bool {
+	return l < r || math.IsNaN(l)
 }
 
 func typeIndex(v any) int {

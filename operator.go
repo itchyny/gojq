@@ -422,16 +422,14 @@ func deepMergeObjects(l, r map[string]any) any {
 }
 
 func repeatString(s string, n float64) any {
-	if n < 0.0 || math.IsNaN(n) {
+	if lt(n, 0) {
 		return nil
 	}
-	if s == "" {
-		return ""
-	}
-	if n >= float64(math.MaxInt32/len(s)) {
+	c := int(min(n, math.MaxInt32))
+	if uint64(len(s))*uint64(c) >= math.MaxInt32 {
 		return &repeatStringTooLargeError{s, n}
 	}
-	return strings.Repeat(s, int(n))
+	return strings.Repeat(s, c)
 }
 
 func funcOpDiv(_, l, r any) any {
