@@ -1660,6 +1660,13 @@
   error: |
     flatten depth should not be negative: -1
 
+- name: flatten/1 function depth error with nan
+  args:
+    - 'flatten(nan)'
+  input: '[]'
+  error: |
+    flatten depth should not be negative: null
+
 - name: min, min_by, max, max_by functions
   args:
     - -c

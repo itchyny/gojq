@@ -1203,7 +1203,7 @@ func funcFlatten(v any, args []any) any {
 		if !ok {
 			return &func0TypeError{"flatten", args[0]}
 		}
-		if depth < 0 {
+		if lt(depth, 0) {
 			return &flattenDepthError{depth}
 		}
 	}
