@@ -1735,11 +1735,19 @@ func updateArraySlice(v []any, m map[string]any, path []any, n any, a allocator)
 		return nil, &expectedStartEndError{m}
 	}
 	var start, end int
-	if i, ok := toInt(s); ok {
-		start = clampIndex(i, 0, len(v))
+	if s != nil {
+		if i, ok := toInt(s); ok {
+			start = clampIndex(i, 0, len(v))
+		} else {
+			return nil, &arrayIndexNotNumberError{s}
+		}
 	}
-	if i, ok := toInt(e); ok {
-		end = clampIndex(i, start, len(v))
+	if e != nil {
+		if i, ok := toIntCeil(e); ok {
+			end = clampIndex(i, start, len(v))
+		} else {
+			return nil, &arrayIndexNotNumberError{e}
+		}
 	} else {
 		end = len(v)
 	}

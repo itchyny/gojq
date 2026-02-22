@@ -4822,6 +4822,13 @@
   error: |
     setpath([{"end":1,"start":0}]; 10) cannot be applied to []: expected an array but got: number (10)
 
+- name: setpath function error
+  args:
+    - 'setpath([{start:"x",end:2}]; [9])'
+  input: '[1,2,3]'
+  error: |
+    setpath([{"end":2,"start":"x"}]; [9]) cannot be applied to [1,2,3]: expected a number for indexing an array but got: string ("x")
+
 - name: delpaths function
   args:
     - -c
@@ -4888,6 +4895,13 @@
   input: '[]'
   error: |
     delpaths([["x"]]) cannot be applied to []: expected an object but got: array ([])
+
+- name: delpaths function error
+  args:
+    - 'delpaths([[{"start":1,"end":{}}]])'
+  input: '[1,2,3]'
+  error: |
+    delpaths([[{"end":{},"start":1}]]) cannot be applied to [1,2,3]: expected a number for indexing an array but got: object ({})
 
 - name: getpath function
   args:
