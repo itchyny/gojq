@@ -221,14 +221,6 @@ func (err *flattenDepthError) Error() string {
 	return "flatten depth should not be negative: " + Preview(err.v)
 }
 
-type joinTypeError struct {
-	v any
-}
-
-func (err *joinTypeError) Error() string {
-	return "join cannot be applied to an array including: " + typeErrorPreview(err.v)
-}
-
 type timeArrayError struct{}
 
 func (*timeArrayError) Error() string {

@@ -6,12 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"iter"
 	"maps"
 	"math"
 	"math/big"
 	"net/url"
 	"reflect"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -470,8 +472,12 @@ func funcAdd(v any) any {
 	if !ok {
 		return &func0TypeError{"add", v}
 	}
-	v = nil
-	for _, x := range vs {
+	return add(slices.Values(vs))
+}
+
+func add(xs iter.Seq[any]) any {
+	var v any
+	for x := range xs {
 		switch x := x.(type) {
 		case nil:
 			continue
@@ -1401,29 +1407,24 @@ func funcJoin(v, x any) any {
 	if len(vs) == 0 {
 		return ""
 	}
-	sep, ok := x.(string)
-	if len(vs) > 1 && !ok {
-		return &func1TypeError{"join", v, x}
-	}
-	ss := make([]string, len(vs))
-	for i, v := range vs {
-		switch v := v.(type) {
-		case nil:
-		case string:
-			ss[i] = v
-		case bool:
-			if v {
-				ss[i] = "true"
-			} else {
-				ss[i] = "false"
+	return add(func(yield func(any) bool) {
+		for i, v := range vs {
+			s := x
+			if i == 0 {
+				s = ""
 			}
-		case int, float64, *big.Int, json.Number:
-			ss[i] = jsonMarshal(v)
-		default:
-			return &joinTypeError{v}
+			if !yield(s) {
+				return
+			}
+			switch w := v.(type) {
+			case bool, int, float64, *big.Int, json.Number:
+				v = jsonMarshal(w)
+			}
+			if !yield(v) {
+				return
+			}
 		}
-	}
-	return strings.Join(ss, sep)
+	})
 }
 
 func funcSignificand(v float64) float64 {

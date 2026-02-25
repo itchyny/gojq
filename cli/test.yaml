@@ -2423,19 +2423,14 @@
   expected: |
     ",false,true,0,1,,a,b,abc"
 
-- name: join object order
-  args:
-    - 'join(",")'
-  input: '{"d":4, "c":3, "b":2, "a":1}'
-  expected: |
-    "1,2,3,4"
-
 - name: join function error item
   args:
     - 'try join(",") catch .'
-  input: '["1","2",[3,4,5]]'
+  input: '["1","2",[3,4,5]] [[]] [{}]'
   expected: |
-    "join cannot be applied to an array including: array ([3,4,5])"
+    "cannot add: string (\"1,2,\") and array ([3,4,5])"
+    "cannot add: string (\"\") and array ([])"
+    "cannot add: string (\"\") and object ({})"
 
 - name: join function error input
   args:
@@ -2448,6 +2443,27 @@
     "join(\",\") cannot be applied to: number (1)"
     "join(\",\") cannot be applied to: string (\"a\")"
 
+- name: join function null separator
+  args:
+    - 'join(null)'
+  input: '[] ["a"] ["a","b","c"] ["a",null,"b"] [null,null,null] [null]'
+  expected: |
+    ""
+    "a"
+    "abc"
+    "ab"
+    ""
+    ""
+
+- name: join function null elements
+  args:
+    - 'join(",")'
+  input: '[null] [null,null,null] ["a",null,"b"]'
+  expected: |
+    ""
+    ",,"
+    "a,,b"
+
 - name: join function non-string separator
   args:
     - '.[] | try join(1) catch .'
@@ -2455,7 +2471,7 @@
   expected: |
     ""
     "1"
-    "join(1) cannot be applied to: array ([1,2])"
+    "cannot add: string (\"1\") and number (1)"
 
 - name: ascii_downcase function
   args:
