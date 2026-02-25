@@ -288,7 +288,7 @@ func funcAbs(v any) any {
 		if v >= 0 {
 			return v
 		}
-		return -v
+		return negate(v)
 	case float64:
 		return math.Abs(v)
 	case *big.Int:
@@ -314,7 +314,7 @@ func funcLength(v any) any {
 		if v >= 0 {
 			return v
 		}
-		return -v
+		return negate(v)
 	case float64:
 		return math.Abs(v)
 	case *big.Int:
@@ -2184,7 +2184,7 @@ func toIntCeil(x any) (int, bool) {
 }
 
 func floatToInt(x float64) int {
-	if math.MinInt <= x && x <= math.MaxInt {
+	if math.MinInt <= x && x < math.MaxInt {
 		return int(x)
 	}
 	if x > 0 {
