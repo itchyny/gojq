@@ -1427,10 +1427,8 @@ func funcJoin(v, x any) any {
 }
 
 func funcSignificand(v float64) float64 {
-	if math.IsNaN(v) || math.IsInf(v, 0) || v == 0.0 {
-		return v
-	}
-	return math.Float64frombits((math.Float64bits(v) & 0x800fffffffffffff) | 0x3ff0000000000000)
+	frac, _ := math.Frexp(v)
+	return frac * 2
 }
 
 func funcExp10(v float64) float64 {
