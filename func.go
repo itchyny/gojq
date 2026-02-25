@@ -1511,7 +1511,7 @@ func funcIsnan(v any) any {
 
 func funcIsnormal(v any) any {
 	if v, ok := toFloat(v); ok {
-		e := math.Float64bits(v) & 0x7ff0000000000000 >> 52
+		e := (math.Float64bits(v) & 0x7ff0000000000000) >> 52
 		return 0 < e && e < 0x7ff
 	}
 	return false
