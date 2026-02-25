@@ -75,7 +75,7 @@ lint: $(GOBIN)/staticcheck
 	staticcheck -checks all -tags gojq_debug ./...
 
 $(GOBIN)/staticcheck:
-	go install honnef.co/go/tools/cmd/staticcheck@latest
+	go install honnef.co/go/tools/cmd/staticcheck@v0.6.1
 
 .PHONY: check-tools
 check-tools:
