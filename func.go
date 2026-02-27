@@ -170,8 +170,8 @@ func init() {
 		"copysign":       mathFunc2("copysign", math.Copysign),
 		"drem":           mathFunc2("drem", funcDrem),
 		"fdim":           mathFunc2("fdim", math.Dim),
-		"fmax":           mathFunc2("fmax", math.Max),
-		"fmin":           mathFunc2("fmin", math.Min),
+		"fmax":           mathFunc2("fmax", funcFmax),
+		"fmin":           mathFunc2("fmin", funcFmin),
 		"fmod":           mathFunc2("fmod", math.Mod),
 		"hypot":          mathFunc2("hypot", math.Hypot),
 		"jn":             mathFunc2("jn", funcJn),
@@ -1450,6 +1450,9 @@ func funcModf(v any) any {
 	if !ok {
 		return &func0TypeError{"modf", v}
 	}
+	if math.IsInf(x, 0) {
+		return []any{math.Copysign(0, x), x}
+	}
 	i, f := math.Modf(x)
 	return []any{f, i}
 }
@@ -1465,6 +1468,26 @@ func funcDrem(l, r float64) float64 {
 		return math.Copysign(x, l)
 	}
 	return x
+}
+
+func funcFmax(l, r float64) float64 {
+	if math.IsNaN(l) {
+		return r
+	}
+	if math.IsNaN(r) {
+		return l
+	}
+	return max(l, r)
+}
+
+func funcFmin(l, r float64) float64 {
+	if math.IsNaN(l) {
+		return r
+	}
+	if math.IsNaN(r) {
+		return l
+	}
+	return min(l, r)
 }
 
 func funcJn(l, r float64) float64 {

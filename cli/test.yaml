@@ -4500,6 +4500,15 @@
     [[0,0],[0.5,-1],[-0.5,0],[0.5,1],[-0.75,1],[0.5,2],[0.78125,2]]
     [[0,0],[0.25,0],[-0.5,-0],[0,1],[-0.5,-1],[0,2],[0.125,3]]
 
+- name: modf against infinite
+  args:
+    - -c
+    - 'infinite, -infinite | modf'
+  input: 'null'
+  expected: |
+    [0,1.7976931348623157e+308]
+    [-0,-1.7976931348623157e+308]
+
 - name: log, log10, log1p, log2, logb functions
   args:
     - -c
@@ -4544,6 +4553,16 @@
     [0.125,0.5,0,0.25]
     [0.2,0.3,0.4,0.4]
     [0.1,0.2,0.1,0.3]
+
+- name: fdim/2, fmax/2, fmin/2 functions with nan
+  args:
+    - -c
+    - '[fdim(1,nan; 1,nan)], [fmax(1,nan; 1,nan)], [fmin(1,nan; 1,nan)]'
+  input: 'null'
+  expected: |
+    [0,null,null,null]
+    [1,1,1,null]
+    [1,1,1,null]
 
 - name: copysign/2, drem/2, fmod/2, remainder/2 functions
   args:
