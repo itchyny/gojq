@@ -6514,24 +6514,26 @@
 - name: split/2 function
   args:
     - -c
-    - 'split("a"), split("a+"), split("a+"; ""), split("a+"; "i")'
+    - 'split("a"), split("a+"), split("a+"; ""), split("a+"; "i"), split(""; "")'
   input: '"abaacaAad"'
   expected: |
     ["","b","","c","A","d"]
     ["abaacaAad"]
     ["","b","c","A","d"]
     ["","b","c","d"]
+    ["","a","b","a","a","c","a","A","a","d",""]
 
 - name: splits function
   args:
     - -c
-    - '[splits("a")], [splits("a+")], [splits("a+"; "")], [splits("a+"; "i")]'
+    - '[splits("a")], [splits("a+")], [splits("a+"; "")], [splits("a+"; "i")], [splits(""; "")]'
   input: '"abaacaAad"'
   expected: |
     ["","b","","c","A","d"]
     ["","b","c","A","d"]
     ["","b","c","A","d"]
     ["","b","c","d"]
+    ["","a","b","a","a","c","a","A","a","d",""]
 
 - name: sub function
   args:

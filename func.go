@@ -69,6 +69,7 @@ func init() {
 		"type":           argFunc0(funcType),
 		"reverse":        argFunc0(funcReverse),
 		"contains":       argFunc1(funcContains),
+		"inside":         argFunc1(funcInside),
 		"indices":        argFunc1(funcIndices),
 		"index":          argFunc1(funcIndex),
 		"rindex":         argFunc1(funcRindex),
@@ -82,7 +83,8 @@ func init() {
 		"trim":           argFunc0(funcTrim),
 		"explode":        argFunc0(funcExplode),
 		"implode":        argFunc0(funcImplode),
-		"split":          {argcount1 | argcount2, false, funcSplit},
+		"split":          argFunc1(funcSplit),
+		"join":           argFunc1(funcJoin),
 		"ascii_downcase": argFunc0(funcASCIIDowncase),
 		"ascii_upcase":   argFunc0(funcASCIIUpcase),
 		"tojson":         argFunc0(funcToJSON),
@@ -123,7 +125,6 @@ func init() {
 		"_group_by":      argFunc1(funcGroupBy),
 		"unique":         argFunc0(funcUnique),
 		"_unique_by":     argFunc1(funcUniqueBy),
-		"join":           argFunc1(funcJoin),
 		"sin":            mathFunc("sin", math.Sin),
 		"cos":            mathFunc("cos", math.Cos),
 		"tan":            mathFunc("tan", math.Tan),
@@ -624,6 +625,10 @@ func funcContains(v, x any) any {
 	)
 }
 
+func funcInside(v, x any) any {
+	return funcContains(x, v)
+}
+
 func funcIndices(v, x any) any {
 	return indexFunc("indices", v, x, indices)
 }
@@ -813,38 +818,49 @@ func funcImplode(v any) any {
 	return sb.String()
 }
 
-func funcSplit(v any, args []any) any {
+func funcSplit(v any, x any) any {
 	s, ok := v.(string)
 	if !ok {
 		return &func0TypeError{"split", v}
 	}
-	x, ok := args[0].(string)
+	t, ok := x.(string)
 	if !ok {
-		return &func0TypeError{"split", args[0]}
+		return &func0TypeError{"split", x}
 	}
-	var ss []string
-	if len(args) == 1 {
-		ss = strings.Split(s, x)
-	} else {
-		var flags string
-		if args[1] != nil {
-			v, ok := args[1].(string)
-			if !ok {
-				return &func0TypeError{"split", args[1]}
-			}
-			flags = v
-		}
-		r, err := compileRegexp(x, flags)
-		if err != nil {
-			return err
-		}
-		ss = r.Split(s, -1)
-	}
+	ss := strings.Split(s, t)
 	xs := make([]any, len(ss))
 	for i, s := range ss {
 		xs[i] = s
 	}
 	return xs
+}
+
+func funcJoin(v, x any) any {
+	vs, ok := values(v)
+	if !ok {
+		return &func1TypeError{"join", v, x}
+	}
+	if len(vs) == 0 {
+		return ""
+	}
+	return add(func(yield func(any) bool) {
+		for i, v := range vs {
+			s := x
+			if i == 0 {
+				s = ""
+			}
+			if !yield(s) {
+				return
+			}
+			switch w := v.(type) {
+			case bool, int, float64, *big.Int, json.Number:
+				v = jsonMarshal(w)
+			}
+			if !yield(v) {
+				return
+			}
+		}
+	})
 }
 
 func funcASCIIDowncase(v any) any {
@@ -1397,34 +1413,6 @@ func uniqueBy(name string, v, x any) any {
 		}
 	}
 	return rs
-}
-
-func funcJoin(v, x any) any {
-	vs, ok := values(v)
-	if !ok {
-		return &func1TypeError{"join", v, x}
-	}
-	if len(vs) == 0 {
-		return ""
-	}
-	return add(func(yield func(any) bool) {
-		for i, v := range vs {
-			s := x
-			if i == 0 {
-				s = ""
-			}
-			if !yield(s) {
-				return
-			}
-			switch w := v.(type) {
-			case bool, int, float64, *big.Int, json.Number:
-				v = jsonMarshal(w)
-			}
-			if !yield(v) {
-				return
-			}
-		}
-	})
 }
 
 func funcSignificand(v float64) float64 {

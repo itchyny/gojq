@@ -39,7 +39,6 @@ def nulls: select(. == null);
 def values: select(. != null);
 def scalars: select(type | . != "array" and . != "object");
 
-def inside(xs): . as $x | xs | contains($x);
 def combinations:
   if length == 0 then
     []
@@ -147,8 +146,11 @@ def scan($re; $flags):
   else
     [.captures[].string]
   end;
+def splits($re; $flags):
+  .[foreach (match($re; $flags + "g"), null) as {$offset, $length}
+      (null; {start: .next, end: $offset, next: $offset + $length})];
 def splits($re): splits($re; null);
-def splits($re; $flags): split($re; $flags)[];
+def split($re; $flags): [splits($re; $flags)];
 def sub($re; str): sub($re; str; null);
 def sub($re; str; $flags):
   . as $str |
