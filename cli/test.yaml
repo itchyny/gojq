@@ -3917,6 +3917,41 @@
     "[\"foo\"]"
     "{\"a\":[1,2,3]}"
 
+- name: toyaml function
+  args:
+    - 'toyaml'
+  input: |
+    null
+    false
+    true
+    42
+    "foo"
+    ["apple", "banana", "orange"]
+    {"name": "John", "age": 30}
+  expected: |
+    "null"
+    "false"
+    "true"
+    "42"
+    "foo"
+    "- apple\n- banana\n- orange"
+    "age: 30\nname: John"
+
+- name: toyaml function with nested structure
+  args:
+    - 'toyaml'
+  input: |
+    {"person": {"name": "Alice", "age": 25, "hobbies": ["reading", "coding"]}}
+  expected: |
+    "person:\n    age: 25\n    hobbies:\n        - reading\n        - coding\n    name: Alice"
+
+- name: toyaml function with large number
+  args:
+    - 'toyaml'
+  input: '{"number": 4722366482869645213696}'
+  expected: |
+    "number: 4722366482869645213696"
+
 - name: fromjson function
   args:
     - -c
@@ -3944,6 +3979,52 @@
   input: '"[0"'
   error: |
     fromjson cannot be applied to "[0": unexpected EOF
+
+- name: fromyaml function
+  args:
+    - -c
+    - 'fromyaml'
+  input: |
+    "null"
+    "false"
+    "true"
+    "42"
+    "foo"
+    "- apple\n- banana\n- orange"
+    "name: John\nage: 30"
+    "person:\n  name: Alice\n  age: 25\n  hobbies:\n    - reading\n    - coding"
+  expected: |
+    null
+    false
+    true
+    42
+    "foo"
+    ["apple","banana","orange"]
+    {"age":30,"name":"John"}
+    {"person":{"age":25,"hobbies":["reading","coding"],"name":"Alice"}}
+
+- name: fromyaml function with numbers
+  args:
+    - 'fromyaml'
+  input: '"number: 4722366482869645213696"'
+  expected: |
+    {
+      "number": 4722366482869645213696
+    }
+
+- name: fromyaml function error
+  args:
+    - 'fromyaml'
+  input: '"invalid: yaml: ["'
+  error: |
+    fromyaml cannot be applied to "invalid: yaml: [": yaml: line 1: mapping values are not allowed in this context
+
+- name: fromyaml function type error
+  args:
+    - 'fromyaml'
+  input: '123'
+  error: |
+    fromyaml cannot be applied to: number (123)
 
 - name: variable definition
   args:
