@@ -340,6 +340,40 @@ func TestCodeRun_Race(t *testing.T) {
 	wg.Wait()
 }
 
+func TestCodeRun_RaceRegexp(t *testing.T) {
+	query, err := gojq.Parse(`
+		"abcdefg" | test("cd"), split("e") | . == true or length > 0
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, err := gojq.Compile(query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var wg sync.WaitGroup
+	for range 10 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			iter := code.Run(nil)
+			for {
+				v, ok := iter.Next()
+				if !ok {
+					break
+				}
+				if err, ok := v.(error); ok {
+					t.Errorf("unexpected error: %v", err)
+				}
+				if v != true {
+					t.Errorf("expected: true, got: %v", v)
+				}
+			}
+		}()
+	}
+	wg.Wait()
+}
+
 func BenchmarkCompile(b *testing.B) {
 	cnt, err := os.ReadFile("builtin.jq")
 	if err != nil {

@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type compiler struct {
@@ -20,6 +21,7 @@ type compiler struct {
 	builtinScope  *scopeinfo
 	scopes        []*scopeinfo
 	scopecnt      int
+	regexpCache   sync.Map
 }
 
 // Code is a compiled jq query.
@@ -996,6 +998,13 @@ func (c *compiler) compileFunc(e *Func) error {
 			c.append(&code{op: opbacktrack})
 			setfork()
 			return nil
+		case "_match":
+			return c.compileCallInternal(
+				[3]any{c.funcMatch, len(e.Args), e.Name},
+				e.Args,
+				true,
+				-1,
+			)
 		default:
 			return c.compileCall(e.Name, e.Args)
 		}
@@ -1277,6 +1286,10 @@ func listModuleDeps(q *Query) []any {
 		deps[j] = v
 	}
 	return deps
+}
+
+func (c *compiler) funcMatch(v any, args []any) any {
+	return funcMatch(v, args[0], args[1], args[2], &c.regexpCache)
 }
 
 func (c *compiler) compileObject(e *Object) error {

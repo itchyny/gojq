@@ -17,6 +17,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -203,7 +204,7 @@ func init() {
 		"strflocaltime":  argFunc1(funcStrflocaltime),
 		"strptime":       argFunc1(funcStrptime),
 		"now":            argFunc0(funcNow),
-		"_match":         argFunc3(funcMatch),
+		"_match":         argFunc3(nil),
 		"_capture":       argFunc0(funcCapture),
 		"error":          {argcount0 | argcount1, false, funcError},
 		"halt":           argFunc0(funcHalt),
@@ -2030,10 +2031,12 @@ func funcNow(any) any {
 	return timeToEpoch(time.Now())
 }
 
-func funcMatch(v, re, fs, testing any) any {
-	name := "match"
+func funcMatch(v, re, fs, testing any, cache *sync.Map) any {
+	var name string
 	if testing == true {
 		name = "test"
+	} else {
+		name = "match"
 	}
 	var flags string
 	if fs != nil {
@@ -2051,22 +2054,20 @@ func funcMatch(v, re, fs, testing any) any {
 	if !ok {
 		return &func2TypeError{name, v, re, fs}
 	}
-	r, err := compileRegexp(restr, flags)
+	r, err := compileRegexp(restr, flags, cache)
 	if err != nil {
 		return err
 	}
-	var xs [][]int
-	if strings.ContainsRune(flags, 'g') && testing != true {
-		xs = r.FindAllStringSubmatchIndex(s, -1)
-	} else {
-		got := r.FindStringSubmatchIndex(s)
-		if testing == true {
-			return got != nil
-		}
-		if got != nil {
-			xs = [][]int{got}
-		}
+	if testing == true {
+		return r.MatchString(s)
 	}
+	var n int
+	if strings.ContainsRune(flags, 'g') {
+		n = -1
+	} else {
+		n = 1
+	}
+	xs := r.FindAllStringSubmatchIndex(s, n)
 	res, names := make([]any, len(xs)), r.SubexpNames()
 	for i, x := range xs {
 		captures := make([]any, (len(x)-2)/2)
@@ -2101,7 +2102,11 @@ func funcMatch(v, re, fs, testing any) any {
 	return res
 }
 
-func compileRegexp(re, flags string) (*regexp.Regexp, error) {
+func compileRegexp(re, flags string, cache *sync.Map) (*regexp.Regexp, error) {
+	key := [2]string{re, flags}
+	if r, ok := cache.Load(key); ok {
+		return r.(*regexp.Regexp), nil
+	}
 	if strings.IndexFunc(flags, func(r rune) bool {
 		return r != 'g' && r != 'i' && r != 'm'
 	}) >= 0 {
@@ -2117,6 +2122,7 @@ func compileRegexp(re, flags string) (*regexp.Regexp, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid regular expression %q: %s", re, err)
 	}
+	cache.Store(key, r)
 	return r, nil
 }
 
