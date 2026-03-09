@@ -205,7 +205,7 @@ func init() {
 		"strptime":       argFunc1(funcStrptime),
 		"now":            argFunc0(funcNow),
 		"_match":         argFunc3(nil),
-		"_capture":       argFunc0(funcCapture),
+		"_captures":      argFunc0(funcCaptures),
 		"error":          {argcount0 | argcount1, false, funcError},
 		"halt":           argFunc0(funcHalt),
 		"halt_error":     {argcount0 | argcount1, false, funcHaltError},
@@ -2126,12 +2126,7 @@ func compileRegexp(re, flags string, cache *sync.Map) (*regexp.Regexp, error) {
 	return r, nil
 }
 
-func funcCapture(v any) any {
-	vs, ok := v.(map[string]any)
-	if !ok {
-		return &expectedObjectError{v}
-	}
-	v = vs["captures"]
+func funcCaptures(v any) any {
 	captures, ok := v.([]any)
 	if !ok {
 		return &expectedArrayError{v}

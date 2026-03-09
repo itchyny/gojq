@@ -6537,7 +6537,7 @@
 
 - name: sub function
   args:
-    - 'sub("a"; "b"), sub("aaa"; "b"), sub("a"; "b","c"), sub("a(?<a>.)"; "\(.a)b\(.a)"; "ig"), sub("(?<foo>★)"; "\(.foo)☆\(.foo)"), sub("^"; "b")'
+    - 'sub("a"; "b"), sub("aaa"; "b"), sub("a"; "b","c"), sub("a(?<a>.)"; "\(.a)b\(.a)"; "ig"), sub("(?<foo>★)"; "\(.foo)☆\(.foo)"), sub("^"; "b"), sub("a"; empty)'
   input: '"abc☆★☆ABC"'
   expected: |
     "bbc☆★☆ABC"
@@ -6547,21 +6547,21 @@
     "bbbc☆★☆BbBC"
     "abc☆★☆★☆ABC"
     "babc☆★☆ABC"
+    "abc☆★☆ABC"
 
 - name: gsub function
   args:
-    - 'gsub("a"; "b"), gsub("a.c"; "b"), gsub("a"; "b","c"), gsub("a(?<a>..)"; "\(.a+.a)"; "i"), gsub("(?<foo>★)"; "\(.foo)☆\(.foo)"), gsub("^"; "a")'
+    - 'gsub("a"; "b"), gsub("a.c"; "b"), gsub("a"; "b","c"), gsub("a(?<a>..)"; "\(.a+.a)"; "i"), gsub("(?<foo>★)"; "\(.foo)☆\(.foo)"), gsub("^"; "a"), gsub("a"; empty)'
   input: '"abcABC☆★☆ABCabc"'
   expected: |
     "bbcABC☆★☆ABCbbc"
     "bABC☆★☆ABCb"
     "bbcABC☆★☆ABCbbc"
-    "cbcABC☆★☆ABCbbc"
-    "bbcABC☆★☆ABCcbc"
     "cbcABC☆★☆ABCcbc"
     "bcbcBCBC☆★☆BCBCbcbc"
     "abcABC☆★☆★☆ABCabc"
     "aabcABC☆★☆ABCabc"
+    "abcABC☆★☆ABCabc"
 
 - name: INDEX function
   args:
