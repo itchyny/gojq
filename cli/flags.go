@@ -27,6 +27,7 @@ func parseFlags(args []string, opts any) ([]string, error) {
 	}
 	mapKeys := map[string]struct{}{}
 	var positionalVal reflect.Value
+	var optsDone bool
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
 		var (
@@ -34,17 +35,13 @@ func parseFlags(args []string, opts any) ([]string, error) {
 			ok        bool
 			shortopts string
 		)
-		if arg == "--" {
-			if positionalVal.IsValid() {
-				for _, arg := range args[i+1:] {
-					positionalVal.Set(reflect.Append(positionalVal, reflect.ValueOf(arg)))
-				}
-			} else {
-				rest = append(rest, args[i+1:]...)
-			}
-			break
-		}
-		if strings.HasPrefix(arg, "--") {
+		switch {
+		case optsDone:
+			// Skip option parsing after `--`.
+		case arg == "--":
+			optsDone = true
+			continue
+		case strings.HasPrefix(arg, "--"):
 			if val, ok = longToValue[arg[2:]]; !ok {
 				if j := strings.IndexByte(arg, '='); j >= 0 {
 					if val, ok = longToValue[arg[2:j]]; ok {
@@ -60,7 +57,7 @@ func parseFlags(args []string, opts any) ([]string, error) {
 					return nil, fmt.Errorf("unknown flag `%s'", arg)
 				}
 			}
-		} else if len(arg) > 1 && arg[0] == '-' {
+		case len(arg) > 1 && arg[0] == '-':
 			var skip bool
 			for i := 1; i < len(arg); i++ {
 				opt := arg[i : i+1]
@@ -95,7 +92,7 @@ func parseFlags(args []string, opts any) ([]string, error) {
 				return nil, fmt.Errorf("expected argument for flag `%s'", arg)
 			}
 			val.SetString(args[i])
-		case reflect.Ptr:
+		case reflect.Pointer:
 			if val.Type().Elem().Kind() == reflect.Int {
 				if i++; i >= len(args) {
 					return nil, fmt.Errorf("expected argument for flag `%s'", arg)

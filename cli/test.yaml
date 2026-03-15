@@ -8649,14 +8649,15 @@
 
 - name: double dash with args option
   args:
+    - -c
     - --args
     - --
-    - 1
-    - 2
-    - 3
+    - $ARGS
+    - --
+    - 0
   input: '0'
   expected: |
-    0
+    {"named":{},"positional":["--","0"]}
 
 - name: $ARGS variable with jsonargs option
   args:
