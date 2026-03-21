@@ -819,7 +819,7 @@ func funcImplode(v any) any {
 	return sb.String()
 }
 
-func funcSplit(v any, x any) any {
+func funcSplit(v, x any) any {
 	s, ok := v.(string)
 	if !ok {
 		return &func0TypeError{"split", v}
