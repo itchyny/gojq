@@ -1,4 +1,19 @@
 # Changelog
+## [v0.12.19](https://github.com/itchyny/gojq/compare/v0.12.18..v0.12.19) (2026-04-01)
+* fix `gsub` and `sub` when the replacement emits multiple values
+* fix `fmax`, `fmin`, `modf` functions against NaN and infinities
+* fix `join/1` to use `add/0` implementation and handle null separator
+* fix `del` and `delpaths` on null to emit null
+* fix arithmetic operations on the minimum integer
+* fix `significand` function against subnormal numbers
+* fix handling of `--` in cli flag parsing for jq compatibility
+* fix `flatten/1` to emit error when the depth is NaN
+* fix array slice update to validate index types
+* fix string repetition boundary check to match jq behavior
+* implement `splits/2` using `match/2` for better jq compatibility
+* implement `to_entries` and `from_entries` in jq for simplicity
+* improve performance of regexp functions by caching compiled regexps
+
 ## [v0.12.18](https://github.com/itchyny/gojq/compare/v0.12.17..v0.12.18) (2025-12-02)
 * implement `trimstr/1`, `toboolean/0` function
 * fix `last/1` to be included in `builtins/0`
