@@ -61,8 +61,6 @@ func init() {
 		"utf8bytelength": argFunc0(funcUtf8ByteLength),
 		"keys":           argFunc0(funcKeys),
 		"has":            argFunc1(funcHas),
-		"to_entries":     argFunc0(funcToEntries),
-		"from_entries":   argFunc0(funcFromEntries),
 		"add":            argFunc0(funcAdd),
 		"toboolean":      argFunc0(funcToBoolean),
 		"tonumber":       argFunc0(funcToNumber),
@@ -410,63 +408,6 @@ func funcHas(v, x any) any {
 		return false
 	}
 	return &func1TypeError{"has", v, x}
-}
-
-func funcToEntries(v any) any {
-	switch v := v.(type) {
-	case []any:
-		w := make([]any, len(v))
-		for i, x := range v {
-			w[i] = map[string]any{"key": i, "value": x}
-		}
-		return w
-	case map[string]any:
-		w := make([]any, len(v))
-		for i, k := range keys(v) {
-			w[i] = map[string]any{"key": k, "value": v[k]}
-		}
-		return w
-	default:
-		return &func0TypeError{"to_entries", v}
-	}
-}
-
-func funcFromEntries(v any) any {
-	vs, ok := v.([]any)
-	if !ok {
-		return &func0TypeError{"from_entries", v}
-	}
-	w := make(map[string]any, len(vs))
-	for _, v := range vs {
-		switch v := v.(type) {
-		case map[string]any:
-			var (
-				key   string
-				value any
-				ok    bool
-			)
-			for _, k := range [4]string{"key", "Key", "name", "Name"} {
-				if k := v[k]; k != nil && k != false {
-					if key, ok = k.(string); !ok {
-						return &func0WrapError{"from_entries", vs, &objectKeyNotStringError{k}}
-					}
-					break
-				}
-			}
-			if !ok {
-				return &func0WrapError{"from_entries", vs, &objectKeyNotStringError{nil}}
-			}
-			for _, k := range [2]string{"value", "Value"} {
-				if value, ok = v[k]; ok {
-					break
-				}
-			}
-			w[key] = value
-		default:
-			return &func0TypeError{"from_entries", v}
-		}
-	}
-	return w
 }
 
 func funcAdd(v any) any {

@@ -1,11 +1,18 @@
-def not: if . then false else true end;
-def in(xs): . as $x | xs | has($x);
 def map(f): [.[] | f];
-def with_entries(f): to_entries | map(f) | from_entries;
+def add(f): [f] | add;
+def map_values(f): .[] |= f;
+def in(xs): . as $x | xs | has($x);
+def not: if . then false else true end;
 def select(f): if f then . else empty end;
+
 def recurse: recurse(.[]?);
 def recurse(f): def r: ., (f | r); r;
 def recurse(f; cond): def r: ., (f | select(cond) | r); r;
+
+def to_entries: [keys[] as $k | {key: $k, value: .[$k]}];
+def from_entries: map({ (.key // .Key // .name // .Name):
+  if has("value") then .value else .Value end }) | add // {};
+def with_entries(f): to_entries | map(f) | from_entries;
 
 def while(cond; update):
   def _while: if cond then ., (update | _while) else empty end;
@@ -20,7 +27,6 @@ def range($end): _range(0; $end; 1);
 def range($start; $end): _range($start; $end; 1);
 def range($start; $end; $step): _range($start; $end; $step);
 
-def add(f): [f] | add;
 def min_by(f): _min_by(map([f]));
 def max_by(f): _max_by(map([f]));
 def sort_by(f): _sort_by(map([f]));
@@ -46,6 +52,7 @@ def combinations:
     .[0][] as $x | [$x] + (.[1:] | combinations)
   end;
 def combinations(n): [limit(n; repeat(.))] | combinations;
+
 def walk(f):
   def _walk:
     if type == "array" then
@@ -66,6 +73,7 @@ def all(g; y): isempty(g | select(y | not));
 def any: any(.);
 def any(y): any(.[]; y);
 def any(g; y): isempty(g | select(y)) | not;
+
 def limit($n; g):
   if $n > 0 then
     label $out |
@@ -120,7 +128,6 @@ def tostream:
   getpath($p) |
   reduce path(.[]?) as $q ([$p, .]; [$p + $q]);
 
-def map_values(f): .[] |= f;
 def del(f): delpaths([path(f)]);
 def paths: path(..) | select(. != []);
 def paths(f): path(.. | select(f)) | select(. != []);

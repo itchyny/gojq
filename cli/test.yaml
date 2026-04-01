@@ -1502,8 +1502,17 @@
   args:
     - -c
     - 'from_entries'
-  input: '[{"key":"a","Key":"b","value":1},{"Key":"b","Value":2},{"key":null,"name":"c","Name":"d","value":3},{"name":false,"Name":"d","value":null,"Value":4},{"key":"e"}]'
+  input: |
+    []
+    [
+      {"key":"a","Key":"b","value":1},
+      {"Key":"b","Value":2},
+      {"key":null,"name":"c","Name":"d","value":3},
+      {"name":false,"Name":"d","value":null,"Value":4},
+      {"key":"e"}
+    ]
   expected: |
+    {}
     {"a":1,"b":2,"c":3,"d":null,"e":null}
 
 - name: from_entries function missing key
@@ -1511,14 +1520,14 @@
     - 'from_entries'
   input: '[{"value":1}]'
   error: |
-    from_entries cannot be applied to [{"value":1}]: expected a string for object key but got: null
+    expected a string for object key but got: null
 
 - name: from_entries function key type error
   args:
     - 'from_entries'
   input: '[{"key":{},"value":1}]'
   error: |
-    from_entries cannot be applied to [{"key":{},"value":1}]: expected a string for object key but got: object ({})
+    expected a string for object key but got: object ({})
 
 - name: with_entries function
   args:
