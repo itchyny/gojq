@@ -170,3 +170,72 @@ func TestGetLineByOffset(t *testing.T) {
 		})
 	}
 }
+
+func benchJQQuery(size int) string {
+	lines := []string{
+		"def map_values(f): [.[] | f];",
+		".[] | select(.age > 21) | {name, age}",
+		"if .status == \"active\" then .name else empty end",
+		"reduce .[] as $x (0; . + $x)",
+		"[.items[] | {key: .id, value: .count}] | from_entries",
+		"def walk(f): . as $in | if type == \"object\" then",
+		"  reduce keys_unsorted[] as $k ({}; . + {($k): ($in[$k] | walk(f))})",
+		"elif type == \"array\" then map(walk(f)) else f end;",
+	}
+	var sb strings.Builder
+	for sb.Len() < size {
+		sb.WriteString(lines[sb.Len()%len(lines)])
+		sb.WriteByte('\n')
+	}
+	return sb.String()[:size]
+}
+
+func benchJSONLines(size int) string {
+	line := `{"id":12345,"name":"Alice Johnson","active":true,"score":98.6,"tags":["admin","user"]}` + "\n"
+	var sb strings.Builder
+	for sb.Len() < size {
+		sb.WriteString(line)
+	}
+	return sb.String()[:size]
+}
+
+func benchYAML(size int) string {
+	entry := "- id: 42\n  name: Alice Johnson\n  active: true\n  address:\n    street: 123 Main St\n    city: Springfield\n"
+	var sb strings.Builder
+	for sb.Len() < size {
+		sb.WriteString(entry)
+	}
+	return sb.String()[:size]
+}
+
+func BenchmarkGetLineByOffset(b *testing.B) {
+	// queryParseError: jq source — inline arg or -f file, typically short.
+	// jsonParseError: ~16 KiB window (seekable) or full buffered stdin.
+	// yamlParseError: full file contents (no windowing).
+	query := benchJQQuery(2048)
+	jsonWindow := benchJSONLines(16 * 1024)
+	yamlFull := benchYAML(64 * 1024)
+	unicodeLine := "{\n  \"k\": \"" + strings.Repeat("０１２", 120) + "\",\n  \"x\": 1\n}"
+	cases := []struct {
+		name   string
+		str    string
+		offset int
+	}{
+		{"query_inline", ".foo | select(.x > 1)", 15},
+		{"query_2KiB_mid", query, len(query) / 2},
+		{"json_16KiB_mid", jsonWindow, len(jsonWindow) / 2},
+		{"json_16KiB_end", jsonWindow, len(jsonWindow)},
+		{"json_unicode", unicodeLine, strings.Index(unicodeLine, "０")},
+		{"yaml_64KiB_mid", yamlFull, len(yamlFull) / 2},
+		{"yaml_64KiB_end", yamlFull, len(yamlFull)},
+	}
+	for _, tc := range cases {
+		b.Run(tc.name, func(b *testing.B) {
+			b.ReportAllocs()
+			b.SetBytes(int64(len(tc.str)))
+			for b.Loop() {
+				getLineByOffset(tc.str, tc.offset)
+			}
+		})
+	}
+}
