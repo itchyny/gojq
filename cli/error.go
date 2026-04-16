@@ -9,8 +9,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/clipperhouse/displaywidth"
 	"github.com/itchyny/go-yaml"
-	"github.com/mattn/go-runewidth"
 
 	"github.com/itchyny/gojq"
 )
@@ -169,7 +169,7 @@ func getLineByOffset(str string, offset int) (linestr string, line, column int) 
 	} else {
 		offset = len(linestr)
 	}
-	column = runewidth.StringWidth(linestr[:offset])
+	column = displaywidth.String(linestr[:offset])
 	return
 }
 
