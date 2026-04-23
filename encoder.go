@@ -59,6 +59,10 @@ func (e *encoder) encode(v any) {
 		}
 	case int:
 		e.w.Write(strconv.AppendInt(e.buf[:0], int64(v), 10))
+	case int64:
+		e.w.Write(strconv.AppendInt(e.buf[:0], v, 10))
+	case int32:
+		e.w.Write(strconv.AppendInt(e.buf[:0], int64(v), 10))
 	case float64:
 		e.encodeFloat64(v)
 	case *big.Int:
