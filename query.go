@@ -2,6 +2,7 @@ package gojq
 
 import (
 	"context"
+	"fmt"
 	"strings"
 )
 
@@ -17,6 +18,17 @@ func Parse(src string) (*Query, error) {
 		return nil, l.err
 	}
 	return l.result, nil
+}
+
+// MustParse is like [Parse] but panics if the query cannot be parsed.
+// It is intended for use in global variable declarations, where a parse
+// failure indicates a programming error rather than a runtime condition.
+func MustParse(src string) *Query {
+	q, err := Parse(src)
+	if err != nil {
+		panic(fmt.Sprintf("gojq: MustParse(%q): %s", src, err))
+	}
+	return q
 }
 
 // Query represents the abstract syntax tree of a jq query.
