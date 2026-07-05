@@ -374,6 +374,46 @@ func TestCodeRun_RaceRegexp(t *testing.T) {
 	wg.Wait()
 }
 
+func TestCodeRun_RaceDelete(t *testing.T) {
+	query, err := gojq.Parse(`del(.a.b[0], .c.d.e)`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, err := gojq.Compile(query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	v := map[string]any{
+		"a": map[string]any{"b": []any{1, 2, 3}, "sibling": []any{1, 2, 3}},
+		"c": map[string]any{"d": map[string]any{"e": 5, "f": 6}, "sibling": []any{4, 5, 6}},
+	}
+	expected := map[string]any{
+		"a": map[string]any{"b": []any{2, 3}, "sibling": []any{1, 2, 3}},
+		"c": map[string]any{"d": map[string]any{"f": 6}, "sibling": []any{4, 5, 6}},
+	}
+	var wg sync.WaitGroup
+	for range 10 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			iter := code.Run(v)
+			got, ok := iter.Next()
+			if !ok {
+				t.Error("expected a value")
+				return
+			}
+			if err, ok := got.(error); ok {
+				t.Errorf("unexpected error: %v", err)
+				return
+			}
+			if !reflect.DeepEqual(got, expected) {
+				t.Errorf("expected: %#v, got: %#v", expected, got)
+			}
+		}()
+	}
+	wg.Wait()
+}
+
 func BenchmarkCompile(b *testing.B) {
 	cnt, err := os.ReadFile("builtin.jq")
 	if err != nil {

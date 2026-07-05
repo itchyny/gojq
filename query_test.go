@@ -87,6 +87,85 @@ func TestQueryRun_Concurrently(t *testing.T) {
 	wg.Wait()
 }
 
+func TestQueryRun_DeletePreservesInput(t *testing.T) {
+	testCases := []struct {
+		query    string
+		input    any
+		expected any
+	}{
+		{
+			query:    "delpaths([[1],[2]])",
+			input:    []any{0, 1, 2, 3},
+			expected: []any{0, 3},
+		},
+		{
+			query: "del(.a.b[2].d[0], .f[0].g[1])",
+			input: map[string]any{
+				"a": map[string]any{
+					"b": []any{1, 2, map[string]any{"c": 3, "d": []any{4, 5}}},
+					"e": 6,
+				},
+				"f": []any{
+					map[string]any{"g": []any{7, 8, 9}},
+					10,
+				},
+			},
+			expected: map[string]any{
+				"a": map[string]any{
+					"b": []any{1, 2, map[string]any{"c": 3, "d": []any{5}}},
+					"e": 6,
+				},
+				"f": []any{
+					map[string]any{"g": []any{7, 9}},
+					10,
+				},
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.query, func(t *testing.T) {
+			query, err := gojq.Parse(tc.query)
+			if err != nil {
+				t.Fatal(err)
+			}
+			original := deepCopyValue(tc.input)
+			iter := query.Run(tc.input)
+			got, ok := iter.Next()
+			if !ok {
+				t.Fatal("expected a value")
+			}
+			if err, ok := got.(error); ok {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(got, tc.expected) {
+				t.Errorf("expected: %#v, got: %#v", tc.expected, got)
+			}
+			if !reflect.DeepEqual(tc.input, original) {
+				t.Errorf("input was mutated: expected: %#v, got: %#v", original, tc.input)
+			}
+		})
+	}
+}
+
+func deepCopyValue(v any) any {
+	switch v := v.(type) {
+	case []any:
+		u := make([]any, len(v))
+		for i, x := range v {
+			u[i] = deepCopyValue(x)
+		}
+		return u
+	case map[string]any:
+		u := make(map[string]any, len(v))
+		for k, x := range v {
+			u[k] = deepCopyValue(x)
+		}
+		return u
+	default:
+		return v
+	}
+}
+
 func TestQueryRun_Errors(t *testing.T) {
 	query, err := gojq.Parse(".[] | error")
 	if err != nil {

@@ -1555,7 +1555,7 @@ func delpaths(v, p any, a allocator) any {
 			return &func1WrapError{"delpaths", v, p, err}
 		}
 	}
-	return deleteEmpty(u)
+	return deleteEmpty(u, a)
 }
 
 func update(v any, path []any, n any, a allocator) (any, error) {
@@ -1742,24 +1742,31 @@ func updateArraySlice(v []any, m map[string]any, path []any, n any, a allocator)
 	}
 }
 
-func deleteEmpty(v any) any {
+func deleteEmpty(v any, a allocator) any {
 	switch v := v.(type) {
 	case struct{}:
 		return nil
 	case map[string]any:
+		if a != nil && !a.allocated(v) {
+			// Not allocated by update, so it cannot contain a deleted path.
+			return v
+		}
 		for k, w := range v {
 			if w == struct{}{} {
 				delete(v, k)
 			} else {
-				v[k] = deleteEmpty(w)
+				v[k] = deleteEmpty(w, a)
 			}
 		}
 		return v
 	case []any:
+		if a != nil && !a.allocated(v) {
+			return v
+		}
 		var j int
 		for _, w := range v {
 			if w != struct{}{} {
-				v[j] = deleteEmpty(w)
+				v[j] = deleteEmpty(w, a)
 				j++
 			}
 		}
