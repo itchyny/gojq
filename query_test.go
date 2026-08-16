@@ -225,6 +225,42 @@ func TestQueryRun_InvalidPathError(t *testing.T) {
 	}
 }
 
+func TestQueryRun_InvalidPathIterError(t *testing.T) {
+	for _, tc := range []struct {
+		query    string
+		expected string
+	}{
+		{"path([][])", "invalid path on iterating against: array ([])"},
+		{"path([1][])", "invalid path on iterating against: array ([1])"},
+		{"path({}[])", "invalid path on iterating against: object ({})"},
+		{`path({"a":1}[])`, `invalid path on iterating against: object ({"a":1})`},
+	} {
+		query, err := gojq.Parse(tc.query)
+		if err != nil {
+			t.Fatal(err)
+		}
+		iter := query.Run(0)
+		n := 0
+		for {
+			v, ok := iter.Next()
+			if !ok {
+				break
+			}
+			if err, ok := v.(error); ok {
+				if err.Error() != tc.expected {
+					t.Errorf("expected: %v, got: %v", tc.expected, err)
+				}
+			} else {
+				t.Errorf("should emit an error but got: %v", v)
+			}
+			n++
+		}
+		if expected := 1; n != expected {
+			t.Errorf("expected: %v, got: %v", expected, n)
+		}
+	}
+}
+
 func TestQueryRun_IteratorError(t *testing.T) {
 	query, err := gojq.Parse(".[]")
 	if err != nil {

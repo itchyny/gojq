@@ -271,6 +271,7 @@ loop:
 			case []any:
 				if !env.paths.empty() && env.expdepth == 0 && !env.pathIntact(v) {
 					err = &invalidPathIterError{v}
+					env.push(emptyIter{})
 					break loop
 				}
 				if len(v) == 0 {
@@ -283,6 +284,7 @@ loop:
 			case map[string]any:
 				if !env.paths.empty() && env.expdepth == 0 && !env.pathIntact(v) {
 					err = &invalidPathIterError{v}
+					env.push(emptyIter{})
 					break loop
 				}
 				if len(v) == 0 {
