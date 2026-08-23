@@ -401,6 +401,62 @@ func TestQueryString(t *testing.T) {
 	}
 }
 
+func TestMustParse(t *testing.T) {
+	tests := []struct {
+		src      string
+		expected string
+	}{
+		{".foo", ".foo"},
+		{".foo | .bar", ".foo | .bar"},
+		{".[0]", ".[0]"},
+		{"empty", "empty"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.src, func(t *testing.T) {
+			q := gojq.MustParse(test.src)
+			if q == nil {
+				t.Fatal("expected non-nil query")
+			}
+			if got := q.String(); got != test.expected {
+				t.Errorf("expected: %q, got: %q", test.expected, got)
+			}
+		})
+	}
+}
+
+func TestMustParse_Panic(t *testing.T) {
+	tests := []struct {
+		src           string
+		panicContains string
+	}{
+		{"^", `gojq: MustParse("^"):`},
+		{".foo |", `gojq: MustParse(".foo |"):`},
+	}
+
+	for _, test := range tests {
+		t.Run(test.src, func(t *testing.T) {
+			defer func() {
+				r := recover()
+				if r == nil {
+					t.Fatal("expected panic but got none")
+				}
+
+				msg, ok := r.(string)
+				if !ok {
+					t.Fatalf("expected panic string, got %T: %v", r, r)
+				}
+
+				if !strings.Contains(msg, test.panicContains) {
+					t.Errorf("expected panic message to contain %q, got: %q", test.panicContains, msg)
+				}
+			}()
+
+			gojq.MustParse(test.src)
+		})
+	}
+}
+
 func BenchmarkRun(b *testing.B) {
 	query, err := gojq.Parse("range(1000)")
 	if err != nil {
