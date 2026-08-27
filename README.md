@@ -143,6 +143,7 @@ func main() {
       The `halt` function in jq not only stops the iteration, but also terminates the command execution, even if there are still input values.
       So, gojq leaves it up to the library user how to handle the halting error.
   - Note that the result iterator may emit infinite number of values; `repeat(0)` and `range(infinite)`. It may stuck with no output value; `def f: f; f`. Use `RunWithContext` when you want to limit the execution time.
+  - Note that a query may allocate a large amount of memory; `[range(1000000000)]`. Set [`gojq.MaxAlloc`](https://pkg.go.dev/github.com/itchyny/gojq#MaxAlloc) when you want to bound the total allocation of a single run; the run stops with an allocation error once the budget is exceeded. The default value `0` means unlimited.
 
 [`gojq.Compile`](https://pkg.go.dev/github.com/itchyny/gojq#Compile) allows to configure the following compiler options.
 

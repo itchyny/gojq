@@ -11,6 +11,18 @@ import (
 // The result will be 0 if l == r, -1 if l < r, and +1 if l > r.
 // This comparison is used by built-in operators and functions.
 func Compare(l, r any) int {
+	return compareDepth(l, r, 0)
+}
+
+// compareDepth is Compare with a recursion-depth bound. Compare recurses on
+// nested arrays and objects; a deeply nested value ( >= 16 bytes per level )
+// would overflow the goroutine stack ( a fatal crash ) inside sort, unique, min,
+// the comparison operators, etc. Past the depth a value already exceeds the
+// limit, so panic; the interpreter's Next recovers it.
+func compareDepth(l, r any, depth int) int {
+	if MaxAlloc > 0 && (int64(depth)*16 > MaxAlloc || depth > maxRecursionDepth) {
+		panic(&allocLimitError{})
+	}
 	return binopTypeSwitch(l, r,
 		cmp.Compare,
 		func(l, r float64) int {
@@ -27,7 +39,7 @@ func Compare(l, r any) int {
 		cmp.Compare,
 		func(l, r []any) int {
 			for i := range min(len(l), len(r)) {
-				if cmp := Compare(l[i], r[i]); cmp != 0 {
+				if cmp := compareDepth(l[i], r[i], depth+1); cmp != 0 {
 					return cmp
 				}
 			}
@@ -35,11 +47,11 @@ func Compare(l, r any) int {
 		},
 		func(l, r map[string]any) int {
 			lk, rk := funcKeys(l), funcKeys(r)
-			if cmp := Compare(lk, rk); cmp != 0 {
+			if cmp := compareDepth(lk, rk, depth+1); cmp != 0 {
 				return cmp
 			}
 			for _, k := range lk.([]any) {
-				if cmp := Compare(l[k.(string)], r[k.(string)]); cmp != 0 {
+				if cmp := compareDepth(l[k.(string)], r[k.(string)], depth+1); cmp != 0 {
 					return cmp
 				}
 			}

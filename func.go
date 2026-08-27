@@ -15,9 +15,9 @@ import (
 	"regexp"
 	"slices"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -330,7 +330,7 @@ func funcLength(v any) any {
 		}
 		return v[1:]
 	case string:
-		return len([]rune(v))
+		return utf8.RuneCountInString(v)
 	case []any:
 		return len(v)
 	case map[string]any:
@@ -351,12 +351,18 @@ func funcUtf8ByteLength(v any) any {
 func funcKeys(v any) any {
 	switch v := v.(type) {
 	case []any:
+		if arrayTooLarge(len(v)) {
+			return &allocLimitError{}
+		}
 		w := make([]any, len(v))
 		for i := range v {
 			w[i] = i
 		}
 		return w
 	case map[string]any:
+		if arrayTooLarge(len(v)) {
+			return &allocLimitError{}
+		}
 		w := make([]any, len(v))
 		for i, k := range keys(v) {
 			w[i] = k
@@ -378,18 +384,23 @@ func keys(v map[string]any) []string {
 	return w
 }
 
-func values(v any) ([]any, bool) {
+var errNotIterable = errors.New("not iterable")
+
+func values(v any) ([]any, error) {
 	switch v := v.(type) {
 	case []any:
-		return v, true
+		return v, nil
 	case map[string]any:
+		if arrayTooLarge(len(v)) {
+			return nil, &allocLimitError{}
+		}
 		vs := make([]any, len(v))
 		for i, k := range keys(v) {
 			vs[i] = v[k]
 		}
-		return vs, true
+		return vs, nil
 	default:
-		return nil, false
+		return nil, errNotIterable
 	}
 }
 
@@ -411,9 +422,12 @@ func funcHas(v, x any) any {
 }
 
 func funcAdd(v any) any {
-	vs, ok := values(v)
-	if !ok {
-		return &func0TypeError{"add", v}
+	vs, err := values(v)
+	if err != nil {
+		if err == errNotIterable {
+			return &func0TypeError{"add", v}
+		}
+		return err
 	}
 	return add(slices.Values(vs))
 }
@@ -433,26 +447,42 @@ func add(xs iter.Seq[any]) any {
 				continue
 			case *strings.Builder:
 				w.WriteString(x)
+				if MaxAlloc > 0 && int64(w.Len()) > MaxAlloc {
+					return &allocLimitError{}
+				}
 				continue
 			}
 		case []any:
 			switch w := v.(type) {
 			case nil:
+				if arrayTooLarge(len(x)) {
+					return &allocLimitError{}
+				}
 				s := make([]any, len(x))
 				copy(s, x)
 				v = s
 				continue
 			case []any:
-				v = append(w, x...)
+				w = append(w, x...)
+				if arrayTooLarge(len(w)) {
+					return &allocLimitError{}
+				}
+				v = w
 				continue
 			}
 		case map[string]any:
 			switch w := v.(type) {
 			case nil:
+				if MaxAlloc > 0 && int64(len(x))*24 > MaxAlloc {
+					return &allocLimitError{}
+				}
 				v = maps.Clone(x)
 				continue
 			case map[string]any:
 				maps.Copy(w, x)
+				if MaxAlloc > 0 && int64(len(w))*24 > MaxAlloc {
+					return &allocLimitError{}
+				}
 				continue
 			}
 		}
@@ -522,6 +552,9 @@ func funcReverse(v any) any {
 	if !ok {
 		return &func0TypeError{"reverse", v}
 	}
+	if arrayTooLarge(len(vs)) {
+		return &allocLimitError{}
+	}
 	ws := make([]any, len(vs))
 	for i, v := range vs {
 		ws[len(ws)-i-1] = v
@@ -530,6 +563,16 @@ func funcReverse(v any) any {
 }
 
 func funcContains(v, x any) any {
+	return containsDepth(v, x, 0)
+}
+
+// containsDepth is funcContains with a recursion-depth bound; contains/inside
+// recurse on nested arrays and objects, so a deeply nested value would overflow
+// the goroutine stack. Past the depth a value already exceeds the limit.
+func containsDepth(v, x any, depth int) any {
+	if MaxAlloc > 0 && (int64(depth)*16 > MaxAlloc || depth > maxRecursionDepth) {
+		panic(&allocLimitError{})
+	}
 	return binopTypeSwitch(v, x,
 		func(l, r int) any { return l == r },
 		func(l, r float64) any { return l == r },
@@ -539,7 +582,7 @@ func funcContains(v, x any) any {
 		R:
 			for _, r := range r {
 				for _, l := range l {
-					if funcContains(l, r) == true {
+					if containsDepth(l, r, depth+1) == true {
 						continue R
 					}
 				}
@@ -552,7 +595,7 @@ func funcContains(v, x any) any {
 				return false
 			}
 			for k, r := range r {
-				if l, ok := l[k]; !ok || funcContains(l, r) != true {
+				if l, ok := l[k]; !ok || containsDepth(l, r, depth+1) != true {
 					return false
 				}
 			}
@@ -571,6 +614,20 @@ func funcInside(v, x any) any {
 	return funcContains(x, v)
 }
 
+// matchAt reports whether xs equals the len(xs)-run of vs starting at i. It
+// compares element by element rather than reslicing vs on every position, which
+// boxed a fresh slice header into Compare each step and turned indices / index /
+// rindex over a large array into a big transient allocation ( tens of MB for one
+// match ). Elements are already interface values, so this allocates nothing.
+func matchAt(vs, xs []any, i int) bool {
+	for j := range xs {
+		if Compare(vs[i+j], xs[j]) != 0 {
+			return false
+		}
+	}
+	return true
+}
+
 func funcIndices(v, x any) any {
 	return indexFunc("indices", v, x, indices)
 }
@@ -581,8 +638,11 @@ func indices(vs, xs []any) any {
 		return rs
 	}
 	for i := range len(vs) - len(xs) + 1 {
-		if Compare(vs[i:i+len(xs)], xs) == 0 {
+		if matchAt(vs, xs, i) {
 			rs = append(rs, i)
+			if arrayTooLarge(len(rs)) {
+				return &allocLimitError{}
+			}
 		}
 	}
 	return rs
@@ -594,7 +654,7 @@ func funcIndex(v, x any) any {
 			return nil
 		}
 		for i := range len(vs) - len(xs) + 1 {
-			if Compare(vs[i:i+len(xs)], xs) == 0 {
+			if matchAt(vs, xs, i) {
 				return i
 			}
 		}
@@ -608,7 +668,7 @@ func funcRindex(v, x any) any {
 			return nil
 		}
 		for i := len(vs) - len(xs); i >= 0; i-- {
-			if Compare(vs[i:i+len(xs)], xs) == 0 {
+			if matchAt(vs, xs, i) {
 				return i
 			}
 		}
@@ -629,6 +689,9 @@ func indexFunc(name string, v, x any, f func(_, _ []any) any) any {
 		}
 	case string:
 		if x, ok := x.(string); ok {
+			if arrayTooLarge(utf8.RuneCountInString(v)) || arrayTooLarge(utf8.RuneCountInString(x)) {
+				return &allocLimitError{}
+			}
 			return f(explode(v), explode(x))
 		}
 		return &func1TypeError{name, v, x}
@@ -726,11 +789,14 @@ func funcExplode(v any) any {
 	if !ok {
 		return &func0TypeError{"explode", v}
 	}
+	if arrayTooLarge(utf8.RuneCountInString(s)) {
+		return &allocLimitError{}
+	}
 	return explode(s)
 }
 
 func explode(s string) []any {
-	xs := make([]any, len([]rune(s)))
+	xs := make([]any, utf8.RuneCountInString(s))
 	var i int
 	for _, r := range s {
 		xs[i] = int(r)
@@ -744,14 +810,32 @@ func funcImplode(v any) any {
 	if !ok {
 		return &func0TypeError{"implode", v}
 	}
+	// The input array remains live while strings.Builder validates and encodes
+	// every interface value. Builder growth can temporarily retain old and new
+	// backing buffers, and each rune can occupy four output bytes. Cap that whole
+	// decode/encode working set before starting it; the returned string is still
+	// charged normally by the opcode meter.
+	if implodeWorkingSetTooLarge(len(vs)) {
+		return &allocLimitError{}
+	}
 	var sb strings.Builder
-	sb.Grow(len(vs))
+	// Grow is only a capacity hint; cap it at the limit so a huge input array
+	// cannot force an upfront allocation past MaxAlloc before the per-rune check
+	// below has a chance to fire.
+	grow := len(vs)
+	if MaxAlloc > 0 && int64(grow) > MaxAlloc {
+		grow = int(MaxAlloc)
+	}
+	sb.Grow(grow)
 	for _, v := range vs {
 		if r, ok := toInt(v); ok {
 			if 0 <= r && r <= utf8.MaxRune {
 				sb.WriteRune(rune(r))
 			} else {
 				sb.WriteRune(utf8.RuneError)
+			}
+			if MaxAlloc > 0 && int64(sb.Len()) > MaxAlloc {
+				return &allocLimitError{}
 			}
 		} else {
 			return &func0TypeError{"implode", vs}
@@ -769,6 +853,9 @@ func funcSplit(v, x any) any {
 	if !ok {
 		return &func0TypeError{"split", x}
 	}
+	if arrayTooLarge(strings.Count(s, t) + 1) {
+		return &allocLimitError{}
+	}
 	ss := strings.Split(s, t)
 	xs := make([]any, len(ss))
 	for i, s := range ss {
@@ -778,9 +865,12 @@ func funcSplit(v, x any) any {
 }
 
 func funcJoin(v, x any) any {
-	vs, ok := values(v)
-	if !ok {
-		return &func1TypeError{"join", v, x}
+	vs, err := values(v)
+	if err != nil {
+		if err == errNotIterable {
+			return &func1TypeError{"join", v, x}
+		}
+		return err
 	}
 	if len(vs) == 0 {
 		return ""
@@ -832,7 +922,11 @@ func funcASCIIUpcase(v any) any {
 }
 
 func funcToJSON(v any) any {
-	return jsonMarshal(v)
+	s, err := marshalBounded(v)
+	if err != nil {
+		return err
+	}
+	return s
 }
 
 func funcFromJSON(v any) any {
@@ -843,7 +937,16 @@ func funcFromJSON(v any) any {
 	var w any
 	dec := json.NewDecoder(strings.NewReader(s))
 	dec.UseNumber()
-	if err := dec.Decode(&w); err != nil {
+	if MaxAlloc > 0 {
+		var size int64
+		var err error
+		if w, err = decodeJSONLimited(dec, &size, 0); err != nil {
+			if _, ok := err.(*allocLimitError); ok {
+				return err
+			}
+			return &func0WrapError{"fromjson", v, err}
+		}
+	} else if err := dec.Decode(&w); err != nil {
 		return &func0WrapError{"fromjson", v, err}
 	}
 	if _, err := dec.Token(); err != io.EOF {
@@ -876,7 +979,11 @@ var htmlEscaper = strings.NewReplacer(
 func funcToHTML(v any) any {
 	switch x := funcToString(v).(type) {
 	case string:
-		return htmlEscaper.Replace(x)
+		s, ok := boundedReplace(htmlEscaper.Replace, x)
+		if !ok {
+			return &allocLimitError{}
+		}
+		return s
 	default:
 		return x
 	}
@@ -885,7 +992,13 @@ func funcToHTML(v any) any {
 func funcToURI(v any) any {
 	switch x := funcToString(v).(type) {
 	case string:
-		return strings.ReplaceAll(url.QueryEscape(x), "+", "%20")
+		s, ok := boundedReplace(func(s string) string {
+			return strings.ReplaceAll(url.QueryEscape(s), "+", "%20")
+		}, x)
+		if !ok {
+			return &allocLimitError{}
+		}
+		return s
 	default:
 		return x
 	}
@@ -910,9 +1023,7 @@ var csvEscaper = strings.NewReplacer(
 )
 
 func funcToCSV(v any) any {
-	return formatJoin("csv", v, ",", func(s string) string {
-		return `"` + csvEscaper.Replace(s) + `"`
-	})
+	return formatJoin("csv", v, ",", `"`, csvEscaper.Replace)
 }
 
 var tsvEscaper = strings.NewReplacer(
@@ -924,7 +1035,7 @@ var tsvEscaper = strings.NewReplacer(
 )
 
 func funcToTSV(v any) any {
-	return formatJoin("tsv", v, "\t", tsvEscaper.Replace)
+	return formatJoin("tsv", v, "\t", "", tsvEscaper.Replace)
 }
 
 var shEscaper = strings.NewReplacer(
@@ -936,35 +1047,79 @@ func funcToSh(v any) any {
 	if _, ok := v.([]any); !ok {
 		v = []any{v}
 	}
-	return formatJoin("sh", v, " ", func(s string) string {
-		return "'" + shEscaper.Replace(s) + "'"
-	})
+	return formatJoin("sh", v, " ", "'", shEscaper.Replace)
 }
 
-func formatJoin(typ string, v any, sep string, escape func(string) string) any {
+func formatJoin(typ string, v any, sep, quote string, escape func(string) string) any {
 	vs, ok := v.([]any)
 	if !ok {
 		return &func0TypeError{"@" + typ, v}
 	}
+	if arrayTooLarge(len(vs)) {
+		return &allocLimitError{}
+	}
 	ss := make([]string, len(vs))
+	var total int64
 	for i, v := range vs {
 		switch v := v.(type) {
 		case []any, map[string]any:
 			return &formatRowError{typ, v}
 		case string:
-			ss[i] = escape(v)
+			s, ok := boundedReplace(escape, v)
+			if !ok {
+				return &allocLimitError{}
+			}
+			ss[i] = quote + s + quote
 		default:
-			if s := jsonMarshal(v); s != "null" || typ == "sh" {
+			s, err := marshalBounded(v)
+			if err != nil {
+				return err
+			}
+			if s != "null" || typ == "sh" {
 				ss[i] = s
+			}
+		}
+		if MaxAlloc > 0 {
+			if total += int64(len(ss[i])) + 16; total > MaxAlloc {
+				return &allocLimitError{}
 			}
 		}
 	}
 	return strings.Join(ss, sep)
 }
 
+// boundedReplace applies a single-byte-replacement escaper to s, stopping once
+// the escaped output would pass MaxAlloc. The csv/tsv/sh escapers each replace
+// one byte at a time, so escaping fixed-size chunks and concatenating gives the
+// same result as escaping the whole string, while never building more than the
+// limit before the check fires. A quote-heavy field that would expand to many
+// times its size is caught here instead of after it is fully materialized.
+func boundedReplace(escape func(string) string, s string) (string, bool) {
+	if MaxAlloc <= 0 {
+		return escape(s), true
+	}
+	const chunk = 1 << 16
+	if len(s) <= chunk {
+		out := escape(s)
+		return out, int64(len(out)) <= MaxAlloc
+	}
+	var b strings.Builder
+	for i := 0; i < len(s); i += chunk {
+		j := min(i+chunk, len(s))
+		b.WriteString(escape(s[i:j]))
+		if int64(b.Len()) > MaxAlloc {
+			return "", false
+		}
+	}
+	return b.String(), true
+}
+
 func funcToBase64(v any) any {
 	switch x := funcToString(v).(type) {
 	case string:
+		if MaxAlloc > 0 && int64(base64.StdEncoding.EncodedLen(len(x))) > MaxAlloc {
+			return &allocLimitError{}
+		}
 		return base64.StdEncoding.EncodeToString([]byte(x))
 	default:
 		return x
@@ -1053,7 +1208,7 @@ func index(vs []any, i int) any {
 }
 
 func indexString(s string, i int) any {
-	l := len([]rune(s))
+	l := utf8.RuneCountInString(s)
 	i = clampIndex(i, -1, l)
 	if 0 <= i && i < l {
 		for _, r := range s {
@@ -1101,7 +1256,7 @@ func slice(vs []any, e, s any) any {
 
 func sliceString(v string, e, s any) any {
 	var start, end int
-	l := len([]rune(v))
+	l := utf8.RuneCountInString(v)
 	if s != nil {
 		if i, ok := toInt(s); ok {
 			start = clampIndex(i, 0, l)
@@ -1154,15 +1309,28 @@ func clampIndex(i, minimum, maximum int) int {
 	}
 }
 
-func funcFlatten(v any, args []any) any {
-	vs, ok := values(v)
-	if !ok {
-		return &func0TypeError{"flatten", v}
+func funcFlatten(v any, args []any) (r any) {
+	defer func() {
+		if e := recover(); e != nil {
+			if _, ok := e.(*allocLimitError); ok {
+				r = &allocLimitError{}
+				return
+			}
+			panic(e)
+		}
+	}()
+	vs, err := values(v)
+	if err != nil {
+		if err == errNotIterable {
+			return &func0TypeError{"flatten", v}
+		}
+		return err
 	}
 	var depth float64
 	if len(args) == 0 {
 		depth = -1
 	} else {
+		var ok bool
 		depth, ok = toFloat(args[0])
 		if !ok {
 			return &func0TypeError{"flatten", args[0]}
@@ -1171,15 +1339,23 @@ func funcFlatten(v any, args []any) any {
 			return &flattenDepthError{depth}
 		}
 	}
-	return flatten([]any{}, vs, depth)
+	return flatten([]any{}, vs, depth, 0)
 }
 
-func flatten(xs, vs []any, depth float64) []any {
+func flatten(xs, vs []any, depth float64, rec int) []any {
+	// bound the Go recursion depth so a deeply nested array cannot overflow the
+	// goroutine stack; a value this deep already exceeds the limit.
+	if MaxAlloc > 0 && (int64(rec)*16 > MaxAlloc || rec > maxRecursionDepth) {
+		panic(&allocLimitError{})
+	}
 	for _, v := range vs {
 		if vs, ok := v.([]any); ok && depth != 0 {
-			xs = flatten(xs, vs, depth-1)
+			xs = flatten(xs, vs, depth-1, rec+1)
 		} else {
 			xs = append(xs, v)
+			if arrayTooLarge(len(xs)) {
+				panic(&allocLimitError{})
+			}
 		}
 	}
 	return xs
@@ -1287,6 +1463,12 @@ func sortItems(name string, v, x any) ([]*sortItem, error) {
 	if len(vs) != len(xs) {
 		return nil, &func1WrapError{name, v, x, &lengthMismatchError{}}
 	}
+	// Sorting holds an 8-byte pointer slice plus one 32-byte sortItem per input
+	// and then a 16-byte result slot per input. Preflight the unavoidable peak so
+	// a single call cannot allocate past MaxAlloc before its result is charged.
+	if MaxAlloc > 0 && int64(len(vs)) > MaxAlloc/56 {
+		return nil, &allocLimitError{}
+	}
 	items := make([]*sortItem, len(vs))
 	for i, v := range vs {
 		items[i] = &sortItem{v, xs[i]}
@@ -1309,6 +1491,9 @@ func sortBy(name string, v, x any) any {
 	items, err := sortItems(name, v, x)
 	if err != nil {
 		return err
+	}
+	if arrayTooLarge(len(items)) {
+		return &allocLimitError{}
 	}
 	rs := make([]any, len(items))
 	for i, x := range items {
@@ -1515,7 +1700,8 @@ func setpath(v, p, n any, a allocator) any {
 	if !ok {
 		return &func1TypeError{"setpath", v, p}
 	}
-	u, err := update(v, path, n, a)
+	var size int64
+	u, err := update(v, path, n, a, &size)
 	if err != nil {
 		return &func2WrapError{"setpath", v, p, n, err}
 	}
@@ -1544,13 +1730,14 @@ func delpaths(v, p any, a allocator) any {
 	//   jq -n "[0, 1, 2, 3] | delpaths([[1], [2]])" #=> [0, 3].
 	var empty struct{}
 	var err error
+	var size int64
 	u := v
 	for _, q := range paths {
 		path, ok := q.([]any)
 		if !ok {
 			return &func1WrapError{"delpaths", v, p, &expectedArrayError{q}}
 		}
-		u, err = update(u, path, empty, a)
+		u, err = update(u, path, empty, a, &size)
 		if err != nil {
 			return &func1WrapError{"delpaths", v, p, err}
 		}
@@ -1558,7 +1745,15 @@ func delpaths(v, p any, a allocator) any {
 	return deleteEmpty(u)
 }
 
-func update(v any, path []any, n any, a allocator) (any, error) {
+func update(v any, path []any, n any, a allocator, size *int64) (any, error) {
+	// update recurses once per path element ( updateObject/Index/Slice call back
+	// into update ), and the size counters only charge on the way UP - so a long
+	// path from input, which is not metered, would overflow the goroutine stack on
+	// the way DOWN before any charge fires. The path length is the recursion depth ,
+	// and a path this long builds a structure past the limit ( >= 16 bytes/level ).
+	if MaxAlloc > 0 && (int64(len(path))*16 > MaxAlloc || len(path) > maxRecursionDepth) {
+		return nil, &allocLimitError{}
+	}
 	if len(path) == 0 {
 		return n, nil
 	}
@@ -1566,9 +1761,9 @@ func update(v any, path []any, n any, a allocator) (any, error) {
 	case string:
 		switch v := v.(type) {
 		case nil:
-			return updateObject(nil, p, path[1:], n, a)
+			return updateObject(nil, p, path[1:], n, a, size)
 		case map[string]any:
-			return updateObject(v, p, path[1:], n, a)
+			return updateObject(v, p, path[1:], n, a, size)
 		case struct{}:
 			return v, nil
 		default:
@@ -1578,9 +1773,9 @@ func update(v any, path []any, n any, a allocator) (any, error) {
 		i, _ := toInt(p)
 		switch v := v.(type) {
 		case nil:
-			return updateArrayIndex(nil, i, path[1:], n, a)
+			return updateArrayIndex(nil, i, path[1:], n, a, size)
 		case []any:
-			return updateArrayIndex(v, i, path[1:], n, a)
+			return updateArrayIndex(v, i, path[1:], n, a, size)
 		case struct{}:
 			return v, nil
 		default:
@@ -1589,9 +1784,9 @@ func update(v any, path []any, n any, a allocator) (any, error) {
 	case map[string]any:
 		switch v := v.(type) {
 		case nil:
-			return updateArraySlice(nil, p, path[1:], n, a)
+			return updateArraySlice(nil, p, path[1:], n, a, size)
 		case []any:
-			return updateArraySlice(v, p, path[1:], n, a)
+			return updateArraySlice(v, p, path[1:], n, a, size)
 		case struct{}:
 			return v, nil
 		default:
@@ -1607,7 +1802,7 @@ func update(v any, path []any, n any, a allocator) (any, error) {
 	}
 }
 
-func updateObject(v map[string]any, k string, path []any, n any, a allocator) (any, error) {
+func updateObject(v map[string]any, k string, path []any, n any, a allocator, size *int64) (any, error) {
 	x, ok := v[k]
 	if !ok && n == struct{}{} {
 		if v == nil {
@@ -1615,7 +1810,7 @@ func updateObject(v map[string]any, k string, path []any, n any, a allocator) (a
 		}
 		return v, nil
 	}
-	u, err := update(x, path, n, a)
+	u, err := update(x, path, n, a, size)
 	if err != nil {
 		return nil, err
 	}
@@ -1623,13 +1818,18 @@ func updateObject(v map[string]any, k string, path []any, n any, a allocator) (a
 		v[k] = u
 		return v, nil
 	}
+	if MaxAlloc > 0 {
+		if *size += int64(len(v)+1)*24 + 16; *size > MaxAlloc {
+			return nil, &allocLimitError{}
+		}
+	}
 	w := a.makeObject(len(v) + 1)
 	maps.Copy(w, v)
 	w[k] = u
 	return w, nil
 }
 
-func updateArrayIndex(v []any, i int, path []any, n any, a allocator) (any, error) {
+func updateArrayIndex(v []any, i int, path []any, n any, a allocator, size *int64) (any, error) {
 	var x any
 	if j := clampIndex(i, -1, len(v)); j < 0 {
 		if n == struct{}{} {
@@ -1652,8 +1852,11 @@ func updateArrayIndex(v []any, i int, path []any, n any, a allocator) (any, erro
 		if i >= 0x20000000 {
 			return nil, &arrayIndexTooLargeError{i}
 		}
+		if MaxAlloc > 0 && int64(i+1)*16 > MaxAlloc {
+			return nil, &arrayIndexTooLargeError{i}
+		}
 	}
-	u, err := update(x, path, n, a)
+	u, err := update(x, path, n, a, size)
 	if err != nil {
 		return nil, err
 	}
@@ -1671,13 +1874,18 @@ func updateArrayIndex(v []any, i int, path []any, n any, a allocator) (any, erro
 	if i >= l {
 		l = i + 1
 	}
+	if MaxAlloc > 0 {
+		if *size += int64(l)*16 + 16; *size > MaxAlloc {
+			return nil, &allocLimitError{}
+		}
+	}
 	w := a.makeArray(l, c)
 	copy(w, v)
 	w[i] = u
 	return w, nil
 }
 
-func updateArraySlice(v []any, m map[string]any, path []any, n any, a allocator) (any, error) {
+func updateArraySlice(v []any, m map[string]any, path []any, n any, a allocator, size *int64) (any, error) {
 	s, ok := m["start"]
 	if !ok {
 		return nil, &expectedStartEndError{m}
@@ -1709,7 +1917,7 @@ func updateArraySlice(v []any, m map[string]any, path []any, n any, a allocator)
 		}
 		return v, nil
 	}
-	u, err := update(v[start:end], path, n, a)
+	u, err := update(v[start:end], path, n, a, size)
 	if err != nil {
 		return nil, err
 	}
@@ -1719,6 +1927,11 @@ func updateArraySlice(v []any, m map[string]any, path []any, n any, a allocator)
 		if len(u) == end-start && a.allocated(v) {
 			w = v
 		} else {
+			if MaxAlloc > 0 {
+				if *size += int64(len(v)-(end-start)+len(u))*16 + 16; *size > MaxAlloc {
+					return nil, &allocLimitError{}
+				}
+			}
 			w = a.makeArray(len(v)-(end-start)+len(u), 0)
 			copy(w, v[:start])
 			copy(w[start+len(u):], v[end:])
@@ -1730,6 +1943,11 @@ func updateArraySlice(v []any, m map[string]any, path []any, n any, a allocator)
 		if a.allocated(v) {
 			w = v
 		} else {
+			if MaxAlloc > 0 {
+				if *size += int64(len(v))*16 + 16; *size > MaxAlloc {
+					return nil, &allocLimitError{}
+				}
+			}
 			w = a.makeArray(len(v), 0)
 			copy(w, v)
 		}
@@ -1743,6 +1961,17 @@ func updateArraySlice(v []any, m map[string]any, path []any, n any, a allocator)
 }
 
 func deleteEmpty(v any) any {
+	return deleteEmptyDepth(v, 0)
+}
+
+// deleteEmptyDepth is deleteEmpty with a recursion-depth bound. delpaths walks
+// the whole result to strip empty markers, recursing on nesting; a deeply nested
+// sibling would overflow the goroutine stack. Past the depth the value already
+// exceeds the limit ; the interpreter's Next recovers the panic.
+func deleteEmptyDepth(v any, depth int) any {
+	if MaxAlloc > 0 && (int64(depth)*16 > MaxAlloc || depth > maxRecursionDepth) {
+		panic(&allocLimitError{})
+	}
 	switch v := v.(type) {
 	case struct{}:
 		return nil
@@ -1751,7 +1980,7 @@ func deleteEmpty(v any) any {
 			if w == struct{}{} {
 				delete(v, k)
 			} else {
-				v[k] = deleteEmpty(w)
+				v[k] = deleteEmptyDepth(w, depth+1)
 			}
 		}
 		return v
@@ -1759,7 +1988,7 @@ func deleteEmpty(v any) any {
 		var j int
 		for _, w := range v {
 			if w != struct{}{} {
-				v[j] = deleteEmpty(w)
+				v[j] = deleteEmptyDepth(w, depth+1)
 				j++
 			}
 		}
@@ -1809,6 +2038,9 @@ func funcTranspose(v any) any {
 		if k := len(vs); l < k {
 			l = k
 		}
+	}
+	if MaxAlloc > 0 && int64(l)*int64(len(vss))*16 > MaxAlloc {
+		return &allocLimitError{}
 	}
 	wss := make([][]any, l)
 	xs := make([]any, l)
@@ -1883,6 +2115,20 @@ func timeToEpoch(t time.Time) float64 {
 	return float64(t.Unix()) + float64(t.Nanosecond())/1e9
 }
 
+// boundedStrftime formats t with format but rejects a format long enough that
+// its expansion could pass MaxAlloc. timefmt.Format builds the whole result in
+// one pass, and directives such as %A / %B / %c expand a two-byte directive to
+// many bytes, so a big format taken from input ( strftime(.field) ) could
+// amplify far past the limit before the value meter, which sees only the
+// finished string, could charge it. The widest directive expands under 16x per
+// format byte, so this keeps a passing format's output under the limit.
+func boundedStrftime(t time.Time, format string) any {
+	if MaxAlloc > 0 && int64(len(format))*16 > MaxAlloc {
+		return &allocLimitError{}
+	}
+	return timefmt.Format(t, format)
+}
+
 func funcStrftime(v, x any) any {
 	if w, ok := toFloat(v); ok {
 		v = epochToArray(w, time.UTC)
@@ -1899,7 +2145,7 @@ func funcStrftime(v, x any) any {
 	if err != nil {
 		return &func1WrapError{"strftime", v, x, err}
 	}
-	return timefmt.Format(t, format)
+	return boundedStrftime(t, format)
 }
 
 func funcStrflocaltime(v, x any) any {
@@ -1918,7 +2164,7 @@ func funcStrflocaltime(v, x any) any {
 	if err != nil {
 		return &func1WrapError{"strflocaltime", v, x, err}
 	}
-	return timefmt.Format(t, format)
+	return boundedStrftime(t, format)
 }
 
 func funcStrptime(v, x any) any {
@@ -1929,6 +2175,13 @@ func funcStrptime(v, x any) any {
 	format, ok := x.(string)
 	if !ok {
 		return &func1TypeError{"strptime", v, x}
+	}
+	// timefmt.Parse reads the whole input and format into runes before matching,
+	// so a huge input ( which almost always fails on extra text anyway ) allocates
+	// several times its size. Reject one whose parse could pass MaxAlloc; real date
+	// strings are tiny, so only absurd inputs are refused.
+	if MaxAlloc > 0 && (int64(len(s))*8 > MaxAlloc || int64(len(format))*8 > MaxAlloc) {
+		return &allocLimitError{}
 	}
 	t, err := timefmt.Parse(s, format)
 	if err != nil {
@@ -1972,7 +2225,7 @@ func funcNow(any) any {
 	return timeToEpoch(time.Now())
 }
 
-func funcMatch(v, re, fs, testing any, cache *sync.Map) any {
+func funcMatch(v, re, fs, testing any, cache *reCache) any {
 	var name string
 	if testing == true {
 		name = "test"
@@ -2003,12 +2256,23 @@ func funcMatch(v, re, fs, testing any, cache *sync.Map) any {
 		return r.MatchString(s)
 	}
 	var n int
+	capped := false
 	if strings.ContainsRune(flags, 'g') {
 		n = -1
+		if MaxAlloc > 0 {
+			// bound the number of matches so the result array (a map per match,
+			// plus one per capture group) cannot exceed MaxAlloc.
+			if lim := int(MaxAlloc/int64(600+r.NumSubexp()*256)) + 1; lim > 0 {
+				n, capped = lim, true
+			}
+		}
 	} else {
 		n = 1
 	}
 	xs := r.FindAllStringSubmatchIndex(s, n)
+	if capped && len(xs) >= n {
+		return &allocLimitError{}
+	}
 	res, names := make([]any, len(xs)), r.SubexpNames()
 	for i, x := range xs {
 		captures := make([]any, (len(x)-2)/2)
@@ -2028,14 +2292,14 @@ func funcMatch(v, re, fs, testing any, cache *sync.Map) any {
 			}
 			captures[j-1] = map[string]any{
 				"name":   name,
-				"offset": len([]rune(s[:x[j*2]])),
-				"length": len([]rune(s[:x[j*2+1]])) - len([]rune(s[:x[j*2]])),
+				"offset": utf8.RuneCountInString(s[:x[j*2]]),
+				"length": utf8.RuneCountInString(s[:x[j*2+1]]) - utf8.RuneCountInString(s[:x[j*2]]),
 				"string": s[x[j*2]:x[j*2+1]],
 			}
 		}
 		res[i] = map[string]any{
-			"offset":   len([]rune(s[:x[0]])),
-			"length":   len([]rune(s[:x[1]])) - len([]rune(s[:x[0]])),
+			"offset":   utf8.RuneCountInString(s[:x[0]]),
+			"length":   utf8.RuneCountInString(s[:x[1]]) - utf8.RuneCountInString(s[:x[0]]),
 			"string":   s[x[0]:x[1]],
 			"captures": captures,
 		}
@@ -2043,9 +2307,18 @@ func funcMatch(v, re, fs, testing any, cache *sync.Map) any {
 	return res
 }
 
-func compileRegexp(re, flags string, cache *sync.Map) (*regexp.Regexp, error) {
+// reCache holds compiled regexps and tracks their approximate retained bytes,
+// so a run that generates millions of distinct patterns cannot grow the cache
+// without bound. When MaxAlloc is set and the cache is full, new patterns are
+// still compiled and returned, just not retained.
+type reCache struct {
+	m     sync.Map
+	bytes atomic.Int64
+}
+
+func compileRegexp(re, flags string, cache *reCache) (*regexp.Regexp, error) {
 	key := [2]string{re, flags}
-	if r, ok := cache.Load(key); ok {
+	if r, ok := cache.m.Load(key); ok {
 		return r.(*regexp.Regexp), nil
 	}
 	if strings.IndexFunc(flags, func(r rune) bool {
@@ -2063,7 +2336,11 @@ func compileRegexp(re, flags string, cache *sync.Map) (*regexp.Regexp, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid regular expression %q: %s", re, err)
 	}
-	cache.Store(key, r)
+	if MaxAlloc <= 0 || cache.bytes.Load() < MaxAlloc {
+		if _, loaded := cache.m.LoadOrStore(key, r); !loaded {
+			cache.bytes.Add(int64(len(re))*128 + 1024)
+		}
+	}
 	return r, nil
 }
 
@@ -2165,25 +2442,42 @@ func bigToFloat(x *big.Int) float64 {
 	if x.IsInt64() {
 		return float64(x.Int64())
 	}
-	if f, err := strconv.ParseFloat(x.String(), 64); err == nil {
-		return f
-	}
-	return math.Inf(x.Sign())
+	// Convert through big.Float (a binary copy) rather than x.String(), whose
+	// base-10 conversion allocates large superlinear scratch inside math/big: a
+	// 10 MB integer divided by a small number reached ~300 MB, none of it seen by
+	// the value meter. Float64 already yields +/-Inf on overflow.
+	f, _ := new(big.Float).SetPrec(53).SetInt(x).Float64()
+	return f
 }
 
 func parseNumber(v json.Number) any {
-	if i, err := v.Int64(); err == nil && math.MinInt <= i && i <= math.MaxInt {
-		return int(i)
+	s := v.String()
+	if len(s) <= 20 {
+		if i, err := v.Int64(); err == nil && math.MinInt <= i && i <= math.MaxInt {
+			return int(i)
+		}
 	}
-	if strings.ContainsAny(v.String(), ".eE") {
+	// Decimal conversion uses superlinear scratch inside math/big. Mirror the
+	// encoder's 384-bytes-per-word safety factor in the reverse direction and
+	// reject by O(1) digit count before SetString starts work. Counting a sign or
+	// decimal syntax byte as a digit is deliberately conservative for absurdly
+	// large numbers and avoids a linear pre-scan on the attack path.
+	if MaxAlloc > 0 && len(s) > 20 {
+		digits := int64(len(s))
+		words := (digits + 18) / 19 // at most 19 decimal digits per 64-bit word
+		if words > MaxAlloc/384 {
+			panic(&allocLimitError{})
+		}
+	}
+	if strings.ContainsAny(s, ".eE") {
 		if f, err := v.Float64(); err == nil {
 			return f
 		}
 	}
-	if bi, ok := new(big.Int).SetString(v.String(), 10); ok {
+	if bi, ok := new(big.Int).SetString(s, 10); ok {
 		return bi
 	}
-	if strings.HasPrefix(v.String(), "-") {
+	if strings.HasPrefix(s, "-") {
 		return math.Inf(-1)
 	}
 	return math.Inf(1)

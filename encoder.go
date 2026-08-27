@@ -23,7 +23,16 @@ import (
 // and does not escape '<', '>', '&', '\u2028', and '\u2029'. These behaviors
 // are based on the marshaler of jq command, and different from json.Marshal in
 // the Go standard library. Note that the result is not safe to embed in HTML.
-func Marshal(v any) ([]byte, error) {
+func Marshal(v any) (bs []byte, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			if _, ok := r.(*allocLimitError); ok {
+				bs, err = nil, &allocLimitError{}
+				return
+			}
+			panic(r)
+		}
+	}()
 	var b bytes.Buffer
 	(&encoder{w: &b}).encode(v)
 	return b.Bytes(), nil
@@ -35,6 +44,40 @@ func jsonMarshal(v any) string {
 	return sb.String()
 }
 
+// jsonMarshalTruncated is jsonMarshal but returns the bounded prefix built so far
+// instead of letting the encode guard's *allocLimitError panic escape. Error() and
+// String() methods cannot return an error, so a big value would otherwise crash
+// formatting. jsonMarshal itself must keep panicking, since marshalBounded relies
+// on that to report the limit as an error.
+func jsonMarshalTruncated(v any) (s string) {
+	var sb strings.Builder
+	defer func() {
+		if r := recover(); r != nil {
+			if _, ok := r.(*allocLimitError); !ok {
+				panic(r)
+			}
+			s = sb.String()
+		}
+	}()
+	(&encoder{w: &sb}).encode(v)
+	return sb.String()
+}
+
+// marshalBounded is jsonMarshal, but returns an allocLimitError instead of
+// building an encoding larger than MaxAlloc (see encode).
+func marshalBounded(v any) (s string, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			if _, ok := r.(*allocLimitError); ok {
+				err = &allocLimitError{}
+				return
+			}
+			panic(r)
+		}
+	}()
+	return jsonMarshal(v), nil
+}
+
 func jsonEncodeString(sb *strings.Builder, v string) {
 	(&encoder{w: sb}).encodeString(v)
 }
@@ -44,11 +87,20 @@ type encoder struct {
 		io.Writer
 		io.ByteWriter
 		io.StringWriter
+		Len() int
 	}
-	buf [64]byte
+	buf   [64]byte
+	depth int
 }
 
 func (e *encoder) encode(v any) {
+	// Shared references (e.g. `[., .]` repeated) make a value whose own
+	// footprint is tiny expand to an exponentially larger encoding. Bound the
+	// output so tojson / tostring / @json cannot build gigabytes before the
+	// value meter, which only sees the finished string, could charge it.
+	if MaxAlloc > 0 && int64(e.w.Len()) > MaxAlloc {
+		panic(&allocLimitError{})
+	}
 	switch v := v.(type) {
 	case nil:
 		e.w.WriteString("null")
@@ -63,6 +115,14 @@ func (e *encoder) encode(v any) {
 	case float64:
 		e.encodeFloat64(v)
 	case *big.Int:
+		// Converting a big integer to base 10 allocates large superlinear scratch
+		// inside math/big (a 4 MB integer peaks past 100 MB), none of it visible to
+		// the between-values guard above. Reject one whose decimal form could pass
+		// the limit; the widest realistic integer is tiny, so this only refuses
+		// absurd multi-hundred-thousand-digit values.
+		if MaxAlloc > 0 && int64(len(v.Bits()))*384 > MaxAlloc {
+			panic(&allocLimitError{})
+		}
 		e.w.Write(v.Append(e.buf[:0], 10))
 	case json.Number:
 		e.w.WriteString(v.String())
@@ -112,6 +172,9 @@ func (e *encoder) encodeString(s string) {
 			if start < i {
 				e.w.WriteString(s[start:i])
 			}
+			if MaxAlloc > 0 && int64(e.w.Len()) > MaxAlloc {
+				panic(&allocLimitError{})
+			}
 			switch b {
 			case '"':
 				e.w.WriteString(`\"`)
@@ -142,6 +205,9 @@ func (e *encoder) encodeString(s string) {
 			if start < i {
 				e.w.WriteString(s[start:i])
 			}
+			if MaxAlloc > 0 && int64(e.w.Len()) > MaxAlloc {
+				panic(&allocLimitError{})
+			}
 			e.w.WriteString(`\ufffd`)
 			i += size
 			start = i
@@ -156,6 +222,15 @@ func (e *encoder) encodeString(s string) {
 }
 
 func (e *encoder) encodeArray(vs []any) {
+	// Bound the recursion depth. encode is Go-recursive and is not covered by
+	// the interpreter's overStackLimit, and the buffer guard does not fire on a
+	// deep-narrow value ( each level adds one byte on the way down ), so a deeply
+	// nested value overflowed the goroutine stack ( a fatal, unrecoverable crash ).
+	// A value this deep is already larger than the limit ( >= 16 bytes per level ).
+	if e.depth++; MaxAlloc > 0 && (int64(e.depth)*16 > MaxAlloc || e.depth > maxRecursionDepth) {
+		panic(&allocLimitError{})
+	}
+	defer func() { e.depth-- }()
 	e.w.WriteByte('[')
 	for i, v := range vs {
 		if i > 0 {
@@ -167,10 +242,17 @@ func (e *encoder) encodeArray(vs []any) {
 }
 
 func (e *encoder) encodeObject(vs map[string]any) {
+	if e.depth++; MaxAlloc > 0 && (int64(e.depth)*16 > MaxAlloc || e.depth > maxRecursionDepth) {
+		panic(&allocLimitError{})
+	}
+	defer func() { e.depth-- }()
 	e.w.WriteByte('{')
 	type keyVal struct {
 		key string
 		val any
+	}
+	if MaxAlloc > 0 && int64(len(vs))*32 > MaxAlloc {
+		panic(&allocLimitError{})
 	}
 	kvs := make([]keyVal, len(vs))
 	var i int

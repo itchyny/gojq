@@ -8,7 +8,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 type compiler struct {
@@ -20,9 +19,10 @@ type compiler struct {
 	codes         []*code
 	codeinfos     []codeinfo
 	builtinScope  *scopeinfo
+	builtinDepth  int
 	scopes        []*scopeinfo
 	scopecnt      int
-	regexpCache   sync.Map
+	regexpCache   reCache
 }
 
 // Code is a compiled jq query.
@@ -81,7 +81,7 @@ func Compile(q *Query, options ...CompilerOption) (*Code, error) {
 	scope := c.newScope()
 	c.scopes = []*scopeinfo{scope}
 	setscope := c.lazy(func() *code {
-		return &code{op: opscope, v: [3]int{scope.id, scope.variablecnt, 0}}
+		return &code{op: opscope, v: scopeCode{id: scope.id, variableCount: scope.variablecnt}}
 	})
 	for _, name := range c.variables {
 		if !newLexer(name).validVarName() {
@@ -310,6 +310,11 @@ func (c *compiler) newScopeDepth() func() {
 }
 
 func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
+	if builtin {
+		c.builtinDepth++
+		defer func() { c.builtinDepth-- }()
+	}
+	isBuiltin := c.builtinDepth > 0
 	var scope *scopeinfo
 	if builtin {
 		scope = c.builtinScope
@@ -332,7 +337,10 @@ func (c *compiler) compileFuncDef(e *FuncDef, builtin bool) error {
 		c.scopes = append(c.scopes, scope)
 	}
 	defer c.lazy(func() *code {
-		return &code{op: opscope, v: [3]int{scope.id, scope.variablecnt, len(e.Args)}}
+		return &code{op: opscope, v: scopeCode{
+			id: scope.id, variableCount: scope.variablecnt,
+			argumentCount: len(e.Args), builtin: isBuiltin,
+		}}
 	})()
 	if len(e.Args) > 0 {
 		type varIndex struct {
@@ -1042,7 +1050,7 @@ func (c *compiler) compileAssign() {
 	// Cannot reuse v, p due to backtracking in x.
 	w, q := [2]int{scope.id, 4}, [2]int{scope.id, 5}
 	c.appends(
-		&code{op: opscope, v: [3]int{scope.id, 6, 2}},
+		&code{op: opscope, v: scopeCode{id: scope.id, variableCount: 6, argumentCount: 2, builtin: true}},
 		&code{op: opstore, v: v}, //                def _assign(p; $x):
 		&code{op: opstore, v: p},
 		&code{op: opstore, v: x},
@@ -1087,7 +1095,7 @@ func (c *compiler) compileModify() {
 	f, d := [2]int{scope.id, 2}, [2]int{scope.id, 3}
 	a, l := [2]int{scope.id, 4}, [2]int{scope.id, 5}
 	c.appends(
-		&code{op: opscope, v: [3]int{scope.id, 6, 2}},
+		&code{op: opscope, v: scopeCode{id: scope.id, variableCount: 6, argumentCount: 2, builtin: true}},
 		&code{op: opstore, v: v}, //                def _modify(p; f):
 		&code{op: opstore, v: p},
 		&code{op: opstore, v: f},
@@ -1142,7 +1150,7 @@ func (c *compiler) compileLast() {
 	scope := c.newScope()
 	v, g, x := [2]int{scope.id, 0}, [2]int{scope.id, 1}, [2]int{scope.id, 2}
 	c.appends(
-		&code{op: opscope, v: [3]int{scope.id, 3, 1}},
+		&code{op: opscope, v: scopeCode{id: scope.id, variableCount: 3, argumentCount: 1, builtin: true}},
 		&code{op: opstore, v: v},
 		&code{op: opstore, v: g},
 		&code{op: oppush, v: true}, //              $x = true
@@ -1647,21 +1655,21 @@ func (c *compiler) lazy(f func() *code) func() {
 
 func (c *compiler) optimizeTailRec() {
 	var pcs []int
-	scopes := map[int]bool{}
+	scopes := map[int]scopeCode{}
 L:
 	for i, code := range c.codes {
 		switch code.op {
 		case opscope:
 			pcs = append(pcs, i)
-			if v := code.v.([3]int); v[2] == 0 {
-				scopes[i] = v[1] == 0
+			if v := code.v.(scopeCode); v.argumentCount == 0 {
+				scopes[i] = v
 			}
 		case opcall:
-			var canjump bool
+			var tailScope scopeCode
 			if j, ok := code.v.(int); !ok ||
 				len(pcs) == 0 || pcs[len(pcs)-1] != j {
 				break
-			} else if canjump, ok = scopes[j]; !ok {
+			} else if tailScope, ok = scopes[j]; !ok {
 				break
 			}
 			for j := i + 1; j < len(c.codes); {
@@ -1669,7 +1677,9 @@ L:
 				case opjump:
 					j = c.codes[j].v.(int)
 				case opret:
-					if canjump {
+					if !tailScope.builtin {
+						code.op = opcalltail
+					} else if tailScope.variableCount == 0 {
 						code.op = opjump
 						code.v = pcs[len(pcs)-1] + 1
 					} else {

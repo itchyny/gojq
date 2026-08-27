@@ -9,6 +9,9 @@ import (
 )
 
 func (env *env) execute(bc *Code, v any, vars ...any) Iter {
+	if len(vars)+1 > env.maxStackDepth {
+		return NewIter(&stackLimitError{})
+	}
 	env.codes = bc.codes
 	env.codeinfos = bc.codeinfos
 	env.push(v)
@@ -19,11 +22,27 @@ func (env *env) execute(bc *Code, v any, vars ...any) Iter {
 	return env
 }
 
-func (env *env) Next() (any, bool) {
+func (env *env) Next() (v any, ok bool) {
 	var err error
 	pc, callpc, index := env.pc, len(env.codes)-1, -1
 	backtrack, hasCtx := env.backtrack, env.ctx != context.Background()
-	defer func() { env.pc, env.backtrack = pc, true }()
+	defer func() {
+		// A few value operations recurse in Go outside the opcode loop and panic
+		// with *allocLimitError when they get too deep or too large (Compare over a
+		// deeply nested value, for one). Interpreter stack pushes use the same
+		// internal unwind for *stackLimitError. Recover both here so they surface as
+		// typed errors instead of escaping the run; anything else re-panics.
+		if r := recover(); r != nil {
+			switch r.(type) {
+			case *allocLimitError, *stackLimitError:
+			default:
+				panic(r)
+			}
+			pc, env.forks = len(env.codes), nil
+			v, ok = r, true
+		}
+		env.pc, env.backtrack = pc, true
+	}()
 loop:
 	for ; pc < len(env.codes); pc++ {
 		env.debugState(pc, backtrack)
@@ -35,6 +54,10 @@ loop:
 				return env.ctx.Err(), true
 			default:
 			}
+		}
+		if MaxAlloc > 0 && env.overStackLimit() {
+			pc, env.forks = len(env.codes), nil
+			return &allocLimitError{}, true
 		}
 		switch code.op {
 		case opnop:
@@ -72,9 +95,26 @@ loop:
 				}
 			}
 			env.push(m)
+			if env.charge(m) {
+				err = &allocLimitError{}
+				break loop
+			}
 		case opappend:
 			i := env.index(code.v.([2]int))
-			env.values[i] = append(env.values[i].([]any), env.pop())
+			x := env.pop()
+			xs := env.values[i].([]any)
+			// append can hold both old and new 16-byte-slot backing arrays during
+			// geometric growth. Bound that peak before it can make a large array
+			// whose transient footprint already exceeds the run limit.
+			if arrayAppendTooLarge(len(xs) + 1) {
+				err = &allocLimitError{}
+				break loop
+			}
+			if env.chargeBytes(16 + allocSize(x)) {
+				err = &allocLimitError{}
+				break loop
+			}
+			env.values[i] = append(xs, x)
 		case opfork:
 			if backtrack {
 				if err != nil {
@@ -166,7 +206,7 @@ loop:
 					err = &invalidPathError{v}
 					break loop
 				}
-				env.paths.push(pathValue{path: p, value: w})
+				env.pushpath(pathValue{path: p, value: w})
 			}
 		case opcall:
 			if backtrack {
@@ -188,6 +228,33 @@ loop:
 					break loop
 				}
 				env.push(w)
+				exceeded := false
+				if MaxAlloc > 0 {
+					switch w.(type) {
+					case nil, bool, int, float64:
+						// The scalar hot path allocates nothing. Keep only the
+						// monotonic-budget check needed after a caught limit error.
+						exceeded = env.alloc > MaxAlloc
+					default:
+						n := allocSize(w)
+						exceeded = env.alloc > MaxAlloc
+						if n > 0 {
+							name, _ := v[2].(string)
+							if name != "input" && name != "inputs" {
+								switch w.(type) {
+								case []any, map[string]any:
+									exceeded = env.chargeFreshResult(w, x, args)
+								default:
+									exceeded = env.chargeBytes(n)
+								}
+							}
+						}
+					}
+				}
+				if exceeded {
+					err = &allocLimitError{}
+					break loop
+				}
 				if !env.paths.empty() && env.expdepth == 0 {
 					switch v[2].(string) {
 					case "_index":
@@ -195,13 +262,13 @@ loop:
 							err = &invalidPathError{x}
 							break loop
 						}
-						env.paths.push(pathValue{path: args[1], value: w})
+						env.pushpath(pathValue{path: args[1], value: w})
 					case "_slice":
 						if x = args[0]; !env.pathIntact(x) {
 							err = &invalidPathError{x}
 							break loop
 						}
-						env.paths.push(pathValue{
+						env.pushpath(pathValue{
 							path:  map[string]any{"start": args[2], "end": args[1]},
 							value: w,
 						})
@@ -211,7 +278,7 @@ loop:
 							break loop
 						}
 						for _, p := range args[0].([]any) {
-							env.paths.push(pathValue{path: p, value: w})
+							env.pushpath(pathValue{path: p, value: w})
 						}
 					}
 				}
@@ -221,6 +288,11 @@ loop:
 		case opcallrec:
 			pc, callpc, index = code.v.(int), -1, env.scopes.index
 			goto loop
+		case opcalltail:
+			env.tailDepth++
+			env.checkStackDepth(env.tailDepth + max(env.scopes.index, env.scopes.limit) + 1)
+			pc, callpc, index = code.v.(int), -1, env.scopes.index
+			goto loop
 		case oppushpc:
 			env.push([2]int{code.v.(int), env.scopes.index})
 		case opcallpc:
@@ -228,24 +300,30 @@ loop:
 			pc, callpc, index = xs[0], pc, xs[1]
 			goto loop
 		case opscope:
-			xs := code.v.([3]int)
+			xs := code.v.(scopeCode)
 			var saveindex, outerindex int
+			tailDepth := env.tailDepth
 			if index == env.scopes.index {
 				if callpc >= 0 {
 					saveindex = index
 				} else {
-					callpc, saveindex = env.popscope()
+					s := env.popscope()
+					callpc, saveindex, tailDepth = s.pc, s.saveindex, s.tailDepth
 				}
 			} else {
 				saveindex = env.scopes.index
 			}
 			if outerindex = index; outerindex >= 0 {
-				if s := env.scopes.data[outerindex].value; s.id == xs[0] {
+				if s := env.scopes.data[outerindex].value; s.id == xs.id {
 					outerindex = s.outerindex
 				}
 			}
-			env.scopes.push(scope{xs[0], env.offset, callpc, saveindex, outerindex})
-			env.offset += xs[1]
+			env.pushscope(scope{
+				id: xs.id, offset: env.offset, pc: callpc,
+				saveindex: saveindex, outerindex: outerindex, tailDepth: tailDepth,
+			})
+			env.checkStackDepth(env.offset + xs.variableCount)
+			env.offset += xs.variableCount
 			if env.offset > len(env.values) {
 				vs := make([]any, env.offset*2)
 				copy(vs, env.values)
@@ -255,7 +333,8 @@ loop:
 			if backtrack {
 				break loop
 			}
-			pc, env.scopes.index = env.popscope()
+			s := env.popscope()
+			pc, env.scopes.index, env.tailDepth = s.pc, s.saveindex, s.tailDepth
 			if env.scopes.empty() {
 				return env.pop(), true
 			}
@@ -277,6 +356,16 @@ loop:
 				if len(v) == 0 {
 					break loop
 				}
+				// .[] materializes a []pathValue of every element ( 32 bytes each )
+				// to drive the iteration. A per-array pre-check bounded one array
+				// but never charged it, so nested iteration of the same large array
+				// ( $a[] as $x | $a[] as $y | ... ) stacked these uncharged and
+				// reached hundreds of MB. Charge it to the run meter so nested and
+				// looped iterations accumulate and trip.
+				if env.chargeBytes(int64(len(v)) * 32) {
+					err = &allocLimitError{}
+					break loop
+				}
 				xs = make([]pathValue, len(v))
 				for i, v := range v {
 					xs[i] = pathValue{path: i, value: v}
@@ -288,6 +377,16 @@ loop:
 					break loop
 				}
 				if len(v) == 0 {
+					break loop
+				}
+				// .[] materializes a []pathValue of every element ( 32 bytes each )
+				// to drive the iteration. A per-array pre-check bounded one array
+				// but never charged it, so nested iteration of the same large array
+				// ( $a[] as $x | $a[] as $y | ... ) stacked these uncharged and
+				// reached hundreds of MB. Charge it to the run meter so nested and
+				// looped iterations accumulate and trip.
+				if env.chargeBytes(int64(len(v)) * 32) {
+					err = &allocLimitError{}
 					break loop
 				}
 				xs = make([]pathValue, len(v))
@@ -308,6 +407,28 @@ loop:
 						err = e
 						break loop
 					}
+					exceeded := false
+					if MaxAlloc > 0 {
+						switch w.(type) {
+						case nil, bool, int, float64:
+							exceeded = env.alloc > MaxAlloc
+						default:
+							n := allocSize(w)
+							exceeded = env.alloc > MaxAlloc
+							if n > 0 {
+								switch w.(type) {
+								case []any, map[string]any:
+									exceeded = env.chargeFreshResult(w, nil, nil)
+								default:
+									exceeded = env.chargeBytes(n)
+								}
+							}
+						}
+					}
+					if exceeded {
+						err = &allocLimitError{}
+						break loop
+					}
 					env.push(w)
 					continue
 				}
@@ -324,15 +445,15 @@ loop:
 			}
 			env.push(xs[0].value)
 			if !env.paths.empty() && env.expdepth == 0 {
-				env.paths.push(xs[0])
+				env.pushpath(xs[0])
 			}
 		case opexpbegin:
 			env.expdepth++
 		case opexpend:
 			env.expdepth--
 		case oppathbegin:
-			env.paths.push(env.expdepth)
-			env.paths.push(pathValue{value: env.stack.top()})
+			env.pushpath(env.expdepth)
+			env.pushpath(pathValue{value: env.stack.top()})
 			env.expdepth = 0
 		case oppathend:
 			if backtrack {
@@ -343,8 +464,13 @@ loop:
 				err = &invalidPathError{v}
 				break loop
 			}
-			env.push(env.poppaths())
-			env.expdepth = env.paths.pop().(int)
+			paths := env.poppaths()
+			if env.charge(paths) {
+				err = &allocLimitError{}
+				break loop
+			}
+			env.push(paths)
+			env.expdepth = env.poppath().(int)
 		default:
 			panic(code.op)
 		}
@@ -360,24 +486,41 @@ loop:
 }
 
 func (env *env) push(v any) {
-	env.stack.push(v)
+	env.stack.push(v, env.maxStackDepth)
 }
 
 func (env *env) pop() any {
 	return env.stack.pop()
 }
 
-func (env *env) popscope() (int, int) {
+func (env *env) pushpath(v any) {
+	env.paths.push(v, env.maxStackDepth)
+}
+
+func (env *env) poppath() any {
+	return env.paths.pop()
+}
+
+func (env *env) pushscope(s scope) {
+	env.checkStackDepth(nextScopeDepth(env.scopes) + env.tailDepth)
+	env.scopes.push(s)
+}
+
+func (env *env) popscope() scope {
 	free := env.scopes.index > env.scopes.limit
 	s := env.scopes.pop()
 	if free {
 		env.offset = s.offset
 	}
-	return s.pc, s.saveindex
+	return s
 }
 
 func (env *env) pushfork(pc int) {
-	f := fork{pc: pc, offset: env.offset, expdepth: env.expdepth}
+	env.checkStackDepth(len(env.forks) + 1)
+	f := fork{
+		pc: pc, offset: env.offset, expdepth: env.expdepth,
+		tailDepth: env.tailDepth,
+	}
 	f.stackindex, f.stacklimit = env.stack.save()
 	f.scopeindex, f.scopelimit = env.scopes.save()
 	f.pathindex, f.pathlimit = env.paths.save()
@@ -388,8 +531,8 @@ func (env *env) pushfork(pc int) {
 func (env *env) popfork() int {
 	f := env.forks[len(env.forks)-1]
 	env.debugForks(f.pc, "<<<")
-	env.forks, env.offset, env.expdepth =
-		env.forks[:len(env.forks)-1], f.offset, f.expdepth
+	env.forks, env.offset, env.expdepth, env.tailDepth =
+		env.forks[:len(env.forks)-1], f.offset, f.expdepth, f.tailDepth
 	env.stack.restore(f.stackindex, f.stacklimit)
 	env.scopes.restore(f.scopeindex, f.scopelimit)
 	env.paths.restore(f.pathindex, f.pathlimit)
@@ -431,7 +574,7 @@ func (env *env) pathIntact(v any) bool {
 func (env *env) poppaths() []any {
 	xs := []any{}
 	for {
-		p := env.paths.pop().(pathValue)
+		p := env.poppath().(pathValue)
 		if p.path == nil {
 			break
 		}

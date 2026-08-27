@@ -79,7 +79,7 @@ func (env *env) debugCodes() {
 	for i, c := range env.codes {
 		pc := i
 		switch c.op {
-		case opcall, opcallrec:
+		case opcall, opcallrec, opcalltail:
 			if x, ok := c.v.(int); ok {
 				pc = x
 			}
@@ -92,7 +92,7 @@ func (env *env) debugCodes() {
 		var s string
 		if name := env.lookupInfoName(pc); name != "" {
 			switch c.op {
-			case opcall, opcallrec, opjump:
+			case opcall, opcallrec, opcalltail, opjump:
 				if !strings.HasPrefix(name, "module ") {
 					s = "\t## call " + name
 					break
@@ -127,7 +127,7 @@ func (env *env) debugState(pc int, backtrack bool) {
 		sb.WriteString(debugValue(env.stack.data[xs[i]].value))
 	}
 	switch c.op {
-	case opcall, opcallrec:
+	case opcall, opcallrec, opcalltail:
 		if x, ok := c.v.(int); ok {
 			pc = x
 		}
@@ -139,7 +139,7 @@ func (env *env) debugState(pc int, backtrack bool) {
 	}
 	if name := env.lookupInfoName(pc); name != "" {
 		switch c.op {
-		case opcall, opcallrec, opjump:
+		case opcall, opcallrec, opcalltail, opjump:
 			if !strings.HasPrefix(name, "module ") {
 				sb.WriteString("\t\t\t## call " + name)
 				break
@@ -174,7 +174,7 @@ func (env *env) debugForks(pc int, op string) {
 
 func debugOperand(c *code) string {
 	switch c.op {
-	case opcall, opcallrec:
+	case opcall, opcallrec, opcalltail:
 		switch v := c.v.(type) {
 		case int:
 			return strconv.Itoa(v)
@@ -196,8 +196,8 @@ func debugValue(v any) string {
 		return fmt.Sprintf("[]gojq.pathValue(%v)", v)
 	case [2]int:
 		return fmt.Sprintf("[%d,%d]", v[0], v[1])
-	case [3]int:
-		return fmt.Sprintf("[%d,%d,%d]", v[0], v[1], v[2])
+	case scopeCode:
+		return fmt.Sprintf("[%d,%d,%d]", v.id, v.variableCount, v.argumentCount)
 	case [3]any:
 		return fmt.Sprintf("[%v,%v,%v]", v[0], v[1], v[2])
 	case allocator:

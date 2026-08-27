@@ -15,12 +15,15 @@ func newStack() *stack {
 	return &stack{index: -1, limit: -1}
 }
 
-func (s *stack) push(v any) {
+func (s *stack) push(v any, maxDepth int) {
 	b := block{v, s.index}
 	s.index = max(s.index, s.limit) + 1
 	if s.index < len(s.data) {
 		s.data[s.index] = b
 	} else {
+		if s.index >= maxDepth {
+			panic(&stackLimitError{})
+		}
 		s.data = append(s.data, b)
 	}
 }

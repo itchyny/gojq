@@ -72,6 +72,10 @@ func (w *limitedWriter) WriteString(s string) (int, error) {
 	return n, nil
 }
 
+func (w *limitedWriter) Len() int {
+	return w.off
+}
+
 func (w *limitedWriter) Bytes() []byte {
 	return w.buf[:w.off]
 }

@@ -178,7 +178,7 @@ func (err *exitCodeError) Error() string {
 	if s, ok := err.value.(string); ok {
 		return "error: " + s
 	}
-	return "error: " + jsonMarshal(err.value)
+	return "error: " + jsonMarshalTruncated(err.value)
 }
 
 func (err *exitCodeError) Value() any {

@@ -5,6 +5,13 @@ type code struct {
 	op opcode
 }
 
+type scopeCode struct {
+	id            int
+	variableCount int
+	argumentCount int
+	builtin       bool
+}
+
 type opcode int
 
 const (
@@ -28,6 +35,7 @@ const (
 	opindex
 	opindexarray
 	opcall
+	opcalltail
 	opcallrec
 	oppushpc
 	opcallpc
@@ -84,6 +92,8 @@ func (op opcode) String() string {
 		return "call"
 	case opcallrec:
 		return "callrec"
+	case opcalltail:
+		return "calltail"
 	case oppushpc:
 		return "pushpc"
 	case opcallpc:
