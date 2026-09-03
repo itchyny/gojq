@@ -473,17 +473,7 @@ func funcOpDiv(_, l, r any) any {
 			}
 			return bigToFloat(l) / bigToFloat(r)
 		},
-		func(l, r string) any {
-			if l == "" {
-				return []any{}
-			}
-			xs := strings.Split(l, r)
-			vs := make([]any, len(xs))
-			for i, x := range xs {
-				vs[i] = x
-			}
-			return vs
-		},
+		func(l, r string) any { return splitString(l, r) },
 		func(l, r []any) any { return &binopTypeError{"divide", l, r} },
 		func(l, r map[string]any) any { return &binopTypeError{"divide", l, r} },
 		func(l, r any) any { return &binopTypeError{"divide", l, r} },

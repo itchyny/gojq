@@ -2407,6 +2407,29 @@
     "/a,b/c/d/e,f/"
     ",/ /a/,/b/,/ /c/,/ /d/,/ /e/,/f/,/ "
 
+- name: split/1 function against the divide operator
+  args:
+    - -c
+    - '.[] as $t | .[] as $s | $s | split($t)'
+  input: '["abc", "a", "b", ""]'
+  expected: |
+    ["",""]
+    ["a"]
+    ["b"]
+    []
+    ["","bc"]
+    ["",""]
+    ["b"]
+    []
+    ["a","c"]
+    ["a"]
+    ["",""]
+    []
+    ["a","b","c"]
+    ["a"]
+    ["b"]
+    []
+
 - name: join function
   args:
     - 'join(",")'

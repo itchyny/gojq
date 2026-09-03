@@ -769,6 +769,15 @@ func funcSplit(v, x any) any {
 	if !ok {
 		return &func0TypeError{"split", x}
 	}
+	return splitString(s, t)
+}
+
+// splitString implements both split/1 and the division operator on strings.
+// An empty input string yields an empty array, not a single empty string.
+func splitString(s, t string) []any {
+	if s == "" {
+		return []any{}
+	}
 	ss := strings.Split(s, t)
 	xs := make([]any, len(ss))
 	for i, s := range ss {
