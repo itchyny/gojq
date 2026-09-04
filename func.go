@@ -1488,6 +1488,17 @@ func (a allocator) allocated(v any) bool {
 	return ok
 }
 
+// release forgets every allocated address when the value is one of them, so
+// that a value handed to a query is copied on update again.
+func (a allocator) release(v any) {
+	switch v.(type) {
+	case map[string]any, []any:
+		if a.allocated(v) {
+			clear(a)
+		}
+	}
+}
+
 func (a allocator) makeObject(l int) map[string]any {
 	v := make(map[string]any, l)
 	if a != nil {
@@ -1512,6 +1523,15 @@ func funcSetpath(v, p, n any) any {
 // Used in compiler#compileAssign and compiler#compileModify.
 func funcSetpathWithAllocator(v any, args []any) any {
 	return setpath(v, args[0], args[1], args[2].(allocator))
+}
+
+// Used in compiler#compileModify: the update function may store the value
+// anywhere, so it must not be modified in place afterwards. Registered as
+// getpath to keep tracking paths through the call.
+func funcGetpathWithAllocator(v any, args []any) any {
+	w := funcGetpath(v, args[0])
+	args[1].(allocator).release(w)
+	return w
 }
 
 func setpath(v, p, n any, a allocator) any {
@@ -1591,6 +1611,8 @@ func update(v any, path []any, n any, a allocator) (any, error) {
 			return nil, &expectedArrayError{v}
 		}
 	case map[string]any:
+		// A slice bound stays reachable through the path.
+		a.release(p)
 		switch v := v.(type) {
 		case nil:
 			return updateArraySlice(nil, p, path[1:], n, a)
