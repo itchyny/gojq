@@ -397,7 +397,7 @@ func (c *compiler) compileQuery(e *Query) error {
 		return c.compileAlt(e.Left, e.Right)
 	case OpAssign, OpModify, OpUpdateAdd, OpUpdateSub,
 		OpUpdateMul, OpUpdateDiv, OpUpdateMod, OpUpdateAlt:
-		return c.compileQueryUpdate(e.Left, e.Right, e.Op)
+		return c.compileQueryUpdate(e.Left, e.Right, e.Op, nil)
 	case OpOr:
 		return c.compileIf(
 			&If{
@@ -471,7 +471,10 @@ func (c *compiler) compileAlt(l, r *Query) error {
 	return c.compileQuery(r)
 }
 
-func (c *compiler) compileQueryUpdate(l, r *Query, op Operator) error {
+// compileQueryUpdate compiles an assignment operator. alloc is nil unless the
+// assignment may update the input value in place, in which case it yields the
+// allocator of the enclosing reduce expression.
+func (c *compiler) compileQueryUpdate(l, r *Query, op Operator, alloc *Query) error {
 	switch op {
 	case OpAssign:
 		// optimize assignment operator with constant indexing and slicing
@@ -491,12 +494,7 @@ func (c *compiler) compileQueryUpdate(l, r *Query, op Operator) error {
 		}
 		fallthrough
 	case OpModify:
-		return c.compileFunc(
-			&Func{
-				Name: op.getFunc(),
-				Args: []*Query{l, r},
-			},
-		)
+		return c.compileUpdateFunc(op.getFunc(), []*Query{l, r}, alloc)
 	default:
 		name := "$%0"
 		c.append(&code{op: opdup})
@@ -504,25 +502,51 @@ func (c *compiler) compileQueryUpdate(l, r *Query, op Operator) error {
 			return err
 		}
 		c.append(&code{op: opstore, v: c.pushVariable(name)})
-		return c.compileFunc(
-			&Func{
-				Name: "_modify",
-				Args: []*Query{
-					l,
-					{Term: &Term{
-						Type: TermTypeFunc,
-						Func: &Func{
-							Name: op.getFunc(),
-							Args: []*Query{
-								{Term: &Term{Type: TermTypeIdentity}},
-								{Term: &Term{Type: TermTypeFunc, Func: &Func{Name: name}}},
-							},
+		return c.compileUpdateFunc(
+			"_modify",
+			[]*Query{
+				l,
+				{Term: &Term{
+					Type: TermTypeFunc,
+					Func: &Func{
+						Name: op.getFunc(),
+						Args: []*Query{
+							{Term: &Term{Type: TermTypeIdentity}},
+							{Term: &Term{Type: TermTypeFunc, Func: &Func{Name: name}}},
 						},
-					}},
-				},
+					},
+				}},
 			},
+			alloc,
 		)
 	}
+}
+
+const (
+	// Both names are deliberately invalid identifiers, so that a query cannot
+	// reach the allocator variants directly.
+	allocatorArgSuffix = "/3"
+	allocatorName      = "$%allocator"
+)
+
+// compileUpdateFunc calls _assign or _modify, or the variant taking an
+// allocator as its third argument.
+func (c *compiler) compileUpdateFunc(name string, args []*Query, alloc *Query) error {
+	if alloc == nil {
+		return c.compileFunc(&Func{Name: name, Args: args})
+	}
+	args = append(args, alloc)
+	fn := c.lookupBuiltin(name+allocatorArgSuffix, len(args))
+	if fn == nil {
+		switch name {
+		case "_assign":
+			c.compileAssign(true)
+		case "_modify":
+			c.compileModify(true)
+		}
+		fn = c.lookupBuiltin(name+allocatorArgSuffix, len(args))
+	}
+	return c.compileCallPc(fn, args)
 }
 
 func (c *compiler) compileBind(l, r *Query, patterns []*Pattern) error {
@@ -720,6 +744,21 @@ func (c *compiler) compileReduce(e *Reduce) error {
 	}
 	f()
 	c.append(&code{op: opstore, v: v})
+	// An assignment forming the whole update query is the only thing that
+	// observes the accumulated value, so it may modify it in place; see
+	// Query#inPlaceUpdate. The allocator lives across the whole reduction.
+	l, r, op, inPlace := e.Update.inPlaceUpdate()
+	var alloc *Query
+	if inPlace {
+		c.appends(
+			&code{op: oppush, v: nil},
+			&code{op: opcall, v: [3]any{funcAllocator, 0, "_allocator"}},
+			&code{op: opstore, v: c.pushVariable(allocatorName)},
+		)
+		alloc = &Query{Term: &Term{
+			Type: TermTypeFunc, Func: &Func{Name: allocatorName},
+		}}
+	}
 	setfork := c.lazy(func() *code {
 		return &code{op: opfork, v: len(c.codes)}
 	})
@@ -731,7 +770,13 @@ func (c *compiler) compileReduce(e *Reduce) error {
 	}
 	c.append(&code{op: opload, v: v})
 	f = c.newScopeDepth()
-	if err := c.compileQuery(e.Update); err != nil {
+	var err error
+	if inPlace {
+		err = c.compileQueryUpdate(l, r, op, alloc)
+	} else {
+		err = c.compileQuery(e.Update)
+	}
+	if err != nil {
 		return err
 	}
 	f()
@@ -936,9 +981,9 @@ func (c *compiler) compileFunc(e *Func) error {
 		if !compiled {
 			switch e.Name {
 			case "_assign":
-				c.compileAssign()
+				c.compileAssign(false)
 			case "_modify":
-				c.compileModify()
+				c.compileModify(false)
 			case "_last":
 				c.compileLast()
 			}
@@ -1034,29 +1079,54 @@ func (c *compiler) compileFunc(e *Func) error {
 //
 // To overcome the difficulty of reducing allocations on `setpath`, we use the
 // `allocator` type and track the allocated addresses during the reduction.
-func (c *compiler) compileAssign() {
-	defer c.appendBuiltin("_assign", 2)()
+//
+// The shared variant reuses the allocator of the enclosing reduce expression
+// instead of creating a new one, modifying the value in place.
+func (c *compiler) compileAssign(shared bool) {
+	name, argcnt := "_assign", 2
+	if shared {
+		name, argcnt = name+allocatorArgSuffix, 3
+	}
+	defer c.appendBuiltin(name, argcnt)()
 	scope := c.newScope()
 	v, p := [2]int{scope.id, 0}, [2]int{scope.id, 1}
 	x, a := [2]int{scope.id, 2}, [2]int{scope.id, 3}
 	// Cannot reuse v, p due to backtracking in x.
 	w, q := [2]int{scope.id, 4}, [2]int{scope.id, 5}
 	c.appends(
-		&code{op: opscope, v: [3]int{scope.id, 6, 2}},
+		&code{op: opscope, v: [3]int{scope.id, 6, argcnt}},
 		&code{op: opstore, v: v}, //                def _assign(p; $x):
 		&code{op: opstore, v: p},
 		&code{op: opstore, v: x},
+	)
+	if shared {
+		c.append(&code{op: opstore, v: a}) //       the allocator argument
+	}
+	c.appends(
 		&code{op: opload, v: v},
 		&code{op: opexpbegin},
 		&code{op: opload, v: x},
 		&code{op: opcallpc},
 		&code{op: opstore, v: x},
 		&code{op: opexpend},
-		&code{op: oppush, v: nil},
-		&code{op: opcall, v: [3]any{funcAllocator, 0, "_allocator"}},
-		&code{op: opstore, v: a},
+	)
+	if shared {
+		c.appends(
+			&code{op: opload, v: v},
+			&code{op: opload, v: a},
+			&code{op: opcallpc},
+			&code{op: opstore, v: a},
+		)
+	} else {
+		c.appends(
+			&code{op: oppush, v: nil},
+			&code{op: opcall, v: [3]any{funcAllocator, 0, "_allocator"}},
+			&code{op: opstore, v: a},
+		)
+	}
+	c.appends(
 		&code{op: opload, v: v},
-		&code{op: opfork, v: len(c.codes) + 30}, // reduce [L1]
+		&code{op: opfork, v: len(c.codes) + 17}, // reduce [L1]
 		&code{op: opdup},
 		&code{op: opstore, v: w},
 		&code{op: oppathbegin}, //                  path(p)
@@ -1080,24 +1150,49 @@ func (c *compiler) compileAssign() {
 
 // Appends the compiled code for the update-assignment operator (`|=`) to
 // maximize performance. We use the `allocator` type, just like `_assign/2`.
-func (c *compiler) compileModify() {
-	defer c.appendBuiltin("_modify", 2)()
+//
+// The shared variant reuses the allocator of the enclosing reduce expression;
+// see compiler#compileAssign.
+func (c *compiler) compileModify(shared bool) {
+	name, argcnt := "_modify", 2
+	if shared {
+		name, argcnt = name+allocatorArgSuffix, 3
+	}
+	defer c.appendBuiltin(name, argcnt)()
 	scope := c.newScope()
 	v, p := [2]int{scope.id, 0}, [2]int{scope.id, 1}
 	f, d := [2]int{scope.id, 2}, [2]int{scope.id, 3}
 	a, l := [2]int{scope.id, 4}, [2]int{scope.id, 5}
 	c.appends(
-		&code{op: opscope, v: [3]int{scope.id, 6, 2}},
+		&code{op: opscope, v: [3]int{scope.id, 6, argcnt}},
 		&code{op: opstore, v: v}, //                def _modify(p; f):
 		&code{op: opstore, v: p},
 		&code{op: opstore, v: f},
+	)
+	if shared {
+		c.append(&code{op: opstore, v: a}) //       the allocator argument
+	}
+	c.appends(
 		&code{op: oppush, v: []any{}},
 		&code{op: opstore, v: d},
-		&code{op: oppush, v: nil},
-		&code{op: opcall, v: [3]any{funcAllocator, 0, "_allocator"}},
-		&code{op: opstore, v: a},
+	)
+	if shared {
+		c.appends(
+			&code{op: opload, v: v},
+			&code{op: opload, v: a},
+			&code{op: opcallpc},
+			&code{op: opstore, v: a},
+		)
+	} else {
+		c.appends(
+			&code{op: oppush, v: nil},
+			&code{op: opcall, v: [3]any{funcAllocator, 0, "_allocator"}},
+			&code{op: opstore, v: a},
+		)
+	}
+	c.appends(
 		&code{op: opload, v: v},
-		&code{op: opfork, v: len(c.codes) + 40}, // reduce [L1]
+		&code{op: opfork, v: len(c.codes) + 31}, // reduce [L1]
 		&code{op: oppathbegin},                  // path(p)
 		&code{op: opload, v: p},
 		&code{op: opcallpc},
@@ -1106,7 +1201,7 @@ func (c *compiler) compileModify() {
 		&code{op: opstore, v: p},                // as $p (.;
 		&code{op: opforklabel, v: l},            // label $l |
 		&code{op: opload, v: v},                 //
-		&code{op: opfork, v: len(c.codes) + 37}, // [L2]
+		&code{op: opfork, v: len(c.codes) + 28}, // [L2]
 		&code{op: oppop},                        // (getpath($p) |
 		&code{op: opload, v: a},
 		&code{op: opload, v: a},
@@ -1120,8 +1215,8 @@ func (c *compiler) compileModify() {
 		&code{op: opcall, v: [3]any{funcSetpathWithAllocator, 3, "_setpath"}},
 		&code{op: opstore, v: v},
 		&code{op: opload, v: v},                 // ., break $l
-		&code{op: opfork, v: len(c.codes) + 35}, // [L4]
-		&code{op: opjump, v: len(c.codes) + 39}, // [L3]
+		&code{op: opfork, v: len(c.codes) + 26}, // [L4]
+		&code{op: opjump, v: len(c.codes) + 30}, // [L3]
 		&code{op: opload, v: l},                 // [L4]
 		&code{op: opcall, v: [3]any{funcBreak(""), 0, "_break"}},
 		&code{op: opload, v: p},   //               append $p to $d [L2]

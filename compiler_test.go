@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"reflect"
+	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -372,6 +373,57 @@ func TestCodeRun_RaceRegexp(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+}
+
+// Building an object or an array of n elements must allocate memory
+// proportional to n, not to n squared.
+func TestCodeRun_ReduceAssignmentAllocation(t *testing.T) {
+	for _, src := range []string{
+		`reduce .[] as $x ({}; .[$x|tostring] = $x)`,
+		`reduce .[] as $x ({}; .[$x|tostring] |= $x)`,
+		`reduce .[] as $x ({}; .[$x|tostring] += 1)`,
+		`reduce .[] as $x ([]; .[$x] = $x)`,
+	} {
+		t.Run(src, func(t *testing.T) {
+			query, err := gojq.Parse(src)
+			if err != nil {
+				t.Fatal(err)
+			}
+			code, err := gojq.Compile(query)
+			if err != nil {
+				t.Fatal(err)
+			}
+			small, large := allocatedBytes(t, code, 1000), allocatedBytes(t, code, 4000)
+			// Quadratic growth would be about sixteen times as much.
+			if expected := small * 8; large > expected {
+				t.Errorf("expected at most %v bytes for 4000 elements, got %v (%v bytes for 1000 elements)",
+					expected, large, small)
+			}
+		})
+	}
+}
+
+func allocatedBytes(t *testing.T, code *gojq.Code, n int) uint64 {
+	t.Helper()
+	input := make([]any, n)
+	for i := range input {
+		input[i] = i
+	}
+	var before, after runtime.MemStats
+	runtime.GC()
+	runtime.ReadMemStats(&before)
+	iter := code.Run(input)
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if err, ok := v.(error); ok {
+			t.Fatal(err)
+		}
+	}
+	runtime.ReadMemStats(&after)
+	return after.TotalAlloc - before.TotalAlloc
 }
 
 func BenchmarkCompile(b *testing.B) {
