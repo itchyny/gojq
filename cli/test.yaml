@@ -2407,7 +2407,7 @@
     "/a,b/c/d/e,f/"
     ",/ /a/,/b/,/ /c/,/ /d/,/ /e/,/f/,/ "
 
-- name: split/1 function against the divide operator
+- name: split/1 function against empty string
   args:
     - -c
     - '.[] as $t | .[] as $s | $s | split($t)'
