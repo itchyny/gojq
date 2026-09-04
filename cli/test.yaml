@@ -5429,6 +5429,14 @@
   expected: |
     [1,3,6,5,5]
 
+- name: update-assignment operator against object with overlapping paths
+  args:
+    - -c
+    - '(.a.b,.a,.a.p.z) |= {p: ., q: .}'
+  input: '{"a":{"b":1}}'
+  expected: |
+    {"a":{"p":{"b":{"p":1,"q":1},"z":{"p":null,"q":null}},"q":{"b":{"p":1,"q":1}}}}
+
 - name: update-assignment operator with optional operator
   args:
     - -c

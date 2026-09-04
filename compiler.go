@@ -1097,7 +1097,7 @@ func (c *compiler) compileModify() {
 		&code{op: opcall, v: [3]any{funcAllocator, 0, "_allocator"}},
 		&code{op: opstore, v: a},
 		&code{op: opload, v: v},
-		&code{op: opfork, v: len(c.codes) + 39}, // reduce [L1]
+		&code{op: opfork, v: len(c.codes) + 40}, // reduce [L1]
 		&code{op: oppathbegin},                  // path(p)
 		&code{op: opload, v: p},
 		&code{op: opcallpc},
@@ -1106,12 +1106,13 @@ func (c *compiler) compileModify() {
 		&code{op: opstore, v: p},                // as $p (.;
 		&code{op: opforklabel, v: l},            // label $l |
 		&code{op: opload, v: v},                 //
-		&code{op: opfork, v: len(c.codes) + 36}, // [L2]
+		&code{op: opfork, v: len(c.codes) + 37}, // [L2]
 		&code{op: oppop},                        // (getpath($p) |
+		&code{op: opload, v: a},
 		&code{op: opload, v: a},
 		&code{op: opload, v: p},
 		&code{op: opload, v: v},
-		&code{op: opcall, v: [3]any{internalFuncs["getpath"].callback, 1, "getpath"}},
+		&code{op: opcall, v: [3]any{funcGetpathWithAllocator, 2, "getpath"}},
 		&code{op: opload, v: f}, //                 f)
 		&code{op: opcallpc},
 		&code{op: opload, v: p}, //                 setpath($p; ...)
@@ -1119,8 +1120,8 @@ func (c *compiler) compileModify() {
 		&code{op: opcall, v: [3]any{funcSetpathWithAllocator, 3, "_setpath"}},
 		&code{op: opstore, v: v},
 		&code{op: opload, v: v},                 // ., break $l
-		&code{op: opfork, v: len(c.codes) + 34}, // [L4]
-		&code{op: opjump, v: len(c.codes) + 38}, // [L3]
+		&code{op: opfork, v: len(c.codes) + 35}, // [L4]
+		&code{op: opjump, v: len(c.codes) + 39}, // [L3]
 		&code{op: opload, v: l},                 // [L4]
 		&code{op: opcall, v: [3]any{funcBreak(""), 0, "_break"}},
 		&code{op: opload, v: p},   //               append $p to $d [L2]
