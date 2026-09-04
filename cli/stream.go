@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 )
 
@@ -47,7 +48,7 @@ func (s *jsonStream) next() (any, error) {
 	for {
 		token, err := s.dec.Token()
 		if err != nil {
-			if err == io.EOF && s.states[len(s.states)-1] != jsonStateTopValue {
+			if s.states[len(s.states)-1] != jsonStateTopValue && isUnexpectedEOF(err, s.dec) {
 				err = io.ErrUnexpectedEOF
 			}
 			return nil, err
@@ -108,4 +109,18 @@ func (s *jsonStream) copyPath() []any {
 	path := make([]any, len(s.path))
 	copy(path, s.path)
 	return path
+}
+
+// isUnexpectedEOF reports whether err from (*json.Decoder).Token marks the input
+// being truncated in the middle of a value. Before Go 1.27 the decoder returned
+// io.EOF at this point; since Go 1.27 (encoding/json v2) it instead returns a
+// *json.SyntaxError ("unexpected end of JSON input") whose offset sits at the end
+// of the consumed input. Both are normalized to io.ErrUnexpectedEOF so callers
+// render the same error position and message across Go versions.
+func isUnexpectedEOF(err error, dec *json.Decoder) bool {
+	if err == io.EOF {
+		return true
+	}
+	var se *json.SyntaxError
+	return errors.As(err, &se) && se.Offset >= dec.InputOffset()
 }
