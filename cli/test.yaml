@@ -3632,6 +3632,68 @@
   expected: |
     [[1,1],[1]]
 
+- name: reduce with assignment in update
+  args:
+    - -c
+    - 'reduce range(3) as $i ({}; .[$i|tostring] = {}),
+       reduce range(3) as $i ({}; .a[$i|tostring] = $i),
+       reduce range(3) as $i ([]; .[$i] = $i),
+       reduce range(3) as $i ({}; .[$i|tostring] += 1)'
+  input: 'null'
+  expected: |
+    {"0":{},"1":{},"2":{}}
+    {"a":{"0":0,"1":1,"2":2}}
+    [0,1,2]
+    {"0":1,"1":1,"2":1}
+
+- name: reduce with assignment of the accumulated value
+  args:
+    - -c
+    - 'reduce range(3) as $i ({}; .a = .),
+       reduce range(3) as $i ({}; .a = {v: .}),
+       reduce range(3) as $i ({}; . as $p | .a = $i | .b = $p)'
+  input: 'null'
+  expected: |
+    {"a":{"a":{"a":{}}}}
+    {"a":{"v":{"a":{"v":{"a":{"v":{}}}}}}}
+    {"a":2,"b":{"a":1,"b":{"a":0,"b":{}}}}
+
+- name: reduce with assignment of multiple values
+  args:
+    - -c
+    - 'reduce range(2) as $i ({"k":"k"}; .[.k] = ("x","y")),
+       reduce range(2) as $i ({}; (.a = 1), (.b = 2))'
+  input: 'null'
+  expected: |
+    {"k":"y","y":"y"}
+    {"b":2}
+
+- name: reduce with assignment of a shared value
+  args:
+    - -c
+    - '{"a":1} as $x | reduce range(2) as $i ({}; .[$i|tostring] = $x) |
+       [(.["0"].a = 9), $x]'
+  input: 'null'
+  expected: |
+    [{"0":{"a":9},"1":{"a":1}},{"a":1}]
+
+- name: reduce with assignment result reused
+  args:
+    - -c
+    - 'reduce range(3) as $i ({}; .[$i|tostring] = $i) as $r |
+       [($r | .["0"] = 9), $r]'
+  input: 'null'
+  expected: |
+    [{"0":9,"1":1,"2":2},{"0":0,"1":1,"2":2}]
+
+- name: foreach with assignment in update
+  args:
+    - -c
+    - '[foreach range(3) as $i ({}; .[$i|tostring] = $i)]'
+  input: 'null'
+  expected: |
+    [{"0":0},{"0":0,"1":1},{"0":0,"1":1,"2":2}]
+
 - name: foreach iterator
   args:
     - 'foreach range(5) as $item (0; $item)'
@@ -5451,6 +5513,14 @@
   input: '[1,2,3,4,5]'
   expected: |
     [1,3,6,5,5]
+
+- name: update-assignment operator against object with overlapping paths
+  args:
+    - -c
+    - '(.a.b,.a,.a.p.z) |= {p: ., q: .}'
+  input: '{"a":{"b":1}}'
+  expected: |
+    {"a":{"p":{"b":{"p":1,"q":1},"z":{"p":null,"q":null}},"q":{"b":{"p":1,"q":1}}}}
 
 - name: update-assignment operator with optional operator
   args:
