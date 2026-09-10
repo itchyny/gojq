@@ -5012,6 +5012,46 @@
   expected: |
     {"a":[{},{"b":[1,2,3]}]}
 
+- name: getpath function against string
+  args:
+    - -c
+    - '[getpath([{"start":1,"end":3}]), getpath([{"start":-2,"end":null}]), getpath([1]), getpath([])]'
+  input: '"abcde"'
+  expected: |
+    ["bc","de","b","abcde"]
+
+- name: getpath function against string in a container
+  args:
+    - -c
+    - 'getpath(["a",{"start":0,"end":2}]), getpath(["a",1])'
+  input: '{"a":"abc"}'
+  expected: |
+    "ab"
+    "b"
+
+- name: getpath function against string round trip with path function
+  args:
+    - -c
+    - '[getpath(path(.[1:3])), getpath(path(.[1]))]'
+  input: '"abcde"'
+  expected: |
+    ["bc","b"]
+
+- name: getpath function against string round trip in a container
+  args:
+    - -c
+    - '. as $d | [path(.a[0:2]), path(.b[1])] | map(. as $p | $d | getpath($p))'
+  input: '{"a":"abc","b":"xyz"}'
+  expected: |
+    ["ab","y"]
+
+- name: getpath function against string with object key
+  args:
+    - 'getpath(["k"])'
+  input: '"abc"'
+  error: |
+    getpath(["k"]) cannot be applied to "abc": expected an object but got: string ("abc")
+
 - name: getpath function error
   args:
     - 'getpath(["a",1,"b","c"])'
