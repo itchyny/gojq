@@ -3608,6 +3608,16 @@
   expected: |
     8
 
+- name: reduce with assignment of multiple paths in update
+  args:
+    - -c
+    - 'reduce (1,2) as $i (.; (.[0], .[.[0]]) = $i),
+       reduce (1,2) as $i (.; (.[0], .[.[0]]) |= $i)'
+  input: '[0,0,0]'
+  expected: |
+    [2,2,0]
+    [2,2,0]
+
 - name: reduce with query in start
   args:
     - 'reduce range(5) as $x (range(3); . + $x)'
