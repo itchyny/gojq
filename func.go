@@ -1783,14 +1783,9 @@ func funcGetpath(v, p any) any {
 	}
 	u := v
 	for _, x := range path {
-		switch v.(type) {
-		case nil, []any, map[string]any:
-			v = funcIndex2(nil, v, x)
-			if err, ok := v.(error); ok {
-				return &func1WrapError{"getpath", u, p, err}
-			}
-		default:
-			return &func1TypeError{"getpath", u, p}
+		v = funcIndex2(nil, v, x)
+		if err, ok := v.(error); ok {
+			return &func1WrapError{"getpath", u, p, err}
 		}
 	}
 	return v
