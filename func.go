@@ -1611,8 +1611,6 @@ func update(v any, path []any, n any, a allocator) (any, error) {
 			return nil, &expectedArrayError{v}
 		}
 	case map[string]any:
-		// A slice bound stays reachable through the path.
-		a.release(p)
 		switch v := v.(type) {
 		case nil:
 			return updateArraySlice(nil, p, path[1:], n, a)
