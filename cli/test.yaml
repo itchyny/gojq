@@ -5084,9 +5084,9 @@
   expected: |
     {"a":[{"b":5}]}
     {"a":[{"b":5}],"b":0}
-    "getpath([\"a\",0,\"b\"]) cannot be applied to: object ({\"a\":0})"
+    "getpath([\"a\",0,\"b\"]) cannot be applied to {\"a\":0}: expected an array but got: number (0)"
     {"a":[{"b":5}]}
-    "getpath([\"a\",0,\"b\"]) cannot be applied to: object ({\"a\":[0,1]})"
+    "getpath([\"a\",0,\"b\"]) cannot be applied to {\"a\":[0,1]}: expected an object but got: number (0)"
     "getpath([\"a\",0,\"b\"]) cannot be applied to {\"a\":{\"b\":1}}: expected an array but got: object ({\"b\":1})"
     {"a":[{"b":5}]}
     {"a":[{"b":5,"c":3}]}

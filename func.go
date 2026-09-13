@@ -1783,16 +1783,9 @@ func funcGetpath(v, p any) any {
 	}
 	u := v
 	for _, x := range path {
-		switch v.(type) {
-		// gojq can index and slice strings, so they work as path targets too.
-		// funcIndex2 still errors if the path element is an object key.
-		case nil, []any, map[string]any, string:
-			v = funcIndex2(nil, v, x)
-			if err, ok := v.(error); ok {
-				return &func1WrapError{"getpath", u, p, err}
-			}
-		default:
-			return &func1TypeError{"getpath", u, p}
+		v = funcIndex2(nil, v, x)
+		if err, ok := v.(error); ok {
+			return &func1WrapError{"getpath", u, p, err}
 		}
 	}
 	return v
