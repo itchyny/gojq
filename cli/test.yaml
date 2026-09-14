@@ -5510,6 +5510,14 @@
   expected: |
     {"a":{"p":{"b":{"p":1,"q":1},"z":{"p":null,"q":null}},"q":{"b":{"p":1,"q":1}}}}
 
+- name: update-assignment operator against nested object with overlapping paths
+  args:
+    - -c
+    - '(.a.b.c,.a,.a.p.b.z) |= {p: ., q: .}'
+  input: '{"a":{"b":{"c":1}}}'
+  expected: |
+    {"a":{"p":{"b":{"c":{"p":1,"q":1},"z":{"p":null,"q":null}}},"q":{"b":{"c":{"p":1,"q":1}}}}}
+
 - name: update-assignment operator with optional operator
   args:
     - -c
