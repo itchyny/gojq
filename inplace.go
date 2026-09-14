@@ -10,6 +10,11 @@ func (e *Query) inPlaceUpdate() (l, r *Query, op Operator, ok bool) {
 	if e.Term != nil || len(e.FuncDefs) > 0 {
 		return nil, nil, 0, false
 	}
+	// Every path is evaluated against the input value, which the setpath calls
+	// for earlier paths would already have modified in place.
+	if !e.Left.pathsIgnoreInput() {
+		return nil, nil, 0, false
+	}
 	switch e.Op {
 	case OpModify:
 		// _modify releases the allocator before calling the update function.
@@ -30,6 +35,49 @@ func (e *Query) inPlaceUpdate() (l, r *Query, op Operator, ok bool) {
 		}
 	}
 	return nil, nil, 0, false
+}
+
+// pathsIgnoreInput reports whether the paths the query denotes do not depend on
+// the input value, such as .a.b, .[$k] or (.a, .b). It answers false unless it
+// can prove otherwise.
+func (e *Query) pathsIgnoreInput() bool {
+	if e == nil || len(e.FuncDefs) > 0 {
+		return false
+	}
+	if e.Term != nil {
+		return e.Term.pathsIgnoreInput()
+	}
+	switch e.Op {
+	case OpComma:
+		return e.Left.pathsIgnoreInput() && e.Right.pathsIgnoreInput()
+	case OpPipe:
+		return len(e.Patterns) == 0 &&
+			e.Left.pathsIgnoreInput() && e.Right.pathsIgnoreInput()
+	default:
+		return false
+	}
+}
+
+func (e *Term) pathsIgnoreInput() bool {
+	switch e.Type {
+	case TermTypeIdentity:
+	case TermTypeIndex:
+		if e.Index.readsInput() {
+			return false
+		}
+	case TermTypeQuery:
+		if !e.Query.pathsIgnoreInput() {
+			return false
+		}
+	default:
+		return false
+	}
+	for _, s := range e.SuffixList {
+		if s.Iter || s.Index == nil || s.Index.readsInput() {
+			return false
+		}
+	}
+	return true
 }
 
 // readsInput reports whether evaluating the query may observe its input value.
