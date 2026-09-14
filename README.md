@@ -143,6 +143,7 @@ func main() {
       The `halt` function in jq not only stops the iteration, but also terminates the command execution, even if there are still input values.
       So, gojq leaves it up to the library user how to handle the halting error.
   - Note that the result iterator may emit infinite number of values; `repeat(0)` and `range(infinite)`. It may stuck with no output value; `def f: f; f`. Use `RunWithContext` when you want to limit the execution time.
+  - When you want to run untrusted queries with a hard memory cap, see the [`sandbox`](https://pkg.go.dev/github.com/itchyny/gojq/sandbox) package; it runs a query in a WebAssembly sandbox and is enabled with the `gojq_sandbox` build tag. The cap applies to each run, so bound the number of concurrent runs to keep the host within its own memory. After changing the guest source, run `make build-sandbox` to regenerate the committed module; CI fails when it is stale.
 
 [`gojq.Compile`](https://pkg.go.dev/github.com/itchyny/gojq#Compile) allows to configure the following compiler options.
 

@@ -76,6 +76,29 @@ jobs:
         run: go generate && ! git diff | grep ^
         shell: bash
 
+  sandbox:
+    name: Sandbox
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: 1.26.x
+      - name: Test
+        run: go test -race -tags gojq_sandbox ./sandbox/
+      - name: Check the guest module is up to date
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --no-tags --depth=1 origin "$GITHUB_BASE_REF"
+          if git diff --name-only "origin/$GITHUB_BASE_REF" HEAD -- sandbox/ | grep -q .; then
+            make build-sandbox
+            git diff --exit-code --stat sandbox/gojq_guest.wasm.gz
+          else
+            echo "sandbox/ unchanged; skipping"
+          fi
+
   docker:
     name: Docker
     permissions:
