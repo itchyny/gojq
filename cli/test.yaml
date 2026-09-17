@@ -6679,6 +6679,33 @@
     "aabcABC☆★☆ABCabc"
     "abcABC☆★☆ABCabc"
 
+- name: match function empty match after non-empty
+  args:
+    - -c
+    - '[scan("[a-z]*")], gsub("[0-9]*";"#"), [match("a*";"g").offset]'
+  input: '"a1b"'
+  expected: |
+    ["a","","b",""]
+    "#a##b#"
+    [0,1,2,3]
+
+- name: match function empty match after non-empty with hyphen
+  args:
+    - -c
+    - '[scan("[a-z]*")], split("-*";"")'
+  input: '"ab-cd"'
+  expected: |
+    ["ab","","cd",""]
+    ["","a","b","","c","d",""]
+
+- name: splits function empty match after non-empty
+  args:
+    - -c
+    - '[splits("\\s*")]'
+  input: '"a b"'
+  expected: |
+    ["","a","","b",""]
+
 - name: INDEX function
   args:
     - -c
