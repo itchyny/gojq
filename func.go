@@ -1857,21 +1857,25 @@ func funcBsearch(v, t any) any {
 }
 
 func funcGmtime(v any) any {
-	if v, ok := toFloat(v); ok {
-		return epochToArray(v, time.UTC)
-	}
-	return &func0TypeError{"gmtime", v}
+	return timeToArrayFunc("gmtime", v, time.UTC)
 }
 
 func funcLocaltime(v any) any {
-	if v, ok := toFloat(v); ok {
-		return epochToArray(v, time.Local)
-	}
-	return &func0TypeError{"localtime", v}
+	return timeToArrayFunc("localtime", v, time.Local)
 }
 
-func epochToArray(v float64, loc *time.Location) []any {
-	t := time.Unix(int64(v), int64((v-math.Floor(v))*1e9)).In(loc)
+func timeToArrayFunc(name string, v any, loc *time.Location) any {
+	if v, ok := toFloat(v); ok {
+		return timeToArray(epochToTime(v, loc))
+	}
+	return &func0TypeError{name, v}
+}
+
+func epochToTime(v float64, loc *time.Location) time.Time {
+	return time.Unix(int64(math.Floor(v)), int64((v-math.Floor(v))*1e9)).In(loc)
+}
+
+func timeToArray(t time.Time) []any {
 	return []any{
 		t.Year(),
 		int(t.Month()) - 1,
@@ -1901,39 +1905,28 @@ func timeToEpoch(t time.Time) float64 {
 }
 
 func funcStrftime(v, x any) any {
-	if w, ok := toFloat(v); ok {
-		v = epochToArray(w, time.UTC)
-	}
-	a, ok := v.([]any)
-	if !ok {
-		return &func1TypeError{"strftime", v, x}
-	}
-	format, ok := x.(string)
-	if !ok {
-		return &func1TypeError{"strftime", v, x}
-	}
-	t, err := arrayToTime(a, time.UTC)
-	if err != nil {
-		return &func1WrapError{"strftime", v, x, err}
-	}
-	return timefmt.Format(t, format)
+	return formatTimeFunc("strftime", v, x, time.UTC)
 }
 
 func funcStrflocaltime(v, x any) any {
-	if w, ok := toFloat(v); ok {
-		v = epochToArray(w, time.Local)
-	}
-	a, ok := v.([]any)
-	if !ok {
-		return &func1TypeError{"strflocaltime", v, x}
-	}
+	return formatTimeFunc("strflocaltime", v, x, time.Local)
+}
+
+func formatTimeFunc(name string, v, x any, loc *time.Location) any {
 	format, ok := x.(string)
 	if !ok {
-		return &func1TypeError{"strflocaltime", v, x}
+		return &func1TypeError{name, v, x}
 	}
-	t, err := arrayToTime(a, time.Local)
-	if err != nil {
-		return &func1WrapError{"strflocaltime", v, x, err}
+	var t time.Time
+	if w, ok := toFloat(v); ok {
+		t = epochToTime(w, loc)
+	} else if a, ok := v.([]any); ok {
+		var err error
+		if t, err = arrayToTime(a, loc); err != nil {
+			return &func1WrapError{name, v, x, err}
+		}
+	} else {
+		return &func1TypeError{name, v, x}
 	}
 	return timefmt.Format(t, format)
 }
@@ -1954,7 +1947,7 @@ func funcStrptime(v, x any) any {
 	if t.Equal(time.Time{}) {
 		return &func1TypeError{"strptime", v, x}
 	}
-	return epochToArray(timeToEpoch(t), time.UTC)
+	return timeToArray(t.UTC())
 }
 
 func arrayToTime(a []any, loc *time.Location) (time.Time, error) {
