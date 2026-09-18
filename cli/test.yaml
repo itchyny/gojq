@@ -6679,6 +6679,49 @@
     "aabcABC☆★☆ABCabc"
     "abcABC☆★☆ABCabc"
 
+- name: match function with empty matches
+  args:
+    - -c
+    - '[match("a*"; "g").offset], [scan("[a-z]*")], gsub("[0-9]*"; "#"), split("-*"; ""), [splits("\\s*")]'
+  input: '"a1b-c d"'
+  expected: |
+    [0,1,2,3,4,5,6,7]
+    ["a","","b","","c","","d",""]
+    "#a##b#-#c# #d#"
+    ["","a","1","b","","c"," ","d",""]
+    ["","a","1","b","-","c","","d",""]
+
+- name: match function with empty matches and assertions
+  args:
+    - -c
+    - 'gsub("(?m)^a*"; "#"), gsub("\\ba*"; "#"), gsub("(^|-)a*"; "#"), gsub("[a-z]*\\b"; "#")'
+  input: '"a-a b"'
+  expected: |
+    "#-a b"
+    "##-## #b#"
+    "## b"
+    "##-## ##"
+
+- name: match function with empty matches and captures
+  args:
+    - -c
+    - '[scan("(x)?a*")], [match("(a|)"; "g") | [.offset, .captures[0].offset]], [scan("[^a]*"; "i")]'
+  input: '"1a-A"'
+  expected: |
+    [[null],[null],[null],[null],[null]]
+    [[0,0],[1,1],[2,2],[3,3],[4,4]]
+    ["1","","-","",""]
+
+- name: match function with empty matches against multibyte characters
+  args:
+    - -c
+    - '[scan("[☆★]*")], [match("[☆★]*"; "g").offset], gsub("[☆★]*"; "#")'
+  input: '"☆★1☆★"'
+  expected: |
+    ["☆★","","☆★",""]
+    [0,2,3,5]
+    "##1##"
+
 - name: INDEX function
   args:
     - -c

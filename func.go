@@ -2053,10 +2053,10 @@ func funcMatch(v, re, fs, testing any, cache *sync.Map) any {
 	return res
 }
 
-func compileRegexp(re, flags string, cache *sync.Map) (*regexp.Regexp, error) {
+func compileRegexp(re, flags string, cache *sync.Map) (*regexpMatcher, error) {
 	key := [2]string{re, flags}
 	if r, ok := cache.Load(key); ok {
-		return r.(*regexp.Regexp), nil
+		return r.(*regexpMatcher), nil
 	}
 	if strings.IndexFunc(flags, func(r rune) bool {
 		return r != 'g' && r != 'i' && r != 'm'
@@ -2073,8 +2073,60 @@ func compileRegexp(re, flags string, cache *sync.Map) (*regexp.Regexp, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid regular expression %q: %s", re, err)
 	}
-	cache.Store(key, r)
-	return r, nil
+	m := &regexpMatcher{Regexp: r}
+	if r, err := regexp.Compile(`\A(?s:.)(?:` + re + `)`); err == nil {
+		m.probe = r
+	}
+	cache.Store(key, m)
+	return m, nil
+}
+
+// regexpMatcher wraps a compiled regular expression to fill the gap between
+// the standard library and jq; the former ignores an empty match abutting a
+// preceding match, while the latter reports it.
+type regexpMatcher struct {
+	*regexp.Regexp
+	// probe matches a single character followed by the regular expression,
+	// anchored at the beginning, and is used to look for an empty match at
+	// the end of a non-empty match without losing the preceding context,
+	// which matters for assertions like ^ and \b.
+	probe *regexp.Regexp
+}
+
+func (r *regexpMatcher) FindAllStringSubmatchIndex(s string, n int) [][]int {
+	xs := r.Regexp.FindAllStringSubmatchIndex(s, n)
+	if len(xs) == 0 || n == 1 || r.probe == nil {
+		return xs
+	}
+	ys := make([][]int, 0, len(xs))
+	for i, x := range xs {
+		ys = append(ys, x)
+		if x[0] == x[1] || i+1 < len(xs) && xs[i+1][0] == x[1] {
+			continue
+		}
+		if y := r.emptyMatchAt(s, x[1]); y != nil {
+			ys = append(ys, y)
+		}
+	}
+	return ys
+}
+
+func (r *regexpMatcher) emptyMatchAt(s string, offset int) []int {
+	_, w := utf8.DecodeLastRuneInString(s[:offset])
+	x := r.probe.FindStringSubmatchIndex(s[offset-w:])
+	if x == nil || x[1] != w {
+		return nil
+	}
+	y := make([]int, len(x))
+	y[0], y[1] = offset, offset
+	for i := 2; i < len(x); i++ {
+		if x[i] < 0 {
+			y[i] = -1
+		} else {
+			y[i] = x[i] + offset - w
+		}
+	}
+	return y
 }
 
 func funcCaptures(v any) any {
