@@ -6679,64 +6679,48 @@
     "aabcABC☆★☆ABCabc"
     "abcABC☆★☆ABCabc"
 
-- name: match function empty match after non-empty
+- name: match function with empty matches
   args:
     - -c
-    - '[scan("[a-z]*")], gsub("[0-9]*";"#"), [match("a*";"g").offset]'
-  input: '"a1b"'
+    - '[match("a*"; "g").offset], [scan("[a-z]*")], gsub("[0-9]*"; "#"), split("-*"; ""), [splits("\\s*")]'
+  input: '"a1b-c d"'
   expected: |
-    ["a","","b",""]
-    "#a##b#"
-    [0,1,2,3]
+    [0,1,2,3,4,5,6,7]
+    ["a","","b","","c","","d",""]
+    "#a##b#-#c# #d#"
+    ["","a","1","b","","c"," ","d",""]
+    ["","a","1","b","-","c","","d",""]
 
-- name: match function empty match after non-empty with hyphen
+- name: match function with empty matches and assertions
   args:
     - -c
-    - '[scan("[a-z]*")], split("-*";"")'
-  input: '"ab-cd"'
+    - 'gsub("(?m)^a*"; "#"), gsub("\\ba*"; "#"), gsub("(^|-)a*"; "#"), gsub("[a-z]*\\b"; "#")'
+  input: '"a-a b"'
   expected: |
-    ["ab","","cd",""]
-    ["","a","b","","c","d",""]
+    "#-a b"
+    "##-## #b#"
+    "## b"
+    "##-## ##"
 
-- name: splits function empty match after non-empty
+- name: match function with empty matches and captures
   args:
     - -c
-    - '[splits("\\s*")]'
-  input: '"a b"'
+    - '[scan("(x)?a*")], [match("(a|)"; "g") | [.offset, .captures[0].offset]], [scan("[^a]*"; "i")]'
+  input: '"1a-A"'
   expected: |
-    ["","a","","b",""]
+    [[null],[null],[null],[null],[null]]
+    [[0,0],[1,1],[2,2],[3,3],[4,4]]
+    ["1","","-","",""]
 
-- name: gsub empty match after non-empty jq cases
+- name: match function with empty matches against multibyte characters
   args:
-    - -r
-    - 'gsub("(?m)^a*";"#")'
-  input: '"a"'
+    - -c
+    - '[scan("[☆★]*")], [match("[☆★]*"; "g").offset], gsub("[☆★]*"; "#")'
+  input: '"☆★1☆★"'
   expected: |
-    #
-
-- name: gsub empty match word-boundary a-star
-  args:
-    - -r
-    - 'gsub("\\ba*";"#")'
-  input: '"aaa"'
-  expected: |
-    ##
-
-- name: gsub empty match start-or-hyphen a-star
-  args:
-    - -r
-    - 'gsub("(^|-)a*";"#")'
-  input: '"ab"'
-  expected: |
-    #b
-
-- name: gsub empty match letters at word boundary
-  args:
-    - -r
-    - 'gsub("[a-z]*\\b";"#")'
-  input: '"ab cd"'
-  expected: |
-    ## ##
+    ["☆★","","☆★",""]
+    [0,2,3,5]
+    "##1##"
 
 - name: INDEX function
   args:
