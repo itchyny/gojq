@@ -7883,6 +7883,17 @@
         2 | bar: ]
                  ^  did not find expected node content
 
+- name: yaml input option error with multibyte characters
+  args:
+    - --yaml-input
+    - '.'
+  input: |
+    {１２３: 4, １２３: 5}
+  error: |
+    invalid yaml: <stdin>:1
+        1 | {１２３: 4, １２３: 5}
+                        ^  mapping key "１２３" already defined at line 1
+
 - name: yaml input option multiple errors
   args:
     - --yaml-input

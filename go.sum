@@ -4,8 +4,8 @@ github.com/clipperhouse/uax29/v2 v2.3.0 h1:SNdx9DVUqMoBuBoW3iLOj4FQv3dN5mDtuqwuh
 github.com/clipperhouse/uax29/v2 v2.3.0/go.mod h1:Wn1g7MK6OoeDT0vL+Q0SQLDz/KpfsVRgg6W7ihQeh4g=
 github.com/google/go-cmp v0.7.0 h1:wk8382ETsv4JYUZwIsn6YpYiWiBsYLSJiTsyBybVuN8=
 github.com/google/go-cmp v0.7.0/go.mod h1:pXiqmnSA92OHEEa9HXL2W4E7lf9JzCmGVUdgjX3N/iU=
-github.com/itchyny/go-yaml v0.0.0-20251001235044-fca9a0999f15 h1:m4jKsIK0QS9ihQzOxUN2zJcPdrACwqIWCwvdzv9skMQ=
-github.com/itchyny/go-yaml v0.0.0-20251001235044-fca9a0999f15/go.mod h1:Tmbz8uw5I/I6NvVpEGuhzlElCGS5hPoXJkt7l+ul6LE=
+github.com/itchyny/go-yaml v0.0.0-20260915070000-e6b590a63860 h1:4qKTMBSqEDbJ/TXZ3+ICq4Q3OOcecFewlixLVkHmX1Y=
+github.com/itchyny/go-yaml v0.0.0-20260915070000-e6b590a63860/go.mod h1:Tmbz8uw5I/I6NvVpEGuhzlElCGS5hPoXJkt7l+ul6LE=
 github.com/itchyny/timefmt-go v0.1.8 h1:1YEo1JvfXeAHKdjelbYr/uCuhkybaHCeTkH8Bo791OI=
 github.com/itchyny/timefmt-go v0.1.8/go.mod h1:5E46Q+zj7vbTgWY8o5YkMeYb4I6GeWLFnetPy5oBrAI=
 github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=

@@ -124,22 +124,33 @@ type yamlParseError struct {
 func (err *yamlParseError) Error() string {
 	var index int
 	var message string
-	var pe *yaml.ParserError
-	var te *yaml.TypeError
-	if errors.As(err.err, &pe) {
-		index, message = pe.Index, pe.Message
-	} else if errors.As(err.err, &te) {
-		var ue *yaml.UnmarshalError
-		for _, e := range te.Errors {
-			if errors.As(e, &ue) {
-				index, message = ue.Index, ue.Err.Error()
-				break
-			}
+	var le *yaml.LoadError
+	if errors.As(err.err, &le) {
+		mark := le.Mark
+		if le.ContextMark.Line > 0 {
+			mark = le.ContextMark
 		}
+		index, message = markIndex(err.contents, mark), le.Message
 	}
 	linestr, line, column := getLineByOffset(err.contents, index+1)
 	return fmt.Sprintf("invalid yaml: %s:%d\n%s  %s",
 		err.fname, line, formatLineInfo(linestr, line, column), message)
+}
+
+func markIndex(contents string, mark yaml.Mark) int {
+	var i int
+	for l := 1; l < mark.Line; l++ {
+		j := strings.IndexByte(contents[i:], '\n')
+		if j < 0 {
+			return mark.Index
+		}
+		i += j + 1
+	}
+	for c := 1; c < mark.Column && i < len(contents); c++ {
+		_, size := utf8.DecodeRuneInString(contents[i:])
+		i += size
+	}
+	return i
 }
 
 func getLineByOffset(str string, offset int) (linestr string, line, column int) {

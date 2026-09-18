@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/google/go-cmp v0.7.0
-	github.com/itchyny/go-yaml v0.0.0-20251001235044-fca9a0999f15
+	github.com/itchyny/go-yaml v0.0.0-20260915070000-e6b590a63860
 	github.com/itchyny/timefmt-go v0.1.8
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mattn/go-runewidth v0.0.19
