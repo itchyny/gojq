@@ -13,7 +13,6 @@ import (
 	"net/url"
 	"reflect"
 	"regexp"
-	"regexp/syntax"
 	"slices"
 	"strconv"
 	"strings"
@@ -2006,12 +2005,12 @@ func funcMatch(v, re, fs, testing any, cache *sync.Map) any {
 	if !ok {
 		return &func2TypeError{name, v, re, fs}
 	}
-	cr, err := compileRegexp(restr, flags, cache)
+	r, err := compileRegexp(restr, flags, cache)
 	if err != nil {
 		return err
 	}
 	if testing == true {
-		return cr.r.MatchString(s)
+		return r.MatchString(s)
 	}
 	var n int
 	if strings.ContainsRune(flags, 'g') {
@@ -2019,8 +2018,8 @@ func funcMatch(v, re, fs, testing any, cache *sync.Map) any {
 	} else {
 		n = 1
 	}
-	xs := findAllStringSubmatchIndex(cr, s, n)
-	res, names := make([]any, len(xs)), cr.r.SubexpNames()
+	xs := r.FindAllStringSubmatchIndex(s, n)
+	res, names := make([]any, len(xs)), r.SubexpNames()
 	for i, x := range xs {
 		captures := make([]any, (len(x)-2)/2)
 		for j := 1; j < len(x)/2; j++ {
@@ -2054,16 +2053,10 @@ func funcMatch(v, re, fs, testing any, cache *sync.Map) any {
 	return res
 }
 
-type compiledRegexp struct {
-	r    *regexp.Regexp
-	re   string
-	cond syntax.EmptyOp
-}
-
-func compileRegexp(re, flags string, cache *sync.Map) (*compiledRegexp, error) {
+func compileRegexp(re, flags string, cache *sync.Map) (*regexpMatcher, error) {
 	key := [2]string{re, flags}
-	if v, ok := cache.Load(key); ok {
-		return v.(*compiledRegexp), nil
+	if r, ok := cache.Load(key); ok {
+		return r.(*regexpMatcher), nil
 	}
 	if strings.IndexFunc(flags, func(r rune) bool {
 		return r != 'g' && r != 'i' && r != 'm'
@@ -2080,77 +2073,60 @@ func compileRegexp(re, flags string, cache *sync.Map) (*compiledRegexp, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid regular expression %q: %s", re, err)
 	}
-	cr := &compiledRegexp{r: r, re: re}
-	if p, err := syntax.Parse(re, syntax.Perl); err == nil {
-		if prog, err := syntax.Compile(p.Simplify()); err == nil {
-			cr.cond = prog.StartCond()
-		}
+	m := &regexpMatcher{Regexp: r}
+	if r, err := regexp.Compile(`\A(?s:.)(?:` + re + `)`); err == nil {
+		m.probe = r
 	}
-	cache.Store(key, cr)
-	return cr, nil
+	cache.Store(key, m)
+	return m, nil
 }
 
-// findAllStringSubmatchIndex is like regexp.FindAllStringSubmatchIndex, but
-// keeps an empty match that immediately follows a non-empty one. Go's FindAll
-// drops those; jq (Oniguruma) does not. Matches are still found in the full
-// string, so ^ and \b do not see a sliced input.
-func findAllStringSubmatchIndex(cr *compiledRegexp, s string, n int) [][]int {
-	xs := cr.r.FindAllStringSubmatchIndex(s, n)
-	if len(xs) == 0 || n == 1 {
+// regexpMatcher wraps a compiled regular expression to fill the gap between
+// the standard library and jq; the former ignores an empty match abutting a
+// preceding match, while the latter reports it.
+type regexpMatcher struct {
+	*regexp.Regexp
+	// probe matches a single character followed by the regular expression,
+	// anchored at the beginning, and is used to look for an empty match at
+	// the end of a non-empty match without losing the preceding context,
+	// which matters for assertions like ^ and \b.
+	probe *regexp.Regexp
+}
+
+func (r *regexpMatcher) FindAllStringSubmatchIndex(s string, n int) [][]int {
+	xs := r.Regexp.FindAllStringSubmatchIndex(s, n)
+	if len(xs) == 0 || n == 1 || r.probe == nil {
 		return xs
 	}
-	out := make([][]int, 0, len(xs)+1)
+	ys := make([][]int, 0, len(xs))
 	for i, x := range xs {
-		if i > 0 {
-			prev := xs[i-1]
-			if prev[0] != prev[1] {
-				if em := emptyMatchAt(cr, s, prev[1]); em != nil && em[0] < x[0] {
-					out = append(out, em)
-				}
-			}
+		ys = append(ys, x)
+		if x[0] == x[1] || i+1 < len(xs) && xs[i+1][0] == x[1] {
+			continue
 		}
-		out = append(out, x)
-	}
-	if last := xs[len(xs)-1]; last[0] != last[1] {
-		if em := emptyMatchAt(cr, s, last[1]); em != nil {
-			out = append(out, em)
+		if y := r.emptyMatchAt(s, x[1]); y != nil {
+			ys = append(ys, y)
 		}
 	}
-	if n > 0 && len(out) > n {
-		return out[:n]
-	}
-	return out
+	return ys
 }
 
-func emptyMatchAt(cr *compiledRegexp, s string, pos int) []int {
-	if pos < 0 || pos > len(s) {
+func (r *regexpMatcher) emptyMatchAt(s string, offset int) []int {
+	_, w := utf8.DecodeLastRuneInString(s[:offset])
+	x := r.probe.FindStringSubmatchIndex(s[offset-w:])
+	if x == nil || x[1] != w {
 		return nil
 	}
-	before, after := rune(-1), rune(-1)
-	if pos > 0 {
-		before, _ = utf8.DecodeLastRuneInString(s[:pos])
+	y := make([]int, len(x))
+	y[0], y[1] = offset, offset
+	for i := 2; i < len(x); i++ {
+		if x[i] < 0 {
+			y[i] = -1
+		} else {
+			y[i] = x[i] + offset - w
+		}
 	}
-	if pos < len(s) {
-		after, _ = utf8.DecodeRuneInString(s[pos:])
-	}
-	if cr.cond&^syntax.EmptyOpContext(before, after) != 0 {
-		return nil
-	}
-	// Match against the full string so ^ / \b see real context, not a suffix.
-	wrapped, err := regexp.Compile(`\A` + regexp.QuoteMeta(s[:pos]) + `(?:` + cr.re + `)`)
-	if err != nil {
-		return nil
-	}
-	loc := wrapped.FindStringSubmatchIndex(s)
-	if loc == nil || loc[0] != 0 || loc[1] != pos {
-		return nil
-	}
-	out := make([]int, 2+2*cr.r.NumSubexp())
-	out[0], out[1] = pos, pos
-	for i := 2; i < len(out) && i < len(loc); i++ {
-		out[i] = loc[i]
-	}
-	return out
+	return y
 }
 
 func funcCaptures(v any) any {
