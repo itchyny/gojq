@@ -6706,6 +6706,38 @@
   expected: |
     ["","a","","b",""]
 
+- name: gsub empty match after non-empty jq cases
+  args:
+    - -r
+    - 'gsub("(?m)^a*";"#")'
+  input: '"a"'
+  expected: |
+    #
+
+- name: gsub empty match word-boundary a-star
+  args:
+    - -r
+    - 'gsub("\\ba*";"#")'
+  input: '"aaa"'
+  expected: |
+    ##
+
+- name: gsub empty match start-or-hyphen a-star
+  args:
+    - -r
+    - 'gsub("(^|-)a*";"#")'
+  input: '"ab"'
+  expected: |
+    #b
+
+- name: gsub empty match letters at word boundary
+  args:
+    - -r
+    - 'gsub("[a-z]*\\b";"#")'
+  input: '"ab cd"'
+  expected: |
+    ## ##
+
 - name: INDEX function
   args:
     - -c

@@ -2056,6 +2056,7 @@ func funcMatch(v, re, fs, testing any, cache *sync.Map) any {
 
 type compiledRegexp struct {
 	r    *regexp.Regexp
+	re   string
 	cond syntax.EmptyOp
 }
 
@@ -2079,7 +2080,7 @@ func compileRegexp(re, flags string, cache *sync.Map) (*compiledRegexp, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid regular expression %q: %s", re, err)
 	}
-	cr := &compiledRegexp{r: r}
+	cr := &compiledRegexp{r: r, re: re}
 	if p, err := syntax.Parse(re, syntax.Perl); err == nil {
 		if prog, err := syntax.Compile(p.Simplify()); err == nil {
 			cr.cond = prog.StartCond()
@@ -2125,39 +2126,31 @@ func emptyMatchAt(cr *compiledRegexp, s string, pos int) []int {
 	if pos < 0 || pos > len(s) {
 		return nil
 	}
-	if pos > 0 && cr.cond&syntax.EmptyBeginText != 0 {
-		return nil
-	}
-	if cr.cond&syntax.EmptyWordBoundary != 0 && !wordBoundary(s, pos) {
-		return nil
-	}
-	if cr.cond&syntax.EmptyNoWordBoundary != 0 && wordBoundary(s, pos) {
-		return nil
-	}
-	loc := cr.r.FindStringSubmatchIndex(s[pos:])
-	if loc == nil || loc[0] != 0 || loc[1] != 0 {
-		return nil
-	}
-	out := make([]int, len(loc))
-	for i, v := range loc {
-		if v >= 0 {
-			out[i] = v + pos
-		} else {
-			out[i] = v
-		}
-	}
-	return out
-}
-
-func wordBoundary(s string, pos int) bool {
-	var before, after rune
+	before, after := rune(-1), rune(-1)
 	if pos > 0 {
 		before, _ = utf8.DecodeLastRuneInString(s[:pos])
 	}
 	if pos < len(s) {
 		after, _ = utf8.DecodeRuneInString(s[pos:])
 	}
-	return syntax.IsWordChar(before) != syntax.IsWordChar(after)
+	if cr.cond&^syntax.EmptyOpContext(before, after) != 0 {
+		return nil
+	}
+	// Match against the full string so ^ / \b see real context, not a suffix.
+	wrapped, err := regexp.Compile(`\A` + regexp.QuoteMeta(s[:pos]) + `(?:` + cr.re + `)`)
+	if err != nil {
+		return nil
+	}
+	loc := wrapped.FindStringSubmatchIndex(s)
+	if loc == nil || loc[0] != 0 || loc[1] != pos {
+		return nil
+	}
+	out := make([]int, 2+2*cr.r.NumSubexp())
+	out[0], out[1] = pos, pos
+	for i := 2; i < len(out) && i < len(loc); i++ {
+		out[i] = loc[i]
+	}
+	return out
 }
 
 func funcCaptures(v any) any {
