@@ -1963,7 +1963,7 @@ func arrayToTime(a []any, loc *time.Location) (time.Time, error) {
 		}
 		if i == 5 {
 			if v, ok := toFloat(a[i]); ok {
-				*p = int(v)
+				*p = int(math.Floor(v))
 				nanosecond = int((v - math.Floor(v)) * 1e9)
 			} else {
 				return t, &timeArrayError{}
