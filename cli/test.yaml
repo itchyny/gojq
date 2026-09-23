@@ -7746,7 +7746,7 @@
     [["c"],3]
     [["c"]]
 
-- name: stream option with unterminated input
+- name: stream option with unterminated input after a comma
   args:
     - -c
     - --stream
@@ -7757,6 +7757,21 @@
   error: |
     invalid json: <stdin>
         {"a":1,
+               ^  unexpected EOF
+
+- name: stream option with unterminated input after a value
+  args:
+    - -c
+    - --stream
+    - '.'
+  input: '[1,[2,3'
+  expected: |
+    [[0],1]
+    [[1,0],2]
+    [[1,1],3]
+  error: |
+    invalid json: <stdin>
+        [1,[2,3
                ^  unexpected EOF
 
 - name: yaml input option

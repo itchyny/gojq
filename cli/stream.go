@@ -36,14 +36,6 @@ func (s *jsonStream) next() (any, error) {
 	case jsonStateArrayEmptyEnd, jsonStateObjectEmptyEnd:
 		s.states = s.states[:len(s.states)-1]
 	}
-	if s.dec.More() {
-		switch s.states[len(s.states)-1] {
-		case jsonStateArrayValue:
-			s.path[len(s.path)-1] = s.path[len(s.path)-1].(int) + 1
-		case jsonStateObjectValue:
-			s.path = s.path[:len(s.path)-1]
-		}
-	}
 	for {
 		token, err := s.dec.Token()
 		if err != nil {
@@ -52,7 +44,16 @@ func (s *jsonStream) next() (any, error) {
 			}
 			return nil, err
 		}
-		if d, ok := token.(json.Delim); ok {
+		d, ok := token.(json.Delim)
+		if !ok || d != ']' && d != '}' {
+			switch s.states[len(s.states)-1] {
+			case jsonStateArrayValue:
+				s.path[len(s.path)-1] = s.path[len(s.path)-1].(int) + 1
+			case jsonStateObjectValue:
+				s.path = s.path[:len(s.path)-1]
+			}
+		}
+		if ok {
 			switch d {
 			case '[', '{':
 				switch s.states[len(s.states)-1] {
