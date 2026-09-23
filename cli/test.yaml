@@ -710,6 +710,27 @@
   error: |
     expected a number for indexing an array but got: boolean (true)
 
+- name: indexing number literal error
+  args:
+    - '-1[0]'
+  input: 'null'
+  error: |
+    expected an array but got: number (1)
+
+- name: slicing number literal error
+  args:
+    - '1 - -1[1:]'
+  input: 'null'
+  error: |
+    expected an array but got: number (1)
+
+- name: indexing by indexed number literal error
+  args:
+    - '.[1[0]]'
+  input: '[0, 1]'
+  error: |
+    expected an array but got: number (1)
+
 - name: array slicing start error
   args:
     - '.[[]:0]'

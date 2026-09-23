@@ -248,6 +248,9 @@ func (e *Term) writeTo(s *strings.Builder) {
 }
 
 func (e *Term) toIndexKey() any {
+	if len(e.SuffixList) > 0 {
+		return nil
+	}
 	switch e.Type {
 	case TermTypeNumber:
 		return toNumber(e.Number)
@@ -285,7 +288,7 @@ func (e *Term) toIndices(xs []any) []any {
 }
 
 func (e *Term) toNumber() any {
-	if e.Type == TermTypeNumber {
+	if e.Type == TermTypeNumber && len(e.SuffixList) == 0 {
 		return toNumber(e.Number)
 	}
 	return nil
