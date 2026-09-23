@@ -21,7 +21,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v7
         with:
-          go-version: 1.26.x
+          go-version: 1.27.x
       - name: Build
         run: make build
       - name: Check command examples
@@ -54,7 +54,10 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        go: [1.26.x, 1.25.x, 1.24.x]
+        go: [1.27.x, 1.24.x]
+        include:
+          - { os: ubuntu-latest, go: 1.26.x }
+          - { os: ubuntu-latest, go: 1.25.x }
       fail-fast: false
     steps:
       - name: Checkout code
@@ -69,6 +72,7 @@ jobs:
         run: env GOARCH=386 go test -v ./...
         if: matrix.os != 'macos-latest'
       - name: Lint
+        if: matrix.go == '1.27.x'
         run: make lint
       - name: Check tools
         run: make check-tools
