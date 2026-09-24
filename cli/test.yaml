@@ -1346,6 +1346,33 @@
   expected: |
     9223372036854775808
 
+- name: abs function against non-numbers
+  args:
+    - -c
+    - 'abs'
+  input: |
+    ""
+    "-42"
+    []
+    [1,-2]
+    {}
+    {"a":-1}
+  expected: |
+    ""
+    "-42"
+    []
+    [1,-2]
+    {}
+    {"a":-1}
+
+- name: abs function error
+  args:
+    - 'abs'
+  input: 'null true'
+  error: |
+    cannot negate: null
+    cannot negate: boolean (true)
+
 - name: length function
   args:
     - 'length'

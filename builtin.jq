@@ -2,6 +2,7 @@ def map(f): [.[] | f];
 def add(f): [f] | add;
 def map_values(f): .[] |= f;
 def in(xs): . as $x | xs | has($x);
+def abs: if . < 0 then -. else . end;
 def not: if . then false else true end;
 def select(f): if f then . else empty end;
 

@@ -55,7 +55,6 @@ func init() {
 		"input":          argFunc0(nil),
 		"modulemeta":     argFunc0(nil),
 		"debug":          argFunc1(nil),
-		"abs":            argFunc0(funcAbs),
 		"length":         argFunc0(funcLength),
 		"utf8bytelength": argFunc0(funcUtf8ByteLength),
 		"keys":           argFunc0(funcKeys),
@@ -281,30 +280,6 @@ func mathFunc3(name string, f func(_, _, _ float64) float64) function {
 		}
 		return f(x, y, z)
 	})
-}
-
-func funcAbs(v any) any {
-	switch v := v.(type) {
-	case int:
-		if v >= 0 {
-			return v
-		}
-		return negate(v)
-	case float64:
-		return math.Abs(v)
-	case *big.Int:
-		if v.Sign() >= 0 {
-			return v
-		}
-		return new(big.Int).Abs(v)
-	case json.Number:
-		if !strings.HasPrefix(v.String(), "-") {
-			return v
-		}
-		return v[1:]
-	default:
-		return &func0TypeError{"abs", v}
-	}
 }
 
 func funcLength(v any) any {
