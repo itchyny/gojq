@@ -67,6 +67,7 @@ type inputIter interface {
 
 type jsonInputIter struct {
 	next   func() (any, error)
+	dec    *json.Decoder
 	ir     *inputReader
 	fname  string
 	offset int64
@@ -79,7 +80,7 @@ func newJSONInputIter(r io.Reader, fname string) inputIter {
 	dec := json.NewDecoder(ir)
 	dec.UseNumber()
 	next := func() (v any, err error) { err = dec.Decode(&v); return }
-	return &jsonInputIter{next: next, ir: ir, fname: fname}
+	return &jsonInputIter{next: next, dec: dec, ir: ir, fname: fname}
 }
 
 func (i *jsonInputIter) Next() (any, bool) {
@@ -106,9 +107,9 @@ func (i *jsonInputIter) Next() (any, bool) {
 		return i.err, true
 	}
 	if buf := i.ir.buf; buf != nil && buf.Len() >= 16*1024 {
-		i.offset += int64(buf.Len())
-		i.line += bytes.Count(buf.Bytes(), []byte{'\n'})
-		buf.Reset()
+		consumed := i.dec.InputOffset() - i.offset
+		i.line += bytes.Count(buf.Next(int(consumed)), []byte{'\n'})
+		i.offset += consumed
 	}
 	return v, true
 }
@@ -126,7 +127,7 @@ func newStreamInputIter(r io.Reader, fname string) inputIter {
 	ir := newInputReader(r)
 	dec := json.NewDecoder(ir)
 	dec.UseNumber()
-	return &jsonInputIter{next: newJSONStream(dec).next, ir: ir, fname: fname}
+	return &jsonInputIter{next: newJSONStream(dec).next, dec: dec, ir: ir, fname: fname}
 }
 
 type nullInputIter struct {
