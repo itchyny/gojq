@@ -141,6 +141,53 @@ func TestJSONInputIter(t *testing.T) {
 	}
 }
 
+func TestJSONInputIterRetainsBufferedInput(t *testing.T) {
+	largeValue := `"` + strings.Repeat("a", 20*1024) + `"`
+	readError := func(iter inputIter) error {
+		for {
+			v, ok := iter.Next()
+			if !ok {
+				return nil
+			}
+			if err, ok := v.(error); ok {
+				return err
+			}
+		}
+	}
+	for _, tc := range []struct {
+		name  string
+		input string
+		line  int
+		text  string
+	}{
+		{"large value", largeValue + "\n\"\\q\"\n", 2, `"\q"`},
+		{"unexpected EOF", largeValue + "\n[1", 2, "[1"},
+		{"multiple buffer resets", strings.Repeat("0\n", 10000) + largeValue + "\n[1", 10002, "[1"},
+		{"multibyte value", `"` + strings.Repeat("世界", 6000) + "\"\n\"\\q\"\n", 2, `"\q"`},
+	} {
+		for _, mode := range []struct {
+			name    string
+			newIter func(io.Reader, string) inputIter
+		}{
+			{"normal", newJSONInputIter},
+			{"stream", newStreamInputIter},
+		} {
+			t.Run(tc.name+"/"+mode.name, func(t *testing.T) {
+				// A pipe should report the same error context as seekable input.
+				wantErr := readError(mode.newIter(strings.NewReader(tc.input), "test.json"))
+				wantLine := fmt.Sprintf("\n    %d | %s\n", tc.line, tc.text)
+				if wantErr == nil || !strings.Contains(wantErr.Error(), wantLine) {
+					t.Fatalf("seekable input: got %v, want error line %q", wantErr, wantLine)
+				}
+				gotErr := readError(mode.newIter(newStringReader(tc.input), "test.json"))
+				if gotErr == nil || gotErr.Error() != wantErr.Error() {
+					t.Errorf("pipe input: got error: %v\nwant error: %v", gotErr, wantErr)
+				}
+			})
+		}
+	}
+}
+
 func TestYAMLInputIter(t *testing.T) {
 	for _, tc := range []struct {
 		name        string
