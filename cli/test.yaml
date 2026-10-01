@@ -6851,6 +6851,14 @@
     "1 2 3"
     "WzEsMiwzXQ=="
 
+- name: format function base64url
+  args:
+    - 'format("base64url"), (format("base64url") | format("base64urld"))'
+  input: '">?>?"'
+  expected: |
+    "Pj8-Pw=="
+    ">?>?"
+
 - name: format function error
   args:
     - -n
@@ -7054,6 +7062,61 @@
     ":"
   error: |
     @base64d cannot be applied to ":": illegal base64 data at input byte 0
+
+- name: format strings @base64url
+  args:
+    - '@base64url'
+  input: '">?>?"'
+  expected: |
+    "Pj8-Pw=="
+
+- name: format strings @base64url with string interpolation
+  args:
+    - '@base64url "\(.),\(. + .),\(. + . + .)"'
+  input: '[1,2]'
+  expected: |
+    "WzEsMl0=,WzEsMiwxLDJd,WzEsMiwxLDIsMSwyXQ=="
+
+- name: format strings @base64urld
+  args:
+    - -R
+    - '@base64urld'
+  input: 'Pj8-Pw=='
+  expected: |
+    ">?>?"
+
+- name: format strings @base64urld without padding
+  args:
+    - -R
+    - '@base64urld'
+  input: 'Pj8-Pw'
+  expected: |
+    ">?>?"
+
+- name: format strings @base64urld with trailing characters after padding
+  args:
+    - -R
+    - '@base64urld'
+  input: 'Pj8-Pw=x=y'
+  expected: |
+    ">?>?"
+
+- name: format strings @base64urld error
+  args:
+    - '@base64urld'
+  input: |
+    ":"
+  error: |
+    @base64urld cannot be applied to ":": illegal base64 data at input byte 0
+
+- name: format strings @base64urld error with standard base64 characters
+  args:
+    - '@base64urld'
+  input: |
+    "Pj8+Pw=="
+  error: |
+    @base64urld cannot be applied to "Pj8+Pw==": illegal base64 data at input byte 3
+
 
 - name: format strings not defined error
   args:
