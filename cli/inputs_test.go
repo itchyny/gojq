@@ -270,3 +270,36 @@ func TestYAMLInputIter(t *testing.T) {
 		}
 	}
 }
+
+func TestJSONInputIterRecoverScalarError(t *testing.T) {
+	input := "\"a\\u263\"\n\"def\"\n"
+	for _, r := range []io.Reader{strings.NewReader(input), newStringReader(input)} {
+		t.Run(fmt.Sprintf("%T", r), func(t *testing.T) {
+			iter := newJSONInputIter(r, "test.json")
+			v1, ok1 := iter.Next()
+			if !ok1 {
+				t.Fatalf("expected first value or error, got ok=false")
+			}
+			err1, ok := v1.(error)
+			if !ok {
+				t.Fatalf("expected error on first value, got: %#v", v1)
+			}
+			if !strings.Contains(err1.Error(), "invalid character") {
+				t.Errorf("unexpected error on first value: %v", err1)
+			}
+
+			v2, ok2 := iter.Next()
+			if !ok2 {
+				t.Fatalf("expected second value, got ok=false")
+			}
+			if v2 != "def" {
+				t.Errorf("expected \"def\", got: %#v", v2)
+			}
+
+			v3, ok3 := iter.Next()
+			if ok3 {
+				t.Errorf("expected EOF, got: %#v", v3)
+			}
+		})
+	}
+}
