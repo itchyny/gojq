@@ -66,26 +66,77 @@ type inputIter interface {
 }
 
 type jsonInputIter struct {
-	next   func() (any, error)
-	dec    *json.Decoder
-	ir     *inputReader
-	fname  string
-	offset int64
-	line   int
-	err    error
+	next    func() (any, error)
+	newNext func(*json.Decoder) func() (any, error)
+	dec     *json.Decoder
+	ir      *inputReader
+	fname   string
+	offset  int64
+	line    int
+	err     error
 }
 
 func newJSONInputIter(r io.Reader, fname string) inputIter {
 	ir := newInputReader(r)
 	dec := json.NewDecoder(ir)
 	dec.UseNumber()
-	next := func() (v any, err error) { err = dec.Decode(&v); return }
-	return &jsonInputIter{next: next, dec: dec, ir: ir, fname: fname}
+	newNext := func(dec *json.Decoder) func() (any, error) {
+		return func() (v any, err error) { err = dec.Decode(&v); return }
+	}
+	return &jsonInputIter{
+		next:    newNext(dec),
+		newNext: newNext,
+		dec:     dec,
+		ir:      ir,
+		fname:   fname,
+	}
+}
+
+func (i *jsonInputIter) recover() bool {
+	r := io.MultiReader(i.dec.Buffered(), i.ir)
+	var b [1]byte
+	var firstByte byte
+	for {
+		_, err := r.Read(b[:])
+		if err != nil {
+			if err == io.EOF {
+				i.err = err
+			}
+			return false
+		}
+		if firstByte == 0 {
+			switch b[0] {
+			case ' ', '\t', '\r', '\n':
+				if b[0] == '\n' {
+					i.line++
+				}
+				continue
+			default:
+				firstByte = b[0]
+				if firstByte == '{' || firstByte == '[' {
+					return false
+				}
+			}
+		}
+		if b[0] == '\n' {
+			i.line++
+			break
+		}
+	}
+	i.ir = newInputReader(r)
+	i.dec = json.NewDecoder(i.ir)
+	i.dec.UseNumber()
+	i.next = i.newNext(i.dec)
+	i.offset = 0
+	i.err = nil
+	return true
 }
 
 func (i *jsonInputIter) Next() (any, bool) {
 	if i.err != nil {
-		return nil, false
+		if i.err == io.EOF || !i.recover() {
+			return nil, false
+		}
 	}
 	v, err := i.next()
 	if err != nil {
@@ -127,7 +178,16 @@ func newStreamInputIter(r io.Reader, fname string) inputIter {
 	ir := newInputReader(r)
 	dec := json.NewDecoder(ir)
 	dec.UseNumber()
-	return &jsonInputIter{next: newJSONStream(dec).next, dec: dec, ir: ir, fname: fname}
+	newNext := func(dec *json.Decoder) func() (any, error) {
+		return newJSONStream(dec).next
+	}
+	return &jsonInputIter{
+		next:    newNext(dec),
+		newNext: newNext,
+		dec:     dec,
+		ir:      ir,
+		fname:   fname,
+	}
 }
 
 type nullInputIter struct {

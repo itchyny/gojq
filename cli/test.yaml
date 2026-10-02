@@ -6504,6 +6504,28 @@
   expected: |
     15
 
+- name: inputs function error recovery on malformed json
+  args:
+    - -nr
+    - 'recurse(try inputs catch .) | select(.) | if type == "string" and startswith("invalid json:") then "error" else . end'
+  input: |
+    "a\u263"
+    "def"
+  expected: |
+    error
+    def
+
+- name: input function error recovery on malformed json
+  args:
+    - -n
+    - -c
+    - '[try (input | .) catch if startswith("invalid json:") then "error" else . end, try input catch .]'
+  input: |
+    "a\u263"
+    "def"
+  expected: |
+    ["error","def"]
+
 - name: inputs function with stream option
   args:
     - -n
@@ -8372,6 +8394,28 @@
     invalid json: <stdin>:2
         2 |   "１２３": n
                          ^  invalid character '\n' in literal null (expecting 'u')
+
+- name: stop at first parse error in main loop
+  input: |
+    x0
+    x1
+    x2
+  error: |
+    invalid json: <stdin>
+        x0
+        ^  invalid character 'x' looking for beginning of value
+
+- name: stop at parse error after valid input in main loop
+  input: |
+    1
+    x0
+    2
+  expected: |
+    1
+  error: |
+    invalid json: <stdin>:2
+        2 | x0
+            ^  invalid character 'x' looking for beginning of value
 
 - name: multiple json in input
   input: '{}[]{"foo":10}{"bar":[]}'

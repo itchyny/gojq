@@ -94,6 +94,8 @@ func (*queryParseError) ExitCode() int {
 	return exitCodeCompileErr
 }
 
+func (*queryParseError) isParseError() {}
+
 type jsonParseError struct {
 	fname, contents string
 	line            int
@@ -116,6 +118,8 @@ func (err *jsonParseError) Error() string {
 		err.fname, linestr, column+1, '^', err.err)
 }
 
+func (*jsonParseError) isParseError() {}
+
 type yamlParseError struct {
 	fname, contents string
 	err             error
@@ -136,6 +140,8 @@ func (err *yamlParseError) Error() string {
 	return fmt.Sprintf("invalid yaml: %s:%d\n%s  %s",
 		err.fname, line, formatLineInfo(linestr, line, column), message)
 }
+
+func (*yamlParseError) isParseError() {}
 
 func markIndex(contents string, mark yaml.Mark) int {
 	var i int

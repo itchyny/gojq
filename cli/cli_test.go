@@ -148,3 +148,27 @@ func TestCliRun(t *testing.T) {
 		})
 	}
 }
+
+func TestCliRun_StopAtFirstParseError(t *testing.T) {
+	var input strings.Builder
+	for i := 0; i < 100; i++ {
+		input.WriteString("x" + string(rune('0'+i%10)) + "\n")
+	}
+	var outStream, errStream strings.Builder
+	cli := cli{
+		inStream:  strings.NewReader(input.String()),
+		outStream: &outStream,
+		errStream: &errStream,
+	}
+	code := cli.run([]string{"."})
+	if code != exitCodeDefaultErr {
+		t.Fatalf("expected exit code %d, got %d", exitCodeDefaultErr, code)
+	}
+	expectedErr := "gojq: invalid json: <stdin>\n    x0\n    ^  invalid character 'x' looking for beginning of value\n"
+	if diff := cmp.Diff(expectedErr, errStream.String()); diff != "" {
+		t.Errorf("unexpected error output:\n%s", diff)
+	}
+	if outStream.Len() != 0 {
+		t.Errorf("expected empty output, got: %s", outStream.String())
+	}
+}

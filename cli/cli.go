@@ -330,6 +330,9 @@ func (cli *cli) process(iter inputIter, code *gojq.Code) error {
 		if e, ok := v.(error); ok {
 			fmt.Fprintf(cli.errStream, "%s: %s\n", name, e)
 			err = e
+			if _, ok := e.(interface{ isParseError() }); ok {
+				break
+			}
 			continue
 		}
 		if e := cli.printValues(code.Run(v, cli.argvalues...)); e != nil {
