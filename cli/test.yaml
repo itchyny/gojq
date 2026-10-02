@@ -6504,6 +6504,28 @@
   expected: |
     15
 
+- name: inputs function error recovery on malformed json
+  args:
+    - -nr
+    - 'recurse(try inputs catch .) | select(.) | length'
+  input: |
+    "a\u263"
+    "def"
+  expected: |
+    105
+    3
+
+- name: input function error recovery on malformed json
+  args:
+    - -n
+    - -c
+    - '[try input catch ., try input catch .]'
+  input: |
+    "a\u263"
+    "def"
+  expected: |
+    ["invalid json: <stdin>\n    \"a\\u263\"\n           ^  invalid character '\"' in \\u hexadecimal character escape","def"]
+
 - name: inputs function with stream option
   args:
     - -n
