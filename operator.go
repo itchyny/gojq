@@ -401,12 +401,12 @@ func funcOpMul(_, l, r any) any {
 		deepMergeObjects,
 		func(l, r any) any {
 			if l, ok := l.(string); ok {
-				if r, ok := toFloat(r); ok {
+				if r, ok := ToFloat64(r); ok {
 					return repeatString(l, r)
 				}
 			}
 			if r, ok := r.(string); ok {
-				if l, ok := toFloat(l); ok {
+				if l, ok := ToFloat64(l); ok {
 					return repeatString(r, l)
 				}
 			}

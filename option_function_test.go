@@ -4,28 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/big"
-	"strconv"
 
 	"github.com/itchyny/gojq"
 )
-
-func toFloat(x any) (float64, bool) {
-	switch x := x.(type) {
-	case int:
-		return float64(x), true
-	case float64:
-		return x, true
-	case *big.Int:
-		f, err := strconv.ParseFloat(x.String(), 64)
-		return f, err == nil
-	case json.Number:
-		f, err := x.Float64()
-		return f, err == nil
-	default:
-		return 0.0, false
-	}
-}
 
 func ExampleWithFunction() {
 	query, err := gojq.Parse(".[] | f | f(3)")
@@ -35,9 +16,9 @@ func ExampleWithFunction() {
 	code, err := gojq.Compile(
 		query,
 		gojq.WithFunction("f", 0, 1, func(x any, xs []any) any {
-			if x, ok := toFloat(x); ok {
+			if x, ok := gojq.ToFloat64(x); ok {
 				if len(xs) == 1 {
-					if y, ok := toFloat(xs[0]); ok {
+					if y, ok := gojq.ToFloat64(xs[0]); ok {
 						x *= y
 					} else {
 						return fmt.Errorf("f cannot be applied to: %v, %v", x, xs)

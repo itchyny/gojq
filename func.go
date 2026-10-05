@@ -14,7 +14,6 @@ import (
 	"reflect"
 	"regexp"
 	"slices"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -242,7 +241,7 @@ func argFunc3(f func(_, _, _, _ any) any) function {
 
 func mathFunc(name string, f func(float64) float64) function {
 	return argFunc0(func(v any) any {
-		x, ok := toFloat(v)
+		x, ok := ToFloat64(v)
 		if !ok {
 			return &func0TypeError{name, v}
 		}
@@ -252,11 +251,11 @@ func mathFunc(name string, f func(float64) float64) function {
 
 func mathFunc2(name string, f func(_, _ float64) float64) function {
 	return argFunc2(func(_, x, y any) any {
-		l, ok := toFloat(x)
+		l, ok := ToFloat64(x)
 		if !ok {
 			return &func0TypeError{name, x}
 		}
-		r, ok := toFloat(y)
+		r, ok := ToFloat64(y)
 		if !ok {
 			return &func0TypeError{name, y}
 		}
@@ -266,15 +265,15 @@ func mathFunc2(name string, f func(_, _ float64) float64) function {
 
 func mathFunc3(name string, f func(_, _, _ float64) float64) function {
 	return argFunc3(func(_, a, b, c any) any {
-		x, ok := toFloat(a)
+		x, ok := ToFloat64(a)
 		if !ok {
 			return &func0TypeError{name, a}
 		}
-		y, ok := toFloat(b)
+		y, ok := ToFloat64(b)
 		if !ok {
 			return &func0TypeError{name, b}
 		}
-		z, ok := toFloat(c)
+		z, ok := ToFloat64(c)
 		if !ok {
 			return &func0TypeError{name, c}
 		}
@@ -370,7 +369,7 @@ func values(v any) ([]any, bool) {
 func funcHas(v, x any) any {
 	switch v := v.(type) {
 	case []any:
-		if x, ok := toInt(x); ok {
+		if x, ok := ToInt(x); ok {
 			return 0 <= x && x < len(v)
 		}
 	case map[string]any:
@@ -719,7 +718,7 @@ func funcImplode(v any) any {
 	var sb strings.Builder
 	sb.Grow(len(vs))
 	for _, v := range vs {
-		if r, ok := toInt(v); ok {
+		if r, ok := ToInt(v); ok {
 			if 0 <= r && r <= utf8.MaxRune {
 				sb.WriteRune(rune(r))
 			} else {
@@ -978,7 +977,7 @@ func funcIndex2(_, v, x any) any {
 			return &expectedObjectError{v}
 		}
 	case int, float64, *big.Int, json.Number:
-		i, _ := toInt(x)
+		i, _ := ToInt(x)
 		switch v := v.(type) {
 		case nil:
 			return nil
@@ -1060,7 +1059,7 @@ func funcSlice(_, v, e, s any) (r any) {
 func slice(vs []any, e, s any) any {
 	var start, end int
 	if s != nil {
-		if i, ok := toInt(s); ok {
+		if i, ok := ToInt(s); ok {
 			start = clampIndex(i, 0, len(vs))
 		} else {
 			return &arrayIndexNotNumberError{s}
@@ -1082,7 +1081,7 @@ func sliceString(v string, e, s any) any {
 	var start, end int
 	l := len([]rune(v))
 	if s != nil {
-		if i, ok := toInt(s); ok {
+		if i, ok := ToInt(s); ok {
 			start = clampIndex(i, 0, l)
 		} else {
 			return &stringIndexNotNumberError{s}
@@ -1142,7 +1141,7 @@ func funcFlatten(v any, args []any) any {
 	if len(args) == 0 {
 		depth = -1
 	} else {
-		depth, ok = toFloat(args[0])
+		depth, ok = ToFloat64(args[0])
 		if !ok {
 			return &func0TypeError{"flatten", args[0]}
 		}
@@ -1346,7 +1345,7 @@ func funcExp10(v float64) float64 {
 }
 
 func funcFrexp(v any) any {
-	x, ok := toFloat(v)
+	x, ok := ToFloat64(v)
 	if !ok {
 		return &func0TypeError{"frexp", v}
 	}
@@ -1355,7 +1354,7 @@ func funcFrexp(v any) any {
 }
 
 func funcModf(v any) any {
-	x, ok := toFloat(v)
+	x, ok := ToFloat64(v)
 	if !ok {
 		return &func0TypeError{"modf", v}
 	}
@@ -1416,12 +1415,12 @@ func funcInfinite(any) any {
 }
 
 func funcIsfinite(v any) any {
-	x, ok := toFloat(v)
+	x, ok := ToFloat64(v)
 	return ok && !math.IsInf(x, 0)
 }
 
 func funcIsinfinite(v any) any {
-	x, ok := toFloat(v)
+	x, ok := ToFloat64(v)
 	return ok && math.IsInf(x, 0)
 }
 
@@ -1430,7 +1429,7 @@ func funcNan(any) any {
 }
 
 func funcIsnan(v any) any {
-	x, ok := toFloat(v)
+	x, ok := ToFloat64(v)
 	if !ok {
 		if v == nil {
 			return false
@@ -1441,7 +1440,7 @@ func funcIsnan(v any) any {
 }
 
 func funcIsnormal(v any) any {
-	if v, ok := toFloat(v); ok {
+	if v, ok := ToFloat64(v); ok {
 		e := (math.Float64bits(v) & 0x7ff0000000000000) >> 52
 		return 0 < e && e < 0x7ff
 	}
@@ -1574,7 +1573,7 @@ func update(v any, path []any, n any, a allocator) (any, error) {
 			return nil, &expectedObjectError{v}
 		}
 	case int, float64, *big.Int, json.Number:
-		i, _ := toInt(p)
+		i, _ := ToInt(p)
 		switch v := v.(type) {
 		case nil:
 			return updateArrayIndex(nil, i, path[1:], n, a)
@@ -1687,7 +1686,7 @@ func updateArraySlice(v []any, m map[string]any, path []any, n any, a allocator)
 	}
 	var start, end int
 	if s != nil {
-		if i, ok := toInt(s); ok {
+		if i, ok := ToInt(s); ok {
 			start = clampIndex(i, 0, len(v))
 		} else {
 			return nil, &arrayIndexNotNumberError{s}
@@ -1840,7 +1839,7 @@ func funcLocaltime(v any) any {
 }
 
 func timeToArrayFunc(name string, v any, loc *time.Location) any {
-	if v, ok := toFloat(v); ok {
+	if v, ok := ToFloat64(v); ok {
 		return timeToArray(epochToTime(v, loc))
 	}
 	return &func0TypeError{name, v}
@@ -1893,7 +1892,7 @@ func formatTimeFunc(name string, v, x any, loc *time.Location) any {
 		return &func1TypeError{name, v, x}
 	}
 	var t time.Time
-	if w, ok := toFloat(v); ok {
+	if w, ok := ToFloat64(v); ok {
 		t = epochToTime(w, loc)
 	} else if a, ok := v.([]any); ok {
 		var err error
@@ -1937,13 +1936,13 @@ func arrayToTime(a []any, loc *time.Location) (time.Time, error) {
 			break
 		}
 		if i == 5 {
-			if v, ok := toFloat(a[i]); ok {
+			if v, ok := ToFloat64(a[i]); ok {
 				*p = int(math.Floor(v))
 				nanosecond = int((v - math.Floor(v)) * 1e9)
 			} else {
 				return t, &timeArrayError{}
 			}
-		} else if v, ok := toInt(a[i]); ok {
+		} else if v, ok := ToInt(a[i]); ok {
 			*p = v
 		} else {
 			return t, &timeArrayError{}
@@ -2135,92 +2134,16 @@ func funcHaltError(v any, args []any) any {
 	code := 5
 	if len(args) > 0 {
 		var ok bool
-		if code, ok = toInt(args[0]); !ok {
+		if code, ok = ToInt(args[0]); !ok {
 			return &func0TypeError{"halt_error", args[0]}
 		}
 	}
 	return &HaltError{v, code}
 }
 
-func toInt(x any) (int, bool) {
-	switch x := x.(type) {
-	case int:
-		return x, true
-	case float64:
-		return floatToInt(x), true
-	case *big.Int:
-		if x.IsInt64() {
-			if i := x.Int64(); math.MinInt <= i && i <= math.MaxInt {
-				return int(i), true
-			}
-		}
-		if x.Sign() > 0 {
-			return math.MaxInt, true
-		}
-		return math.MinInt, true
-	case json.Number:
-		return toInt(parseNumber(x))
-	default:
-		return 0, false
-	}
-}
-
 func toIntCeil(x any) (int, bool) {
 	if f, ok := x.(float64); ok {
 		x = math.Ceil(f)
 	}
-	return toInt(x)
-}
-
-func floatToInt(x float64) int {
-	if math.MinInt <= x && x < math.MaxInt {
-		return int(x)
-	}
-	if x > 0 {
-		return math.MaxInt
-	}
-	return math.MinInt
-}
-
-func toFloat(x any) (float64, bool) {
-	switch x := x.(type) {
-	case int:
-		return float64(x), true
-	case float64:
-		return x, true
-	case *big.Int:
-		return bigToFloat(x), true
-	case json.Number:
-		return toFloat(parseNumber(x))
-	default:
-		return 0.0, false
-	}
-}
-
-func bigToFloat(x *big.Int) float64 {
-	if x.IsInt64() {
-		return float64(x.Int64())
-	}
-	if f, err := strconv.ParseFloat(x.String(), 64); err == nil {
-		return f
-	}
-	return math.Inf(x.Sign())
-}
-
-func parseNumber(v json.Number) any {
-	if i, err := v.Int64(); err == nil && math.MinInt <= i && i <= math.MaxInt {
-		return int(i)
-	}
-	if strings.ContainsAny(v.String(), ".eE") {
-		if f, err := v.Float64(); err == nil {
-			return f
-		}
-	}
-	if bi, ok := new(big.Int).SetString(v.String(), 10); ok {
-		return bi
-	}
-	if strings.HasPrefix(v.String(), "-") {
-		return math.Inf(-1)
-	}
-	return math.Inf(1)
+	return ToInt(x)
 }

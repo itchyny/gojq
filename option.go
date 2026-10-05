@@ -35,6 +35,7 @@ func WithVariables(variables []string) CompilerOption {
 // values should satisfy 0 <= minarity <= maxarity <= 30, otherwise panics.
 // On handling numbers, take account of int, float64, *big.Int, and json.Number.
 // These are the number types you are allowed to return, so do not return int64.
+// Use [ToInt] or [ToFloat64] to convert number arguments to int or float64.
 // Refer to [ValueError] to return a value error just like built-in error
 // function. If you want to emit multiple values, call the empty function,
 // accept a filter for its argument, or call another built-in function, then
