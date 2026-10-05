@@ -2191,8 +2191,7 @@ func toFloat(x any) (float64, bool) {
 	case *big.Int:
 		return bigToFloat(x), true
 	case json.Number:
-		v, err := x.Float64()
-		return v, err == nil
+		return toFloat(parseNumber(x))
 	default:
 		return 0.0, false
 	}
