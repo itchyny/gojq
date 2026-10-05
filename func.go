@@ -2049,9 +2049,9 @@ func compileRegexp(re, flags string, cache *sync.Map) (*regexpMatcher, error) {
 	if r, ok := cache.Load(key); ok {
 		return r.(*regexpMatcher), nil
 	}
-	if strings.IndexFunc(flags, func(r rune) bool {
+	if strings.ContainsFunc(flags, func(r rune) bool {
 		return r != 'g' && r != 'i' && r != 'm'
-	}) >= 0 {
+	}) {
 		return nil, fmt.Errorf("unsupported regular expression flag: %q", flags)
 	}
 	if strings.ContainsRune(flags, 'i') {
