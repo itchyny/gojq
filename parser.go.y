@@ -16,7 +16,7 @@ import "slices"
 %type<value> objectkeyvals objectkeyval objectval
 %type<value> constterm constobject constobjectkeyvals constobjectkeyval constarray constarrayelems
 %type<token> tokIdentVariable tokIdentModuleIdent tokVariableModuleVariable tokKeyword objectkey
-%token<operator> tokAltOp tokUpdateOp tokDestAltOp tokCompareOp
+%token<operator> tokAltOp tokUpdateOp tokCompareOp
 %token<token> tokOrOp tokAndOp tokModule tokImport tokInclude tokDef tokAs tokLabel tokBreak
 %token<token> tokNull tokTrue tokFalse
 %token<token> tokIf tokThen tokElif tokElse tokEnd
@@ -206,9 +206,9 @@ bindpatterns
     {
         $$ = []*Pattern{$1.(*Pattern)}
     }
-    | bindpatterns tokDestAltOp pattern
+    | bindpatterns '?' tokAltOp pattern
     {
-        $$ = append($1.([]*Pattern), $3.(*Pattern))
+        $$ = append($1.([]*Pattern), $4.(*Pattern))
     }
 
 pattern

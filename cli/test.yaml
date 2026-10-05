@@ -3397,6 +3397,13 @@
   expected: |
     [5,5,false,3,3,[null,false],null,false]
 
+- name: optional operator with alternative operator
+  args:
+    - '.a ?// 1'
+  input: 'null'
+  expected: |
+    1
+
 - name: condition
   args:
     - 'if . then . else [.] end'

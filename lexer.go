@@ -128,16 +128,6 @@ func (l *lexer) Lex(lval *yySymType) (tokenType int) {
 			lval.operator = OpModify
 			return tokUpdateOp
 		}
-	case '?':
-		if l.peek() == '/' {
-			l.offset++
-			if l.peek() == '/' {
-				l.offset++
-				l.token = "?//"
-				return tokDestAltOp
-			}
-			l.offset--
-		}
 	case '+':
 		if l.peek() == '=' {
 			l.offset++
