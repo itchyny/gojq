@@ -227,6 +227,18 @@ func (*timeArrayError) Error() string {
 	return "expected an array of 8 numbers"
 }
 
+type timeEpochError struct{}
+
+func (*timeEpochError) Error() string {
+	return "number of seconds is out of range"
+}
+
+type timeNumberError struct{}
+
+func (*timeNumberError) Error() string {
+	return "number is out of range"
+}
+
 type unaryTypeError struct {
 	name string
 	v    any

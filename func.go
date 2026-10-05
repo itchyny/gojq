@@ -1839,14 +1839,27 @@ func funcLocaltime(v any) any {
 }
 
 func timeToArrayFunc(name string, v any, loc *time.Location) any {
-	if v, ok := ToFloat64(v); ok {
-		return timeToArray(epochToTime(v, loc))
+	w, ok := ToFloat64(v)
+	if !ok {
+		return &func0TypeError{name, v}
 	}
-	return &func0TypeError{name, v}
+	t, err := epochToTime(w, loc)
+	if err != nil {
+		return &func0WrapError{name, v, err}
+	}
+	return timeToArray(t)
 }
 
-func epochToTime(v float64, loc *time.Location) time.Time {
-	return time.Unix(int64(math.Floor(v)), int64((v-math.Floor(v))*1e9)).In(loc)
+func epochToTime(v float64, loc *time.Location) (time.Time, error) {
+	i, f := math.Floor(v), v-math.Floor(v)
+	if !(math.MinInt64 <= i && i < math.MaxInt64) {
+		return time.Time{}, &timeEpochError{}
+	}
+	t := time.Unix(int64(i), int64(f*1e9)).In(loc)
+	if i < 0 && t.Year() > 1970 {
+		return time.Time{}, &timeEpochError{}
+	}
+	return t, nil
 }
 
 func timeToArray(t time.Time) []any {
@@ -1893,7 +1906,10 @@ func formatTimeFunc(name string, v, x any, loc *time.Location) any {
 	}
 	var t time.Time
 	if w, ok := ToFloat64(v); ok {
-		t = epochToTime(w, loc)
+		var err error
+		if t, err = epochToTime(w, loc); err != nil {
+			return &func1WrapError{name, v, x, err}
+		}
 	} else if a, ok := v.([]any); ok {
 		var err error
 		if t, err = arrayToTime(a, loc); err != nil {
@@ -1935,17 +1951,18 @@ func arrayToTime(a []any, loc *time.Location) (time.Time, error) {
 		if i >= len(a) {
 			break
 		}
-		if i == 5 {
-			if v, ok := ToFloat64(a[i]); ok {
-				*p = int(math.Floor(v))
-				nanosecond = int((v - math.Floor(v)) * 1e9)
-			} else {
-				return t, &timeArrayError{}
-			}
-		} else if v, ok := ToInt(a[i]); ok {
-			*p = v
-		} else {
+		v, ok := ToFloat64(a[i])
+		if !ok {
 			return t, &timeArrayError{}
+		}
+		if !(math.MinInt <= v && v < math.MaxInt) {
+			return t, &timeNumberError{}
+		}
+		if i == 5 {
+			*p = int(math.Floor(v))
+			nanosecond = int((v - math.Floor(v)) * 1e9)
+		} else {
+			*p, _ = ToInt(a[i])
 		}
 	}
 	return time.Date(year, time.Month(month+1), day,

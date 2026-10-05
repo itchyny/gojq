@@ -6049,6 +6049,42 @@
     86399.5
     -60.5
 
+- name: date functions with non-finite or out of range epoch timestamps
+  args:
+    - -n
+    - '[infinite, -infinite, nan, 1e19, -1e19, 9223372036854775807, -9223372036854775808] | .[] | try gmtime catch .'
+  expected: |
+    "gmtime cannot be applied to 1.7976931348623157e+308: number of seconds is out of range"
+    "gmtime cannot be applied to -1.7976931348623157e+308: number of seconds is out of range"
+    "gmtime cannot be applied to null: number of seconds is out of range"
+    "gmtime cannot be applied to 10000000000000000000: number of seconds is out of range"
+    "gmtime cannot be applied to -10000000000000000000: number of seconds is out of range"
+    "gmtime cannot be applied to 9223372036854775807: number of seconds is out of range"
+    "gmtime cannot be applied to -9223372036854775808: number of seconds is out of range"
+
+- name: date functions with out of range numbers in the array
+  args:
+    - -n
+    - '[[infinite,0,1], [nan,0,1], [1e19,0,1], [0,1e19,1], [2001,0,1,0,0,infinite], [2001,0,1,0,0,nan], [2001,0,1,0,0,1e19], [9223372036854775807,0,1], ["x",0,1]] | .[] | try mktime catch .'
+  expected: |
+    "mktime cannot be applied to [1.7976931348623157e+308,0,1]: number is out of range"
+    "mktime cannot be applied to [null,0,1]: number is out of range"
+    "mktime cannot be applied to [10000000000000000000,0,1]: number is out of range"
+    "mktime cannot be applied to [0,10000000000000000000,1]: number is out of range"
+    "mktime cannot be applied to [2001,0,1,0,0,1.797693134 ...]: number is out of range"
+    "mktime cannot be applied to [2001,0,1,0,0,null]: number is out of range"
+    "mktime cannot be applied to [2001,0,1,0,0,10000000000 ...]: number is out of range"
+    "mktime cannot be applied to [9223372036854775807,0,1]: number is out of range"
+    "mktime cannot be applied to [\"x\",0,1]: expected an array of 8 numbers"
+
+- name: strftime function with out of range datetime
+  args:
+    - -n
+    - 'try (infinite | todate) catch ., try ([1e19,0,1] | strftime("%Y")) catch .'
+  expected: |
+    "strftime(\"%Y-%m-%dT%H:%M:%SZ\") cannot be applied to 1.7976931348623157e+308: number of seconds is out of range"
+    "strftime(\"%Y\") cannot be applied to [10000000000000000000,0,1]: number is out of range"
+
 - name: strptime, fromdate functions
   args:
     - -c
