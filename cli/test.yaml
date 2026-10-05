@@ -7112,6 +7112,17 @@
     {"a":3}
     {"a":4}
 
+- name: destructuring alternative operator with break in try
+  args:
+    - -c
+    - 'first((. as {$a} ?// [$a] ?// $a | {$a})?)'
+  input: '[1] [2] {"a":3} 4'
+  expected: |
+    {"a":1}
+    {"a":2}
+    {"a":3}
+    {"a":4}
+
 - name: destructuring alternative operator with halt
   args:
     - -c
@@ -7124,6 +7135,17 @@
   args:
     - -c
     - '. as {$a} ?// [$a] ?// $a | {$a}, halt_error'
+  input: '[1]'
+  expected: |
+    {"a":1}
+  error: |
+    [1]
+  exit_code: 5
+
+- name: destructuring alternative operator with halt_error in try
+  args:
+    - -c
+    - 'try (. as {$a} ?// [$a] ?// $a | {$a}, halt_error)'
   input: '[1]'
   expected: |
     {"a":1}

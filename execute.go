@@ -105,7 +105,9 @@ loop:
 			env.pushfork(pc)
 		case opforktryend:
 			if backtrack {
-				if err != nil {
+				switch err.(type) {
+				case nil, *breakError, *HaltError:
+				default:
 					err = &tryEndError{err}
 				}
 				break loop
