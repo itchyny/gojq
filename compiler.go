@@ -530,21 +530,23 @@ func (c *compiler) compileBind(l, r *Query, patterns []*Pattern) error {
 	}
 	var pc int
 	var vs [][2]int
+	if len(patterns) > 1 {
+		for _, p := range patterns {
+			vs = c.pushPatternVariables(vs, p)
+		}
+	}
 	for i, p := range patterns {
 		var pcc int
-		var err error
 		if i < len(patterns)-1 {
 			defer c.lazy(func() *code {
 				return &code{op: opforkalt, v: pcc}
 			})()
 		}
-		if 0 < i {
-			for _, v := range vs {
-				c.append(&code{op: oppush, v: nil})
-				c.append(&code{op: opstore, v: v})
-			}
+		for _, v := range vs {
+			c.append(&code{op: oppush, v: nil})
+			c.append(&code{op: opstore, v: v})
 		}
-		if vs, err = c.compilePattern(vs[:0], p); err != nil {
+		if _, err := c.compilePattern(nil, p); err != nil {
 			return err
 		}
 		if i < len(patterns)-1 {
@@ -563,6 +565,28 @@ func (c *compiler) compileBind(l, r *Query, patterns []*Pattern) error {
 		c.append(&code{op: opexpend})
 	}
 	return c.compileQuery(r)
+}
+
+func (c *compiler) pushPatternVariables(vs [][2]int, p *Pattern) [][2]int {
+	if p.Name != "" {
+		if v := c.pushVariable(p.Name); !slices.Contains(vs, v) {
+			vs = append(vs, v)
+		}
+	} else if len(p.Array) > 0 {
+		for _, p := range p.Array {
+			vs = c.pushPatternVariables(vs, p)
+		}
+	} else if len(p.Object) > 0 {
+		for _, kv := range p.Object {
+			if kv.Key != "" && kv.Key[0] == '$' {
+				vs = c.pushPatternVariables(vs, &Pattern{Name: kv.Key})
+			}
+			if kv.Val != nil {
+				vs = c.pushPatternVariables(vs, kv.Val)
+			}
+		}
+	}
+	return vs
 }
 
 func (c *compiler) compilePattern(vs [][2]int, p *Pattern) ([][2]int, error) {

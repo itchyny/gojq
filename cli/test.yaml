@@ -7153,6 +7153,17 @@
     [1]
   exit_code: 5
 
+- name: destructuring alternative operator resets variables of later alternatives
+  args:
+    - -c
+    - '.[] as [$a] ?// {$b} ?// $c | [$a, $b, $c]'
+  input: '[{"b":1}, [2], 3, [4]]'
+  expected: |
+    [null,1,null]
+    [2,null,null]
+    [null,null,3]
+    [4,null,null]
+
 - name: destructuring alternative operator with multiple variables
   args:
     - -c
