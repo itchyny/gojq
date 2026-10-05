@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"iter"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -154,16 +155,10 @@ func markIndex(contents string, mark yaml.Mark) int {
 }
 
 func getLineByOffset(str string, offset int) (linestr string, line, column int) {
-	ss := &stringScanner{str, 0}
-	for {
-		str, start, ok := ss.next()
-		if !ok {
-			offset -= start
-			break
-		}
+	for str, start := range stringLines(str) {
 		line++
 		linestr = str
-		if ss.offset >= offset {
+		if offset <= start+len(str)+1 {
 			offset -= start
 			break
 		}
@@ -184,6 +179,32 @@ func getLineByOffset(str string, offset int) (linestr string, line, column int) 
 	return
 }
 
+func stringLines(str string) iter.Seq2[string, int] {
+	return func(yield func(string, int) bool) {
+		var offset int
+		for str != "" {
+			var line string
+			i := indexNewline(str)
+			if i >= 0 {
+				line, str = str[:i], str[i:]
+				var ok bool
+				if str, ok = strings.CutPrefix(str, "\r\n"); ok {
+					i += 2
+				} else {
+					str = str[1:]
+					i++
+				}
+			} else {
+				line, str = str, ""
+			}
+			if !yield(line, offset) {
+				return
+			}
+			offset += i
+		}
+	}
+}
+
 func trimLastInvalidRune(s string) string {
 	for i := len(s) - 1; i >= 0 && i > len(s)-utf8.UTFMax; i-- {
 		if b := s[i]; b < utf8.RuneSelf {
@@ -201,30 +222,6 @@ func trimLastInvalidRune(s string) string {
 func formatLineInfo(linestr string, line, column int) string {
 	l := strconv.Itoa(line)
 	return fmt.Sprintf("    %s | %s\n    %*c", l, linestr, column+len(l)+4, '^')
-}
-
-type stringScanner struct {
-	str    string
-	offset int
-}
-
-func (ss *stringScanner) next() (line string, start int, ok bool) {
-	if ss.offset == len(ss.str) {
-		return
-	}
-	start, ok = ss.offset, true
-	line = ss.str[start:]
-	i := indexNewline(line)
-	if i < 0 {
-		ss.offset = len(ss.str)
-		return
-	}
-	line = line[:i]
-	if strings.HasPrefix(ss.str[start+i:], "\r\n") {
-		i++
-	}
-	ss.offset += i + 1
-	return
 }
 
 // Faster than strings.ContainsAny(str, "\r\n").
