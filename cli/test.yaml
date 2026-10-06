@@ -2478,6 +2478,17 @@
     ["b"]
     []
 
+- name: split/1 function error
+  args:
+    - -c
+    - 'try split(",") catch ., try split(1) catch .'
+  input: '1 "a"'
+  expected: |
+    "split(\",\") cannot be applied to: number (1)"
+    "split(1) cannot be applied to: number (1)"
+    ["a"]
+    "split(1) cannot be applied to: string (\"a\")"
+
 - name: join function
   args:
     - 'join(",")'

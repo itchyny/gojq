@@ -734,11 +734,11 @@ func funcImplode(v any) any {
 func funcSplit(v, x any) any {
 	s, ok := v.(string)
 	if !ok {
-		return &func0TypeError{"split", v}
+		return &func1TypeError{"split", v, x}
 	}
 	t, ok := x.(string)
 	if !ok {
-		return &func0TypeError{"split", x}
+		return &func1TypeError{"split", v, x}
 	}
 	return splitString(s, t)
 }
