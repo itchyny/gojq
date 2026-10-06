@@ -365,17 +365,17 @@ term
     {
         $$ = &Term{Type: TermTypeTry, Try: &Try{$2.(*Query), $3.(*Query)}}
     }
-    | tokReduce expr tokAs pattern '(' query ';' query ')'
+    | tokReduce expr tokAs bindpatterns '(' query ';' query ')'
     {
-        $$ = &Term{Type: TermTypeReduce, Reduce: &Reduce{$2.(*Query), $4.(*Pattern), $6.(*Query), $8.(*Query)}}
+        $$ = &Term{Type: TermTypeReduce, Reduce: &Reduce{$2.(*Query), $4.([]*Pattern), $6.(*Query), $8.(*Query)}}
     }
-    | tokForeach expr tokAs pattern '(' query ';' query ')'
+    | tokForeach expr tokAs bindpatterns '(' query ';' query ')'
     {
-        $$ = &Term{Type: TermTypeForeach, Foreach: &Foreach{$2.(*Query), $4.(*Pattern), $6.(*Query), $8.(*Query), nil}}
+        $$ = &Term{Type: TermTypeForeach, Foreach: &Foreach{$2.(*Query), $4.([]*Pattern), $6.(*Query), $8.(*Query), nil}}
     }
-    | tokForeach expr tokAs pattern '(' query ';' query ';' query ')'
+    | tokForeach expr tokAs bindpatterns '(' query ';' query ';' query ')'
     {
-        $$ = &Term{Type: TermTypeForeach, Foreach: &Foreach{$2.(*Query), $4.(*Pattern), $6.(*Query), $8.(*Query), $10.(*Query)}}
+        $$ = &Term{Type: TermTypeForeach, Foreach: &Foreach{$2.(*Query), $4.([]*Pattern), $6.(*Query), $8.(*Query), $10.(*Query)}}
     }
     | tokBreak tokVariable
     {

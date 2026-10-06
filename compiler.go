@@ -528,6 +528,17 @@ func (c *compiler) compileBind(l, r *Query, patterns []*Pattern) error {
 	if err := c.compileQuery(l); err != nil {
 		return err
 	}
+	return c.compilePatterns(patterns, func() error {
+		if len(patterns) == 1 && c.codes[len(c.codes)-2].op == opexpbegin {
+			c.codes[len(c.codes)-2].op = opnop
+		} else {
+			c.append(&code{op: opexpend})
+		}
+		return c.compileQuery(r)
+	})
+}
+
+func (c *compiler) compilePatterns(patterns []*Pattern, body func() error) error {
 	var pc int
 	var vs [][2]int
 	if len(patterns) > 1 {
@@ -559,12 +570,7 @@ func (c *compiler) compileBind(l, r *Query, patterns []*Pattern) error {
 	if len(patterns) > 1 {
 		pc = len(c.codes)
 	}
-	if len(patterns) == 1 && c.codes[len(c.codes)-2].op == opexpbegin {
-		c.codes[len(c.codes)-2].op = opnop
-	} else {
-		c.append(&code{op: opexpend})
-	}
-	return c.compileQuery(r)
+	return body()
 }
 
 func (c *compiler) pushPatternVariables(vs [][2]int, p *Pattern) [][2]int {
@@ -746,17 +752,19 @@ func (c *compiler) compileReduce(e *Reduce) error {
 	if err := c.compileQuery(e.Query); err != nil {
 		return err
 	}
-	if _, err := c.compilePattern(nil, e.Pattern); err != nil {
+	if err := c.compilePatterns(e.Patterns, func() error {
+		c.append(&code{op: opload, v: v})
+		f := c.newScopeDepth()
+		if err := c.compileQuery(e.Update); err != nil {
+			return err
+		}
+		f()
+		c.append(&code{op: opstore, v: v})
+		c.append(&code{op: opbacktrack})
+		return nil
+	}); err != nil {
 		return err
 	}
-	c.append(&code{op: opload, v: v})
-	f = c.newScopeDepth()
-	if err := c.compileQuery(e.Update); err != nil {
-		return err
-	}
-	f()
-	c.append(&code{op: opstore, v: v})
-	c.append(&code{op: opbacktrack})
 	setfork()
 	c.append(&code{op: oppop})
 	c.append(&code{op: opload, v: v})
@@ -777,22 +785,21 @@ func (c *compiler) compileForeach(e *Foreach) error {
 	if err := c.compileQuery(e.Query); err != nil {
 		return err
 	}
-	if _, err := c.compilePattern(nil, e.Pattern); err != nil {
-		return err
-	}
-	c.append(&code{op: opload, v: v})
-	f = c.newScopeDepth()
-	if err := c.compileQuery(e.Update); err != nil {
-		return err
-	}
-	f()
-	c.append(&code{op: opdup})
-	c.append(&code{op: opstore, v: v})
-	if e.Extract != nil {
-		defer c.newScopeDepth()()
-		return c.compileQuery(e.Extract)
-	}
-	return nil
+	return c.compilePatterns(e.Patterns, func() error {
+		c.append(&code{op: opload, v: v})
+		f := c.newScopeDepth()
+		if err := c.compileQuery(e.Update); err != nil {
+			return err
+		}
+		f()
+		c.append(&code{op: opdup})
+		c.append(&code{op: opstore, v: v})
+		if e.Extract != nil {
+			defer c.newScopeDepth()()
+			return c.compileQuery(e.Extract)
+		}
+		return nil
+	})
 }
 
 func (c *compiler) compileLabel(e *Label) error {

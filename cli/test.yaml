@@ -3619,6 +3619,29 @@
   expected: |
     5
 
+- name: reduce with destructuring alternative operator
+  args:
+    - 'reduce .[] as [$i,$j] ?// {$i,$j} (0; . + $i * $j)'
+  input: '[[1,2], {"i":3,"j":4}, [5,6]]'
+  expected: |
+    44
+
+- name: reduce with destructuring alternative operator resetting variables
+  args:
+    - -c
+    - 'reduce .[] as [$a] ?// {$b} ?// $c ([]; . + [[$a, $b, $c]])'
+  input: '[{"b":1}, [2], 3, [4]]'
+  expected: |
+    [[null,1,null],[2,null,null],[null,null,3],[4,null,null]]
+
+- name: reduce with destructuring alternative operator and error backtrack
+  args:
+    - -c
+    - 'reduce .[] as [$a] ?// $a ([]; . + [if $a == 2 then error else $a end])'
+  input: '[[1], [2], [3]]'
+  expected: |
+    [1,[2],3]
+
 - name: reduce null
   args:
     - 'reduce . as $n (.; .)'
@@ -3725,6 +3748,37 @@
     -1
     -1
     -4
+
+- name: foreach with destructuring alternative operator
+  args:
+    - 'foreach .[] as [$i,$j] ?// {$i,$j} (0; . + $i * $j)'
+  input: '[[1,2], {"i":3,"j":4}, [5,6]]'
+  expected: |
+    2
+    14
+    44
+
+- name: foreach with destructuring alternative operator resetting variables
+  args:
+    - -c
+    - 'foreach .[] as [$a] ?// {$b} ?// $c (null; [$a, $b, $c])'
+  input: '[{"b":1}, [2], 3, [4]]'
+  expected: |
+    [null,1,null]
+    [2,null,null]
+    [null,null,3]
+    [4,null,null]
+
+- name: foreach with destructuring alternative operator and error backtrack in extract
+  args:
+    - -c
+    - 'foreach .[] as {$a} ?// [$a] ?// $a (null; $a; if 1 < . and . < 4 then error else . end)'
+  input: '[[1], [2], {"a":3}, 4]'
+  expected: |
+    1
+    [2]
+    {"a":3}
+    4
 
 - name: foreach with iterator in update
   args:
