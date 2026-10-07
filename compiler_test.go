@@ -374,6 +374,44 @@ func TestCodeRun_RaceRegexp(t *testing.T) {
 	wg.Wait()
 }
 
+func TestCodeRun_RaceInputIter(t *testing.T) {
+	const n = 10
+	values := make([]int, n)
+	for i := range values {
+		values[i] = i
+	}
+	query, err := gojq.Parse("input")
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, err := gojq.Compile(query, gojq.WithInputIter(gojq.NewIter(values...)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var seen sync.Map
+	var wg sync.WaitGroup
+	for range n {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			v, ok := code.Run(nil).Next()
+			if !ok {
+				t.Error("expected a value")
+				return
+			}
+			if _, loaded := seen.LoadOrStore(v, struct{}{}); loaded {
+				t.Errorf("input %v was consumed more than once", v)
+			}
+		}()
+	}
+	wg.Wait()
+	for i := range n {
+		if _, ok := seen.Load(i); !ok {
+			t.Errorf("expected input %d to be consumed", i)
+		}
+	}
+}
+
 func BenchmarkCompile(b *testing.B) {
 	cnt, err := os.ReadFile("builtin.jq")
 	if err != nil {

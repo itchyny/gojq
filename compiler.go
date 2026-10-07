@@ -17,6 +17,7 @@ type compiler struct {
 	variables     []string
 	customFuncs   map[string]function
 	inputIter     Iter
+	inputMu       sync.Mutex
 	codes         []*code
 	codeinfos     []codeinfo
 	builtinScope  *scopeinfo
@@ -1234,6 +1235,8 @@ func (c *compiler) funcBuiltins(any, []any) any {
 }
 
 func (c *compiler) funcInput(any, []any) any {
+	c.inputMu.Lock()
+	defer c.inputMu.Unlock()
 	v, ok := c.inputIter.Next()
 	if !ok {
 		return errors.New("break")
