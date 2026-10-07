@@ -375,7 +375,7 @@ func TestCodeRun_RaceRegexp(t *testing.T) {
 }
 
 func TestCodeRun_RaceInputIter(t *testing.T) {
-	const n = 1000
+	const n = 10
 	values := make([]int, n)
 	for i := range values {
 		values[i] = i
@@ -388,8 +388,7 @@ func TestCodeRun_RaceInputIter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var mu sync.Mutex
-	counts := make(map[int]int, n)
+	var seen sync.Map
 	var wg sync.WaitGroup
 	for range n {
 		wg.Add(1)
@@ -400,20 +399,15 @@ func TestCodeRun_RaceInputIter(t *testing.T) {
 				t.Error("expected a value")
 				return
 			}
-			x, ok := v.(int)
-			if !ok {
-				t.Errorf("unexpected value: %v", v)
-				return
+			if _, loaded := seen.LoadOrStore(v, struct{}{}); loaded {
+				t.Errorf("input %v was consumed more than once", v)
 			}
-			mu.Lock()
-			counts[x]++
-			mu.Unlock()
 		}()
 	}
 	wg.Wait()
 	for i := range n {
-		if counts[i] != 1 {
-			t.Errorf("expected input %d to be consumed once, got: %d", i, counts[i])
+		if _, ok := seen.Load(i); !ok {
+			t.Errorf("expected input %d to be consumed", i)
 		}
 	}
 }

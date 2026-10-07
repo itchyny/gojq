@@ -1236,8 +1236,8 @@ func (c *compiler) funcBuiltins(any, []any) any {
 
 func (c *compiler) funcInput(any, []any) any {
 	c.inputMu.Lock()
+	defer c.inputMu.Unlock()
 	v, ok := c.inputIter.Next()
-	c.inputMu.Unlock()
 	if !ok {
 		return errors.New("break")
 	}
