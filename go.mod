@@ -8,6 +8,7 @@ require (
 	github.com/itchyny/timefmt-go v0.1.8
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mattn/go-runewidth v0.0.19
+	github.com/tetratelabs/wazero v1.11.0
 )
 
 require (
