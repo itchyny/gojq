@@ -16,6 +16,7 @@ type compiler struct {
 	environLoader func() []string
 	variables     []string
 	customFuncs   map[string]function
+	customFormats map[string]func(any) any
 	inputIter     Iter
 	inputMu       sync.Mutex
 	codes         []*code
@@ -270,6 +271,66 @@ func (c *compiler) lookupBuiltin(name string, argcnt int) *funcinfo {
 		if f := s.funcs[i]; f.name == name && f.argcnt == argcnt {
 			return f
 		}
+	}
+	return nil
+}
+
+func (c *compiler) lookupFunc(name string, argcnt int) *funcinfo {
+	for i := len(c.scopes) - 1; i >= 0; i-- {
+		s := c.scopes[i]
+		for j := len(s.funcs) - 1; j >= 0; j-- {
+			if f := s.funcs[j]; f.name == name && f.argcnt == argcnt {
+				return f
+			}
+		}
+	}
+	return nil
+}
+
+func (c *compiler) lookupFormat(format string) *Func {
+	if f := formatToFunc(format); f != nil {
+		return f
+	}
+	name := format
+	if strings.HasPrefix(name, "@") {
+		name = name[1:]
+	}
+	if fi := c.lookupFunc(format, 0); fi != nil {
+		return &Func{Name: format}
+	}
+	if fi := c.lookupFunc(name, 0); fi != nil {
+		return &Func{Name: name}
+	}
+	if c.customFormats != nil {
+		if _, ok := c.customFormats[name]; ok {
+			return &Func{Name: name}
+		}
+	}
+	if fn := getFormat(name); fn != nil {
+		if c.customFormats == nil {
+			c.customFormats = make(map[string]func(any) any)
+		}
+		c.customFormats[name] = fn
+		withFunction(name, 0, 0, false, func(v any, _ []any) any {
+			return fn(v)
+		})(c)
+		return &Func{Name: name}
+	}
+	if fn, ok := c.customFuncs[format]; ok && fn.accept(0) {
+		return &Func{Name: format}
+	}
+	if fn, ok := c.customFuncs[name]; ok && fn.accept(0) {
+		return &Func{Name: name}
+	}
+	if fds, ok := builtinFuncDefs[name]; ok {
+		for _, fd := range fds {
+			if len(fd.Args) == 0 {
+				return &Func{Name: name}
+			}
+		}
+	}
+	if fn, ok := internalFuncs[name]; ok && fn.accept(0) {
+		return &Func{Name: name}
 	}
 	return nil
 }
@@ -1034,6 +1095,22 @@ func (c *compiler) compileFunc(e *Func) error {
 				true,
 				-1,
 			)
+		case "format":
+			if len(e.Args) == 1 && e.Args[0].Term != nil && e.Args[0].Term.Type == TermTypeString && e.Args[0].Term.Str != nil && e.Args[0].Term.Str.Queries == nil {
+				fmtName := e.Args[0].Term.Str.Str
+				if strings.HasPrefix(fmtName, "@") {
+					fmtName = fmtName[1:]
+				}
+				if f := c.lookupFormat("@" + fmtName); f != nil {
+					return c.compileFunc(f)
+				}
+			}
+			return c.compileCallInternal(
+				[3]any{c.funcFormat, len(e.Args), e.Name},
+				e.Args,
+				true,
+				-1,
+			)
 		default:
 			return c.compileCall(e.Name, e.Args)
 		}
@@ -1216,7 +1293,7 @@ func (c *compiler) funcBuiltins(any, []any) any {
 		}
 	}
 	for name, fn := range c.customFuncs {
-		if name[0] != '_' {
+		if name[0] != '_' && name[0] != '@' {
 			for i, cnt := 0, fn.argcount; cnt > 0; i, cnt = i+1, cnt>>1 {
 				if cnt&1 > 0 {
 					xs = append(xs, &funcNameArity{name, i})
@@ -1316,6 +1393,30 @@ func listModuleDeps(q *Query) []any {
 
 func (c *compiler) funcMatch(v any, args []any) any {
 	return funcMatch(v, args[0], args[1], args[2], &c.regexpCache)
+}
+
+func (c *compiler) funcFormat(v any, args []any) any {
+	if len(args) == 0 {
+		return &funcNotFoundError{&Func{Name: "format"}}
+	}
+	x := args[0]
+	s, ok := x.(string)
+	if !ok {
+		return &func0TypeError{"format", x}
+	}
+	format := "@" + s
+	if f := formatToFunc(format); f != nil {
+		return internalFuncs[f.Name].callback(v, nil)
+	}
+	if c.customFormats != nil {
+		if fn, ok := c.customFormats[s]; ok {
+			return fn(v)
+		}
+	}
+	if fn := getFormat(s); fn != nil {
+		return fn(v)
+	}
+	return &formatNotFoundError{format}
 }
 
 func (c *compiler) compileObject(e *Object) error {
@@ -1475,7 +1576,7 @@ func (c *compiler) compileUnary(e *Unary) error {
 }
 
 func (c *compiler) compileFormat(format string, str *String) error {
-	f := formatToFunc(format)
+	f := c.lookupFormat(format)
 	if f == nil {
 		f = &Func{
 			Name: "format",

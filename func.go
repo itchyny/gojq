@@ -836,11 +836,13 @@ func funcFormat(v, x any) any {
 		return &func0TypeError{"format", x}
 	}
 	format := "@" + s
-	f := formatToFunc(format)
-	if f == nil {
-		return &formatNotFoundError{format}
+	if f := formatToFunc(format); f != nil {
+		return internalFuncs[f.Name].callback(v, nil)
 	}
-	return internalFuncs[f.Name].callback(v, nil)
+	if fn := getFormat(s); fn != nil {
+		return fn(v)
+	}
+	return &formatNotFoundError{format}
 }
 
 var htmlEscaper = strings.NewReplacer(
