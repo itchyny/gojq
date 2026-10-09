@@ -6623,6 +6623,30 @@
   expected: |
     15
 
+- name: inputs function with invalid escape sequence error handling
+  args:
+    - -n
+    - -r
+    - 'recurse(try inputs catch "error") | select(.) | length'
+  input: |
+    "a\u263"
+    "def"
+  expected: |
+    5
+    3
+
+- name: inputs function catching syntax error
+  args:
+    - -n
+    - -c
+    - 'recurse(try inputs catch "caught") | select(.)'
+  input: |
+    "a\u263"
+    "def"
+  expected: |
+    "caught"
+    "def"
+
 - name: inputs function with stream option
   args:
     - -n

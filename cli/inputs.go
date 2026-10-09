@@ -66,21 +66,25 @@ type inputIter interface {
 }
 
 type jsonInputIter struct {
-	next   func() (any, error)
-	dec    *json.Decoder
-	ir     *inputReader
-	fname  string
-	offset int64
-	line   int
-	err    error
+	newNext    func(*json.Decoder) func() (any, error)
+	next       func() (any, error)
+	dec        *json.Decoder
+	ir         *inputReader
+	fname      string
+	baseOffset int64
+	offset     int64
+	line       int
+	err        error
 }
 
 func newJSONInputIter(r io.Reader, fname string) inputIter {
 	ir := newInputReader(r)
 	dec := json.NewDecoder(ir)
 	dec.UseNumber()
-	next := func() (v any, err error) { err = dec.Decode(&v); return }
-	return &jsonInputIter{next: next, dec: dec, ir: ir, fname: fname}
+	newNext := func(dec *json.Decoder) func() (any, error) {
+		return func() (v any, err error) { err = dec.Decode(&v); return }
+	}
+	return &jsonInputIter{newNext: newNext, next: newNext(dec), dec: dec, ir: ir, fname: fname}
 }
 
 func (i *jsonInputIter) Next() (any, bool) {
@@ -95,16 +99,25 @@ func (i *jsonInputIter) Next() (any, bool) {
 		}
 		var offset *int64
 		var line *int
+		rawOffset := int64(0)
+		isSyntaxErr := false
 		if e, ok := err.(*json.SyntaxError); ok {
-			e.Offset -= i.offset
+			rawOffset = e.Offset
+			isSyntaxErr = true
+			e.Offset += i.baseOffset - i.offset
 			offset, line = &e.Offset, &i.line
 		} else if err == io.ErrUnexpectedEOF && i.ir.rs != nil {
 			if pos, err := i.ir.rs.Seek(0, io.SeekEnd); err == nil {
 				offset, line = &pos, &i.line
 			}
 		}
-		i.err = &jsonParseError{i.fname, i.ir.getContents(offset, line), i.line, err}
-		return i.err, true
+		parseErr := &jsonParseError{i.fname, i.ir.getContents(offset, line), i.line, err}
+		if !isSyntaxErr {
+			i.err = parseErr
+			return parseErr, true
+		}
+		i.recover(rawOffset)
+		return parseErr, true
 	}
 	if buf := i.ir.buf; buf != nil && buf.Len() >= 16*1024 {
 		consumed := i.dec.InputOffset() - i.offset
@@ -112,6 +125,81 @@ func (i *jsonInputIter) Next() (any, bool) {
 		i.offset += consumed
 	}
 	return v, true
+}
+
+func (i *jsonInputIter) recover(rawOffset int64) {
+	if i.ir.rs != nil {
+		startPos := i.baseOffset + rawOffset
+		if _, err := i.ir.rs.Seek(startPos, io.SeekStart); err == nil {
+			var buf [4096]byte
+			curPos := startPos
+			nlPos := int64(-1)
+			for {
+				n, rerr := i.ir.rs.Read(buf[:])
+				if n > 0 {
+					if idx := bytes.IndexByte(buf[:n], '\n'); idx >= 0 {
+						nlPos = curPos + int64(idx) + 1
+						break
+					}
+					curPos += int64(n)
+				}
+				if rerr != nil {
+					break
+				}
+			}
+			if nlPos < 0 {
+				nlPos = curPos
+			}
+			_, _ = i.ir.rs.Seek(nlPos, io.SeekStart)
+			i.baseOffset = nlPos
+			i.dec = json.NewDecoder(i.ir)
+			i.dec.UseNumber()
+			i.next = i.newNext(i.dec)
+			i.offset = 0
+			i.line = 0
+		}
+		return
+	}
+	if i.ir.buf != nil {
+		bufErrOffset := int(rawOffset - i.offset)
+		nlIdx := -1
+		start := max(0, bufErrOffset)
+		if start < i.ir.buf.Len() {
+			if idx := bytes.IndexByte(i.ir.buf.Bytes()[start:], '\n'); idx >= 0 {
+				nlIdx = start + idx
+			}
+		}
+		if nlIdx < 0 {
+			var b [1024]byte
+			for {
+				n, rerr := i.ir.Read(b[:])
+				if n > 0 {
+					if idx := bytes.IndexByte(b[:n], '\n'); idx >= 0 {
+						nlIdx = i.ir.buf.Len() - n + idx
+						break
+					}
+				}
+				if rerr != nil {
+					break
+				}
+			}
+		}
+		discardLen := i.ir.buf.Len()
+		if nlIdx >= 0 {
+			discardLen = nlIdx + 1
+		}
+		discarded := i.ir.buf.Next(discardLen)
+		i.line += bytes.Count(discarded, []byte{'\n'})
+		i.offset = 0
+		rem := i.ir.buf.Bytes()
+		var reader io.Reader = i.ir
+		if len(rem) > 0 {
+			reader = io.MultiReader(bytes.NewReader(rem), i.ir)
+		}
+		i.dec = json.NewDecoder(reader)
+		i.dec.UseNumber()
+		i.next = i.newNext(i.dec)
+	}
 }
 
 func (i *jsonInputIter) Close() error {
@@ -127,7 +215,10 @@ func newStreamInputIter(r io.Reader, fname string) inputIter {
 	ir := newInputReader(r)
 	dec := json.NewDecoder(ir)
 	dec.UseNumber()
-	return &jsonInputIter{next: newJSONStream(dec).next, dec: dec, ir: ir, fname: fname}
+	newNext := func(dec *json.Decoder) func() (any, error) {
+		return newJSONStream(dec).next
+	}
+	return &jsonInputIter{newNext: newNext, next: newNext(dec), dec: dec, ir: ir, fname: fname}
 }
 
 type nullInputIter struct {

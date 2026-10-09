@@ -270,3 +270,150 @@ func TestYAMLInputIter(t *testing.T) {
 		}
 	}
 }
+
+func TestJSONInputIterRecovery(t *testing.T) {
+	t.Run("interleaved errors and values", func(t *testing.T) {
+		input := "\"a\\u263\"\n\"val1\"\n\"b\\u263\"\n\"val2\"\n"
+		for _, r := range []io.Reader{strings.NewReader(input), newStringReader(input)} {
+			t.Run(fmt.Sprintf("%T", r), func(t *testing.T) {
+				iter := newJSONInputIter(r, "test.json")
+				defer iter.Close()
+
+				v1, ok := iter.Next()
+				if !ok {
+					t.Fatal("expected value or error, got false")
+				}
+				err1, ok := v1.(error)
+				if !ok {
+					t.Fatalf("expected error, got %v", v1)
+				}
+				if !strings.Contains(err1.Error(), "invalid json: test.json") ||
+					!strings.Contains(err1.Error(), "\"a\\u263\"") ||
+					!strings.Contains(err1.Error(), "^") {
+					t.Errorf("got unexpected error:\n%s", err1.Error())
+				}
+
+				v2, ok := iter.Next()
+				if !ok {
+					t.Fatal("expected second value, got false")
+				}
+				if v2 != "val1" {
+					t.Errorf("got %v, expected \"val1\"", v2)
+				}
+
+				v3, ok := iter.Next()
+				if !ok {
+					t.Fatal("expected third value, got false")
+				}
+				err2, ok := v3.(error)
+				if !ok {
+					t.Fatalf("expected error, got %v", v3)
+				}
+				if !strings.Contains(err2.Error(), "invalid json: test.json:3") ||
+					!strings.Contains(err2.Error(), "3 | \"b\\u263\"") ||
+					!strings.Contains(err2.Error(), "^") {
+					t.Errorf("got unexpected error:\n%s", err2.Error())
+				}
+
+				v4, ok := iter.Next()
+				if !ok {
+					t.Fatal("expected fourth value, got false")
+				}
+				if v4 != "val2" {
+					t.Errorf("got %v, expected \"val2\"", v4)
+				}
+
+				v5, ok := iter.Next()
+				if ok {
+					t.Errorf("expected EOF, got %v", v5)
+				}
+			})
+		}
+	})
+
+	t.Run("stream iterator recovery", func(t *testing.T) {
+		input := "\"a\\u263\"\n\"val1\"\n"
+		for _, r := range []io.Reader{strings.NewReader(input), newStringReader(input)} {
+			t.Run(fmt.Sprintf("%T", r), func(t *testing.T) {
+				iter := newStreamInputIter(r, "test.json")
+				defer iter.Close()
+
+				v1, ok := iter.Next()
+				if !ok {
+					t.Fatal("expected error, got false")
+				}
+				if _, ok := v1.(error); !ok {
+					t.Fatalf("expected error, got %v", v1)
+				}
+
+				v2, ok := iter.Next()
+				if !ok {
+					t.Fatal("expected stream value, got false")
+				}
+				expected := []any{[]any{}, "val1"}
+				if !reflect.DeepEqual(v2, expected) {
+					t.Errorf("got %#v, expected %#v", v2, expected)
+				}
+
+				v3, ok := iter.Next()
+				if ok {
+					t.Errorf("expected EOF, got %v", v3)
+				}
+			})
+		}
+	})
+
+	t.Run("multiline object recovery", func(t *testing.T) {
+		input := "{\n  \"a\": 1,\n  \"b\":\n}\n\"valid\"\n"
+		for _, r := range []io.Reader{strings.NewReader(input), newStringReader(input)} {
+			t.Run(fmt.Sprintf("%T", r), func(t *testing.T) {
+				iter := newJSONInputIter(r, "test.json")
+				defer iter.Close()
+
+				v1, ok := iter.Next()
+				if !ok {
+					t.Fatal("expected error, got false")
+				}
+				if _, ok := v1.(error); !ok {
+					t.Fatalf("expected error, got %v", v1)
+				}
+
+				v2, ok := iter.Next()
+				if !ok {
+					t.Fatal("expected valid value, got false")
+				}
+				if v2 != "valid" {
+					t.Errorf("got %v, expected \"valid\"", v2)
+				}
+
+				v3, ok := iter.Next()
+				if ok {
+					t.Errorf("expected EOF, got %v", v3)
+				}
+			})
+		}
+	})
+
+	t.Run("error at EOF without newline", func(t *testing.T) {
+		input := "\"a\\u263\""
+		for _, r := range []io.Reader{strings.NewReader(input), newStringReader(input)} {
+			t.Run(fmt.Sprintf("%T", r), func(t *testing.T) {
+				iter := newJSONInputIter(r, "test.json")
+				defer iter.Close()
+
+				v1, ok := iter.Next()
+				if !ok {
+					t.Fatal("expected error, got false")
+				}
+				if _, ok := v1.(error); !ok {
+					t.Fatalf("expected error, got %v", v1)
+				}
+
+				v2, ok := iter.Next()
+				if ok {
+					t.Errorf("expected EOF, got %v", v2)
+				}
+			})
+		}
+	})
+}
