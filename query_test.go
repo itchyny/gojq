@@ -454,3 +454,140 @@ func FuzzQueryRun(f *testing.F) {
 		}
 	})
 }
+
+func TestQueryRun_Base64URL(t *testing.T) {
+	testCases := []struct {
+		query    string
+		input    any
+		expected any
+	}{
+		{
+			query:    "@base64url",
+			input:    "hello world",
+			expected: "aGVsbG8gd29ybGQ=",
+		},
+		{
+			query:    "@base64url",
+			input:    "  >  ?",
+			expected: "ICA-ICA_",
+		},
+		{
+			query:    "@base64url",
+			input:    "\xfb\xef\xff",
+			expected: "--__",
+		},
+		{
+			query:    "@base64url",
+			input:    123,
+			expected: "MTIz",
+		},
+		{
+			query:    "@base64urld",
+			input:    "ICA-ICA_",
+			expected: "  >  ?",
+		},
+		{
+			query:    "@base64urld",
+			input:    "eyJhIjoxfQ==",
+			expected: "{\"a\":1}",
+		},
+		{
+			query:    "@base64urld",
+			input:    "eyJhIjoxfQ",
+			expected: "{\"a\":1}",
+		},
+		{
+			query:    "@base64urld",
+			input:    "eyJhIjoxfQ==trailing",
+			expected: "{\"a\":1}",
+		},
+		{
+			query:    "@base64urld",
+			input:    "--__",
+			expected: "\xfb\xef\xff",
+		},
+		{
+			query:    `format("base64url")`,
+			input:    "  >  ?",
+			expected: "ICA-ICA_",
+		},
+		{
+			query:    `format("base64urld")`,
+			input:    "ICA-ICA_",
+			expected: "  >  ?",
+		},
+		{
+			query:    `@base64url "val: \(.)"`,
+			input:    "abc",
+			expected: "val: YWJj",
+		},
+		{
+			query:    `@base64url "\(.)"`,
+			input:    "val: abc",
+			expected: "dmFsOiBhYmM=",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.query, func(t *testing.T) {
+			query, err := gojq.Parse(tc.query)
+			if err != nil {
+				t.Fatal(err)
+			}
+			iter := query.Run(tc.input)
+			v, ok := iter.Next()
+			if !ok {
+				t.Fatal("expected value but got none")
+			}
+			if err, ok := v.(error); ok {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if !reflect.DeepEqual(v, tc.expected) {
+				t.Errorf("expected: %#v, got: %#v", tc.expected, v)
+			}
+		})
+	}
+
+	errorCases := []struct {
+		query       string
+		input       any
+		expectedErr string
+	}{
+		{
+			query:       "@base64urld",
+			input:       ":",
+			expectedErr: `@base64urld cannot be applied to ":": illegal base64 data at input byte 0`,
+		},
+		{
+			query:       "@base64urld",
+			input:       "ICA+ICA/",
+			expectedErr: `@base64urld cannot be applied to "ICA+ICA/": illegal base64 data at input byte 3`,
+		},
+		{
+			query:       "@base64urld",
+			input:       "a",
+			expectedErr: `@base64urld cannot be applied to "a": illegal base64 data at input byte 0`,
+		},
+	}
+
+	for _, tc := range errorCases {
+		t.Run(tc.query+"_error", func(t *testing.T) {
+			query, err := gojq.Parse(tc.query)
+			if err != nil {
+				t.Fatal(err)
+			}
+			iter := query.Run(tc.input)
+			v, ok := iter.Next()
+			if !ok {
+				t.Fatal("expected error value but got none")
+			}
+			errVal, ok := v.(error)
+			if !ok {
+				t.Fatalf("expected error but got: %#v", v)
+			}
+			if errVal.Error() != tc.expectedErr {
+				t.Errorf("expected error %q, got %q", tc.expectedErr, errVal.Error())
+			}
+		})
+	}
+}

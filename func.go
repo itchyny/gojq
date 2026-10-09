@@ -94,6 +94,8 @@ func init() {
 		"_tosh":          argFunc0(funcToSh),
 		"_tobase64":      argFunc0(funcToBase64),
 		"_tobase64d":     argFunc0(funcToBase64d),
+		"_tobase64url":   argFunc0(funcToBase64url),
+		"_tobase64urld":  argFunc0(funcToBase64urld),
 		"_index":         argFunc2(funcIndex2),
 		"_slice":         argFunc3(funcSlice),
 		"_plus":          argFunc0(funcOpPlus),
@@ -958,6 +960,31 @@ func funcToBase64d(v any) any {
 		y, err := base64.RawStdEncoding.DecodeString(x)
 		if err != nil {
 			return &func0WrapError{"@base64d", v, err}
+		}
+		return string(y)
+	default:
+		return x
+	}
+}
+
+func funcToBase64url(v any) any {
+	switch x := funcToString(v).(type) {
+	case string:
+		return base64.URLEncoding.EncodeToString([]byte(x))
+	default:
+		return x
+	}
+}
+
+func funcToBase64urld(v any) any {
+	switch x := funcToString(v).(type) {
+	case string:
+		if i := strings.IndexRune(x, base64.StdPadding); i >= 0 {
+			x = x[:i]
+		}
+		y, err := base64.RawURLEncoding.DecodeString(x)
+		if err != nil {
+			return &func0WrapError{"@base64urld", v, err}
 		}
 		return string(y)
 	default:

@@ -1510,6 +1510,10 @@ func formatToFunc(format string) *Func {
 		return &Func{Name: "_tobase64"}
 	case "@base64d":
 		return &Func{Name: "_tobase64d"}
+	case "@base64url":
+		return &Func{Name: "_tobase64url"}
+	case "@base64urld":
+		return &Func{Name: "_tobase64urld"}
 	default:
 		return nil
 	}

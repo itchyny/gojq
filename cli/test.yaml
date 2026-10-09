@@ -6960,7 +6960,7 @@
 
 - name: format function
   args:
-    - 'format("html","uri","csv","tsv","sh","base64")'
+    - 'format("html","uri","csv","tsv","sh","base64","base64url")'
   input: '[1,2,3]'
   expected: |
     "[1,2,3]"
@@ -6968,6 +6968,7 @@
     "1,2,3"
     "1\t2\t3"
     "1 2 3"
+    "WzEsMiwzXQ=="
     "WzEsMiwzXQ=="
 
 - name: format function error
@@ -7173,6 +7174,68 @@
     ":"
   error: |
     @base64d cannot be applied to ":": illegal base64 data at input byte 0
+
+- name: format strings @base64url
+  args:
+    - '@base64url'
+  input: '"  >  ?"'
+  expected: |
+    "ICA-ICA_"
+
+- name: format strings @base64url with string interpolation
+  args:
+    - '@base64url "\(.),\(. + .),\(. + . + .)"'
+  input: '[1,2]'
+  expected: |
+    "WzEsMl0=,WzEsMiwxLDJd,WzEsMiwxLDIsMSwyXQ=="
+
+- name: format strings @base64urld
+  args:
+    - -R
+    - '@base64urld'
+  input: 'ICA-ICA_'
+  expected: |
+    "  >  ?"
+
+- name: format strings @base64urld with padding
+  args:
+    - -R
+    - '@base64urld'
+  input: 'eyJmb28iOiJiYXIifQ=='
+  expected: |
+    "{\"foo\":\"bar\"}"
+
+- name: format strings @base64urld without padding
+  args:
+    - -R
+    - '@base64urld'
+  input: 'eyJmb28iOiJiYXIifQ'
+  expected: |
+    "{\"foo\":\"bar\"}"
+
+- name: format strings @base64urld with trailing characters after padding
+  args:
+    - -R
+    - '@base64urld'
+  input: 'eyJmb28iOiJiYXIifQ=x=y'
+  expected: |
+    "{\"foo\":\"bar\"}"
+
+- name: format strings @base64urld error
+  args:
+    - '@base64urld'
+  input: |
+    ":"
+  error: |
+    @base64urld cannot be applied to ":": illegal base64 data at input byte 0
+
+- name: format strings @base64urld error on standard base64 characters
+  args:
+    - '@base64urld'
+  input: |
+    "ICA+ICA/"
+  error: |
+    @base64urld cannot be applied to "ICA+ICA/": illegal base64 data at input byte 3
 
 - name: format strings not defined error
   args:
