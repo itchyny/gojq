@@ -333,7 +333,7 @@ loop:
 		case opexpend:
 			env.expdepth--
 		case oppathbegin:
-			env.paths.push(env.expdepth)
+			env.paths.push(pathValue{value: env.expdepth})
 			env.paths.push(pathValue{value: env.stack.top()})
 			env.expdepth = 0
 		case oppathend:
@@ -346,7 +346,7 @@ loop:
 				break loop
 			}
 			env.push(env.poppaths())
-			env.expdepth = env.paths.pop().(int)
+			env.expdepth = env.paths.pop().value.(int)
 		default:
 			panic(code.op)
 		}
@@ -371,7 +371,10 @@ func (env *env) pop() any {
 
 func (env *env) popscope() (int, int) {
 	free := env.scopes.index > env.scopes.limit
-	s := env.scopes.pop()
+	// Refer to the scope by pointer; env.scopes.pop() copies the struct
+	// twice when inlined, which slows down function returns.
+	s := &env.scopes.data[env.scopes.index].value
+	env.scopes.pop()
 	if free {
 		env.offset = s.offset
 	}
@@ -414,7 +417,7 @@ type pathValue struct {
 }
 
 func (env *env) pathIntact(v any) bool {
-	w := env.paths.top().(pathValue).value
+	w := env.paths.top().value
 	switch v := v.(type) {
 	case []any, map[string]any:
 		switch w.(type) {
@@ -433,7 +436,7 @@ func (env *env) pathIntact(v any) bool {
 func (env *env) poppaths() []any {
 	xs := []any{}
 	for {
-		p := env.paths.pop().(pathValue)
+		p := env.paths.pop()
 		if p.path == nil {
 			break
 		}

@@ -1,22 +1,22 @@
 package gojq
 
-type stack struct {
-	data  []block
+type stack[T any] struct {
+	data  []block[T]
 	index int
 	limit int
 }
 
-type block struct {
-	value any
+type block[T any] struct {
+	value T
 	next  int
 }
 
-func newStack() *stack {
-	return &stack{index: -1, limit: -1}
+func newStack[T any]() *stack[T] {
+	return &stack[T]{index: -1, limit: -1}
 }
 
-func (s *stack) push(v any) {
-	b := block{v, s.index}
+func (s *stack[T]) push(v T) {
+	b := block[T]{v, s.index}
 	s.index = max(s.index, s.limit) + 1
 	if s.index < len(s.data) {
 		s.data[s.index] = b
@@ -25,21 +25,21 @@ func (s *stack) push(v any) {
 	}
 }
 
-func (s *stack) pop() any {
+func (s *stack[T]) pop() T {
 	b := s.data[s.index]
 	s.index = b.next
 	return b.value
 }
 
-func (s *stack) top() any {
+func (s *stack[T]) top() T {
 	return s.data[s.index].value
 }
 
-func (s *stack) empty() bool {
+func (s *stack[T]) empty() bool {
 	return s.index < 0
 }
 
-func (s *stack) save() (index, limit int) {
+func (s *stack[T]) save() (index, limit int) {
 	index, limit = s.index, s.limit
 	if s.index > s.limit {
 		s.limit = s.index
@@ -47,6 +47,6 @@ func (s *stack) save() (index, limit int) {
 	return
 }
 
-func (s *stack) restore(index, limit int) {
+func (s *stack[T]) restore(index, limit int) {
 	s.index, s.limit = index, limit
 }
