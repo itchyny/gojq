@@ -8482,6 +8482,32 @@
   error: |
     expected a query file for flag `-f'
 
+- name: inputs recover after malformed unicode string
+  args:
+    - -nr
+    - 'recurse(try inputs catch "error") | select(.)'
+  input: |
+    "a\u263"
+    "def"
+  expected: |
+    error
+    def
+
+- name: inputs recover after malformed json on multiple lines
+  args:
+    - -nr
+    - 'recurse(try inputs catch "error") | select(.)'
+  input: |
+    "a\q" "discarded"
+    "first"
+    [1,]
+    "second"
+  expected: |
+    error
+    first
+    error
+    second
+
 - name: invalid json unexpected eof error
   input: '{'
   error: |
