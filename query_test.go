@@ -327,6 +327,22 @@ func TestQueryRun_Input(t *testing.T) {
 	}
 }
 
+func TestQueryRun_AddNilMap(t *testing.T) {
+	for _, src := range []string{"add", "add(.[])"} {
+		t.Run(src, func(t *testing.T) {
+			query, err := gojq.Parse(src)
+			if err != nil {
+				t.Fatal(err)
+			}
+			input := []any{map[string]any(nil), map[string]any{"x": 1}}
+			v, ok := query.Run(input).Next()
+			if expected := map[string]any{"x": 1}; !ok || !reflect.DeepEqual(v, expected) {
+				t.Errorf("expected: %#v, got: %#v", expected, v)
+			}
+		})
+	}
+}
+
 func TestQueryRun_NonNilSlice(t *testing.T) {
 	for _, f := range []string{"keys", "map(.)", "to_entries", "arrays",
 		"reverse", "flatten", "sort", "sort_by(.)", "group_by(.)", "unique",
