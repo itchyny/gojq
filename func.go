@@ -2160,6 +2160,10 @@ func funcHaltError(v any, args []any) any {
 
 func toIntCeil(x any) (int, bool) {
 	if f, ok := x.(float64); ok {
+		if -1 < f && f < 0 {
+			// the length plus this negative index rounds up to the length
+			return math.MaxInt, true
+		}
 		x = math.Ceil(f)
 	}
 	return ToInt(x)
