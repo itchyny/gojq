@@ -6822,6 +6822,18 @@
     {"bar":"deA","foo":"cdeA"}
     [{"a":"bcdeA","bar":"deA","foo":"c"},{"a":"BCDEa","bar":"DEa","foo":"C"}]
 
+- name: match, test, and capture functions with an array argument
+  args:
+    - -c
+    - '[match(["bcd"])], [match(["bcd", "gi"])], [test(["bcD"]), test(["bcD", "i"]), test(["bcD", null])], capture(["b(?<foo>c)"]), [capture(["(?<foo>b)c", "gi"])]'
+  input: '"abcdeABCDE"'
+  expected: |
+    [{"captures":[],"length":3,"offset":1,"string":"bcd"}]
+    [{"captures":[],"length":3,"offset":1,"string":"bcd"},{"captures":[],"length":3,"offset":6,"string":"BCD"}]
+    [false,true,false]
+    {"foo":"c"}
+    [{"foo":"b"},{"foo":"B"}]
+
 - name: scan function
   args:
     - -c
