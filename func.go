@@ -1059,7 +1059,7 @@ func funcSlice(_, v, e, s any) (r any) {
 func slice(vs []any, e, s any) any {
 	var start, end int
 	if s != nil {
-		if i, ok := ToInt(s); ok {
+		if i, ok := toIntFloor(s); ok {
 			start = clampIndex(i, 0, len(vs))
 		} else {
 			return &arrayIndexNotNumberError{s}
@@ -1081,7 +1081,7 @@ func sliceString(v string, e, s any) any {
 	var start, end int
 	l := len([]rune(v))
 	if s != nil {
-		if i, ok := ToInt(s); ok {
+		if i, ok := toIntFloor(s); ok {
 			start = clampIndex(i, 0, l)
 		} else {
 			return &stringIndexNotNumberError{s}
@@ -1686,7 +1686,7 @@ func updateArraySlice(v []any, m map[string]any, path []any, n any, a allocator)
 	}
 	var start, end int
 	if s != nil {
-		if i, ok := ToInt(s); ok {
+		if i, ok := toIntFloor(s); ok {
 			start = clampIndex(i, 0, len(v))
 		} else {
 			return nil, &arrayIndexNotNumberError{s}
@@ -2161,6 +2161,13 @@ func funcHaltError(v any, args []any) any {
 func toIntCeil(x any) (int, bool) {
 	if f, ok := x.(float64); ok {
 		x = math.Ceil(f)
+	}
+	return ToInt(x)
+}
+
+func toIntFloor(x any) (int, bool) {
+	if f, ok := x.(float64); ok {
+		x = math.Floor(f)
 	}
 	return ToInt(x)
 }
