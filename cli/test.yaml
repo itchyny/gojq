@@ -564,6 +564,18 @@
     [[0],[0,1]]
     [[0],[0,1],[0,1,2],[],[1],[1,2],[],[],[2]]
 
+- name: array slicing by negative floating-point number
+  args:
+    - -c
+    - '.[-1.5:], .[-0.5:], .[-2.5:-1.5], (.[-1.5:] = ["x"]), del(.[-1.5:])'
+  input: '[0, 1, 2]'
+  expected: |
+    [1,2]
+    [2]
+    [0,1]
+    [0,"x"]
+    [0]
+
 - name: array indexing and slicing by large number
   args:
     - -c
@@ -767,6 +779,15 @@
     "３４"
     "２３"
     "２３４"
+
+- name: string slicing by negative floating-point number
+  args:
+    - '.[-1.5:], .[-0.5:], .[-2.5:-1.5]'
+  input: '"１２３４５"'
+  expected: |
+    "４５"
+    "５"
+    "３４"
 
 - name: string indexing not number error
   args:
