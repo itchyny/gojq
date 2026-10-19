@@ -1403,7 +1403,7 @@ func funcJn(l, r float64) float64 {
 }
 
 func funcLdexp(l, r float64) float64 {
-	return math.Ldexp(l, int(r))
+	return math.Ldexp(l, int(max(math.MinInt16, min(math.MaxInt16, r))))
 }
 
 func funcYn(l, r float64) float64 {
