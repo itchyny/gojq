@@ -1430,13 +1430,7 @@ func funcNan(any) any {
 
 func funcIsnan(v any) any {
 	x, ok := ToFloat64(v)
-	if !ok {
-		if v == nil {
-			return false
-		}
-		return &func0TypeError{"isnan", v}
-	}
-	return math.IsNaN(x)
+	return ok && math.IsNaN(x)
 }
 
 func funcIsnormal(v any) any {
