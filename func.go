@@ -411,7 +411,7 @@ func add(xs iter.Seq[any]) any {
 		case []any:
 			switch w := v.(type) {
 			case nil:
-				v = slices.Clone(x)
+				v = append([]any{}, x...)
 				continue
 			case []any:
 				v = append(w, x...)
@@ -420,7 +420,11 @@ func add(xs iter.Seq[any]) any {
 		case map[string]any:
 			switch w := v.(type) {
 			case nil:
-				v = maps.Clone(x)
+				m := maps.Clone(x)
+				if m == nil {
+					m = map[string]any{}
+				}
+				v = m
 				continue
 			case map[string]any:
 				maps.Copy(w, x)
