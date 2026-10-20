@@ -2159,9 +2159,11 @@ func funcHaltError(v any, args []any) any {
 }
 
 func toIntCeil(x any) (int, bool) {
+	if n, ok := x.(json.Number); ok {
+		x = parseNumber(n)
+	}
 	if f, ok := x.(float64); ok {
 		if -1 < f && f < 0 {
-			// the length plus this negative index rounds up to the length
 			return math.MaxInt, true
 		}
 		x = math.Ceil(f)
@@ -2170,6 +2172,9 @@ func toIntCeil(x any) (int, bool) {
 }
 
 func toIntFloor(x any) (int, bool) {
+	if n, ok := x.(json.Number); ok {
+		x = parseNumber(n)
+	}
 	if f, ok := x.(float64); ok {
 		x = math.Floor(f)
 	}

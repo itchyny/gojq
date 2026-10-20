@@ -581,6 +581,16 @@
     [0,1]
     []
 
+- name: array slicing by floating-point number from input
+  args:
+    - -c
+    - '.[0] as $a | .[1][] as $i | [$a[:$i], $a[$i:]]'
+  input: '[[0, 1, 2], [1.5, -0.5, -1.5]]'
+  expected: |
+    [[0,1],[1,2]]
+    [[0,1,2],[2]]
+    [[0,1],[1,2]]
+
 - name: array indexing and slicing by large number
   args:
     - -c
