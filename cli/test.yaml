@@ -567,7 +567,7 @@
 - name: array slicing by negative floating-point number
   args:
     - -c
-    - '.[-1.5:], .[-0.5:], .[-2.5:-1.5], (.[-1.5:] = ["x"]), del(.[-1.5:])'
+    - '.[-1.5:], .[-0.5:], .[-2.5:-1.5], (.[-1.5:] = ["x"]), del(.[-1.5:]), .[1:-0.5], (.[:-0.5] = ["x"]), del(.[:-0.5]), .[:-1.0], .[:0.0]'
   input: '[0, 1, 2]'
   expected: |
     [1,2]
@@ -575,6 +575,11 @@
     [0,1]
     [0,"x"]
     [0]
+    [1,2]
+    ["x"]
+    []
+    [0,1]
+    []
 
 - name: array indexing and slicing by large number
   args:
@@ -782,12 +787,13 @@
 
 - name: string slicing by negative floating-point number
   args:
-    - '.[-1.5:], .[-0.5:], .[-2.5:-1.5]'
+    - '.[-1.5:], .[-0.5:], .[-2.5:-1.5], .[1:-0.5]'
   input: '"１２３４５"'
   expected: |
     "４５"
     "５"
     "３４"
+    "２３４５"
 
 - name: string indexing not number error
   args:
