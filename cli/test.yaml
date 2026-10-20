@@ -4908,6 +4908,14 @@
     [0,1,false]
     [null,1,false]
 
+- name: isnan function on non-numbers
+  args:
+    - -c
+    - '[null, true, false, "", [], {} | isnan]'
+  input: 'null'
+  expected: |
+    [false,false,false,false,false,false]
+
 - name: nan and comparison
   args:
     - -c
