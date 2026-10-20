@@ -1171,12 +1171,12 @@ type rangeIter struct {
 	value, end, step any
 }
 
-func (iter *rangeIter) Next() (any, bool) {
-	if Compare(iter.step, 0)*Compare(iter.value, iter.end) >= 0 {
+func (it *rangeIter) Next() (any, bool) {
+	if Compare(it.step, 0)*Compare(it.value, it.end) >= 0 {
 		return nil, false
 	}
-	v := iter.value
-	iter.value = funcOpAdd(nil, v, iter.step)
+	v := it.value
+	it.value = funcOpAdd(nil, v, it.step)
 	return v, true
 }
 
