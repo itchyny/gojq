@@ -1403,7 +1403,21 @@ func funcFmin(l, r float64) float64 {
 }
 
 func funcJn(l, r float64) float64 {
-	return math.Jn(int(l), r)
+	n := int(l)
+	if x := math.Abs(r); 0 < x && x < math.Inf(1) {
+		// |J_n(x)| <= (|x|/2)^|n| / |n|! underflows to zero,
+		// avoiding the recurrence which takes O(|n|) time
+		// (https://github.com/golang/go/issues/81489)
+		m := math.Abs(float64(n))
+		// values below 2^-1076, half of the rounding threshold 2^-1075, round to zero
+		if m*math.Log(x/2)-funcLgamma(m+1) < -1076*math.Ln2 {
+			if n&1 != 0 && (n < 0) != (r < 0) {
+				return math.Copysign(0, -1)
+			}
+			return 0
+		}
+	}
+	return math.Jn(n, r)
 }
 
 func funcLdexp(l, r float64) float64 {
@@ -1411,7 +1425,21 @@ func funcLdexp(l, r float64) float64 {
 }
 
 func funcYn(l, r float64) float64 {
-	return math.Yn(int(l), r)
+	n := int(l)
+	if m := math.Abs(float64(n)); 0 < r && r <= m-1 {
+		// |Y_n(x)| >= 2/(πx J_{n-1}(x)) >= 2(n-1)!/(πx (x/2)^(n-1)) overflows,
+		// by the Wronskian and the bound of J_{n-1}, for 0 < x <= n-1 where
+		// J_{n-1}(x), J_n(x) > 0 and Y_{n-1}(x), Y_n(x) < 0, avoiding the long
+		// recurrence (https://github.com/golang/go/issues/81489)
+		// log(math.MaxFloat64) ≈ 709.78: values above this overflow
+		if math.Log(2/(math.Pi*r))+funcLgamma(m)-(m-1)*math.Log(r/2) > 710 {
+			if n < 0 && n&1 != 0 {
+				return math.Inf(1)
+			}
+			return math.Inf(-1)
+		}
+	}
+	return math.Yn(n, r)
 }
 
 func funcInfinite(any) any {
