@@ -637,6 +637,30 @@
     [0,1,2]
     []
 
+- name: array slicing by nan
+  args:
+    - -c
+    - '.[nan:], .[:nan], .[1:nan], .[nan:nan], (.[1:nan] = ["x"]), del(.[1:nan])'
+  input: '[0, 1, 2]'
+  expected: |
+    [0,1,2]
+    [0,1,2]
+    [1,2]
+    [0,1,2]
+    [0,"x"]
+    [0]
+
+- name: string slicing by nan
+  args:
+    - -c
+    - '.[nan:], .[:nan], .[1:nan], .[nan:nan]'
+  input: '"abc"'
+  expected: |
+    "abc"
+    "abc"
+    "bc"
+    "abc"
+
 - name: array and string slicing by object
   args:
     - -c

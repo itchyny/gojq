@@ -2161,7 +2161,7 @@ func toIntCeil(x any) (int, bool) {
 		x = parseNumber(n)
 	}
 	if f, ok := x.(float64); ok {
-		if -1 < f && f < 0 {
+		if -1 < f && f < 0 || math.IsNaN(f) {
 			return math.MaxInt, true
 		}
 		x = math.Ceil(f)
