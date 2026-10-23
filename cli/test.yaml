@@ -6520,16 +6520,14 @@
   args:
     - 'halt_error'
   input: '1'
-  error: |
-    1
+  error: '1'
   exit_code: 5
 
 - name: halt_error/0 function on nan
   args:
     - 'nan | halt_error'
   input: 'null'
-  error: |
-    null
+  error: 'null'
   exit_code: 5
 
 - name: halt_error/0 function on string
@@ -6546,8 +6544,7 @@
   args:
     - 'range(5) | try halt_error catch .'
   input: 'null'
-  error: |
-    0
+  error: '0'
   exit_code: 5
 
 - name: halt_error/0 function with null input and try catch
@@ -6563,8 +6560,7 @@
     1
     2
     3
-  error: |
-    1
+  error: '1'
   exit_code: 5
 
 - name: halt_error/0 function and raw string input option
@@ -6601,8 +6597,7 @@
     1
     2
     3
-  error: |
-    1
+  error: '1'
   exit_code: 1
 
 - name: builtins function
@@ -7373,8 +7368,7 @@
   input: '[1]'
   expected: |
     {"a":1}
-  error: |
-    [1]
+  error: '[1]'
   exit_code: 5
 
 - name: destructuring alternative operator with halt_error in try
@@ -7384,8 +7378,7 @@
   input: '[1]'
   expected: |
     {"a":1}
-  error: |
-    [1]
+  error: '[1]'
   exit_code: 5
 
 - name: destructuring alternative operator resets variables of later alternatives

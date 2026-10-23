@@ -335,13 +335,7 @@ func (cli *cli) process(iter inputIter, code *gojq.Code) error {
 		if e := cli.printValues(code.Run(v, cli.argvalues...)); e != nil {
 			if e, ok := e.(*gojq.HaltError); ok {
 				if v := e.Value(); v != nil {
-					if str, ok := v.(string); ok {
-						cli.errStream.Write([]byte(str))
-					} else {
-						bs, _ := gojq.Marshal(v)
-						cli.errStream.Write(bs)
-						cli.errStream.Write([]byte{'\n'})
-					}
+					_ = (&rawMarshaler{m: newEncoder(false, -1)}).marshal(v, cli.errStream)
 				}
 				err = e
 				break
