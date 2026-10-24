@@ -60,10 +60,18 @@ brew install gojq
 mise use -g gojq@latest
 ```
 
+### Scoop
+```sh
+scoop install gojq
+```
+
 ### Zero Install
 ```sh
 0install add gojq https://apps.0install.net/utils/gojq.xml
 ```
+
+### Prebuilt binaries
+Download the archive for your platform from the [releases page](https://github.com/itchyny/gojq/releases).
 
 ### Build from source
 ```sh
