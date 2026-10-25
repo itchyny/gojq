@@ -1567,17 +1567,27 @@ func delpaths(v, p any, a allocator) any {
 	// in each loop because array indices should not change. For example,
 	//   jq -n "[0, 1, 2, 3] | delpaths([[1], [2]])" #=> [0, 3].
 	var empty struct{}
-	var err error
+	var pending [][]any
 	u := v
 	for _, q := range paths {
 		path, ok := q.([]any)
 		if !ok {
 			return &func1WrapError{"delpaths", v, p, &expectedArrayError{q}}
 		}
-		u, err = update(u, path, empty, a)
+		w, err := update(u, path, empty, a)
+		if err != nil {
+			pending = append(pending, path)
+		} else {
+			u = w
+		}
+	}
+	// A later deletion may cover a path that could not be traversed earlier.
+	for _, path := range pending {
+		w, err := update(u, path, empty, a)
 		if err != nil {
 			return &func1WrapError{"delpaths", v, p, err}
 		}
+		u = w
 	}
 	return deleteEmpty(u)
 }

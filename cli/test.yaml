@@ -5209,6 +5209,91 @@
     {"x":[]}
     {}
 
+- name: delpaths function with descendant before object parent
+  args:
+    - -c
+    - 'delpaths([["a","b"],["a"]], [["a"],["a","b"]])'
+  input: '{"a":1,"keep":2}'
+  expected: |
+    {"keep":2}
+    {"keep":2}
+
+- name: delpaths function with descendant before array parent
+  args:
+    - -c
+    - 'delpaths([[0,"b"],[0]], [[0],[0,"b"]])'
+  input: '[1,2]'
+  expected: |
+    [2]
+    [2]
+
+- name: delpaths function with descendant before root
+  args:
+    - -c
+    - 'delpaths([[0],[]], [[],[0]])'
+  input: '{}'
+  expected: |
+    null
+    null
+
+- name: delpaths function preserves path order and input
+  args:
+    - -c
+    - '[["a","b"],["a"]] as $p | [delpaths($p), $p, .]'
+  input: '{"a":1,"keep":2}'
+  expected: |
+    [{"keep":2},[["a","b"],["a"]],{"a":1,"keep":2}]
+
+- name: delpaths function with overlapping negative indices
+  args:
+    - -c
+    - 'delpaths([[0],[-2,"x"]], [[-2,"x"],[0]])'
+  input: '[1,2]'
+  expected: |
+    [2]
+    [2]
+
+- name: delpaths function with overlapping fractional indices
+  args:
+    - -c
+    - 'delpaths([[1.9],[1.1,"x"]], [[1.1,"x"],[1.9]])'
+  input: '[1,2]'
+  expected: |
+    [1]
+    [1]
+
+- name: delpaths function with overlapping slice and index
+  args:
+    - -c
+    - 'delpaths([[{start:0,end:1}],[0,"x"]], [[0,"x"],[{start:0,end:1}]])'
+  input: '[1,2]'
+  expected: |
+    [2]
+    [2]
+
+- name: delpaths function with overlapping nested slices
+  args:
+    - -c
+    - 'delpaths([[{start:0,end:1},{start:0,end:1},0],[0,"x"]], [[0,"x"],[{start:0,end:1},{start:0,end:1},0]])'
+  input: '[1,2]'
+  expected: |
+    [2]
+    [2]
+
+- name: delpaths function with uncovered invalid descendant
+  args:
+    - 'delpaths([["a","b"],["keep"]])'
+  input: '{"a":1,"keep":2}'
+  error: |
+    delpaths([["a","b"],["keep"]]) cannot be applied to {"a":1,"keep":2}: expected an object but got: number (1)
+
+- name: delpaths function validates paths after root
+  args:
+    - 'delpaths([[],{}])'
+  input: '{}'
+  error: |
+    delpaths([[],{}]) cannot be applied to {}: expected an array but got: object ({})
+
 - name: delpaths function against null
   args:
     - 'delpaths([["a"]]), delpaths([["a","b"]]), delpaths([[0]]), delpaths([[-1]]), delpaths([[{start:1,end:2}]])'
