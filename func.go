@@ -1563,6 +1563,12 @@ func delpaths(v, p any, a allocator) any {
 	if len(paths) == 0 {
 		return v
 	}
+	// Sorts the paths to delete ancestor before descendant paths. For example,
+	//   jq -n '{a: 1, b: 2} | delpaths([["a", "b"], ["a"]])' #=> {"b": 2}.
+	if !slices.IsSortedFunc(paths, Compare) {
+		paths = slices.Clone(paths)
+		slices.SortFunc(paths, Compare)
+	}
 	// Fills the paths with an empty value and then delete them. We cannot delete
 	// in each loop because array indices should not change. For example,
 	//   jq -n "[0, 1, 2, 3] | delpaths([[1], [2]])" #=> [0, 3].
