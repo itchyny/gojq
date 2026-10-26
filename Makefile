@@ -4,6 +4,7 @@ VERSION_PATH := cli
 CURRENT_REVISION = $(shell git rev-parse --short HEAD)
 BUILD_LDFLAGS = "-s -w -X github.com/itchyny/$(BIN)/cli.revision=$(CURRENT_REVISION)"
 GOBIN ?= $(shell go env GOPATH)/bin
+SANDBOX_GO := go1.25.4
 SHELL := /bin/bash
 
 .PHONY: all
@@ -64,6 +65,13 @@ CREDITS: $(GOBIN)/gocredits go.sum
 
 $(GOBIN)/gocredits:
 	go install github.com/Songmu/gocredits/cmd/gocredits@latest
+
+.PHONY: build-sandbox
+build-sandbox:
+	cd sandbox && GOTOOLCHAIN=$(SANDBOX_GO) GOOS=wasip1 GOARCH=wasm \
+		go build -trimpath -ldflags='-s -w' -o gojq_guest.wasm ./guest
+	cd sandbox && GOTOOLCHAIN=$(SANDBOX_GO) go run mkguestgz.go gojq_guest.wasm gojq_guest.wasm.gz
+	rm sandbox/gojq_guest.wasm
 
 .PHONY: test
 test: build
