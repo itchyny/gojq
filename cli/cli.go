@@ -8,6 +8,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/mattn/go-isatty"
 
@@ -159,8 +160,8 @@ Usage:
 		cli.argvalues = append(cli.argvalues, v)
 	}
 	for k, v := range opts.ArgJSON {
-		val, _ := newJSONInputIter(strings.NewReader(v), "$"+k).Next()
-		if err, ok := val.(error); ok {
+		val, err := parseJSONArg(v, "$"+k)
+		if err != nil {
 			return err
 		}
 		cli.argnames = append(cli.argnames, "$"+k)
@@ -189,8 +190,8 @@ Usage:
 	positional := opts.Args
 	for i, v := range opts.JSONArgs {
 		if v != nil {
-			val, _ := newJSONInputIter(strings.NewReader(v.(string)), "--jsonargs").Next()
-			if err, ok := val.(error); ok {
+			val, err := parseJSONArg(v.(string), "--jsonargs")
+			if err != nil {
 				return err
 			}
 			if i < len(positional) {
@@ -275,6 +276,29 @@ Usage:
 		iter = newNullInputIter()
 	}
 	return cli.process(iter, code)
+}
+
+func parseJSONArg(value, name string) (any, error) {
+	iter := newJSONInputIter(strings.NewReader(value), name).(*jsonInputIter)
+	defer iter.Close()
+	v, ok := iter.Next()
+	if !ok {
+		return nil, &jsonParseError{name, value, 0, io.ErrUnexpectedEOF}
+	}
+	if err, ok := v.(error); ok {
+		return nil, err
+	}
+	offset := iter.dec.InputOffset()
+	if next, ok := iter.Next(); ok {
+		if err, ok := next.(error); ok {
+			return nil, err
+		}
+		rest := strings.TrimLeft(value[offset:], " \t\n\r")
+		char, _ := utf8.DecodeRuneInString(rest)
+		return nil, &jsonParseError{name, value, 0,
+			&jsonTrailingValueError{char, len(value) - len(rest) + 1}}
+	}
+	return v, nil
 }
 
 func slurpFile(name string) (any, error) {
