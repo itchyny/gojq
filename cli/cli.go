@@ -289,10 +289,7 @@ func parseJSONArg(value, name string) (any, error) {
 		return nil, err
 	}
 	offset := iter.dec.InputOffset()
-	if next, ok := iter.Next(); ok {
-		if err, ok := next.(error); ok {
-			return nil, err
-		}
+	if _, err := iter.dec.Token(); err != io.EOF {
 		rest := strings.TrimLeft(value[offset:], " \t\n\r")
 		char, _ := utf8.DecodeRuneInString(rest)
 		return nil, &jsonParseError{name, value, 0,

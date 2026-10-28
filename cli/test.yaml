@@ -9140,7 +9140,7 @@
   error: |
     invalid json: $foo
         {} {
-            ^  unexpected EOF
+           ^  invalid character '{' after top-level value
 
 - name: argjson option with empty value
   args:
