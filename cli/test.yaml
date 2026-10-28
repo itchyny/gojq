@@ -9109,6 +9109,43 @@
         { foo }
           ^  invalid character 'f' looking for beginning of object key string
 
+- name: argjson option with multiple values
+  args:
+    - --argjson
+    - 'foo'
+    - '1 2'
+    - '.'
+  error: |
+    invalid json: $foo: expected a single JSON value
+
+- name: argjson option with adjacent values
+  args:
+    - --argjson
+    - 'foo'
+    - '{}[]'
+    - '.'
+  error: |
+    invalid json: $foo: expected a single JSON value
+
+- name: argjson option with trailing parse error
+  args:
+    - --argjson
+    - 'foo'
+    - '{} {'
+    - '.'
+  error: |
+    invalid json: $foo
+        {} {
+            ^  unexpected EOF
+
+- name: argjson option with empty value
+  args:
+    - --argjson
+    - 'foo'
+    - ''
+    - '.'
+  error: "invalid json: $foo\n    \n    ^  unexpected EOF\n"
+
 - name: slurpfile option
   args:
     - --slurpfile
@@ -9319,6 +9356,35 @@
     invalid json: --jsonargs
         {"x":}
              ^  invalid character '}' looking for beginning of value
+
+- name: jsonargs option with multiple values
+  args:
+    - '$ARGS'
+    - --jsonargs
+    - '1'
+    - '"bar" "baz"'
+  input: '0'
+  error: |
+    invalid json: --jsonargs: expected a single JSON value
+
+- name: jsonargs option with empty value
+  args:
+    - '$ARGS'
+    - --jsonargs
+    - '1'
+    - ''
+  input: '0'
+  error: "invalid json: --jsonargs\n    \n    ^  unexpected EOF\n"
+
+- name: jsonargs option with big integer
+  args:
+    - -c
+    - '$ARGS.positional | .[0] * 2'
+    - --jsonargs
+    - '10000000000000000000000000000000'
+  input: '0'
+  expected: |
+    20000000000000000000000000000000
 
 - name: args with jsonargs option
   args:
