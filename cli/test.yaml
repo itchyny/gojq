@@ -9116,7 +9116,9 @@
     - '1 2'
     - '.'
   error: |
-    invalid json: $foo: expected a single JSON value
+    invalid json: $foo
+        1 2
+          ^  invalid character '2' after top-level value
 
 - name: argjson option with adjacent values
   args:
@@ -9125,7 +9127,9 @@
     - '{}[]'
     - '.'
   error: |
-    invalid json: $foo: expected a single JSON value
+    invalid json: $foo
+        {}[]
+          ^  invalid character '[' after top-level value
 
 - name: argjson option with trailing parse error
   args:
@@ -9365,7 +9369,9 @@
     - '"bar" "baz"'
   input: '0'
   error: |
-    invalid json: --jsonargs: expected a single JSON value
+    invalid json: --jsonargs
+        "bar" "baz"
+              ^  invalid character '"' after top-level value
 
 - name: jsonargs option with empty value
   args:

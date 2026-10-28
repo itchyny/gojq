@@ -107,6 +107,8 @@ func (err *jsonParseError) Error() string {
 		offset = len(err.contents) + 1
 	} else if e, ok := err.err.(*json.SyntaxError); ok {
 		offset = int(e.Offset)
+	} else if e, ok := err.err.(*jsonTrailingValueError); ok {
+		offset = e.offset
 	}
 	linestr, line, column := getLineByOffset(err.contents, offset)
 	if line += err.line; line > 1 {
@@ -115,6 +117,15 @@ func (err *jsonParseError) Error() string {
 	}
 	return fmt.Sprintf("invalid json: %s\n    %s\n    %*c  %s",
 		err.fname, linestr, column+1, '^', err.err)
+}
+
+type jsonTrailingValueError struct {
+	char   rune
+	offset int
+}
+
+func (err *jsonTrailingValueError) Error() string {
+	return "invalid character " + strconv.QuoteRune(err.char) + " after top-level value"
 }
 
 type yamlParseError struct {
