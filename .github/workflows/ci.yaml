@@ -140,11 +140,10 @@ jobs:
         with:
           name: goxz
           path: goxz
-      - name: Setup release body
-        run: sed -n '/\[${{ github.ref_name }}\]/,/^$/{//!p}' CHANGELOG.md >release-body.txt
       - name: Create release
-        uses: ncipollo/release-action@v1
-        with:
-          name: Release ${{ github.ref_name }}
-          bodyFile: release-body.txt
-          artifacts: goxz/*
+        run: |
+          sed -n '/\['"${GITHUB_REF_NAME//./[.]}"']/,/^$/{//!p;}' CHANGELOG.md |
+            gh release create "$GITHUB_REF_NAME" --verify-tag \
+              --title "Release $GITHUB_REF_NAME" --notes-file - goxz/*
+        env:
+          GH_TOKEN: ${{ github.token }}
