@@ -420,16 +420,31 @@ func TestQueryString(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	q, err := gojq.Parse(string(cnt))
-	if err != nil {
-		t.Fatal(err)
-	}
-	r, err := gojq.Parse(q.String())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(q, r) {
-		t.Errorf("\n%v\n%v", q, r)
+	for _, src := range []string{
+		string(cnt),
+		`module { a: null, "b": [true, false, 1.5, "c"], c: {} };
+import "a" as a { search: "./" };
+import "b" as $b;
+include "c" { d: [] };
+.`,
+		`. as [$a, {$b, c: $c, "d": $d, (.e): $e, $f: [$g]}] ?// $h | $a`,
+		`. as {"a\(.b)c": $d} | $d`,
+		`"a\(.b)c\("d\(.e)f")g", @base64 "a\(.b)c", @json`,
+		`.a."b".["c"]."d\(.e)f", . .a, 0 .a, ..[]`,
+		`{a: 1, "b": 2, "c\(.d)e": 3, (.f): 4, $g, h}`,
+	} {
+		q, err := gojq.Parse(src)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r, err := gojq.Parse(q.String())
+		if err != nil {
+			t.Errorf("failed to parse the query string: %v\n%v", err, q)
+			continue
+		}
+		if !reflect.DeepEqual(q, r) {
+			t.Errorf("query string round trip mismatch:\noriginal:\n%v\nreparsed:\n%v", q, r)
+		}
 	}
 }
 
