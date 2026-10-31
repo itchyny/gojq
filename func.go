@@ -482,10 +482,14 @@ func toNumber(v string) any {
 }
 
 func funcToString(v any) any {
+	return toString(v)
+}
+
+func toString(v any) string {
 	if s, ok := v.(string); ok {
 		return s
 	}
-	return funcToJSON(v)
+	return jsonMarshal(v)
 }
 
 func funcType(v any) any {
@@ -856,34 +860,19 @@ var htmlEscaper = strings.NewReplacer(
 )
 
 func funcToHTML(v any) any {
-	switch x := funcToString(v).(type) {
-	case string:
-		return htmlEscaper.Replace(x)
-	default:
-		return x
-	}
+	return htmlEscaper.Replace(toString(v))
 }
 
 func funcToURI(v any) any {
-	switch x := funcToString(v).(type) {
-	case string:
-		return strings.ReplaceAll(url.QueryEscape(x), "+", "%20")
-	default:
-		return x
-	}
+	return strings.ReplaceAll(url.QueryEscape(toString(v)), "+", "%20")
 }
 
 func funcToURId(v any) any {
-	switch x := funcToString(v).(type) {
-	case string:
-		x, err := url.QueryUnescape(strings.ReplaceAll(x, "+", "%2B"))
-		if err != nil {
-			return &func0WrapError{"@urid", v, err}
-		}
-		return x
-	default:
-		return x
+	x, err := url.QueryUnescape(strings.ReplaceAll(toString(v), "+", "%2B"))
+	if err != nil {
+		return &func0WrapError{"@urid", v, err}
 	}
+	return x
 }
 
 var csvEscaper = strings.NewReplacer(
@@ -945,28 +934,19 @@ func formatJoin(typ string, v any, sep string, escape func(string) string) any {
 }
 
 func funcToBase64(v any) any {
-	switch x := funcToString(v).(type) {
-	case string:
-		return base64.StdEncoding.EncodeToString([]byte(x))
-	default:
-		return x
-	}
+	return base64.StdEncoding.EncodeToString([]byte(toString(v)))
 }
 
 func funcToBase64d(v any) any {
-	switch x := funcToString(v).(type) {
-	case string:
-		if i := strings.IndexRune(x, base64.StdPadding); i >= 0 {
-			x = x[:i]
-		}
-		y, err := base64.RawStdEncoding.DecodeString(x)
-		if err != nil {
-			return &func0WrapError{"@base64d", v, err}
-		}
-		return string(y)
-	default:
-		return x
+	x := toString(v)
+	if i := strings.IndexRune(x, base64.StdPadding); i >= 0 {
+		x = x[:i]
 	}
+	y, err := base64.RawStdEncoding.DecodeString(x)
+	if err != nil {
+		return &func0WrapError{"@base64d", v, err}
+	}
+	return string(y)
 }
 
 func funcIndex2(_, v, x any) any {
