@@ -255,7 +255,7 @@ Usage:
 				}
 			}(iter),
 		),
-		gojq.WithInputIter(iter),
+		gojq.WithInputIter(&queryInputIter{iter}),
 	)
 	if err != nil {
 		if err, ok := err.(interface {
