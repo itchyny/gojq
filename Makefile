@@ -1,5 +1,5 @@
 BIN := gojq
-VERSION := $$(make -s show-version)
+VERSION := $$($(MAKE) -s show-version)
 VERSION_PATH := cli
 CURRENT_REVISION = $(shell git rev-parse --short HEAD)
 BUILD_LDFLAGS = "-s -w -X github.com/itchyny/$(BIN)/cli.revision=$(CURRENT_REVISION)"
