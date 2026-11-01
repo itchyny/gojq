@@ -6319,6 +6319,19 @@
     [1969,11,31,23,59,59.5,3,364]
     [2345,0,2,3,4,5.678901,2,1]
 
+- name: strptime with the zero time instant
+  args:
+    - -c
+    - 'strptime("%Y-%m-%dT%H:%M:%S%z")'
+  input: |
+    "0001-01-01T00:00:00Z"
+    "0001-01-01T01:00:00+0100"
+    "0001-01-01T00:00:01Z"
+  expected: |
+    [1,0,1,0,0,0,1,0]
+    [1,0,1,0,0,0,1,0]
+    [1,0,1,0,0,1,1,0]
+
 - name: strftime, strptime functions
   args:
     - 'strptime("%c") | strftime("%c")'
