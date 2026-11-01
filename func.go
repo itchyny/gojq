@@ -1946,9 +1946,6 @@ func funcStrptime(v, x any) any {
 	if err != nil {
 		return &func1WrapError{"strptime", v, x, err}
 	}
-	if t.Equal(time.Time{}) {
-		return &func1TypeError{"strptime", v, x}
-	}
 	return timeToArray(t.UTC())
 }
 
