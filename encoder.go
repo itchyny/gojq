@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/itchyny/go-yaml"
 )
 
 // Marshal returns the jq-flavored JSON encoding of v.
@@ -32,6 +34,19 @@ func jsonMarshal(v any) string {
 	var sb strings.Builder
 	(&encoder{w: &sb}).encode(v)
 	return sb.String()
+}
+
+func yamlMarshal(v any) (string, error) {
+	b, err := yaml.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+	// Remove trailing newline if present
+	s := string(b)
+	if len(s) > 0 && s[len(s)-1] == '\n' {
+		s = s[:len(s)-1]
+	}
+	return s, nil
 }
 
 func jsonEncodeString(sb *strings.Builder, v string) {
