@@ -1,4 +1,35 @@
 # Changelog
+## [v0.12.20](https://github.com/itchyny/gojq/compare/v0.12.19..v0.12.20) (2026-11-01)
+* implement `gojq.ToInt` and `gojq.ToFloat64` for converting number values
+* fix destructuring alternative operator (`?//`) to reset variables of
+  later alternatives, and to propagate `break` and `halt` errors
+* fix update-assignment operator against object with overlapping paths
+* fix `delpaths` function to delete ancestor paths before descendant paths
+* fix `getpath` function against string input
+* fix indexing and slicing a number literal written after a unary operator
+* fix slice indices of floating point numbers for jq compatibility
+* fix date and time functions against fractional, non-finite, and out of range numbers
+* fix `strptime` function to accept the zero time instant
+* fix `match`, `test`, and `capture` functions to support array arguments
+* fix `match` function to report an empty match after a non-empty one
+* fix `split/1` function against empty input string
+* fix math functions against large number literals like `1e1000`
+* fix `jn/2` and `yn/2` functions to avoid long recurrence on large orders
+* fix `abs` function against non-numbers for jq compatibility
+* fix `isnan` function to return false for non-numbers for jq compatibility
+* fix `halt_error` function not to print a newline after non-string values
+* fix `--argjson` and `--jsonargs` options to reject empty and multiple JSON values
+* fix `--stream` option error message against unterminated input
+* fix JSON parse error message after a large value in non-seekable input like stdin
+* fix offset of YAML parse error on multi-byte characters
+* fix panic on continuing iteration after an invalid path error
+* fix data race on input iterator when running code concurrently
+* fix `add` function to handle a nil map and slice as the first value
+* support destructuring alternative operator (`?//`) in `reduce` and `foreach` syntax
+* allow optional operator followed by alternative operator without spaces (`.a?//1`)
+* improve performance of function calls by avoiding copies of scope values,
+  and path tracking in `path`, `paths`, `|=`, and `del` by reducing allocations
+
 ## [v0.12.19](https://github.com/itchyny/gojq/compare/v0.12.18..v0.12.19) (2026-04-01)
 * fix `gsub` and `sub` when the replacement emits multiple values
 * fix `fmax`, `fmin`, `modf` functions against NaN and infinities
