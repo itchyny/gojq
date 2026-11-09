@@ -497,6 +497,10 @@ func funcType(v any) any {
 }
 
 func funcReverse(v any) any {
+	if v == nil {
+		// jq defines reverse through length and indexing, so null yields [].
+		return []any{}
+	}
 	vs, ok := v.([]any)
 	if !ok {
 		return &func0TypeError{"reverse", v}

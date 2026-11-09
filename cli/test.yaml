@@ -2148,6 +2148,30 @@
       0
     ]
 
+- name: reverse function with null
+  args:
+    - -c
+    - 'reverse'
+  input: 'null'
+  expected: |
+    []
+
+- name: reverse function with a missing property
+  args:
+    - -c
+    - '.a | reverse'
+  input: '{}'
+  expected: |
+    []
+
+- name: reverse function with a string
+  args:
+    - 'reverse'
+  input: '"abc"'
+  error: |
+    reverse cannot be applied to: string ("abc")
+  exit_code: 5
+
 - name: contains function
   args:
     - -c
