@@ -1034,6 +1034,13 @@ func (c *compiler) compileFunc(e *Func) error {
 				true,
 				-1,
 			)
+		case "_splits":
+			return c.compileCallInternal(
+				[3]any{c.funcSplits, len(e.Args), e.Name},
+				e.Args,
+				true,
+				-1,
+			)
 		default:
 			return c.compileCall(e.Name, e.Args)
 		}
@@ -1316,6 +1323,10 @@ func listModuleDeps(q *Query) []any {
 
 func (c *compiler) funcMatch(v any, args []any) any {
 	return funcMatch(v, args[0], args[1], args[2], &c.regexpCache)
+}
+
+func (c *compiler) funcSplits(v any, args []any) any {
+	return funcSplits(v, args[0], args[1], args[2], &c.regexpCache)
 }
 
 func (c *compiler) compileObject(e *Object) error {
