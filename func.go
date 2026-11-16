@@ -2020,6 +2020,16 @@ func funcMatch(v, re, fs, testing any, cache *sync.Map) any {
 	}
 	xs := r.FindAllStringSubmatchIndex(s, n)
 	res, names := make([]any, len(xs)), r.SubexpNames()
+	prevByte, prevRune := 0, 0
+	runeOffset := func(b int) int {
+		if b >= prevByte {
+			prevRune += utf8.RuneCountInString(s[prevByte:b])
+		} else {
+			prevRune -= utf8.RuneCountInString(s[b:prevByte])
+		}
+		prevByte = b
+		return prevRune
+	}
 	for i, x := range xs {
 		captures := make([]any, (len(x)-2)/2)
 		for j := 1; j < len(x)/2; j++ {
@@ -2036,16 +2046,18 @@ func funcMatch(v, re, fs, testing any, cache *sync.Map) any {
 				}
 				continue
 			}
+			offset := runeOffset(x[j*2])
 			captures[j-1] = map[string]any{
 				"name":   name,
-				"offset": len([]rune(s[:x[j*2]])),
-				"length": len([]rune(s[:x[j*2+1]])) - len([]rune(s[:x[j*2]])),
+				"offset": offset,
+				"length": runeOffset(x[j*2+1]) - offset,
 				"string": s[x[j*2]:x[j*2+1]],
 			}
 		}
+		offset := runeOffset(x[0])
 		res[i] = map[string]any{
-			"offset":   len([]rune(s[:x[0]])),
-			"length":   len([]rune(s[:x[1]])) - len([]rune(s[:x[0]])),
+			"offset":   offset,
+			"length":   runeOffset(x[1]) - offset,
 			"string":   s[x[0]:x[1]],
 			"captures": captures,
 		}

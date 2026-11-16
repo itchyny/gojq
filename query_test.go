@@ -464,6 +464,26 @@ func BenchmarkRun(b *testing.B) {
 	}
 }
 
+func BenchmarkMatch(b *testing.B) {
+	query, err := gojq.Parse(`[match("<"; "g")] | length`)
+	if err != nil {
+		b.Fatal(err)
+	}
+	input := strings.Repeat("<a>\u00e9 ", 10000)
+	for b.Loop() {
+		iter := query.Run(input)
+		for {
+			v, ok := iter.Next()
+			if !ok {
+				break
+			}
+			if err, ok := v.(error); ok {
+				b.Fatal(err)
+			}
+		}
+	}
+}
+
 func BenchmarkParse(b *testing.B) {
 	cnt, err := os.ReadFile("builtin.jq")
 	if err != nil {
