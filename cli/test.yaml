@@ -7096,6 +7096,15 @@
     [0,2,3,5]
     "##1##"
 
+- name: match function with captures against multibyte characters
+  args:
+    - -c
+    - 'match("★((.)b)(z)?"; "g") | [.offset, .length, (.captures[] | [.offset, .length])]'
+  input: '"😀★☆b☆★cb"'
+  expected: |
+    [1,3,[2,2],[2,1],[-1,0]]
+    [5,3,[6,2],[6,1],[-1,0]]
+
 - name: INDEX function
   args:
     - -c
