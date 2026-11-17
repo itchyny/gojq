@@ -2020,7 +2020,11 @@ func funcMatch(v, re, fs, testing any, cache *sync.Map) any {
 	}
 	xs := r.FindAllStringSubmatchIndex(s, n)
 	res, names := make([]any, len(xs)), r.SubexpNames()
+	// Counts the runes from the previous match, not from the beginning of the
+	// string, to get the offsets of all the matches in linear time in total.
+	var prev, offset int
 	for i, x := range xs {
+		offset, prev = offset+len([]rune(s[prev:x[0]])), x[0]
 		captures := make([]any, (len(x)-2)/2)
 		for j := 1; j < len(x)/2; j++ {
 			var name any
@@ -2038,14 +2042,14 @@ func funcMatch(v, re, fs, testing any, cache *sync.Map) any {
 			}
 			captures[j-1] = map[string]any{
 				"name":   name,
-				"offset": len([]rune(s[:x[j*2]])),
-				"length": len([]rune(s[:x[j*2+1]])) - len([]rune(s[:x[j*2]])),
+				"offset": offset + len([]rune(s[x[0]:x[j*2]])),
+				"length": len([]rune(s[x[j*2]:x[j*2+1]])),
 				"string": s[x[j*2]:x[j*2+1]],
 			}
 		}
 		res[i] = map[string]any{
-			"offset":   len([]rune(s[:x[0]])),
-			"length":   len([]rune(s[:x[1]])) - len([]rune(s[:x[0]])),
+			"offset":   offset,
+			"length":   len([]rune(s[x[0]:x[1]])),
 			"string":   s[x[0]:x[1]],
 			"captures": captures,
 		}
