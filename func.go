@@ -200,6 +200,7 @@ func init() {
 		"strptime":       argFunc1(funcStrptime),
 		"now":            argFunc0(funcNow),
 		"_match":         argFunc3(nil),
+		"_splits":        argFunc3(nil),
 		"_captures":      argFunc0(funcCaptures),
 		"error":          {argcount0 | argcount1, false, funcError},
 		"halt":           argFunc0(funcHalt),
@@ -1989,34 +1990,12 @@ func funcMatch(v, re, fs, testing any, cache *sync.Map) any {
 	} else {
 		name = "match"
 	}
-	var flags string
-	if fs != nil {
-		var ok bool
-		flags, ok = fs.(string)
-		if !ok {
-			return &func2TypeError{name, v, re, fs}
-		}
-	}
-	s, ok := v.(string)
-	if !ok {
-		return &func2TypeError{name, v, re, fs}
-	}
-	restr, ok := re.(string)
-	if !ok {
-		return &func2TypeError{name, v, re, fs}
-	}
-	r, err := compileRegexp(restr, flags, cache)
+	s, r, n, err := prepareMatch(name, v, re, fs, cache)
 	if err != nil {
 		return err
 	}
 	if testing == true {
 		return r.MatchString(s)
-	}
-	var n int
-	if strings.ContainsRune(flags, 'g') {
-		n = -1
-	} else {
-		n = 1
 	}
 	xs := r.FindAllStringSubmatchIndex(s, n)
 	res, names := make([]any, len(xs)), r.SubexpNames()
@@ -2055,6 +2034,71 @@ func funcMatch(v, re, fs, testing any, cache *sync.Map) any {
 		}
 	}
 	return res
+}
+
+// funcSplits splits the string by the matches of the regular expression. When
+// capturing is true, it returns the named captures of the matches as well.
+func funcSplits(v, re, fs, capturing any, cache *sync.Map) any {
+	s, r, n, err := prepareMatch("match", v, re, fs, cache)
+	if err != nil {
+		return err
+	}
+	xs := r.FindAllStringSubmatchIndex(s, n)
+	res := make([]any, len(xs)+1)
+	var prev int
+	for i, x := range xs {
+		res[i], prev = s[prev:x[0]], x[1]
+	}
+	res[len(xs)] = s[prev:]
+	if capturing != true {
+		return res
+	}
+	captures, names := make([]any, len(xs)), r.SubexpNames()
+	for i, x := range xs {
+		capture := make(map[string]any)
+		for j, name := range names {
+			if name == "" {
+				continue
+			}
+			if x[j*2] < 0 {
+				capture[name] = nil
+			} else {
+				capture[name] = s[x[j*2]:x[j*2+1]]
+			}
+		}
+		captures[i] = capture
+	}
+	return []any{res, captures}
+}
+
+func prepareMatch(name string, v, re, fs any, cache *sync.Map) (string, *regexpMatcher, int, error) {
+	var flags string
+	if fs != nil {
+		var ok bool
+		flags, ok = fs.(string)
+		if !ok {
+			return "", nil, 0, &func2TypeError{name, v, re, fs}
+		}
+	}
+	s, ok := v.(string)
+	if !ok {
+		return "", nil, 0, &func2TypeError{name, v, re, fs}
+	}
+	restr, ok := re.(string)
+	if !ok {
+		return "", nil, 0, &func2TypeError{name, v, re, fs}
+	}
+	r, err := compileRegexp(restr, flags, cache)
+	if err != nil {
+		return "", nil, 0, err
+	}
+	var n int
+	if strings.ContainsRune(flags, 'g') {
+		n = -1
+	} else {
+		n = 1
+	}
+	return s, r, n, nil
 }
 
 func compileRegexp(re, flags string, cache *sync.Map) (*regexpMatcher, error) {

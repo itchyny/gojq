@@ -157,18 +157,14 @@ def scan($re; $flags):
   else
     [.captures[].string]
   end;
-def splits($re; $flags):
-  .[foreach (match($re; $flags + "g"), null) as {$offset, $length}
-      (null; {start: .next, end: $offset, next: $offset + $length})];
+def splits($re; $flags): _splits($re; $flags + "g"; false)[];
 def splits($re): splits($re; null);
-def split($re; $flags): [splits($re; $flags)];
+def split($re; $flags): _splits($re; $flags + "g"; false);
 def sub($re; str): sub($re; str; null);
 def sub($re; str; $flags):
-  reduce match($re; $flags) as {$offset, $length, $captures}
-    ({s: ., r: []};
-      reduce ($captures | _captures | str) as $s
-        (.i = 0; .r[.i] += .s[.next:$offset] + $s | .i += 1) |
-      .next = $offset + $length) | .r[] + .s[.next:] // .s;
+  . as $s | _splits($re; $flags; true) as [$ps, $cs] |
+  [range($cs | length) as $i | [$cs[$i] | str | $ps[$i] + .]] |
+  (transpose[] | add + $ps[-1]) // $s;
 def gsub($re; str): sub($re; str; "g");
 def gsub($re; str; $flags): sub($re; str; $flags + "g");
 
