@@ -1510,7 +1510,14 @@ func funcSetpathWithAllocator(v any, args []any) any {
 // getpath to keep tracking paths through the call.
 func funcGetpathWithAllocator(v any, args []any) any {
 	w := funcGetpath(v, args[0])
-	args[1].(allocator).release(w)
+	a := args[1].(allocator)
+	a.release(w)
+	// A slice shares the backing array, but its address differs from the array.
+	if p, _ := args[0].([]any); len(p) > 0 && len(a) > 0 {
+		if _, ok := p[len(p)-1].(map[string]any); ok {
+			clear(a)
+		}
+	}
 	return w
 }
 
