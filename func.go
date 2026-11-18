@@ -1512,26 +1512,13 @@ func funcGetpathWithAllocator(v any, args []any) any {
 	w := funcGetpath(v, args[0])
 	a := args[1].(allocator)
 	a.release(w)
-	if _, ok := w.([]any); ok && len(a) > 0 {
-		a.releaseSlice(v, args[0])
+	// A slice shares the backing array, but its address differs from the array.
+	if p, _ := args[0].([]any); len(p) > 0 && len(a) > 0 {
+		if _, ok := p[len(p)-1].(map[string]any); ok {
+			clear(a)
+		}
 	}
 	return w
-}
-
-// releaseSlice forgets every allocated address when the path slices an
-// allocated array. The slice shares the backing array, but its address differs
-// from the array when the start index is positive, so release cannot find it.
-func (a allocator) releaseSlice(v, p any) {
-	path, _ := p.([]any)
-	for _, x := range path {
-		if _, ok := x.(map[string]any); ok {
-			if _, ok := v.([]any); ok && a.allocated(v) {
-				clear(a)
-				return
-			}
-		}
-		v = funcIndex2(nil, v, x)
-	}
 }
 
 func setpath(v, p, n any, a allocator) any {
