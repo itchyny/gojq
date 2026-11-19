@@ -8,6 +8,27 @@ import (
 	"strings"
 )
 
+// cloneConstant keeps mutable constant collections private to each evaluation.
+// Scalars can be shared, but nested arrays and objects must also be copied.
+func cloneConstant(v any) any {
+	switch v := v.(type) {
+	case []any:
+		w := make([]any, len(v))
+		for i, x := range v {
+			w[i] = cloneConstant(x)
+		}
+		return w
+	case map[string]any:
+		w := make(map[string]any, len(v))
+		for k, x := range v {
+			w[k] = cloneConstant(x)
+		}
+		return w
+	default:
+		return v
+	}
+}
+
 func (env *env) execute(bc *Code, v any, vars ...any) Iter {
 	env.codes = bc.codes
 	env.codeinfos = bc.codeinfos
@@ -40,7 +61,7 @@ loop:
 		case opnop:
 			// nop
 		case oppush:
-			env.push(code.v)
+			env.push(cloneConstant(code.v))
 		case oppop:
 			env.pop()
 		case opdup:
@@ -49,7 +70,7 @@ loop:
 			env.push(v)
 		case opconst:
 			env.pop()
-			env.push(code.v)
+			env.push(cloneConstant(code.v))
 		case opload:
 			env.push(env.values[env.index(code.v.([2]int))])
 		case opstore:
