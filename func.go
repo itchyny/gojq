@@ -14,6 +14,7 @@ import (
 	"reflect"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -488,6 +489,17 @@ func funcToString(v any) any {
 func toString(v any) string {
 	if s, ok := v.(string); ok {
 		return s
+	}
+	return numberToString(v)
+}
+
+// numberToString formats integers and json.Number without the encoder.
+func numberToString(v any) string {
+	switch v := v.(type) {
+	case int:
+		return strconv.Itoa(v)
+	case json.Number:
+		return v.String()
 	}
 	return jsonMarshal(v)
 }
