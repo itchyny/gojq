@@ -487,21 +487,16 @@ func funcToString(v any) any {
 }
 
 func toString(v any) string {
-	if s, ok := v.(string); ok {
-		return s
-	}
-	return numberToString(v)
-}
-
-// numberToString formats integers and json.Number without the encoder.
-func numberToString(v any) string {
 	switch v := v.(type) {
+	case string:
+		return v
 	case int:
 		return strconv.Itoa(v)
 	case json.Number:
 		return v.String()
+	default:
+		return jsonMarshal(v)
 	}
-	return jsonMarshal(v)
 }
 
 func funcType(v any) any {
