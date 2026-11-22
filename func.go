@@ -492,6 +492,8 @@ func toString(v any) string {
 		return v
 	case int:
 		return strconv.Itoa(v)
+	case *big.Int:
+		return v.String()
 	case json.Number:
 		return v.String()
 	default:
