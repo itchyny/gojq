@@ -83,6 +83,9 @@ jobs:
   docker:
     name: Docker
     permissions:
+      attestations: write
+      contents: read
+      id-token: write
       packages: write
     runs-on: ubuntu-latest
     steps:
@@ -100,6 +103,8 @@ jobs:
             type=semver,pattern={{major}}.{{minor}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             type=semver,pattern={{major}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             type=sha,format=long,enable=${{ !startsWith(github.ref, 'refs/tags/v') }}
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
       - name: Login to Docker Hub
@@ -116,6 +121,7 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and release Docker image
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -124,6 +130,13 @@ jobs:
           platforms: linux/amd64, linux/arm64
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
+          annotations: ${{ steps.metadata.outputs.annotations }}
+      - name: Attest build provenance
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/attest@v4
+        with:
+          subject-name: ghcr.io/${{ github.repository }}
+          subject-digest: ${{ steps.build.outputs.digest }}
 
   release:
     name: Release
