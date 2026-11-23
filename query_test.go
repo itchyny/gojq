@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/big"
 	"os"
 	"reflect"
 	"strconv"
@@ -413,6 +414,56 @@ func TestQueryRun_Race(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+}
+
+func TestQueryRun_MixedIntFloat(t *testing.T) {
+	two53 := new(big.Int).Lsh(big.NewInt(1), 53)
+	two53p1 := new(big.Int).Add(new(big.Int).Set(two53), big.NewInt(1))
+	run := func(t *testing.T, src string) any {
+		t.Helper()
+		query, err := gojq.Parse(src)
+		if err != nil {
+			t.Fatal(err)
+		}
+		v, ok := query.Run(nil).Next()
+		if !ok {
+			t.Fatal("no output")
+		}
+		if err, ok := v.(error); ok {
+			t.Fatal(err)
+		}
+		return v
+	}
+
+	got := run(t, `[9007199254740992 == 9007199254740993,
+		9007199254740993 == 9007199254740992.0,
+		9007199254740992 == 9007199254740992.0]`)
+	if expected := []any{false, false, true}; !reflect.DeepEqual(got, expected) {
+		t.Errorf("comparisons: expected %#v, got %#v", expected, got)
+	}
+
+	for _, src := range []string{
+		`[9007199254740992,9007199254740992.0,9007199254740993] | unique`,
+		`[9007199254740992.0,9007199254740992,9007199254740993] | unique`,
+	} {
+		got := run(t, src)
+		arr, ok := got.([]any)
+		if !ok || len(arr) != 2 ||
+			gojq.Compare(arr[0], two53) != 0 || gojq.Compare(arr[1], two53p1) != 0 {
+			t.Errorf("%s: expected [%v, %v], got %#v", src, two53, two53p1, got)
+		}
+	}
+
+	got = run(t, `[9007199254740993,9007199254740992.0] | min`)
+	if expected := 9007199254740992.0; !reflect.DeepEqual(got, expected) {
+		t.Errorf("min: expected %#v, got %#v", expected, got)
+	}
+
+	// Addition still converts through float64; only comparison is exact.
+	got = run(t, `9007199254740993 + 0.0`)
+	if expected := 9007199254740992.0; !reflect.DeepEqual(got, expected) {
+		t.Errorf("addition: expected %#v, got %#v", expected, got)
+	}
 }
 
 func TestQueryString(t *testing.T) {
