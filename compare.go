@@ -12,18 +12,32 @@ import (
 // The result will be 0 if l == r, -1 if l < r, and +1 if l > r.
 // This comparison is used by built-in operators and functions.
 func Compare(l, r any) int {
+	if n, ok := l.(json.Number); ok {
+		l = parseNumber(n)
+	}
+	if n, ok := r.(json.Number); ok {
+		r = parseNumber(n)
+	}
+	switch l := l.(type) {
+	case int:
+		if r, ok := r.(float64); ok {
+			return compareIntFloat(l, r)
+		}
+	case float64:
+		switch r := r.(type) {
+		case int:
+			return -compareIntFloat(r, l)
+		case *big.Int:
+			return -compareBigIntFloat(r, l)
+		}
+	case *big.Int:
+		if r, ok := r.(float64); ok {
+			return compareBigIntFloat(l, r)
+		}
+	}
 	return binopTypeSwitch(l, r,
 		cmp.Compare,
-		func(l, r float64) int {
-			switch {
-			case lt(l, r):
-				return -1
-			case l == r:
-				return 0
-			default:
-				return 1
-			}
-		},
+		compareFloats,
 		(*big.Int).Cmp,
 		strings.Compare,
 		func(l, r []any) int {
@@ -50,6 +64,31 @@ func Compare(l, r any) int {
 			return cmp.Compare(typeIndex(l), typeIndex(r))
 		},
 	)
+}
+
+func compareFloats(l, r float64) int {
+	switch {
+	case lt(l, r):
+		return -1
+	case l == r:
+		return 0
+	default:
+		return 1
+	}
+}
+
+func compareIntFloat(l int, r float64) int {
+	if l := int64(l); -1<<53 <= l && l <= 1<<53 || math.IsNaN(r) {
+		return compareFloats(float64(l), r)
+	}
+	return new(big.Float).SetInt64(int64(l)).Cmp(big.NewFloat(r))
+}
+
+func compareBigIntFloat(l *big.Int, r float64) int {
+	if math.IsNaN(r) {
+		return 1
+	}
+	return new(big.Float).SetInt(l).Cmp(big.NewFloat(r))
 }
 
 func lt(l, r float64) bool {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"strconv"
 	"testing"
 
 	"github.com/itchyny/gojq"
@@ -38,6 +39,14 @@ func TestCompare(t *testing.T) {
 		{1, big.NewInt(0), 1},
 		{big.NewInt(0), 1, -1},
 		{0, big.NewInt(0), 0},
+		{new(big.Int).Lsh(big.NewInt(1), 1100), math.Inf(1), -1},
+		{math.Inf(1), new(big.Int).Lsh(big.NewInt(1), 1100), 1},
+		{new(big.Int).Neg(new(big.Int).Lsh(big.NewInt(1), 1100)), math.Inf(-1), 1},
+		{math.Inf(-1), new(big.Int).Neg(new(big.Int).Lsh(big.NewInt(1), 1100)), -1},
+		{new(big.Int).Lsh(big.NewInt(1), 100), math.Ldexp(1, 100), 0},
+		{new(big.Int).Add(new(big.Int).Lsh(big.NewInt(1), 100), big.NewInt(1)), math.Ldexp(1, 100), 1},
+		{big.NewInt(1), math.NaN(), 1},
+		{math.NaN(), big.NewInt(1), -1},
 		{1, "", -1},
 		{"", 1, 1},
 		{"", "", 0},
@@ -62,6 +71,39 @@ func TestCompare(t *testing.T) {
 		{map[string]any{"a": 0, "b": 0, "c": 0}, map[string]any{"a": 0, "b": 0, "c": 0}, 0},
 		{map[string]any{"a": 0, "b": 0, "d": 0}, map[string]any{"a": 0, "b": 1, "c": 0}, 1},
 		{map[string]any{"a": 0, "b": 1, "c": 2}, map[string]any{"a": 0, "b": 2, "c": 1}, -1},
+	}
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("%v,%v", tc.l, tc.r), func(t *testing.T) {
+			got := gojq.Compare(tc.l, tc.r)
+			if got != tc.expected {
+				t.Errorf("Compare(%v, %v): got %d, expected %d", tc.l, tc.r, got, tc.expected)
+			}
+		})
+	}
+}
+
+func TestCompareLargeIntAndFloat(t *testing.T) {
+	if strconv.IntSize < 64 {
+		t.Skip("int is not 64-bit")
+	}
+	x := int64(1) << 53
+	testCases := []struct {
+		l, r     any
+		expected int
+	}{
+		{int(x), float64(x), 0},
+		{float64(x), int(x), 0},
+		{int(x + 1), float64(x), 1},
+		{float64(x), int(x + 1), -1},
+		{int(-x - 1), float64(-x), -1},
+		{float64(-x), int(-x - 1), 1},
+		{int(x + 1), math.NaN(), 1},
+		{math.NaN(), int(x + 1), -1},
+		{math.MaxInt, math.Ldexp(1, 63), -1},
+		{math.Ldexp(1, 63), math.MaxInt, 1},
+		{math.MinInt, math.Ldexp(-1, 63), 0},
+		{math.MaxInt, math.Inf(1), -1},
+		{math.MinInt, math.Inf(-1), 1},
 	}
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("%v,%v", tc.l, tc.r), func(t *testing.T) {
