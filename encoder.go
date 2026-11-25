@@ -15,8 +15,8 @@ import (
 
 // Marshal returns the jq-flavored JSON encoding of v.
 //
-// This method accepts only limited types (nil, bool, int, float64, *big.Int,
-// json.Number, string, []any, and map[string]any) because these are the
+// This method accepts only limited types (nil, bool, int, int64, int32,
+// float64, *big.Int, json.Number, string, []any, and map[string]any) because these are the
 // possible types a gojq iterator can emit. This method marshals NaN to null,
 // truncates infinities to (+|-) math.MaxFloat64, uses \b and \f in strings,
 // and does not escape '<', '>', '&', '\u2028', and '\u2029'. These behaviors
@@ -58,6 +58,10 @@ func (e *encoder) encode(v any) {
 			e.w.WriteString("false")
 		}
 	case int:
+		e.w.Write(strconv.AppendInt(e.buf[:0], int64(v), 10))
+	case int64:
+		e.w.Write(strconv.AppendInt(e.buf[:0], v, 10))
+	case int32:
 		e.w.Write(strconv.AppendInt(e.buf[:0], int64(v), 10))
 	case float64:
 		e.encodeFloat64(v)
