@@ -65,29 +65,50 @@ type inputIter interface {
 	Name() string
 }
 
+type queryInputIter struct {
+	inputIter
+}
+
+func (i *queryInputIter) Next() (any, bool) {
+	// Only explicit input/inputs calls may resume after a caught parse error.
+	// The CLI's outer input loop still stops reading the current input on error.
+	if iter, ok := i.inputIter.(interface{ recoverLine() bool }); ok {
+		iter.recoverLine()
+	}
+	return i.inputIter.Next()
+}
+
 type jsonInputIter struct {
-	next   func() (any, error)
-	dec    *json.Decoder
-	ir     *inputReader
-	fname  string
-	offset int64
-	line   int
-	err    error
+	next          func() (any, error)
+	dec           *json.Decoder
+	ir            *inputReader
+	reader        io.Reader
+	fname         string
+	offset        int64
+	decoderOffset int64
+	recoverOffset int64
+	line          int
+	err           error
 }
 
 func newJSONInputIter(r io.Reader, fname string) inputIter {
 	ir := newInputReader(r)
 	dec := json.NewDecoder(ir)
 	dec.UseNumber()
-	next := func() (v any, err error) { err = dec.Decode(&v); return }
-	return &jsonInputIter{next: next, dec: dec, ir: ir, fname: fname}
+	return &jsonInputIter{dec: dec, ir: ir, reader: ir, fname: fname}
 }
 
 func (i *jsonInputIter) Next() (any, bool) {
 	if i.err != nil {
 		return nil, false
 	}
-	v, err := i.next()
+	var v any
+	var err error
+	if i.next != nil {
+		v, err = i.next()
+	} else {
+		err = i.dec.Decode(&v)
+	}
 	if err != nil {
 		if err == io.EOF {
 			i.err = err
@@ -95,27 +116,68 @@ func (i *jsonInputIter) Next() (any, bool) {
 		}
 		var offset *int64
 		var line *int
+		errorLine := i.line
 		if e, ok := err.(*json.SyntaxError); ok {
-			e.Offset -= i.offset
-			offset, line = &e.Offset, &i.line
+			if i.next == nil {
+				i.recoverOffset = e.Offset
+			}
+			e.Offset += i.decoderOffset - i.offset
+			offset, line = &e.Offset, &errorLine
 		} else if err == io.ErrUnexpectedEOF && i.ir.rs != nil {
 			if pos, err := i.ir.rs.Seek(0, io.SeekEnd); err == nil {
-				offset, line = &pos, &i.line
+				offset, line = &pos, &errorLine
 			}
 		}
-		i.err = &jsonParseError{i.fname, i.ir.getContents(offset, line), i.line, err}
+		contents := i.ir.getContents(offset, line)
+		i.err = &jsonParseError{i.fname, contents, errorLine, err}
 		return i.err, true
 	}
-	if buf := i.ir.buf; buf != nil && buf.Len() >= 16*1024 {
-		consumed := i.dec.InputOffset() - i.offset
-		i.line += bytes.Count(buf.Next(int(consumed)), []byte{'\n'})
-		i.offset += consumed
-	}
+	i.discardConsumedInput(i.decoderOffset + i.dec.InputOffset())
 	return v, true
+}
+
+func (i *jsonInputIter) discardConsumedInput(offset int64) {
+	if buf := i.ir.buf; buf != nil && buf.Len() >= 16*1024 {
+		i.line += bytes.Count(buf.Next(int(offset-i.offset)), []byte{'\n'})
+		i.offset = offset
+	}
+}
+
+func (i *jsonInputIter) recoverLine() bool {
+	if i.recoverOffset == 0 {
+		return false
+	}
+	r := io.MultiReader(i.dec.Buffered(), i.reader)
+	// Leave the offending byte to the newline scan: the syntax error itself
+	// can be an unexpected newline in a string or literal.
+	n, err := io.CopyN(io.Discard, r, i.recoverOffset-i.dec.InputOffset()-1)
+	i.recoverOffset = 0
+	if err != nil {
+		return false
+	}
+	consumed := i.dec.InputOffset() + n
+	var buf [512]byte
+	for {
+		n, err := r.Read(buf[:])
+		if end := bytes.IndexByte(buf[:n], '\n'); end >= 0 {
+			i.decoderOffset += consumed + int64(end+1)
+			i.discardConsumedInput(i.decoderOffset)
+			i.reader = io.MultiReader(bytes.NewReader(buf[end+1:n]), r)
+			i.dec = json.NewDecoder(i.reader)
+			i.dec.UseNumber()
+			i.err = nil
+			return true
+		}
+		consumed += int64(n)
+		if err != nil {
+			return false
+		}
+	}
 }
 
 func (i *jsonInputIter) Close() error {
 	i.err = io.EOF
+	i.recoverOffset = 0
 	return nil
 }
 
@@ -219,6 +281,13 @@ func (i *filesInputIter) Close() error {
 		i.err = io.EOF
 	}
 	return nil
+}
+
+func (i *filesInputIter) recoverLine() bool {
+	if iter, ok := i.iter.(interface{ recoverLine() bool }); ok {
+		return iter.recoverLine()
+	}
+	return false
 }
 
 func (i *filesInputIter) Name() string {

@@ -2,12 +2,16 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"reflect"
 	"slices"
 	"strings"
 	"testing"
+	"testing/iotest"
 )
 
 func TestJSONInputIter(t *testing.T) {
@@ -185,6 +189,152 @@ func TestJSONInputIterRetainsBufferedInput(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestJSONInputIterRecoverAfterSyntaxError(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		input string
+		want  []any
+	}{
+		{"unicode", "\"a\\u263\"\n\"def\"\n", []any{"error", "def"}},
+		{"same line", "\"a\\q\" \"discarded\"\n\"def\"\n", []any{"error", "def"}},
+		{"CRLF", "[1,]\r\n\"def\"\r\n", []any{"error", "def"}},
+		{"newline error", "n\n\"def\"\n", []any{"error", "def"}},
+		{"multiple errors", "\"a\\q\"\n\"first\"\n[1,]\n\"second\"\n", []any{"error", "first", "error", "second"}},
+		{"number precision", "[1,]\n9007199254740993\n", []any{"error", json.Number("9007199254740993")}},
+		{"large line", "\"a\\q" + strings.Repeat("x", 20*1024) + "\"\n\"def\"\n", []any{"error", "def"}},
+		{"no newline", "\"a\\q\" \"discarded\"", []any{"error"}},
+	} {
+		for _, r := range []io.Reader{strings.NewReader(tc.input), newStringReader(tc.input), iotest.OneByteReader(strings.NewReader(tc.input))} {
+			t.Run(fmt.Sprintf("%s_%T", tc.name, r), func(t *testing.T) {
+				iter := &queryInputIter{newJSONInputIter(r, "test.json")}
+				var got []any
+				for v, ok := iter.Next(); ok; v, ok = iter.Next() {
+					if _, ok := v.(error); ok {
+						v = "error"
+					}
+					got = append(got, v)
+				}
+				if !reflect.DeepEqual(got, tc.want) {
+					t.Errorf("got %#v, want %#v", got, tc.want)
+				}
+			})
+		}
+	}
+}
+
+func TestJSONInputIterRecoveryErrorContext(t *testing.T) {
+	input := `"` + strings.Repeat("x", 20*1024) + "\"\n\"a\\q\"\n\"valid\"\n[1,]\n"
+	for _, r := range []io.Reader{strings.NewReader(input), newStringReader(input)} {
+		t.Run(fmt.Sprintf("%T", r), func(t *testing.T) {
+			iter := &queryInputIter{newJSONInputIter(r, "test.json")}
+			var got []string
+			for v, ok := iter.Next(); ok; v, ok = iter.Next() {
+				if err, ok := v.(error); ok {
+					got = append(got, err.Error())
+				}
+			}
+			want := []string{
+				"invalid json: test.json:2\n    2 | \"a\\q\"\n           ^  invalid character 'q' in string escape code",
+				"invalid json: test.json:4\n    4 | [1,]\n           ^  invalid character ']' looking for beginning of value",
+			}
+			if !reflect.DeepEqual(got, want) {
+				t.Errorf("got errors %q, want %q", got, want)
+			}
+		})
+	}
+}
+
+func TestJSONInputIterIOError(t *testing.T) {
+	want := errors.New("read error")
+	iter := &queryInputIter{newJSONInputIter(iotest.ErrReader(want), "test.json")}
+	v, ok := iter.Next()
+	if err, isErr := v.(*jsonParseError); !ok || !isErr || err.err != want {
+		t.Fatalf("got (%v, %v), want read error", v, ok)
+	}
+	if v, ok := iter.Next(); ok {
+		t.Fatalf("got (%v, %v) after read error", v, ok)
+	}
+}
+
+func TestJSONInputIterRecoveryBoundsBuffer(t *testing.T) {
+	const count = 4000
+	input := strings.Repeat("\"a\\q\"\n", count) + "\"def\"\n"
+	jsonIter := newJSONInputIter(newStringReader(input), "test.json").(*jsonInputIter)
+	iter := &queryInputIter{jsonIter}
+	var firstErr, lastErr error
+	var firstMessage string
+	var errors int
+	var got []any
+	for v, ok := iter.Next(); ok; v, ok = iter.Next() {
+		if err, ok := v.(error); ok {
+			if firstErr == nil {
+				firstErr, firstMessage = err, err.Error()
+			}
+			lastErr = err
+			errors++
+		} else {
+			got = append(got, v)
+		}
+		if n := jsonIter.ir.buf.Len(); n > 20*1024 {
+			t.Fatalf("retained %d bytes after %d syntax errors", n, errors)
+		}
+	}
+	if errors != count || !reflect.DeepEqual(got, []any{"def"}) {
+		t.Fatalf("got %d errors and values %#v", errors, got)
+	}
+	if firstErr.Error() != firstMessage || !strings.Contains(lastErr.Error(), "test.json:4000\n    4000 | \"a\\q\"\n") {
+		t.Errorf("error contexts changed: first %q, last %q", firstErr, lastErr)
+	}
+}
+
+func TestJSONInputIterCloseAfterSyntaxError(t *testing.T) {
+	iter := &queryInputIter{newJSONInputIter(strings.NewReader("[1,]\n\"def\"\n"), "test.json")}
+	if v, ok := iter.Next(); !ok {
+		t.Fatalf("got (%v, %v), want syntax error", v, ok)
+	}
+	if err := iter.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if v, ok := iter.Next(); ok {
+		t.Fatalf("got (%v, %v) after close", v, ok)
+	}
+}
+
+func TestCliRunRecoverJSONFiles(t *testing.T) {
+	dir := t.TempDir()
+	first, second := filepath.Join(dir, "first.json"), filepath.Join(dir, "second.json")
+	if err := os.WriteFile(first, []byte("\"a\\u263\"\n\"first\"\n[1,]\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(second, []byte("\"second\"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		args []string
+		want string
+		err  bool
+	}{
+		{[]string{"-nr", `recurse(try inputs catch "error") | select(.)`, first, second}, "error\nfirst\nerror\nsecond\n", false},
+		{[]string{".", first, second}, "\"second\"\n", true},
+	} {
+		var out, errOut strings.Builder
+		c := cli{inStream: strings.NewReader(""), outStream: &out, errStream: &errOut}
+		code := c.run(tc.args)
+		if (code != 0) != tc.err || out.String() != tc.want || (errOut.Len() != 0) != tc.err {
+			t.Errorf("args %q: got code %d, stdout %q, stderr %q", tc.args, code, out.String(), errOut.String())
+		}
+	}
+}
+
+func TestCliRunJSONSyntaxErrorStopsInput(t *testing.T) {
+	var out, errOut strings.Builder
+	c := cli{inStream: strings.NewReader("\"a\\q\"\n\"discarded\"\n"), outStream: &out, errStream: &errOut}
+	code := c.run([]string{"."})
+	if code == 0 || out.Len() != 0 || !strings.Contains(errOut.String(), "invalid json: <stdin>") {
+		t.Errorf("got code %d, stdout %q, stderr %q", code, out.String(), errOut.String())
 	}
 }
 
