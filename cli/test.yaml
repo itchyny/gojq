@@ -7092,6 +7092,35 @@
     "aabcABC☆★☆ABCabc"
     "abcABC☆★☆ABCabc"
 
+- name: sub and gsub functions with multiple outputs and unmatched captures
+  args:
+    - -c
+    - '[sub("(?<x>[ab])"; "1", "2")], [gsub("(?<x>[ab])"; if .x == "a" then "1", "2" else "3" end)], gsub("(?<x>a)|b"; "<\(.x)>")'
+  input: '"abcab"'
+  expected: |
+    ["1bcab","2bcab"]
+    ["13c13","2c2"]
+    "<a><null>c<a><null>"
+
+- name: splits, sub, and gsub functions against multibyte characters
+  args:
+    - -c
+    - '[splits("☆+")], [splits("b|★"; "i")], split("[☆★]*"; null), sub("☆+"; "-"), gsub("(?<x>[☆★])"; .x + .x)'
+  input: '"a☆B☆☆c★"'
+  expected: |
+    ["a","B","c★"]
+    ["a☆","☆☆c",""]
+    ["","a","","B","","c","",""]
+    "a-B☆☆c★"
+    "a☆☆B☆☆☆☆c★★"
+
+- name: sub function type error
+  args:
+    - 'sub("x"; "y")'
+  input: '{}'
+  error: |
+    match("x"; null) cannot be applied to: object ({})
+
 - name: match function with empty matches
   args:
     - -c
